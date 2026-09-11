@@ -1,0 +1,35 @@
+/* 
+ * BRAND & WHITE-LABEL OVERRIDES
+ * This file is the only token file intended for feature branch edits or white-label customization.
+ * Place brand-specific theme modifications, font adjustments, or accessibility overrides here.
+ */
+
+:root,
+[data-theme='light'] {
+  /*
+   * Accessibility Override: Bump --text-tertiary from --colors-neutral-500 (#64748b)
+   * to --colors-neutral-600 (#475569) in light mode to guarantee WCAG AA 4.5:1 contrast ratio
+   * on --bg-default (#ffffff) and --bg-surface-1 (#f8fafc).
+   */
+  --text-tertiary: var(--colors-neutral-600);
+
+  /* SOW Creator Brand Cyan Tokens */
+  --brand-cyan-50: #e6f9fa;
+  --brand-cyan-100: #ccf3f5;
+  --brand-cyan-400: #1ad3db;
+  --brand-cyan-500: #00c4c4;
+  --brand-cyan-600: #00a8a8;
+  --brand-cyan-700: #008f8f;
+
+  /* Semantic Action Overrides for SOW Creator */
+  --action-primary-bg-default: var(--brand-cyan-500);
+  --action-primary-bg-hover: var(--brand-cyan-600);
+  --action-primary-bg-pressed: var(--brand-cyan-700);
+  --action-primary-text: #ffffff;
+  --border-focus: var(--brand-cyan-500);
+
+  /* Standardized Typography Tokens across Application */
+  --text-title: #0d212c;
+  --text-subtitle: #64748b;
+}
+
