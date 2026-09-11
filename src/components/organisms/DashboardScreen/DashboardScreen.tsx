@@ -248,13 +248,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </svg>
           </button>
 
-          {/* Logout Icon: Aligned at bottom edge of main white card */}
+          {/* Logout Icon: Aligned at bottom edge of main white card (Turns red on hover) */}
           <button
             type="button"
             aria-label="Sign Out"
             onClick={onSignOut}
             title="Sign Out"
-            className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-[#0d212c] hover:bg-gray-50 shadow-2xs flex items-center justify-center cursor-pointer transition"
+            className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 shadow-2xs flex items-center justify-center cursor-pointer transition"
           >
             <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -277,19 +277,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </h1>
           </section>
 
-          {/* ─── "CREATE A NEW SOW" HERO BANNER CARD ───────────────────────── */}
-          <section className="bg-gradient-to-r from-[#e0f2fe]/80 via-[#f0f9ff]/90 to-[#e6f9fa] border border-[#bae6fd]/70 rounded-2xl px-5 py-3.5 sm:py-4 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-3 shadow-2xs mb-3.5 shrink-0">
+          {/* ─── "CREATE A NEW SOW" HERO BANNER CARD (Increased height & vector size) ─── */}
+          <section className="bg-gradient-to-r from-[#e0f2fe]/80 via-[#f0f9ff]/90 to-[#e6f9fa] border border-[#bae6fd]/70 rounded-2xl px-6 py-5 sm:py-6 min-h-[148px] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xs mb-4 shrink-0">
             {/* Background vector curve overlays */}
             <div className="absolute -right-12 -top-12 w-64 h-64 bg-cyan-200/20 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-blue-200/20 rounded-full blur-2xl pointer-events-none" />
 
             {/* Banner Left Content */}
             <div className="relative z-10 flex flex-col items-start max-w-2xl text-left">
-              <h2 className="text-lg sm:text-xl font-bold text-[#0d212c] tracking-tight mb-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#0d212c] tracking-tight mb-1.5">
                 Create a new SOW
               </h2>
               {/* Single line description without wrapping */}
-              <p className="text-xs sm:text-sm text-[#64748b] font-normal leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis mb-3 max-w-full">
+              <p className="text-xs sm:text-sm text-[#64748b] font-normal leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis mb-4 max-w-full">
                 Upload your project details and let AI help you get started with a structured SOW.
               </p>
 
@@ -298,7 +298,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 type="button"
                 id="create-sow-cta-btn"
                 onClick={() => setIsModalOpen(true)}
-                className="bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-md transition duration-150 flex items-center gap-2 cursor-pointer border-0"
+                className="bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-full shadow-md transition duration-150 flex items-center gap-2 cursor-pointer border-0"
               >
                 <svg className="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -307,53 +307,53 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </button>
             </div>
 
-            {/* Banner Right Enhanced Graphic Illustration (Multiple SOW cards) */}
-            <div className="relative z-10 w-full max-w-[280px] flex items-center justify-center p-1">
-              <div className="relative w-full h-28 flex items-center justify-center">
+            {/* Banner Right Prominent Visual Vector Illustration (Enlarged 3D Cards Stack) */}
+            <div className="relative z-10 w-full max-w-[340px] flex items-center justify-center p-1">
+              <div className="relative w-full h-36 flex items-center justify-center">
                 {/* Back Card 1 */}
-                <div className="absolute -left-2 w-28 h-20 bg-white rounded-xl border border-gray-100 shadow-sm transform -rotate-6 p-2 flex flex-col justify-between opacity-80">
-                  <div className="text-[8px] font-bold text-gray-400">SOW #01</div>
-                  <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[7px] font-semibold bg-[#dcfce7] text-[#16a34a] self-start">
+                <div className="absolute -left-3 w-34 h-26 bg-white rounded-xl border border-gray-100 shadow-md transform -rotate-6 p-2.5 flex flex-col justify-between opacity-80">
+                  <div className="text-[9px] font-bold text-gray-400">SOW #01</div>
+                  <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-semibold bg-[#dcfce7] text-[#16a34a] self-start">
                     ✓ Approved
                   </div>
                 </div>
 
                 {/* Back Card 2 */}
-                <div className="absolute right-0 w-28 h-20 bg-white rounded-xl border border-gray-100 shadow-sm transform rotate-6 p-2 flex flex-col justify-between opacity-80">
-                  <div className="text-[8px] font-bold text-gray-400">SOW #03</div>
-                  <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[7px] font-semibold bg-[#ffedd5] text-[#c2410c] self-start">
+                <div className="absolute right-0 w-34 h-26 bg-white rounded-xl border border-gray-100 shadow-md transform rotate-6 p-2.5 flex flex-col justify-between opacity-80">
+                  <div className="text-[9px] font-bold text-gray-400">SOW #03</div>
+                  <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-semibold bg-[#ffedd5] text-[#c2410c] self-start">
                     ⏱ Review
                   </div>
                 </div>
 
                 {/* Main Front Active SOW Card */}
-                <div className="absolute z-10 w-36 h-24 bg-white rounded-xl border border-gray-100 shadow-lg p-2.5 flex flex-col justify-between">
+                <div className="absolute z-10 w-44 h-30 bg-white rounded-2xl border border-gray-100 shadow-xl p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold text-[#0d212c]">SOW #02</span>
-                      <span className="text-[8px] font-semibold text-[#00C4C4]">AI Ready</span>
+                      <span className="text-[10px] font-bold text-[#0d212c]">SOW #02</span>
+                      <span className="text-[9px] font-semibold text-[#00C4C4]">AI Ready</span>
                     </div>
-                    <div className="mt-1 w-full h-1 bg-slate-100 rounded-full" />
-                    <div className="mt-1 w-3/4 h-1 bg-slate-100 rounded-full" />
+                    <div className="mt-1.5 w-full h-1.5 bg-slate-100 rounded-full" />
+                    <div className="mt-1 w-3/4 h-1.5 bg-slate-100 rounded-full" />
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[7px] font-semibold bg-[#e0f2fe] text-[#0284c7]">
+                    <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-semibold bg-[#e0f2fe] text-[#0284c7]">
                       📈 In Progress
                     </div>
-                    <span className="text-[7px] text-gray-400 font-medium">Verified</span>
+                    <span className="text-[8px] text-gray-400 font-medium">Verified</span>
                   </div>
                 </div>
 
                 {/* Large Cyan Circular + Action Button */}
-                <div className="absolute -right-1 top-1 z-20 w-8 h-8 rounded-full bg-[#00C4C4] text-white shadow-md flex items-center justify-center border-0 cursor-pointer hover:scale-105 transition">
-                  <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute -right-2 top-0 z-20 w-9 h-9 rounded-full bg-[#00C4C4] text-white shadow-md flex items-center justify-center border-0 cursor-pointer hover:scale-105 transition">
+                  <svg className="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
 
                 {/* Dashed connector arc */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 280 112" fill="none">
-                  <path d="M150 25 C 190 5, 230 15, 250 40" stroke="#00C4C4" strokeWidth="1.5" strokeDasharray="4 4" />
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 340 144" fill="none">
+                  <path d="M180 30 C 230 5, 280 15, 300 45" stroke="#00C4C4" strokeWidth="1.5" strokeDasharray="4 4" />
                 </svg>
               </div>
             </div>

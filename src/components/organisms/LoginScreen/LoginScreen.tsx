@@ -314,18 +314,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 >
                   Send OTP
                 </button>
-
-                <p className="text-[11px] text-center text-[#64748b] font-normal leading-relaxed mt-4">
-                  By continuing, you agree to our{' '}
-                  <a href="#terms" className="text-[#00C4C4] hover:underline font-semibold">
-                    Terms of Use
-                  </a>{' '}
-                  and{' '}
-                  <a href="#privacy" className="text-[#00C4C4] hover:underline font-semibold">
-                    Privacy Policy
-                  </a>
-                  .
-                </p>
               </form>
             )}
 
@@ -470,6 +458,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             )}
 
           </div>
+
+          {/* Bottom Pinned Terms & Privacy Disclaimer */}
+          <p className="text-[11px] text-center text-[#64748b] font-normal leading-relaxed shrink-0 mt-4">
+            By continuing, you agree to our{' '}
+            <a href="#terms" className="text-[#00C4C4] hover:underline font-semibold">
+              Terms of Use
+            </a>{' '}
+            and{' '}
+            <a href="#privacy" className="text-[#00C4C4] hover:underline font-semibold">
+              Privacy Policy
+            </a>
+            .
+          </p>
         </div>
 
       </div>
