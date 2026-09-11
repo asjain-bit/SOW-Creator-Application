@@ -167,7 +167,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       data-testid="login-screen-container"
     >
       {/* Outer App Window Frame Card with enlarged dimensions */}
-      <div className="w-full max-w-[1140px] bg-white/90 backdrop-blur-md rounded-[32px] border border-[#e2e8f0] shadow-2xl p-4 sm:p-5 flex flex-col lg:flex-row gap-5 min-h-[640px]">
+      <div className="w-full max-w-[1180px] bg-white/90 backdrop-blur-md rounded-[32px] border border-[#e2e8f0] shadow-2xl p-4 sm:p-5 flex flex-col lg:flex-row gap-5 min-h-[640px]">
         
         {/* ─── LEFT PANEL: GRADIENT & ILLUSTRATION (Middle aligned with reduced gaps) ─── */}
         <div className="flex-1 rounded-[28px] bg-gradient-to-br from-[#e0f2fe]/80 via-[#f0f9ff]/90 to-[#e6f9fa] border border-[#bae6fd]/50 p-8 sm:p-10 flex flex-col justify-center gap-5 sm:gap-6 relative overflow-hidden min-h-[500px]">
@@ -185,7 +185,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
 
           {/* Graphic Stacked SOW Illustration (Left Aligned with Content, tight spacing) */}
-          <div className="relative z-10 w-full max-w-[380px] self-start flex items-center justify-start py-1">
+          <div className="relative w-full max-w-[380px] self-start flex items-center justify-start py-1">
             <div className="relative w-full h-44 flex items-center justify-center">
               
               {/* Sheet 1: Left Approved Card */}
@@ -253,8 +253,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
         </div>
 
-        {/* ─── RIGHT PANEL: FORM CONTAINER matching reference screenshot ──── */}
-        <div className="w-full lg:w-[440px] shrink-0 bg-white rounded-[28px] p-8 sm:p-10 shadow-lg border border-gray-100 flex flex-col justify-between min-h-[500px]">
+        {/* ─── RIGHT PANEL: FORM CONTAINER (Increased width 470px to prevent email truncation) ──── */}
+        <div className="w-full lg:w-[470px] shrink-0 bg-white rounded-[28px] p-8 sm:p-10 shadow-lg border border-gray-100 flex flex-col justify-between min-h-[500px]">
           
           <div className="my-auto flex flex-col w-full">
             
@@ -317,7 +317,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </form>
             )}
 
-            {/* ─── STEP 2: VERIFY YOUR EMAIL (OTP INPUT - Single line email text with matching style) ─── */}
+            {/* ─── STEP 2: VERIFY YOUR EMAIL (OTP INPUT - User email in dark grey without truncation) ─── */}
             {step === 'otp' && (
               <form onSubmit={handleVerifyOtp} className="flex flex-col gap-6" noValidate>
                 {/* Top Back Button */}
@@ -336,8 +336,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   <h2 className="text-2xl sm:text-3xl font-bold text-[#0d212c] tracking-tight">
                     Verify Your Email
                   </h2>
-                  <p className="mt-1.5 text-sm text-[#64748b] font-normal leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
-                    We&apos;ve sent a 6-digit OTP to {email}
+                  <p className="mt-1.5 text-sm text-[#64748b] font-normal leading-relaxed">
+                    We&apos;ve sent a 6-digit OTP to{' '}
+                    <span className="text-[#0d212c] font-semibold">{email}</span>
                   </p>
                 </div>
 

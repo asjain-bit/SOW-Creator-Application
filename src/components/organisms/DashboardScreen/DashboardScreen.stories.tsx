@@ -12,7 +12,7 @@ const meta: Meta<typeof DashboardScreen> = {
 export default meta
 type Story = StoryObj<typeof DashboardScreen>
 
-export className: Story = {
+export const Default: Story = {
   args: {
     userName: 'Ashika',
     userRole: 'PMO',

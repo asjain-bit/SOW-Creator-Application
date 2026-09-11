@@ -217,7 +217,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <div className="bg-white border border-gray-200 rounded-full pl-1.5 pr-4 py-1 flex items-center gap-3 shadow-2xs cursor-pointer hover:bg-gray-50 transition">
             <img
               src="/profile-user.png"
-              alt="Ashika Jain Profile"
+              alt={`${userName} (${userInitials}) Profile`}
               className="w-8 h-8 rounded-full object-cover border border-gray-100 shadow-xs"
             />
             <div className="flex flex-col text-left">
@@ -278,7 +278,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </section>
 
           {/* ─── "CREATE A NEW SOW" HERO BANNER CARD (Increased height & vector size) ─── */}
-          <section className="bg-gradient-to-r from-[#e0f2fe]/80 via-[#f0f9ff]/90 to-[#e6f9fa] border border-[#bae6fd]/70 rounded-2xl px-6 py-5 sm:py-6 min-h-[148px] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xs mb-4 shrink-0">
+          <section className="bg-gradient-to-r from-[#e0f2fe]/80 via-[#f0f9ff]/90 to-[#e6f9fa] border border-[#bae6fd]/70 rounded-2xl px-6 py-6 sm:py-7 min-h-[175px] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xs mb-4 shrink-0">
             {/* Background vector curve overlays */}
             <div className="absolute -right-12 -top-12 w-64 h-64 bg-cyan-200/20 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-blue-200/20 rounded-full blur-2xl pointer-events-none" />
@@ -308,10 +308,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </div>
 
             {/* Banner Right Prominent Visual Vector Illustration (Enlarged 3D Cards Stack) */}
-            <div className="relative z-10 w-full max-w-[340px] flex items-center justify-center p-1">
-              <div className="relative w-full h-36 flex items-center justify-center">
+            <div className="relative z-10 w-full max-w-[360px] flex items-center justify-center p-1">
+              <div className="relative w-full h-40 flex items-center justify-center">
                 {/* Back Card 1 */}
-                <div className="absolute -left-3 w-34 h-26 bg-white rounded-xl border border-gray-100 shadow-md transform -rotate-6 p-2.5 flex flex-col justify-between opacity-80">
+                <div className="absolute -left-2 w-36 h-28 bg-white rounded-xl border border-gray-100 shadow-md transform -rotate-6 p-2.5 flex flex-col justify-between opacity-80">
                   <div className="text-[9px] font-bold text-gray-400">SOW #01</div>
                   <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-semibold bg-[#dcfce7] text-[#16a34a] self-start">
                     ✓ Approved
@@ -319,7 +319,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </div>
 
                 {/* Back Card 2 */}
-                <div className="absolute right-0 w-34 h-26 bg-white rounded-xl border border-gray-100 shadow-md transform rotate-6 p-2.5 flex flex-col justify-between opacity-80">
+                <div className="absolute right-0 w-36 h-28 bg-white rounded-xl border border-gray-100 shadow-md transform rotate-6 p-2.5 flex flex-col justify-between opacity-80">
                   <div className="text-[9px] font-bold text-gray-400">SOW #03</div>
                   <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-semibold bg-[#ffedd5] text-[#c2410c] self-start">
                     ⏱ Review
@@ -327,7 +327,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </div>
 
                 {/* Main Front Active SOW Card */}
-                <div className="absolute z-10 w-44 h-30 bg-white rounded-2xl border border-gray-100 shadow-xl p-3 flex flex-col justify-between">
+                <div className="absolute z-10 w-48 h-32 bg-white rounded-2xl border border-gray-100 shadow-xl p-3 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-[#0d212c]">SOW #02</span>
