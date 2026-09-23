@@ -2252,11 +2252,45 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
   },
 ]
 
-// Meridian Healthcare — contributor (Narendra) has a handful of items assigned to him ('m5')
-// scattered across sections; everything else keeps the original assignee.
-const MERIDIAN_SECTIONS: SOWSection[] = INITIAL_SECTIONS_V2.map((sec, si) => ({
+// Meridian Healthcare — contributor (Narendra) has items assigned to him ('m5') across a
+// handful of sections, with a deliberate mix of answered/unanswered and varied answer
+// lengths (single word, one line, multi-sentence) so the Structure tab feels realistic.
+// Overrides are keyed by item id; everything else keeps the original seed data.
+const MERIDIAN_OVERRIDES: Record<
+  string,
+  { assignedTo: string; answered: boolean; response?: string }
+> = {
+  s1a: { assignedTo: 'm5', answered: true, response: 'Confirmed.' },
+  s1b: { assignedTo: 'm5', answered: false },
+  s4a: { assignedTo: 'm5', answered: false },
+  s4b: {
+    assignedTo: 'm5',
+    answered: true,
+    response: 'Yes — capped at 50 vendors for Phase 1, per CPO sign-off on 20 Sept.',
+  },
+  s7a: {
+    assignedTo: 'm5',
+    answered: true,
+    response:
+      'Confirmed. Sprint cadence agreed in the Project Initiation doc, with fortnightly client showcases booked from kick-off through to go-live, and a mid-phase checkpoint scheduled to reassess velocity.',
+  },
+  s7b: { assignedTo: 'm5', answered: false },
+  s10a: { assignedTo: 'm5', answered: true, response: 'Booked for 3 Nov 2026.' },
+  s13a: {
+    assignedTo: 'm5',
+    answered: true,
+    response:
+      'Reviewed with the client Risk Committee on 16 Sept — 6 of 8 Tier-1 risks accepted outright, the remaining 2 need additional mitigation plans before sign-off, due by 30 Sept.',
+  },
+  s16a: { assignedTo: 'm5', answered: false },
+}
+
+const MERIDIAN_SECTIONS: SOWSection[] = INITIAL_SECTIONS_V2.map((sec) => ({
   ...sec,
-  items: sec.items.map((it, ii) => (si % 3 === 0 && ii === 0 ? { ...it, assignedTo: 'm5' } : it)),
+  items: sec.items.map((it) => {
+    const o = MERIDIAN_OVERRIDES[it.id]
+    return o ? { ...it, ...o, response: o.response } : it
+  }),
 }))
 
 function MemberAvatar({ memberId, size = 24 }: { memberId: string; size?: number }) {
@@ -2917,9 +2951,15 @@ function StructureTab({
   const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
   // Contributors only ever see their own assigned items, in sections that have at least one.
+  // Unanswered items surface first within each section so open work is easy to find.
   const visibleSections = isContributor
     ? sections
-        .map((s) => ({ ...s, items: s.items.filter((i) => i.assignedTo === currentMemberId) }))
+        .map((s) => ({
+          ...s,
+          items: s.items
+            .filter((i) => i.assignedTo === currentMemberId)
+            .sort((a, b) => Number(a.answered) - Number(b.answered)),
+        }))
         .filter((s) => s.items.length > 0)
     : sections
 
@@ -3840,14 +3880,27 @@ function ItemRow({
                   gap: 5,
                   padding: '5px 12px',
                   borderRadius: 6,
-                  border: '1px solid rgba(0,196,196,0.5)',
-                  background: draft.trim() ? 'rgba(0,196,196,0.12)' : 'rgba(0,196,196,0.05)',
+                  border: 'none',
+                  background: draft.trim() ? '#16a34a' : 'rgba(148,163,184,0.25)',
                   fontSize: 11.5,
-                  fontWeight: 600,
-                  color: draft.trim() ? '#007a7a' : '#94a3b8',
+                  fontWeight: 700,
+                  color: draft.trim() ? '#ffffff' : '#94a3b8',
                   cursor: draft.trim() ? 'pointer' : 'not-allowed',
+                  boxShadow: draft.trim() ? '0 1px 4px rgba(22,163,74,0.35)' : 'none',
                 }}
               >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
                 Save Answer
               </button>
             </div>
@@ -4593,12 +4646,12 @@ function SOWDraftTab() {
                         width: 20,
                         height: 20,
                         borderRadius: '50%',
-                        background: isActive ? '#00C4C4' : 'rgba(148,163,184,0.15)',
-                        border: isActive ? 'none' : '1.5px solid #cbd5e1',
+                        background: isActive ? '#00C4C4' : 'rgba(0,196,196,0.12)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0,
+                        transition: 'all 0.15s',
                       }}
                     >
                       <span
@@ -6688,46 +6741,48 @@ export function SOWDetailScreen({
             <div style={{ marginLeft: 'auto', paddingRight: 10 }}>
               {isContributor ? null : showGenerateDraft ? (
                 draftGenState === 'ready' ? (
-                  <button
-                    onClick={() => setShowReviewModal(true)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 14px',
-                      borderRadius: 8,
-                      border: '1.5px solid rgba(0,196,196,0.35)',
-                      background: 'rgba(0,196,196,0.07)',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#00a0a0',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                    }}
-                    onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.14)'
-                    }}
-                    onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.07)'
-                    }}
-                  >
-                    <svg
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      viewBox="0 0 24 24"
+                  activeTab !== 'sow-draft' ? null : (
+                    <button
+                      onClick={() => setShowReviewModal(true)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        border: '1.5px solid rgba(0,196,196,0.35)',
+                        background: 'rgba(0,196,196,0.07)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: '#00a0a0',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                      onMouseEnter={(e) => {
+                        ;(e.currentTarget as HTMLButtonElement).style.background =
+                          'rgba(0,196,196,0.14)'
+                      }}
+                      onMouseLeave={(e) => {
+                        ;(e.currentTarget as HTMLButtonElement).style.background =
+                          'rgba(0,196,196,0.07)'
+                      }}
                     >
-                      <path d="M22 2L11 13" />
-                      <path d="M22 2L15 22 11 13 2 9l20-7z" />
-                    </svg>
-                    Send for Review
-                  </button>
+                      <svg
+                        width="13"
+                        height="13"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M22 2L11 13" />
+                        <path d="M22 2L15 22 11 13 2 9l20-7z" />
+                      </svg>
+                      Send for Review
+                    </button>
+                  )
                 ) : draftGenState === 'generating' || draftGenState === 'shimmer' ? (
                   <div
                     style={{
