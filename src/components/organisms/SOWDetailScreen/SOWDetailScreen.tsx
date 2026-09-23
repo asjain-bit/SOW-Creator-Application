@@ -5089,8 +5089,8 @@ export function SOWDetailScreen({
         </button>
       </div>
 
-      {/* Header area — transparent background, no box */}
-      <div style={{ flexShrink: 0, padding: '12px 24px 0' }}>
+      {/* Header area */}
+      <div style={{ flexShrink: 0, padding: '12px 20px 0' }}>
         {/* Single-line header: glass back button + title + status badge (no background behind title) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           {/* Back button — glass-morphic box */}
@@ -5162,19 +5162,16 @@ export function SOWDetailScreen({
           <div style={{ flex: 1 }} />
         </div>
 
-        {/* Tab bar + CTA — inside a glass-morphic card */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.6)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255,255,255,0.7)',
-            borderRadius: '12px 12px 0 0',
-            borderBottom: 'none',
-            padding: '0 4px',
-          }}
-        >
-          <div style={{ display: 'flex', gap: 0, alignItems: 'center' }}>
+        {/* Tab bar + CTA — free, no box */}
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              gap: 0,
+              alignItems: 'center',
+              borderBottom: '1px solid rgba(0,196,196,0.15)',
+            }}
+          >
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id
               return (
@@ -5385,7 +5382,7 @@ export function SOWDetailScreen({
       </div>
       {/* end header area */}
 
-      {/* ── Tab content — glass-morphic card continuation ── */}
+      {/* ── Tab content ── */}
       <div
         style={{
           flex: 1,
@@ -5394,13 +5391,6 @@ export function SOWDetailScreen({
           flexDirection: 'column',
           overflow: activeTab === 'structure' ? 'hidden' : 'auto',
           position: 'relative',
-          margin: '0 24px 16px',
-          background: 'rgba(255,255,255,0.6)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255,255,255,0.7)',
-          borderTop: 'none',
-          borderRadius: '0 0 12px 12px',
         }}
       >
         {/* Generating overlay */}
