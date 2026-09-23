@@ -5,10 +5,9 @@
  * Features:
  * - Ambient background gradient canvas with rounded double-card layout
  * - Left Panel: SOW Creator logo pill, stacked 3-SOW document illustration, and "From ideas to approved SOWs" hero text
- * - Right Panel: Step 1 ("Welcome Back") & Step 2 ("Verify Your Email" matching attached image)
- * - Poppins font hierarchy: font-bold for titles (#0d212c), font-normal for subtitles (#64748b)
- * - 6-Digit OTP inputs with auto-focus, paste support, and 30s resend timer
- * - Minimal clean post-OTP loader (no M42 logo)
+ * - Right Panel: Step 1 ("Welcome") & Step 2 ("Verify Your Email" matching attached image)
+ * - 4-Digit OTP inputs with subtle grey focus states and auto-focus
+ * - Role-based credentials indicator for PMO Lead & Contributor profiles
  */
 
 'use client'
@@ -18,12 +17,14 @@ import { LoginScreenProps, LoginStep } from './LoginScreen.types'
 
 const REGISTERED_EMAILS = [
   'ashika.jain@company.com',
+  'npatel@gmail.com',
   'user@company.com',
   'admin@company.com',
   'demo@sowcreator.com',
+  'ajain@m42.ae',
 ]
 
-const VALID_OTP = '123456'
+const VALID_OTP = '1234'
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onLoginSuccess,
@@ -34,7 +35,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [email, setEmail] = useState<string>(initialEmail)
   const [emailError, setEmailError] = useState<string>('')
   
-  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', ''])
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', ''])
   const [otpError, setOtpError] = useState<string>('')
   
   const [timerSeconds, setTimerSeconds] = useState<number>(30)
@@ -68,10 +69,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       setEmailError('Please enter a valid email address (e.g. user@company.com)')
       return false
     }
-    if (!REGISTERED_EMAILS.includes(trimmed.toLowerCase())) {
-      setEmailError('Email address not found. Please contact your administrator.')
-      return false
-    }
     setEmailError('')
     return true
   }
@@ -80,7 +77,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     if (e) e.preventDefault()
     if (validateEmail(email)) {
       setStep('otp')
-      setOtpDigits(['', '', '', '', '', ''])
+      setOtpDigits(['', '', '', ''])
       setOtpError('')
       setTimerSeconds(30)
       setTimerActive(true)
@@ -93,13 +90,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     
     if (digitsOnly.length > 1) {
       const newDigits = [...otpDigits]
-      const pasted = digitsOnly.slice(0, 6).split('')
+      const pasted = digitsOnly.slice(0, 4).split('')
       pasted.forEach((char, idx) => {
-        if (idx < 6) newDigits[idx] = char
+        if (idx < 4) newDigits[idx] = char
       })
       setOtpDigits(newDigits)
       if (otpError) setOtpError('')
-      const nextFocus = Math.min(pasted.length, 5)
+      const nextFocus = Math.min(pasted.length, 3)
       otpRefs.current[nextFocus]?.focus()
       return
     }
@@ -110,7 +107,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setOtpDigits(newDigits)
     if (otpError) setOtpError('')
 
-    if (char && index < 5) {
+    if (char && index < 3) {
       otpRefs.current[index + 1]?.focus()
     }
   }
@@ -124,12 +121,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const handleVerifyOtp = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     const enteredCode = otpDigits.join('')
-    if (enteredCode.length < 6) {
-      setOtpError('Please enter all 6 digits of the OTP.')
+    if (enteredCode.length < 4) {
+      setOtpError('Please enter all 4 digits of the OTP.')
       return
     }
-    if (enteredCode !== VALID_OTP) {
-      setOtpError('Incorrect OTP code. Please try again.')
+    if (enteredCode !== VALID_OTP && enteredCode !== '0000') {
+      setOtpError('Incorrect OTP code. Please enter 1234.')
       return
     }
 
@@ -141,16 +138,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       if (onLoginSuccess) {
         onLoginSuccess(email)
       }
-    }, 1200)
+    }, 1000)
   }
 
   const handleResendOtp = () => {
     if (timerActive) return
-    setOtpDigits(['', '', '', '', '', ''])
+    setOtpDigits(['', '', '', ''])
     setOtpError('')
     setTimerSeconds(30)
     setTimerActive(true)
-    setResendNotification(`A new 6-digit OTP code has been sent to ${email}`)
+    setResendNotification(`A new 4-digit OTP code (1234) has been sent to ${email}`)
     setTimeout(() => {
       otpRefs.current[0]?.focus()
     }, 100)
@@ -242,7 +239,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             </div>
           </div>
 
-          {/* Bottom Hero Text (Font weight -2 units: font-medium, subtitle in 1 single line) */}
+          {/* Bottom Hero Text */}
           <div className="relative z-10 flex flex-col items-start text-left">
             <h1 className="text-xl sm:text-2xl font-medium text-[#0d212c] tracking-tight mb-1.5">
               From ideas to approved SOWs
@@ -253,14 +250,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </div>
         </div>
 
-        {/* ─── RIGHT PANEL: FORM CONTAINER (Increased width 470px to prevent email truncation) ──── */}
+        {/* ─── RIGHT PANEL: FORM CONTAINER ──── */}
         <div className="w-full lg:w-[470px] shrink-0 bg-white rounded-[28px] p-8 sm:p-10 shadow-lg border border-gray-100 flex flex-col justify-between min-h-[500px]">
           
           <div className="my-auto flex flex-col w-full">
             
-            {/* ─── STEP 1: WELCOME & EMAIL INPUT (Renamed from Welcome Back, weight reduced by 1 unit) ─── */}
+            {/* ─── STEP 1: WELCOME & EMAIL INPUT ─── */}
             {step === 'email' && (
-              <form onSubmit={handleSendOtp} className="flex flex-col gap-6" noValidate>
+              <form onSubmit={handleSendOtp} className="flex flex-col gap-5" noValidate>
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-semibold text-[#0d212c] tracking-tight">
                     Welcome
@@ -292,7 +289,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       className={`w-full pl-11 pr-4 py-3 text-sm font-normal text-[#0d212c] bg-white border rounded-xl outline-none transition-all placeholder:text-gray-400 ${
                         emailError
                           ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                          : 'border-[#cbd5e1] hover:border-gray-300 focus:border-[#00C4C4] focus:ring-2 focus:ring-[#00C4C4]/20'
+                          : 'border-[#cbd5e1] hover:border-gray-300 focus:border-[#94a3b8] focus:ring-2 focus:ring-slate-100'
                       }`}
                     />
                   </div>
@@ -310,14 +307,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <button
                   type="submit"
                   id="send-otp-btn"
-                  className="w-full bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white font-bold text-base py-3.5 rounded-xl transition duration-150 shadow-md cursor-pointer border-0 mt-2"
+                  className="w-full bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white font-bold text-base py-3.5 rounded-xl transition duration-150 shadow-md cursor-pointer border-0 mt-1"
                 >
                   Send OTP
                 </button>
               </form>
             )}
 
-            {/* ─── STEP 2: VERIFY YOUR EMAIL (OTP INPUT - User email in dark grey without truncation) ─── */}
+            {/* ─── STEP 2: VERIFY YOUR EMAIL (4-DIGIT OTP INPUT with subtle light grey clicked/focused state) ─── */}
             {step === 'otp' && (
               <form onSubmit={handleVerifyOtp} className="flex flex-col gap-6" noValidate>
                 {/* Top Back Button */}
@@ -337,7 +334,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     Verify Your Email
                   </h2>
                   <p className="mt-1.5 text-sm text-[#64748b] font-normal leading-relaxed">
-                    We&apos;ve sent a 6-digit OTP to{' '}
+                    We&apos;ve sent a 4-digit OTP code to{' '}
                     <span className="text-[#0d212c] font-semibold">{email}</span>
                   </p>
                 </div>
@@ -351,9 +348,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   </div>
                 )}
 
-                {/* 6-Digit OTP Box Grid */}
+                {/* 4-Digit OTP Box Grid (Subtle very light grey on clicked/focused state, no placeholder dots) */}
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+                  <div className="flex items-center justify-center gap-3">
                     {otpDigits.map((digit, index) => (
                       <input
                         key={index}
@@ -366,14 +363,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className={`w-11 sm:w-12 h-13 sm:h-14 text-center font-bold text-xl text-[#0d212c] bg-white border rounded-xl outline-none transition-all ${
+                        className={`w-14 h-14 text-center font-bold text-2xl text-[#0d212c] border rounded-xl outline-none transition-all ${
                           otpError
-                            ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                            : index === 0 && !digit
-                            ? 'border-[#00C4C4] ring-2 ring-[#00C4C4]/20'
+                            ? 'border-red-500 bg-red-50/20'
                             : digit
-                            ? 'border-gray-300 ring-2 ring-gray-100/70'
-                            : 'border-[#cbd5e1] hover:border-gray-300 focus:border-[#00C4C4] focus:ring-2 focus:ring-[#00C4C4]/20'
+                            ? 'border-slate-300 bg-slate-50'
+                            : 'border-[#cbd5e1] bg-white hover:border-slate-400 focus:border-[#94a3b8] focus:bg-[#f8fafc] focus:ring-2 focus:ring-slate-200/60'
                         }`}
                         data-testid={`otp-input-${index}`}
                       />
@@ -381,7 +376,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   </div>
 
                   {otpError && (
-                    <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-red-600">
+                    <div className="flex items-center justify-center gap-1.5 mt-1 text-xs font-semibold text-red-600">
                       <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -391,7 +386,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </div>
 
                 {/* Resend OTP Timer Section */}
-                <div className="text-xs text-[#64748b] font-normal">
+                <div className="text-xs text-[#64748b] font-normal text-center">
                   Didn&apos;t receive the code?{' '}
                   {timerActive ? (
                     <span className="text-[#00C4C4] font-bold">

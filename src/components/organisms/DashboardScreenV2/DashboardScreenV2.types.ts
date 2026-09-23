@@ -27,7 +27,7 @@ export interface KPIItem {
   trendColor?: string
 }
 
-export type ActiveNav = 'dashboard' | 'my-sows' | 'templates' | 'analytics' | 'notifications'
+export type ActiveNav = 'dashboard' | 'my-sows' | 'audit-log' | 'templates' | 'analytics' | 'notifications'
 
 export interface DashboardScreenV2Props {
   userName?: string
@@ -43,5 +43,6 @@ export interface DashboardScreenV2Props {
   className?: string
   onNavHome?: () => void
   onNavAllSOWs?: () => void
+  onNavAuditLog?: () => void
   onOpenSOWV2?: () => void
 }

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import { LoginScreen } from '@/components/organisms/LoginScreen'
-import { DashboardScreen } from '@/components/organisms/DashboardScreen'
 import { DashboardScreenV2 } from '@/components/organisms/DashboardScreenV2'
 import { SOWDetailScreen } from '@/components/organisms/SOWDetailScreen'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
@@ -26,16 +25,23 @@ export default function Home() {
     )
   }
 
-  const firstName = userEmail.split('.')[0]
-  const displayName = firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : 'Ashika'
+  const isNarendra =
+    userEmail.toLowerCase().includes('npatel') ||
+    userEmail.toLowerCase().includes('narendra') ||
+    userEmail.toLowerCase().includes('contributor')
+  const displayName = isNarendra ? 'Narendra' : 'Ashika Jain'
+  const userRole = isNarendra ? 'Contributor' : 'PMO'
+  const userInitials = isNarendra ? 'N' : 'AJ'
+  const userImage = '/profile-user.png'
 
   const isSOWDetail = view === 'sow-detail' || view === 'sow-detail-v2'
 
   return (
     <DashboardScreenV2
       userName={displayName}
-      userRole="PMO"
-      userInitials={displayName.slice(0, 2).toUpperCase()}
+      userRole={userRole}
+      userInitials={userInitials}
+      userImage={userImage}
       onSignOut={() => setIsLoggedIn(false)}
       activeNav={isSOWDetail ? 'my-sows' : 'dashboard'}
       contentOverride={
@@ -57,6 +63,7 @@ export default function Home() {
       }}
       onNavHome={() => setView('dashboard')}
       onNavAllSOWs={() => setView('dashboard')}
+      onNavAuditLog={() => setView('dashboard')}
       onOpenSOWV2={() => setView('sow-detail-v2')}
     />
   )

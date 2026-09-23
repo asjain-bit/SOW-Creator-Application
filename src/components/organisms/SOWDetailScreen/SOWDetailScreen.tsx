@@ -8,6 +8,8 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { Check, X, ChevronDown, CheckCircle2, FileText, Clock, Layers } from 'lucide-react'
+import { AuditLogView } from '../AuditLogView'
 import type {
   SOWDetailScreenProps,
   SOWTab,
@@ -207,8 +209,239 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
   return (
     <div style={{ padding: '20px 16px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
+      {/* ── KPI Cards Bar ── */}
+      <div className="grid grid-cols-4 gap-3 mb-6">
+        {/* 1. SOW Sources */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.6)',
+            border: '1px solid rgba(255,255,255,0.85)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              Total Documents
+            </span>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: 'rgba(0,196,196,0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <FileText size={16} color="#00a0a0" />
+            </div>
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
+            {files.length > 0 ? files.length : 2}
+          </div>
+          <div
+            style={{
+              height: 1,
+              background: 'rgba(0,196,196,0.12)',
+              width: '100%',
+              margin: '4px 0 2px 0',
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+              RFP & Vendor MSA Attached · 4.2 MB
+            </span>
+          </div>
+        </div>
+
+        {/* 2. Commitments */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.6)',
+            border: '1px solid rgba(255,255,255,0.85)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              Extracted Commitments
+            </span>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: '#e0f2fe',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CheckCircle2 size={16} color="#0284c7" />
+            </div>
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
+            6
+          </div>
+          <div
+            style={{
+              height: 1,
+              background: 'rgba(0,196,196,0.12)',
+              width: '100%',
+              margin: '4px 0 2px 0',
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+              4 Open · 2 Completed
+            </span>
+          </div>
+        </div>
+
+        {/* 3. Sections of SOW */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.6)',
+            border: '1px solid rgba(255,255,255,0.85)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              SOW Sections
+            </span>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: '#f3e8ff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Layers size={16} color="#7c3aed" />
+            </div>
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
+            6
+          </div>
+          <div
+            style={{
+              height: 1,
+              background: 'rgba(0,196,196,0.12)',
+              width: '100%',
+              margin: '4px 0 2px 0',
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+              4 Finalized · 2 In Progress
+            </span>
+          </div>
+        </div>
+
+        {/* 4. Review Status */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.6)',
+            border: '1px solid rgba(255,255,255,0.85)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              Review Status
+            </span>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: '#fef3c7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Clock size={16} color="#d97706" />
+            </div>
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 600, color: '#d97706', lineHeight: 1.38 }}>
+            Pending
+          </div>
+          <div
+            style={{
+              height: 1,
+              background: 'rgba(0,196,196,0.12)',
+              width: '100%',
+              margin: '4px 0 2px 0',
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+              2 Stakeholders Awaiting
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c', marginBottom: 2 }}>
           Uploaded Documents
         </div>
         <div style={{ fontSize: 13, color: '#64748b' }}>
@@ -220,7 +453,7 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
           No documents uploaded.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {files.map((file) => (
             <button
               key={file.id}
@@ -228,23 +461,27 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
-                padding: '14px 18px',
-                background: 'rgba(255,255,255,0.7)',
-                border: '1px solid rgba(0,196,196,0.15)',
-                borderRadius: 10,
+                gap: 12,
+                padding: '14px 16px',
+                background: 'rgba(255,255,255,0.8)',
+                border: '1px solid rgba(0,196,196,0.18)',
+                borderRadius: 12,
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.15s',
+                boxShadow: '0 2px 8px rgba(0,196,196,0.04)',
               }}
               onMouseEnter={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#00C4C4'
+                ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
                 ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-                  '0 2px 12px rgba(0,196,196,0.12)'
+                  '0 4px 14px rgba(0,196,196,0.14)'
               }}
               onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,196,196,0.15)'
-                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,196,196,0.18)'
+                ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
+                ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  '0 2px 8px rgba(0,196,196,0.04)'
               }}
             >
               <span style={{ fontSize: 24, flexShrink: 0 }}>
@@ -253,19 +490,22 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
-                    fontWeight: 500,
+                    fontWeight: 600,
                     color: '#0d212c',
-                    fontSize: 14,
+                    fontSize: 13,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                   }}
+                  title={file.name}
                 >
                   {file.name}
                 </div>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{file.size}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                  {file.size} · {file.type.toUpperCase()}
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: '#00a0a0', fontWeight: 500, flexShrink: 0 }}>
+              <div style={{ fontSize: 11, color: '#00a0a0', fontWeight: 600, flexShrink: 0 }}>
                 Preview →
               </div>
             </button>
@@ -359,7 +599,15 @@ function RichTextField({
   )
 }
 
-function FormTab({ files: _files, onSubmit }: { files: UploadedFile[]; onSubmit: () => void }) {
+function FormTab({
+  files: _files,
+  onReady,
+  onSubmit: _onSubmit,
+}: {
+  files: UploadedFile[]
+  onReady?: () => void
+  onSubmit: () => void
+}) {
   const [isLoading, setIsLoading] = useState(true)
   const [formData, setFormData] = useState<SOWFormData>({
     commitments: [],
@@ -379,11 +627,12 @@ function FormTab({ files: _files, onSubmit }: { files: UploadedFile[]; onSubmit:
     timerRef.current = setTimeout(() => {
       setFormData(MOCK_FORM_DATA)
       setIsLoading(false)
-    }, 5000)
+      onReady?.()
+    }, 4000)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [])
+  }, [onReady])
 
   const addCommitment = () => {
     if (!newCommitment.trim()) return
@@ -463,126 +712,6 @@ function FormTab({ files: _files, onSubmit }: { files: UploadedFile[]; onSubmit:
 
   return (
     <div style={{ padding: '20px 16px', maxWidth: 820 }}>
-      {/* ── AI Agent block ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, rgba(0,196,196,0.08) 0%, rgba(0,168,168,0.05) 100%)',
-          border: '1px solid rgba(0,196,196,0.25)',
-          borderRadius: 14,
-          padding: '16px 20px',
-          marginBottom: 20,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* AI avatar */}
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              background: 'rgba(0,196,196,0.18)',
-              border: '1px solid rgba(0,196,196,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#00a0a0"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-              <path d="M16 3.5A4 4 0 0 1 19.5 7" />
-              <path d="M8 3.5A4 4 0 0 0 4.5 7" />
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#0d212c', marginBottom: 3 }}>
-              Intake Agent
-              <span
-                style={{
-                  marginLeft: 8,
-                  padding: '2px 8px',
-                  background: 'rgba(0,196,196,0.15)',
-                  color: '#00a0a0',
-                  borderRadius: 20,
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                Done
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b' }}>
-              <span>
-                📎 Sources referred: <strong style={{ color: '#0d212c' }}>1 document</strong>
-              </span>
-              <span>·</span>
-              <span>
-                ✓ Commitments found:{' '}
-                <strong style={{ color: '#0d212c' }}>{MOCK_FORM_DATA.commitments.length}</strong>
-              </span>
-              <span>·</span>
-              <span>
-                📋 Fields extracted: <strong style={{ color: '#0d212c' }}>8</strong>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Submit CTA */}
-        <button
-          onClick={onSubmit}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '10px 22px',
-            background: '#00C4C4',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 10,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: 'pointer',
-            flexShrink: 0,
-            boxShadow: '0 4px 16px rgba(0,196,196,0.3)',
-            transition: 'background 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
-          }}
-          onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
-          }}
-        >
-          Submit Form
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-
       {/* ── Commitments card ── */}
       <SectionCard
         title={
@@ -1423,16 +1552,31 @@ function AddItemModal({
   onClose: () => void
   onAdd: (item: Omit<SectionItem, 'id'>) => void
 }) {
-  const [type, setType] = useState<'assumption' | 'question'>('assumption')
+  const [type, setType] = useState<'question' | 'assumption'>('question')
   const [text, setText] = useState('')
-  const [assignedTo, setAssignedTo] = useState(members[0] ?? 'm1')
+  const [assignedTo, setAssignedTo] = useState<string>('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const selectedMember = assignedTo ? memberById(assignedTo) : null
 
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.35)',
+        background: 'rgba(0,0,0,0.4)',
+        backdropFilter: 'blur(3px)',
         zIndex: 200,
         display: 'flex',
         alignItems: 'center',
@@ -1444,105 +1588,266 @@ function AddItemModal({
         style={{
           background: '#fff',
           borderRadius: 16,
-          padding: '20px 16px 16px',
+          padding: '24px',
           width: 480,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          position: 'relative',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
-          Add to {sectionTitle}
-        </div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-          Add an assumption or question and assign it to a section member.
+        {/* Header with Close Cross Icon */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
+              Add to {sectionTitle}
+            </div>
+            <div style={{ fontSize: 13, color: '#64748b' }}>
+              Add a question or assumption and assign it to a section member.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#94a3b8',
+              padding: 4,
+              borderRadius: 6,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#0d212c')}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#94a3b8')}
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        {/* Type toggle */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {(['assumption', 'question'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setType(t)}
+        {/* Radio buttons: Question first, Assumption at bottom (no highlight fill/stroke on card) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+          <label
+            onClick={() => setType('question')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 14px',
+              borderRadius: 10,
+              border: '1.5px solid #e2e8f0',
+              background: '#ffffff',
+              cursor: 'pointer',
+              transition: 'all 0.12s ease',
+            }}
+          >
+            <div
               style={{
-                flex: 1,
-                padding: '8px 0',
-                borderRadius: 8,
-                border: `1.5px solid ${type === t ? (t === 'assumption' ? '#00C4C4' : '#f59e0b') : '#e2e8f0'}`,
-                background:
-                  type === t
-                    ? t === 'assumption'
-                      ? 'rgba(0,196,196,0.08)'
-                      : '#fffbeb'
-                    : '#f8fafc',
-                color: type === t ? (t === 'assumption' ? '#00a0a0' : '#d97706') : '#64748b',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                textTransform: 'capitalize',
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                border: `2px solid ${type === 'question' ? '#00C4C4' : '#cbd5e1'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
-              {t}
-            </button>
-          ))}
+              {type === 'question' && (
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C4C4' }} />
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>Question</div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>Clarification or inquiry required from team / vendor</div>
+            </div>
+          </label>
+
+          <label
+            onClick={() => setType('assumption')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 14px',
+              borderRadius: 10,
+              border: '1.5px solid #e2e8f0',
+              background: '#ffffff',
+              cursor: 'pointer',
+              transition: 'all 0.12s ease',
+            }}
+          >
+            <div
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                border: `2px solid ${type === 'assumption' ? '#00C4C4' : '#cbd5e1'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {type === 'assumption' && (
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C4C4' }} />
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>Assumption</div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>Premise or condition taken as granted for this section</div>
+            </div>
+          </label>
         </div>
 
-        {/* Text */}
-        <textarea
-          placeholder={type === 'assumption' ? 'Describe the assumption…' : 'Write the question…'}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={3}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            fontSize: 13,
-            borderRadius: 8,
-            border: '1.5px solid #e2e8f0',
-            outline: 'none',
-            resize: 'vertical',
-            boxSizing: 'border-box',
-            fontFamily: 'inherit',
-            color: '#0d212c',
-          }}
-        />
+        {/* Textarea Description */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+            {type === 'question' ? 'Question Text' : 'Assumption Description'}
+          </label>
+          <textarea
+            placeholder={type === 'question' ? 'Enter the question to be answered…' : 'Enter the assumption details…'}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={3}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              fontSize: 13,
+              borderRadius: 8,
+              border: '1.5px solid #e2e8f0',
+              outline: 'none',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              color: '#0d212c',
+            }}
+          />
+        </div>
 
-        {/* Assign to */}
-        <div style={{ marginTop: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+        {/* Assign to Dropdown Field (empty by default) */}
+        <div ref={dropdownRef} style={{ position: 'relative', marginBottom: 24 }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
             Assign to
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {members.map((mid) => {
-              const m = memberById(mid)
-              const sel = assignedTo === mid
-              return (
-                <button
-                  key={mid}
-                  onClick={() => setAssignedTo(mid)}
+          </label>
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((v) => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              padding: '9px 12px',
+              borderRadius: 8,
+              border: `1.5px solid ${dropdownOpen ? '#00C4C4' : '#e2e8f0'}`,
+              background: '#ffffff',
+              cursor: 'pointer',
+            }}
+          >
+            {selectedMember ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div
                   style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: selectedMember.color,
+                    color: '#fff',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 10px',
-                    borderRadius: 20,
-                    border: `1.5px solid ${sel ? m.color : '#e2e8f0'}`,
-                    background: sel ? `${m.color}15` : '#f8fafc',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: sel ? m.color : '#64748b',
+                    justifyContent: 'center',
+                    fontSize: 10,
+                    fontWeight: 700,
                   }}
                 >
-                  <MemberAvatar memberId={mid} size={18} />
-                  {m.name}
-                </button>
-              )
-            })}
-          </div>
+                  {selectedMember.initials}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
+                  {selectedMember.name}
+                </span>
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>PMO Member</span>
+              </div>
+            ) : (
+              <span style={{ fontSize: 13, color: '#94a3b8' }}>Select a section member…</span>
+            )}
+            <ChevronDown size={15} color="#64748b" />
+          </button>
+
+          {dropdownOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 4px)',
+                left: 0,
+                right: 0,
+                zIndex: 60,
+                background: '#ffffff',
+                border: '1px solid rgba(0,196,196,0.2)',
+                borderRadius: 10,
+                boxShadow: '0 8px 30px rgba(0,0,0,0.14)',
+                padding: 6,
+                maxHeight: 180,
+                overflowY: 'auto',
+              }}
+            >
+              {members.map((mid) => {
+                const m = memberById(mid)
+                const isSel = assignedTo === mid
+                return (
+                  <button
+                    key={mid}
+                    type="button"
+                    onClick={() => {
+                      setAssignedTo(mid)
+                      setDropdownOpen(false)
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: isSel ? 'rgba(0,196,196,0.08)' : 'transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        background: m.color,
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 10,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {m.initials}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>{m.name}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>PMO Member</div>
+                    </div>
+                    {isSel && <Check size={14} color="#00C4C4" />}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+        {/* Footer Actions */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button
+            type="button"
             onClick={onClose}
             style={{
               padding: '8px 18px',
@@ -1558,12 +1863,14 @@ function AddItemModal({
             Cancel
           </button>
           <button
+            type="button"
             onClick={() => {
               if (text.trim()) {
                 onAdd({ type, text: text.trim(), assignedTo, answered: false })
                 onClose()
               }
             }}
+            disabled={!text.trim()}
             style={{
               padding: '8px 20px',
               borderRadius: 8,
@@ -1572,11 +1879,11 @@ function AddItemModal({
               fontSize: 13,
               fontWeight: 700,
               color: '#fff',
-              cursor: 'pointer',
+              cursor: text.trim() ? 'pointer' : 'not-allowed',
               opacity: text.trim() ? 1 : 0.5,
             }}
           >
-            Add {type === 'assumption' ? 'Assumption' : 'Question'}
+            Add Item
           </button>
         </div>
       </div>
@@ -2184,16 +2491,28 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
                   fontSize: 13,
                   fontWeight: 600,
                   color: '#00a0a0',
+                  userSelect: 'none',
                 }}
+                onClick={() =>
+                  allSelected ? clearSelection() : setSelected(new Set(allItemIds))
+                }
               >
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={() =>
-                    allSelected ? clearSelection() : setSelected(new Set(allItemIds))
-                  }
-                  style={{ accentColor: '#00C4C4', width: 15, height: 15 }}
-                />
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 4,
+                    border: allSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                    background: allSelected ? '#00C4C4' : '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.12s ease',
+                  }}
+                >
+                  {allSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
+                </div>
                 {selected.size} selected
               </label>
               <div style={{ height: 16, width: 1, background: 'rgba(0,196,196,0.25)' }} />
@@ -2570,12 +2889,25 @@ function ItemRow({
           transition: 'opacity 0.1s',
         }}
       >
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={onToggle}
-          style={{ width: 14, height: 14, accentColor: '#00C4C4', cursor: 'pointer' }}
-        />
+        <button
+          type="button"
+          onClick={onToggle}
+          style={{
+            width: 16,
+            height: 16,
+            borderRadius: 4,
+            border: isSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+            background: isSelected ? '#00C4C4' : '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            padding: 0,
+            transition: 'all 0.12s ease',
+          }}
+        >
+          {isSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
+        </button>
       </div>
 
       {/* Label tag */}
@@ -5165,6 +5497,7 @@ export function SOWDetailScreen({
   const [activeTab, setActiveTab] = useState<SOWTab>(sowVariant === 'v2' ? 'structure' : 'overview')
   const [isStructureUnlocked, setIsStructureUnlocked] = useState(sowVariant === 'v2')
   const [isDraftUnlocked, setIsDraftUnlocked] = useState(false)
+  const [isFormReady, setIsFormReady] = useState(false)
   const [draftGenState, setDraftGenState] = useState<DraftGenState>('idle')
   const [inviteToast, setInviteToast] = useState(false)
   const [showReviewModal, setShowReviewModal] = useState(false)
@@ -5505,7 +5838,7 @@ export function SOWDetailScreen({
                       border: '1.5px solid rgba(0,196,196,0.5)',
                       background: 'rgba(0,196,196,0.12)',
                       fontSize: 12,
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: '#007a7a',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
@@ -5537,9 +5870,9 @@ export function SOWDetailScreen({
                     Generate Draft
                   </button>
                 )
-              ) : (
+              ) : activeTab === 'form' && isFormReady ? (
                 <button
-                  onClick={showInviteToast}
+                  onClick={handleFormSubmit}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -5549,10 +5882,11 @@ export function SOWDetailScreen({
                     border: '1.5px solid rgba(0,196,196,0.35)',
                     background: 'rgba(0,196,196,0.07)',
                     fontSize: 12,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#00a0a0',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
+                    transition: 'all 0.15s',
                   }}
                   onMouseEnter={(e) => {
                     ;(e.currentTarget as HTMLButtonElement).style.background =
@@ -5561,6 +5895,47 @@ export function SOWDetailScreen({
                   onMouseLeave={(e) => {
                     ;(e.currentTarget as HTMLButtonElement).style.background =
                       'rgba(0,196,196,0.07)'
+                  }}
+                >
+                  Submit Form
+                  <svg
+                    width="13"
+                    height="13"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ) : activeTab === 'structure' ? (
+                <button
+                  onClick={handleGenerateDraft}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    border: '1.5px solid rgba(0,196,196,0.5)',
+                    background: 'rgba(0,196,196,0.12)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#007a7a',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background =
+                      'rgba(0,196,196,0.22)'
+                  }}
+                  onMouseLeave={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background =
+                      'rgba(0,196,196,0.12)'
                   }}
                 >
                   <svg
@@ -5573,12 +5948,14 @@ export function SOWDetailScreen({
                     strokeLinejoin="round"
                     viewBox="0 0 24 24"
                   >
-                    <path d="M22 2L11 13" />
-                    <path d="M22 2L15 22 11 13 2 9l20-7z" />
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
                   </svg>
-                  Invite Participants
+                  Generate Draft
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -5610,7 +5987,13 @@ export function SOWDetailScreen({
             </div>
           )}
           {activeTab === 'overview' && <OverviewTab files={uploadedFiles} />}
-          {activeTab === 'form' && <FormTab files={uploadedFiles} onSubmit={handleFormSubmit} />}
+          {activeTab === 'form' && (
+            <FormTab
+              files={uploadedFiles}
+              onReady={() => setIsFormReady(true)}
+              onSubmit={handleFormSubmit}
+            />
+          )}
           {activeTab === 'structure' &&
             (isStructureUnlocked ? (
               <StructureTab
@@ -5636,22 +6019,8 @@ export function SOWDetailScreen({
               />
             ))}
           {activeTab === 'audit-log' && (
-            <div style={{ padding: '20px 16px' }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', marginBottom: 16 }}>
-                Audit Log
-              </div>
-              <div
-                style={{
-                  background: '#fff',
-                  border: '1px solid rgba(0,196,196,0.15)',
-                  borderRadius: 10,
-                  padding: '20px 24px',
-                  color: '#64748b',
-                  fontSize: 14,
-                }}
-              >
-                No activity recorded yet. Actions taken on this SOW will appear here.
-              </div>
+            <div style={{ flex: 1, padding: '16px', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              <AuditLogView />
             </div>
           )}
         </div>

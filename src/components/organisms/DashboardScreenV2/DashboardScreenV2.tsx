@@ -19,6 +19,7 @@ import {
 } from './DashboardScreenV2.types'
 import { CreateSOWModal } from '@/components/molecules/CreateSOWModal'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
+import { AuditLogView } from '../AuditLogView'
 
 /* ─── Static Data ─────────────────────────────────────────────────────────── */
 
@@ -327,7 +328,7 @@ function FilterDropdown({
 function SortIcon({ col, sortCol, sortDir }: { col: SortCol; sortCol: SortCol; sortDir: SortDir }) {
   if (sortCol !== col) {
     return (
-      <svg className="w-3 h-3 text-[#cbd5e1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-3 h-3 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -577,7 +578,7 @@ function AllSOWsView({ sows, onOpenSOWV2 }: { sows: SOWItem[]; onOpenSOWV2?: () 
             <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
               <tr
                 style={{
-                  background: 'rgba(0,196,196,0.05)',
+                  background: '#ffffff',
                   borderBottom: '1px solid rgba(0,196,196,0.1)',
                 }}
               >
@@ -591,7 +592,7 @@ function AllSOWsView({ sows, onOpenSOWV2 }: { sows: SOWItem[]; onOpenSOWV2?: () 
                       textAlign: 'left',
                       fontSize: 10,
                       fontWeight: 600,
-                      color: '#94a3b8',
+                      color: '#475569',
                       textTransform: 'uppercase',
                       letterSpacing: '0.07em',
                       cursor: col ? 'pointer' : 'default',
@@ -786,10 +787,11 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   className = '',
   onNavHome,
   onNavAllSOWs,
+  onNavAuditLog,
   onOpenSOWV2,
 }) => {
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [homeView, setHomeView] = useState<'home' | 'all-sows'>('home')
+  const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log'>('home')
   const [activeTab, setActiveTab] = useState<ActiveTab>('my')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
@@ -915,7 +917,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
       </div>
 
       {/* All content sits above the animated background */}
-      <div className="relative flex h-full gap-[12px] p-[12px]" style={{ zIndex: 1 }}>
+      <div className="relative flex h-full" style={{ zIndex: 1, paddingTop: 20, paddingBottom: 12, paddingLeft: 12, paddingRight: 12, gap: 20 }}>
         {/* ─── LEFT SIDEBAR ─────────────────────────────────────────────── */}
         <nav
           className="flex flex-col shrink-0 rounded-2xl relative"
@@ -1202,6 +1204,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <AllSOWsView sows={initialSOWs} onOpenSOWV2={onOpenSOWV2} />
             </div>
+          ) : homeView === 'audit-log' ? (
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+              <AuditLogView onBackToDashboard={() => setHomeView('home')} />
+            </div>
           ) : (
             /* Scrollable inner content with consistent 12px padding all around */
             <div className="flex-1 overflow-y-auto p-0">
@@ -1243,7 +1249,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 {/* 1 — Total SOWs */}
                 <div
                   style={{
-                    background: 'rgba(255,255,255,0.7)',
+                    background: 'rgba(255,255,255,0.8)',
                     border: '1px solid rgba(255,255,255,0.9)',
                     borderRadius: 16,
                     padding: '16px 18px',
@@ -1302,9 +1308,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     8
                   </div>
                   <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
-                      +2 this month
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#16a34a' }}>
+                      +2 this month ↗
                     </span>
                   </div>
                 </div>
@@ -1312,7 +1318,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 {/* 2 — In Progress */}
                 <div
                   style={{
-                    background: 'rgba(255,255,255,0.7)',
+                    background: 'rgba(255,255,255,0.8)',
                     border: '1px solid rgba(255,255,255,0.9)',
                     borderRadius: 16,
                     padding: '16px 18px',
@@ -1371,19 +1377,17 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     3
                   </div>
                   <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Form</span>
-                    <span style={{ fontSize: 11, color: '#cbd5e1' }}>·</span>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Structure</span>
-                    <span style={{ fontSize: 11, color: '#cbd5e1' }}>·</span>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Draft</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#16a34a' }}>
+                      +1 from last month ↗
+                    </span>
                   </div>
                 </div>
 
                 {/* 3 — Pending with Me */}
                 <div
                   style={{
-                    background: 'rgba(255,255,255,0.7)',
+                    background: 'rgba(255,255,255,0.8)',
                     border: '1px solid rgba(255,255,255,0.9)',
                     borderRadius: 16,
                     padding: '16px 18px',
@@ -1452,7 +1456,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 {/* 4 — Pending with Participants */}
                 <div
                   style={{
-                    background: 'rgba(255,255,255,0.7)',
+                    background: 'rgba(255,255,255,0.8)',
                     border: '1px solid rgba(255,255,255,0.9)',
                     borderRadius: 16,
                     padding: '16px 18px',
@@ -1521,7 +1525,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 {/* 5 — Pending Review */}
                 <div
                   style={{
-                    background: 'rgba(255,255,255,0.7)',
+                    background: 'rgba(255,255,255,0.8)',
                     border: '1px solid rgba(255,255,255,0.9)',
                     borderRadius: 16,
                     padding: '16px 18px',
@@ -1577,12 +1581,12 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     </div>
                   </div>
                   <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
-                    3
+                    2
                   </div>
                   <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
-                      +1 this month
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#16a34a' }}>
+                      +1 this month ↗
                     </span>
                   </div>
                 </div>
@@ -1603,7 +1607,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0d212c' }}>
+                      <span style={{ fontSize: 16, fontWeight: 600, color: '#0d212c' }}>
                         Active SOWs
                       </span>
                       <span
@@ -1717,7 +1721,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       <thead>
                         <tr
                           style={{
-                            background: 'rgba(0,196,196,0.05)',
+                            background: '#ffffff',
                             borderBottom: '1px solid rgba(0,196,196,0.1)',
                           }}
                         >
@@ -1736,7 +1740,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 textAlign: 'left',
                                 fontSize: 10,
                                 fontWeight: 600,
-                                color: '#94a3b8',
+                                color: '#475569',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.07em',
                                 cursor: col ? 'pointer' : 'default',
@@ -1783,6 +1787,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             <tr
                               key={row.id}
                               style={{
+                                height: 60,
                                 borderBottom:
                                   idx < Math.min(paginatedRows.length, 7) - 1
                                     ? '1px solid rgba(0,196,196,0.07)'
@@ -1903,7 +1908,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0d212c' }}>
+                      <span style={{ fontSize: 16, fontWeight: 600, color: '#0d212c' }}>
                         Due This Week
                       </span>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-normal bg-[#fee2e2] text-[#dc2626] border border-red-200/60">
@@ -1928,7 +1933,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       <thead>
                         <tr
                           style={{
-                            background: 'rgba(0,196,196,0.05)',
+                            background: '#ffffff',
                             borderBottom: '1px solid rgba(0,196,196,0.1)',
                           }}
                         >
@@ -1939,7 +1944,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                               textAlign: 'left',
                               fontSize: 10,
                               fontWeight: 600,
-                              color: '#94a3b8',
+                              color: '#475569',
                               textTransform: 'uppercase',
                               letterSpacing: '0.07em',
                             }}
@@ -1953,7 +1958,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                               textAlign: 'left',
                               fontSize: 10,
                               fontWeight: 600,
-                              color: '#94a3b8',
+                              color: '#475569',
                               textTransform: 'uppercase',
                               letterSpacing: '0.07em',
                             }}
@@ -2023,6 +2028,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             <tr
                               key={idx}
                               style={{
+                                height: 60,
                                 borderBottom:
                                   idx < arr.length - 1
                                     ? '1px solid rgba(0,196,196,0.07)'
