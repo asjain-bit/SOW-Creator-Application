@@ -10,6 +10,8 @@ export interface SOWItem {
   id: string
   name: string
   client: string
+  createdBy: string
+  createdDate: string
   lastUpdated: string
   status: SOWStatus
 }
@@ -25,7 +27,7 @@ export interface KPIItem {
   trendColor?: string
 }
 
-export type ActiveNav = 'dashboard' | 'my-sows' | 'templates' | 'analytics'
+export type ActiveNav = 'dashboard' | 'my-sows' | 'templates' | 'analytics' | 'notifications'
 
 export interface DashboardScreenV2Props {
   userName?: string

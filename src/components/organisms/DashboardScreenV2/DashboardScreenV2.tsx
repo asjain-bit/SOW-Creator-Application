@@ -27,6 +27,8 @@ const DEFAULT_SOWS: SOWItem[] = [
     id: 'sow-1',
     name: 'Customer Transformation Program',
     client: 'Acme Corp',
+    createdBy: 'Ashika Jain',
+    createdDate: 'Aug 01, 2026',
     lastUpdated: 'Today, 10:24 AM',
     status: 'Completed',
   },
@@ -34,6 +36,8 @@ const DEFAULT_SOWS: SOWItem[] = [
     id: 'sow-2',
     name: 'Digital Workplace Enablement',
     client: 'Globex Inc',
+    createdBy: 'Ashika Jain',
+    createdDate: 'Aug 10, 2026',
     lastUpdated: 'Aug 28, 2026',
     status: 'In Progress',
   },
@@ -41,6 +45,8 @@ const DEFAULT_SOWS: SOWItem[] = [
     id: 'sow-3',
     name: 'Cloud Modernization Initiative',
     client: 'TechSphere',
+    createdBy: 'Rohan Mehta',
+    createdDate: 'Aug 05, 2026',
     lastUpdated: 'Aug 18, 2026',
     status: 'In Progress',
   },
@@ -48,6 +54,8 @@ const DEFAULT_SOWS: SOWItem[] = [
     id: 'sow-4',
     name: 'IT Infrastructure Revamp',
     client: 'Zenith Ltd',
+    createdBy: 'Priya Sharma',
+    createdDate: 'Jul 28, 2026',
     lastUpdated: 'Aug 12, 2026',
     status: 'Pending',
   },
@@ -55,6 +63,8 @@ const DEFAULT_SOWS: SOWItem[] = [
     id: 'sow-5',
     name: 'Data Analytics Platform',
     client: 'Orion Group',
+    createdBy: 'Ashika Jain',
+    createdDate: 'Jul 22, 2026',
     lastUpdated: 'Aug 10, 2026',
     status: 'Not Started',
   },
@@ -62,6 +72,8 @@ const DEFAULT_SOWS: SOWItem[] = [
     id: 'sow-6',
     name: 'Enterprise Security Architecture',
     client: 'CyberShield',
+    createdBy: 'Rohan Mehta',
+    createdDate: 'Jul 15, 2026',
     lastUpdated: 'Aug 05, 2026',
     status: 'Completed',
   },
@@ -69,6 +81,8 @@ const DEFAULT_SOWS: SOWItem[] = [
     id: 'sow-7',
     name: 'AI Automation & Workflow Setup',
     client: 'Innovate LLC',
+    createdBy: 'Priya Sharma',
+    createdDate: 'Jul 10, 2026',
     lastUpdated: 'Jul 29, 2026',
     status: 'In Progress',
   },
@@ -76,7 +90,72 @@ const DEFAULT_SOWS: SOWItem[] = [
     id: 'sow-8',
     name: 'Modern Data Warehouse Migration',
     client: 'Apex Global',
+    createdBy: 'Ashika Jain',
+    createdDate: 'Jul 02, 2026',
     lastUpdated: 'Jul 21, 2026',
+    status: 'Pending',
+  },
+  {
+    id: 'sow-9',
+    name: 'ERP Integration & Rollout',
+    client: 'Nexus Corp',
+    createdBy: 'Rohan Mehta',
+    createdDate: 'Jun 25, 2026',
+    lastUpdated: 'Jul 18, 2026',
+    status: 'Completed',
+  },
+  {
+    id: 'sow-10',
+    name: 'Supply Chain Digitization',
+    client: 'LogiTech Pvt',
+    createdBy: 'Priya Sharma',
+    createdDate: 'Jun 18, 2026',
+    lastUpdated: 'Jul 10, 2026',
+    status: 'In Progress',
+  },
+  {
+    id: 'sow-11',
+    name: 'HR Systems Modernization',
+    client: 'PeopleFirst',
+    createdBy: 'Ashika Jain',
+    createdDate: 'Jun 10, 2026',
+    lastUpdated: 'Jul 05, 2026',
+    status: 'Pending',
+  },
+  {
+    id: 'sow-12',
+    name: 'Customer 360 Analytics',
+    client: 'RetailEdge',
+    createdBy: 'Rohan Mehta',
+    createdDate: 'Jun 03, 2026',
+    lastUpdated: 'Jun 28, 2026',
+    status: 'Not Started',
+  },
+  {
+    id: 'sow-13',
+    name: 'DevOps Transformation',
+    client: 'BuildFast Inc',
+    createdBy: 'Priya Sharma',
+    createdDate: 'May 27, 2026',
+    lastUpdated: 'Jun 20, 2026',
+    status: 'Completed',
+  },
+  {
+    id: 'sow-14',
+    name: 'Salesforce CRM Implementation',
+    client: 'GrowthHive',
+    createdBy: 'Ashika Jain',
+    createdDate: 'May 20, 2026',
+    lastUpdated: 'Jun 14, 2026',
+    status: 'In Progress',
+  },
+  {
+    id: 'sow-15',
+    name: 'Cybersecurity Risk Assessment',
+    client: 'SafeNet Ltd',
+    createdBy: 'Rohan Mehta',
+    createdDate: 'May 12, 2026',
+    lastUpdated: 'Jun 08, 2026',
     status: 'Pending',
   },
 ]
@@ -269,6 +348,425 @@ function SortIcon({ col, sortCol, sortDir }: { col: SortCol; sortCol: SortCol; s
   )
 }
 
+/* ─── All SOWs View ──────────────────────────────────────────────────────── */
+
+type AllSOWsSortCol =
+  'name' | 'client' | 'createdBy' | 'createdDate' | 'lastUpdated' | 'status' | null
+
+function AllSOWsView({ sows }: { sows: SOWItem[] }) {
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [creatorFilter, setCreatorFilter] = useState<string | null>(null)
+  const [dateFilter, setDateFilter] = useState<string | null>(null)
+  const [sortCol, setSortCol] = useState<AllSOWsSortCol>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  const creators = Array.from(new Set(sows.map((s) => s.createdBy))).sort()
+  const dateOptions = ['Last 7 days', 'Last 30 days', 'Last 3 months', 'Last 6 months']
+
+  const handleSort = (col: AllSOWsSortCol) => {
+    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortCol(col)
+      setSortDir('asc')
+    }
+  }
+
+  const filtered = sows
+    .filter((r) => {
+      if (search.trim()) {
+        const q = search.toLowerCase()
+        if (!r.name.toLowerCase().includes(q) && !r.client.toLowerCase().includes(q)) return false
+      }
+      if (statusFilter && r.status !== statusFilter) return false
+      if (creatorFilter && r.createdBy !== creatorFilter) return false
+      return true
+    })
+    .sort((a, b) => {
+      if (!sortCol) return 0
+      const av = a[sortCol].toLowerCase()
+      const bv = b[sortCol].toLowerCase()
+      return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+    })
+
+  const cols: { label: string; col: AllSOWsSortCol; width: string }[] = [
+    { label: 'SOW Name', col: 'name', width: '28%' },
+    { label: 'Client', col: 'client', width: '14%' },
+    { label: 'Created By', col: 'createdBy', width: '14%' },
+    { label: 'Created Date', col: 'createdDate', width: '14%' },
+    { label: 'Last Updated', col: 'lastUpdated', width: '14%' },
+    { label: 'Status', col: 'status', width: '12%' },
+    { label: '', col: null, width: '4%' },
+  ]
+
+  return (
+    <div
+      style={{
+        padding: '24px 28px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        height: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0d212c', margin: 0 }}>All SOWs</h2>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#64748b',
+              background: 'rgba(0,196,196,0.1)',
+              borderRadius: 8,
+              padding: '3px 10px',
+            }}
+          >
+            {filtered.length} of {sows.length}
+          </span>
+        </div>
+        {/* Filter bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Search */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'rgba(255,255,255,0.7)',
+              border: '1px solid rgba(255,255,255,0.9)',
+              borderRadius: 9,
+              padding: '0 11px',
+              height: 34,
+            }}
+          >
+            <svg
+              width="13"
+              height="13"
+              fill="none"
+              stroke="#94a3b8"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search SOW or client..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                fontSize: 12,
+                color: '#0d212c',
+                width: 180,
+              }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  padding: 0,
+                  display: 'flex',
+                }}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <FilterDropdown
+            label="Status"
+            options={STATUS_OPTIONS}
+            active={statusFilter}
+            onSelect={setStatusFilter}
+          />
+          <FilterDropdown
+            label="Created By"
+            options={creators}
+            active={creatorFilter}
+            onSelect={setCreatorFilter}
+          />
+          <FilterDropdown
+            label="Created Date"
+            options={dateOptions}
+            active={dateFilter}
+            onSelect={setDateFilter}
+          />
+          {(statusFilter || creatorFilter || dateFilter) && (
+            <button
+              onClick={() => {
+                setStatusFilter(null)
+                setCreatorFilter(null)
+                setDateFilter(null)
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '0 12px',
+                height: 34,
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#ef4444',
+                background: '#fef2f2',
+                border: 'none',
+                borderRadius: 9,
+                cursor: 'pointer',
+              }}
+            >
+              <svg
+                width="11"
+                height="11"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          background: 'rgba(255,255,255,0.6)',
+          border: '1px solid rgba(255,255,255,0.85)',
+          borderRadius: 14,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
+        }}
+      >
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+              <tr
+                style={{
+                  background: 'rgba(0,196,196,0.05)',
+                  borderBottom: '1px solid rgba(0,196,196,0.1)',
+                }}
+              >
+                {cols.map(({ label, col, width }) => (
+                  <th
+                    key={label || '__actions'}
+                    onClick={col ? () => handleSort(col) : undefined}
+                    style={{
+                      width,
+                      padding: '11px 14px',
+                      textAlign: 'left',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: '#94a3b8',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.07em',
+                      cursor: col ? 'pointer' : 'default',
+                      userSelect: 'none',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {label && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {label}
+                        {col && (
+                          <SortIcon
+                            col={col as SortCol}
+                            sortCol={sortCol as SortCol}
+                            sortDir={sortDir}
+                          />
+                        )}
+                      </span>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    style={{
+                      padding: '48px 14px',
+                      textAlign: 'center',
+                      fontSize: 13,
+                      color: '#94a3b8',
+                    }}
+                  >
+                    No SOWs match your filters.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((row, idx) => (
+                  <tr
+                    key={row.id}
+                    style={{
+                      borderBottom:
+                        idx < filtered.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined,
+                      cursor: 'pointer',
+                      transition: 'background 0.12s',
+                    }}
+                    onMouseEnter={(e) => {
+                      ;(e.currentTarget as HTMLTableRowElement).style.background =
+                        'rgba(0,196,196,0.04)'
+                    }}
+                    onMouseLeave={(e) => {
+                      ;(e.currentTarget as HTMLTableRowElement).style.background = ''
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: '11px 14px',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: '#0d212c',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {row.name}
+                    </td>
+                    <td
+                      style={{
+                        padding: '11px 14px',
+                        fontSize: 12,
+                        color: '#64748b',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {row.client}
+                    </td>
+                    <td
+                      style={{
+                        padding: '11px 14px',
+                        fontSize: 12,
+                        color: '#64748b',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {row.createdBy}
+                    </td>
+                    <td
+                      style={{
+                        padding: '11px 14px',
+                        fontSize: 12,
+                        color: '#94a3b8',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {row.createdDate}
+                    </td>
+                    <td
+                      style={{
+                        padding: '11px 14px',
+                        fontSize: 12,
+                        color: '#94a3b8',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {row.lastUpdated}
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <StatusBadge status={row.status} />
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <button
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: '#00C4C4',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          opacity: 0,
+                          transition: 'opacity 0.12s',
+                        }}
+                        onMouseEnter={(e) => {
+                          ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
+                        }}
+                        onMouseLeave={(e) => {
+                          ;(e.currentTarget as HTMLButtonElement).style.opacity = '0'
+                        }}
+                      >
+                        Open{' '}
+                        <svg
+                          width="10"
+                          height="10"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        {/* Footer count */}
+        <div
+          style={{
+            padding: '10px 14px',
+            borderTop: '1px solid rgba(0,196,196,0.08)',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span style={{ fontSize: 12, color: '#94a3b8' }}>
+            Showing {filtered.length} of {sows.length} SOWs
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Main Component ──────────────────────────────────────────────────────── */
 
 export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
@@ -284,6 +782,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   className = '',
 }) => {
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [homeView, setHomeView] = useState<'home' | 'all-sows'>('home')
   const [activeTab, setActiveTab] = useState<ActiveTab>('my')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
@@ -294,7 +793,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const [openRpp, setOpenRpp] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [displayedRows, setDisplayedRows] = useState<SOWItem[]>(initialSOWs)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const rppRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!openRpp) return
@@ -304,6 +805,16 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
   }, [openRpp])
+
+  useEffect(() => {
+    if (!userMenuOpen) return
+    function handle(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
+        setUserMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [userMenuOpen])
 
   useEffect(() => {
     setIsSearching(true)
@@ -397,12 +908,12 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
       </div>
 
       {/* All content sits above the animated background */}
-      <div className="relative flex h-full gap-4 p-4" style={{ zIndex: 1 }}>
+      <div className="relative flex h-full gap-3 p-3" style={{ zIndex: 1 }}>
         {/* ─── LEFT SIDEBAR ─────────────────────────────────────────────── */}
         <nav
           className="flex flex-col shrink-0 rounded-2xl overflow-hidden"
           style={{
-            width: 210,
+            width: 76,
             background: 'rgba(8,26,26,0.82)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
@@ -410,31 +921,28 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             boxShadow: '0 8px 40px rgba(0,0,0,0.28), 1px 0 0 rgba(0,196,196,0.08) inset',
           }}
         >
-          {/* Logo area */}
+          {/* Logo area — centered, no text */}
           <div
-            className="flex items-center gap-2.5 px-5 py-5 shrink-0"
+            className="flex items-center justify-center py-5 shrink-0"
             style={{ borderBottom: '1px solid rgba(0,196,196,0.12)' }}
           >
             <Image
               src="/dark-logo.png"
               alt="M42 Logo"
-              width={56}
+              width={36}
               height={20}
               className="h-5 w-auto object-contain brightness-0 invert"
               priority
             />
-            <span className="text-sm font-bold tracking-tight" style={{ color: '#e0fafa' }}>
-              SOW Creator
-            </span>
           </div>
 
-          {/* Nav items */}
-          <div className="flex flex-col gap-1 px-3 py-4 flex-1">
+          {/* Nav items — icon above label, centered */}
+          <div className="flex flex-col gap-1 px-2 py-4 flex-1">
             {(
               [
                 {
                   id: 'dashboard' as ActiveNav,
-                  label: 'Dashboard',
+                  label: 'Home',
                   icon: (
                     <path
                       strokeLinecap="round"
@@ -446,7 +954,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 },
                 {
                   id: 'my-sows' as ActiveNav,
-                  label: 'My SOWs',
+                  label: 'All SOWs',
                   icon: (
                     <path
                       strokeLinecap="round"
@@ -482,11 +990,21 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 },
               ] as { id: ActiveNav; label: string; icon: React.ReactNode }[]
             ).map(({ id, label, icon }) => {
-              const isActive = activeNav === id
+              const isActive = contentOverride
+                ? activeNav === id
+                : id === 'dashboard'
+                  ? homeView === 'home'
+                  : id === 'my-sows'
+                    ? homeView === 'all-sows'
+                    : activeNav === id
               return (
                 <button
                   key={id}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left cursor-pointer transition-all"
+                  onClick={() => {
+                    if (id === 'dashboard') setHomeView('home')
+                    else if (id === 'my-sows') setHomeView('all-sows')
+                  }}
+                  className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl cursor-pointer transition-all gap-1"
                   style={
                     isActive
                       ? {
@@ -514,15 +1032,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     }
                   }}
                 >
-                  <svg
-                    className="w-4.5 h-4.5 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {icon}
                   </svg>
-                  <span className={`text-sm ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                  <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 500, lineHeight: 1 }}>
                     {label}
                   </span>
                 </button>
@@ -530,14 +1043,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             })}
           </div>
 
-          {/* Bottom: notification + user + logout */}
+          {/* Bottom: alerts + user (with sign-out dropdown) */}
           <div
-            className="px-3 py-4 shrink-0"
+            className="px-2 py-4 shrink-0 flex flex-col gap-1"
             style={{ borderTop: '1px solid rgba(0,196,196,0.12)' }}
           >
-            {/* Notification row */}
+            {/* Alerts */}
             <button
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl cursor-pointer transition-all mb-1 relative"
+              className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl cursor-pointer transition-all gap-1 relative"
               style={{
                 background: 'transparent',
                 border: '1px solid transparent',
@@ -552,8 +1065,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 ;(e.currentTarget as HTMLButtonElement).style.color = 'rgba(180,230,230,0.6)'
               }}
             >
-              <span className="relative shrink-0">
-                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="relative">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -561,64 +1074,124 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                   />
                 </svg>
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#00C4C4] rounded-full text-white text-[8px] font-bold flex items-center justify-center">
+                <span
+                  className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#00C4C4] rounded-full text-white flex items-center justify-center"
+                  style={{ fontSize: 8, fontWeight: 700 }}
+                >
                   2
                 </span>
               </span>
-              <span className="text-sm font-medium">Notifications</span>
+              <span style={{ fontSize: 10, fontWeight: 500, lineHeight: 1 }}>Alerts</span>
             </button>
 
-            {/* User row */}
-            <div
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1"
-              style={{ background: 'rgba(0,196,196,0.08)' }}
-            >
-              <div className="w-7 h-7 rounded-full bg-[#00C4C4] text-white text-xs font-bold flex items-center justify-center shrink-0">
-                {userInitials}
-              </div>
-              <div className="flex flex-col leading-tight min-w-0">
-                <span className="text-xs font-semibold truncate" style={{ color: '#e0fafa' }}>
+            {/* User avatar — click opens sign-out dropdown */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl cursor-pointer transition-all gap-1"
+                style={{
+                  background: userMenuOpen ? 'rgba(0,196,196,0.14)' : 'rgba(0,196,196,0.08)',
+                  border: `1px solid ${userMenuOpen ? 'rgba(0,196,196,0.3)' : 'transparent'}`,
+                  color: '#e0fafa',
+                }}
+              >
+                <div className="w-7 h-7 rounded-full bg-[#00C4C4] text-white text-xs font-bold flex items-center justify-center">
+                  {userInitials}
+                </div>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 500,
+                    lineHeight: 1,
+                    color: 'rgba(180,230,230,0.7)',
+                  }}
+                >
                   {userName}
                 </span>
-                <span className="text-[10px]" style={{ color: 'rgba(180,230,230,0.55)' }}>
-                  {userRole}
-                </span>
-              </div>
-            </div>
+              </button>
 
-            {/* Logout */}
-            <button
-              onClick={onSignOut}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl cursor-pointer transition-all"
-              style={{
-                background: 'transparent',
-                border: '1px solid transparent',
-                color: 'rgba(180,230,230,0.5)',
-              }}
-              onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'
-                ;(e.currentTarget as HTMLButtonElement).style.color = '#fca5a5'
-              }}
-              onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                ;(e.currentTarget as HTMLButtonElement).style.color = 'rgba(180,230,230,0.5)'
-              }}
-            >
-              <svg
-                className="w-4.5 h-4.5 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              <span className="text-sm font-medium">Sign Out</span>
-            </button>
+              {/* Sign-out dropdown */}
+              {userMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 8px)',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    minWidth: 148,
+                    background: 'rgba(8,26,26,0.96)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(0,196,196,0.22)',
+                    borderRadius: 12,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    zIndex: 200,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* User info row */}
+                  <div
+                    style={{
+                      padding: '12px 14px 10px',
+                      borderBottom: '1px solid rgba(0,196,196,0.12)',
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#e0fafa' }}>
+                      {userName}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(180,230,230,0.55)', marginTop: 1 }}>
+                      {userRole}
+                    </div>
+                  </div>
+                  {/* Sign out option */}
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false)
+                      onSignOut?.()
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      padding: '10px 14px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#fca5a5',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      transition: 'background 0.15s',
+                      fontFamily: 'inherit',
+                    }}
+                    onMouseEnter={(e) => {
+                      ;(e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(239,68,68,0.12)'
+                    }}
+                    onMouseLeave={(e) => {
+                      ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
+                    }}
+                  >
+                    <svg
+                      width="15"
+                      height="15"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </nav>
 
@@ -636,17 +1209,26 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
           {/* When a content override is provided (e.g. SOW detail), render it directly */}
           {contentOverride ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">{contentOverride}</div>
+          ) : homeView === 'all-sows' ? (
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+              <AllSOWsView sows={initialSOWs} />
+            </div>
           ) : (
             /* Scrollable inner content */
             <div className="flex-1 overflow-y-auto p-6">
               {/* Greeting + Create SOW CTA */}
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h1 className="text-base font-bold text-[#0d212c]">Hi {userName} 👋</h1>
-                  <p className="text-xs text-[#64748b] font-normal mt-0.5">
-                    Here&apos;s your SOW overview for today.
-                  </p>
-                </div>
+              <div className="flex items-center justify-between mb-6">
+                <h1
+                  style={{
+                    fontSize: 24,
+                    fontWeight: 800,
+                    color: '#0d212c',
+                    margin: 0,
+                    lineHeight: 1.15,
+                  }}
+                >
+                  Hi {userName} 👋
+                </h1>
                 <button
                   onClick={() => {
                     setShowCreateModal(true)
@@ -668,426 +1250,882 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
               </div>
 
               {/* ─── KPI CARDS ──────────────────────────────────────────────── */}
-              <p className="text-xs font-bold text-[#0d212c] mb-3 uppercase tracking-wide">
-                My Overview
-              </p>
               <div className="grid grid-cols-5 gap-3 mb-6">
-                {KPIS.map((k, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      background: 'rgba(255,255,255,0.6)',
-                      backdropFilter: 'blur(12px)',
-                      WebkitBackdropFilter: 'blur(12px)',
-                      border: '1px solid rgba(255,255,255,0.8)',
-                      boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
-                    }}
-                    className="rounded-2xl p-4 flex flex-col"
-                  >
-                    {/* Icon + label + value row */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-                        style={{ background: k.iconBg }}
-                      >
-                        <svg
-                          className="w-6 h-6"
-                          fill="none"
-                          stroke={k.iconColor}
-                          viewBox="0 0 24 24"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                      </div>
-                      <div className="flex flex-col justify-center">
-                        <span className="text-xs font-medium text-[#64748b] leading-tight">
-                          {k.label}
-                        </span>
-                        <span className="text-2xl font-bold text-[#0d212c] leading-tight tracking-tight">
-                          {k.value}
-                        </span>
-                      </div>
-                    </div>
-                    {/* Divider */}
-                    <div className="h-px mb-3" style={{ background: 'rgba(0,196,196,0.15)' }} />
-                    {/* Sub info */}
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-base font-semibold text-[#94a3b8]">{k.subValue}</span>
-                      {k.trend && (
-                        <span className="text-sm font-semibold" style={{ color: k.trendColor }}>
-                          {k.trend}
-                        </span>
-                      )}
-                      <span className="text-xs text-[#94a3b8]">{k.subLabel}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* ─── TABS ───────────────────────────────────────────────────── */}
-              <div
-                className="flex gap-6 mb-4"
-                style={{ borderBottom: '1px solid rgba(0,196,196,0.18)' }}
-              >
-                {(['my', 'all'] as ActiveTab[]).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`pb-2.5 text-sm font-medium cursor-pointer bg-transparent border-0 border-b-2 transition-all ${
-                      activeTab === tab
-                        ? 'border-[#00C4C4] text-[#00C4C4]'
-                        : 'border-transparent text-[#94a3b8] hover:text-[#0d212c]'
-                    }`}
-                    style={{ marginBottom: -1 }}
-                  >
-                    {tab === 'my' ? 'My SOWs' : 'All SOWs'}
-                    {tab === 'my' && (
-                      <span
-                        className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: 'rgba(0,196,196,0.12)', color: '#64748b' }}
-                      >
-                        {inProgressCount}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* ─── FILTER BAR ─────────────────────────────────────────────── */}
-              <div className="flex items-center gap-2 mb-4 flex-wrap">
-                {/* Search */}
+                {/* 1 — Total SOWs */}
                 <div
                   style={{
-                    background: 'rgba(255,255,255,0.6)',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255,255,255,0.8)',
+                    background: 'rgba(255,255,255,0.7)',
+                    border: '1px solid rgba(255,255,255,0.9)',
+                    borderRadius: 16,
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
                   }}
-                  className="flex items-center gap-2 rounded-lg px-3 h-9 w-60 focus-within:ring-2 focus-within:ring-[#00C4C4]/20 transition-all"
                 >
-                  <svg
-                    className="w-3.5 h-3.5 text-[#94a3b8] shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <input
-                    type="text"
-                    placeholder="Search SOW or client..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="flex-1 border-0 outline-none bg-transparent text-sm text-[#0d212c] placeholder:text-[#94a3b8] font-normal"
-                  />
-                  {search && (
-                    <button
-                      onClick={() => setSearch('')}
-                      className="text-[#94a3b8] hover:text-[#0d212c] cursor-pointer"
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      Total SOWs
+                    </span>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        background: '#e0f2fe',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
                     >
                       <svg
-                        className="w-3.5 h-3.5"
+                        width="16"
+                        height="16"
                         fill="none"
-                        stroke="currentColor"
+                        stroke="#0284c7"
+                        strokeWidth="1.8"
                         viewBox="0 0 24 24"
                       >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M6 18L18 6M6 6l12 12"
+                          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                         />
                       </svg>
-                    </button>
-                  )}
-                </div>
-
-                <FilterDropdown
-                  label="Status"
-                  options={STATUS_OPTIONS}
-                  active={statusFilter}
-                  onSelect={setStatusFilter}
-                />
-
-                {statusFilter && (
-                  <button
-                    onClick={() => setStatusFilter(null)}
-                    className="flex items-center gap-1.5 px-3 h-9 text-xs font-semibold text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors cursor-pointer border-0"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.5"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                    Clear filters
-                  </button>
-                )}
-              </div>
-
-              {/* ─── TABLE ──────────────────────────────────────────────────── */}
-              <div
-                style={{
-                  background: 'rgba(255,255,255,0.55)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255,255,255,0.75)',
-                  borderRadius: 16,
-                  overflow: 'hidden',
-                }}
-              >
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse" style={{ minWidth: 700 }}>
-                    <thead>
-                      <tr
-                        style={{
-                          background: 'rgba(0,196,196,0.06)',
-                          borderBottom: '1px solid rgba(0,196,196,0.12)',
-                        }}
-                      >
-                        {[
-                          { label: 'SOW Name', col: 'name' as SortCol, width: '35%' },
-                          { label: 'Client', col: 'client' as SortCol, width: '20%' },
-                          { label: 'Last Updated', col: 'lastUpdated' as SortCol, width: '20%' },
-                          { label: 'Status', col: 'status' as SortCol, width: '15%' },
-                          { label: '', col: null, width: '10%' },
-                        ].map(({ label, col, width }) => (
-                          <th
-                            key={label || 'actions'}
-                            onClick={col ? () => handleSort(col) : undefined}
-                            style={{ width }}
-                            className={`px-4 py-3 text-left text-[11px] font-bold text-[#94a3b8] uppercase tracking-wider ${col ? 'cursor-pointer select-none hover:text-[#0d212c]' : ''}`}
-                          >
-                            {label && (
-                              <span className="inline-flex items-center gap-1.5">
-                                {label}
-                                {col && <SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />}
-                              </span>
-                            )}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {isSearching ? (
-                        Array.from({ length: 4 }).map((_, i) => (
-                          <tr
-                            key={`skel-${i}`}
-                            style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}
-                          >
-                            {[35, 20, 20, 15, 10].map((w, j) => (
-                              <td key={j} className="px-4 py-3.5">
-                                <div
-                                  className="rounded animate-pulse"
-                                  style={{
-                                    height: 14,
-                                    width: `${w * 0.7}%`,
-                                    background: 'rgba(0,196,196,0.1)',
-                                  }}
-                                />
-                              </td>
-                            ))}
-                          </tr>
-                        ))
-                      ) : paginatedRows.length > 0 ? (
-                        paginatedRows.map((row, idx) => (
-                          <tr
-                            key={row.id}
-                            className="group transition-colors cursor-pointer"
-                            style={{
-                              borderBottom:
-                                idx < paginatedRows.length - 1
-                                  ? '1px solid rgba(0,196,196,0.08)'
-                                  : undefined,
-                            }}
-                            onMouseEnter={(e) => {
-                              ;(e.currentTarget as HTMLTableRowElement).style.background =
-                                'rgba(0,196,196,0.05)'
-                            }}
-                            onMouseLeave={(e) => {
-                              ;(e.currentTarget as HTMLTableRowElement).style.background = ''
-                            }}
-                          >
-                            <td className="px-4 py-3.5 text-sm font-medium text-[#0d212c] max-w-0">
-                              <span className="block truncate">{row.name}</span>
-                            </td>
-                            <td className="px-4 py-3.5 text-sm text-[#64748b]">{row.client}</td>
-                            <td className="px-4 py-3.5 text-sm text-[#64748b] whitespace-nowrap">
-                              {row.lastUpdated}
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <StatusBadge status={row.status} />
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <button className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-xs font-medium text-[#00C4C4] hover:text-[#00a8a8] cursor-pointer bg-transparent border-0">
-                                Open
-                                <svg
-                                  className="w-3 h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M9 5l7 7-7 7"
-                                  />
-                                </svg>
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} className="px-4 py-12 text-center">
-                            <p className="text-sm font-medium text-[#94a3b8]">
-                              No SOWs match your search.
-                            </p>
-                            <p className="text-xs text-[#cbd5e1] mt-1">
-                              Try adjusting your filters or search term.
-                            </p>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* ─── PAGINATION ─────────────────────────────────────────── */}
-                <div
-                  className="flex items-center justify-between px-4 py-3"
-                  style={{
-                    borderTop: '1px solid rgba(0,196,196,0.1)',
-                    background: 'rgba(255,255,255,0.3)',
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-[#94a3b8]">Rows per page:</span>
-                    <div ref={rppRef} className="relative">
-                      <button
-                        onClick={() => setOpenRpp((v) => !v)}
-                        style={
-                          openRpp
-                            ? {
-                                background: 'rgba(0,196,196,0.12)',
-                                border: '1px solid rgba(0,196,196,0.4)',
-                              }
-                            : {
-                                background: 'rgba(255,255,255,0.6)',
-                                border: '1px solid rgba(255,255,255,0.8)',
-                              }
-                        }
-                        className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer text-[#64748b]"
-                      >
-                        {rowsPerPage}
-                        <svg
-                          className={`w-3 h-3 transition-transform ${openRpp ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                      {openRpp && (
-                        <div
-                          style={{
-                            background: 'rgba(255,255,255,0.9)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(255,255,255,0.9)',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-                          }}
-                          className="absolute bottom-[calc(100%+4px)] left-0 rounded-xl py-1.5 z-50 min-w-[80px]"
-                        >
-                          {ROWS_PER_PAGE_OPTIONS.map((n) => (
-                            <div
-                              key={n}
-                              onClick={() => {
-                                setRowsPerPage(n)
-                                setPage(1)
-                                setOpenRpp(false)
-                              }}
-                              className={`px-3 py-2 text-xs cursor-pointer transition-colors ${rowsPerPage === n ? 'text-[#00C4C4] font-semibold' : 'text-[#0d212c] hover:bg-[#f8fafc]'}`}
-                            >
-                              {n}
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                    <span className="text-xs text-[#94a3b8]">
-                      Showing {totalRows === 0 ? 0 : (page - 1) * rowsPerPage + 1}–
-                      {Math.min(page * rowsPerPage, totalRows)} of {totalRows} SOWs
+                  </div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: '#0d212c', lineHeight: 1 }}>
+                    8
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#16a34a',
+                        background: '#dcfce7',
+                        borderRadius: 6,
+                        padding: '2px 7px',
+                      }}
+                    >
+                      +2 this month
                     </span>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPage((p) => p - 1)}
-                      disabled={page === 1}
+                </div>
+
+                {/* 2 — In Progress */}
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.7)',
+                    border: '1px solid rgba(255,255,255,0.9)',
+                    borderRadius: 16,
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span
                       style={{
-                        background: 'rgba(255,255,255,0.6)',
-                        border: '1px solid rgba(255,255,255,0.8)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
                       }}
-                      className="flex items-center gap-1 h-8 px-3 text-xs font-medium rounded-lg text-[#64748b] cursor-pointer disabled:opacity-40 disabled:cursor-default transition-colors"
+                    >
+                      In Progress
+                    </span>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        background: '#e0f9f9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
                     >
                       <svg
-                        className="w-3.5 h-3.5"
+                        width="16"
+                        height="16"
                         fill="none"
-                        stroke="currentColor"
+                        stroke="#00a8a8"
+                        strokeWidth="1.8"
                         viewBox="0 0 24 24"
                       >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 19l-7-7 7-7"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                         />
                       </svg>
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setPage((p) => p + 1)}
-                      disabled={page === totalPages}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: '#0d212c', lineHeight: 1 }}>
+                    3
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {[
+                      ['Form', '#e0f2fe', '#0284c7'],
+                      ['Structure', '#f0fdf4', '#16a34a'],
+                      ['Draft', '#fef3c7', '#d97706'],
+                    ].map(([label, bg, color]) => (
+                      <span
+                        key={label}
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color,
+                          background: bg,
+                          borderRadius: 5,
+                          padding: '2px 6px',
+                        }}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3 — Pending with Me */}
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.7)',
+                    border: '1px solid rgba(255,255,255,0.9)',
+                    borderRadius: 16,
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span
                       style={{
-                        background: 'rgba(255,255,255,0.6)',
-                        border: '1px solid rgba(255,255,255,0.8)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
                       }}
-                      className="flex items-center gap-1 h-8 px-3 text-xs font-medium rounded-lg text-[#64748b] cursor-pointer disabled:opacity-40 disabled:cursor-default transition-colors"
                     >
-                      Next
+                      Pending with Me
+                    </span>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        background: '#fee2e2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
                       <svg
-                        className="w-3.5 h-3.5"
+                        width="16"
+                        height="16"
                         fill="none"
-                        stroke="currentColor"
+                        stroke="#dc2626"
+                        strokeWidth="1.8"
                         viewBox="0 0 24 24"
                       >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M9 5l7 7-7 7"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                         />
                       </svg>
-                    </button>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: '#dc2626', lineHeight: 1 }}>
+                    4
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {[
+                      ['SOW Form', 2],
+                      ['SOW Draft', 1],
+                      ['Approve', 1],
+                    ].map(([label, count]) => (
+                      <div
+                        key={String(label)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <span style={{ fontSize: 10, color: '#64748b' }}>{label}</span>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: '#dc2626',
+                            background: '#fee2e2',
+                            borderRadius: 5,
+                            padding: '1px 6px',
+                          }}
+                        >
+                          {count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4 — Pending with Participants */}
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.7)',
+                    border: '1px solid rgba(255,255,255,0.9)',
+                    borderRadius: 16,
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      With Participants
+                    </span>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        background: '#f3e8ff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="#7c3aed"
+                        strokeWidth="1.8"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: '#0d212c', lineHeight: 1 }}>
+                    2
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div
+                        style={{
+                          flex: 1,
+                          height: 4,
+                          borderRadius: 4,
+                          background: '#e9d5ff',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '68%',
+                            height: '100%',
+                            background: '#7c3aed',
+                            borderRadius: 4,
+                          }}
+                        />
+                      </div>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed' }}>68%</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 10, color: '#64748b' }}>Answered</span>
+                      <span style={{ fontSize: 10, color: '#64748b' }}>12 open</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5 — Pending Review */}
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.7)',
+                    border: '1px solid rgba(255,255,255,0.9)',
+                    borderRadius: 16,
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      Pending Review
+                    </span>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        background: '#fef3c7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="#d97706"
+                        strokeWidth="1.8"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: '#0d212c', lineHeight: 1 }}>
+                    3
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#d97706',
+                        background: '#fef3c7',
+                        borderRadius: 6,
+                        padding: '2px 7px',
+                      }}
+                    >
+                      +1 this month
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── BOTTOM: ACTIVE SOWs (3/5) + DUE THIS WEEK (2/5) ────── */}
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                {/* Active SOWs — 3/5 */}
+                <div style={{ flex: 3, minWidth: 0 }}>
+                  {/* Section header */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                        Active SOWs
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: '#64748b',
+                          background: 'rgba(0,196,196,0.1)',
+                          borderRadius: 6,
+                          padding: '2px 8px',
+                        }}
+                      >
+                        {displayedRows.length}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {/* Search */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          background: 'rgba(255,255,255,0.7)',
+                          border: '1px solid rgba(255,255,255,0.9)',
+                          borderRadius: 8,
+                          padding: '0 10px',
+                          height: 32,
+                        }}
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          fill="none"
+                          stroke="#94a3b8"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
+                        <input
+                          type="text"
+                          placeholder="Search SOW or client..."
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          style={{
+                            border: 'none',
+                            outline: 'none',
+                            background: 'transparent',
+                            fontSize: 12,
+                            color: '#0d212c',
+                            width: 160,
+                          }}
+                        />
+                        {search && (
+                          <button
+                            onClick={() => setSearch('')}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#94a3b8',
+                              padding: 0,
+                              display: 'flex',
+                            }}
+                          >
+                            <svg
+                              width="12"
+                              height="12"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      <FilterDropdown
+                        label="Status"
+                        options={STATUS_OPTIONS}
+                        active={statusFilter}
+                        onSelect={setStatusFilter}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.6)',
+                      border: '1px solid rgba(255,255,255,0.85)',
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
+                    }}
+                  >
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr
+                          style={{
+                            background: 'rgba(0,196,196,0.05)',
+                            borderBottom: '1px solid rgba(0,196,196,0.1)',
+                          }}
+                        >
+                          {[
+                            ['SOW Name', 'name' as SortCol, '38%'],
+                            ['Client', 'client' as SortCol, '22%'],
+                            ['Updated', 'lastUpdated' as SortCol, '22%'],
+                            ['Status', 'status' as SortCol, '18%'],
+                          ].map(([label, col, width]) => (
+                            <th
+                              key={String(label)}
+                              onClick={col ? () => handleSort(col as SortCol) : undefined}
+                              style={{
+                                width: String(width),
+                                padding: '10px 14px',
+                                textAlign: 'left',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: '#94a3b8',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.07em',
+                                cursor: col ? 'pointer' : 'default',
+                                userSelect: 'none',
+                              }}
+                            >
+                              <span
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                              >
+                                {label}
+                                {col && (
+                                  <SortIcon
+                                    col={col as SortCol}
+                                    sortCol={sortCol}
+                                    sortDir={sortDir}
+                                  />
+                                )}
+                              </span>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {isSearching ? (
+                          Array.from({ length: 5 }).map((_, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                              {[38, 22, 22, 18].map((w, j) => (
+                                <td key={j} style={{ padding: '11px 14px' }}>
+                                  <div
+                                    style={{
+                                      height: 12,
+                                      width: `${w * 0.65}%`,
+                                      background: 'rgba(0,196,196,0.1)',
+                                      borderRadius: 4,
+                                      animation: 'pulse 1.5s infinite',
+                                    }}
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))
+                        ) : paginatedRows.slice(0, 5).length > 0 ? (
+                          paginatedRows.slice(0, 5).map((row, idx) => (
+                            <tr
+                              key={row.id}
+                              style={{
+                                borderBottom:
+                                  idx < Math.min(paginatedRows.length, 5) - 1
+                                    ? '1px solid rgba(0,196,196,0.07)'
+                                    : undefined,
+                                cursor: 'pointer',
+                                transition: 'background 0.12s',
+                              }}
+                              onMouseEnter={(e) => {
+                                ;(e.currentTarget as HTMLTableRowElement).style.background =
+                                  'rgba(0,196,196,0.04)'
+                              }}
+                              onMouseLeave={(e) => {
+                                ;(e.currentTarget as HTMLTableRowElement).style.background = ''
+                              }}
+                            >
+                              <td
+                                style={{
+                                  padding: '11px 14px',
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  color: '#0d212c',
+                                  maxWidth: 0,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {row.name}
+                                </span>
+                              </td>
+                              <td style={{ padding: '11px 14px', fontSize: 12, color: '#64748b' }}>
+                                {row.client}
+                              </td>
+                              <td
+                                style={{
+                                  padding: '11px 14px',
+                                  fontSize: 12,
+                                  color: '#94a3b8',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {row.lastUpdated}
+                              </td>
+                              <td style={{ padding: '11px 14px' }}>
+                                <StatusBadge status={row.status} />
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              style={{
+                                padding: '32px 14px',
+                                textAlign: 'center',
+                                fontSize: 13,
+                                color: '#94a3b8',
+                              }}
+                            >
+                              No SOWs match your search.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                    {/* View All footer */}
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderTop: '1px solid rgba(0,196,196,0.08)',
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                      }}
+                    >
+                      <button
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: '#00C4C4',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        View All SOWs
+                        <svg
+                          width="12"
+                          height="12"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Due This Week — 2/5 */}
+                <div style={{ flex: 2, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                        Due This Week
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: '#dc2626',
+                          background: '#fee2e2',
+                          borderRadius: 6,
+                          padding: '2px 8px',
+                        }}
+                      >
+                        3 urgent
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.6)',
+                      border: '1px solid rgba(255,255,255,0.85)',
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
+                    }}
+                  >
+                    {[
+                      {
+                        name: 'Meridian Healthcare',
+                        action: 'SOW Draft review',
+                        due: 'Today',
+                        urgency: 'high' as const,
+                      },
+                      {
+                        name: 'Acme Corp',
+                        action: 'Approve Form submission',
+                        due: 'Tomorrow',
+                        urgency: 'high' as const,
+                      },
+                      {
+                        name: 'TechSphere',
+                        action: 'Answer 4 open questions',
+                        due: 'Wed',
+                        urgency: 'medium' as const,
+                      },
+                      {
+                        name: 'Globex Inc',
+                        action: 'Complete SOW Structure',
+                        due: 'Thu',
+                        urgency: 'medium' as const,
+                      },
+                      {
+                        name: 'Zenith Ltd',
+                        action: 'Final sign-off pending',
+                        due: 'Fri',
+                        urgency: 'low' as const,
+                      },
+                    ].map((item, idx, arr) => {
+                      const urgencyColor =
+                        item.urgency === 'high'
+                          ? '#dc2626'
+                          : item.urgency === 'medium'
+                            ? '#d97706'
+                            : '#64748b'
+                      const urgencyBg =
+                        item.urgency === 'high'
+                          ? '#fee2e2'
+                          : item.urgency === 'medium'
+                            ? '#fef3c7'
+                            : '#f1f5f9'
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: '12px 14px',
+                            borderBottom:
+                              idx < arr.length - 1 ? '1px solid rgba(0,196,196,0.08)' : undefined,
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            cursor: 'pointer',
+                            transition: 'background 0.12s',
+                          }}
+                          onMouseEnter={(e) => {
+                            ;(e.currentTarget as HTMLDivElement).style.background =
+                              'rgba(0,196,196,0.04)'
+                          }}
+                          onMouseLeave={(e) => {
+                            ;(e.currentTarget as HTMLDivElement).style.background = ''
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              background: urgencyColor,
+                              marginTop: 5,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: '#0d212c',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {item.name}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: '#64748b',
+                                marginTop: 2,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {item.action}
+                            </div>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: urgencyColor,
+                              background: urgencyBg,
+                              borderRadius: 5,
+                              padding: '2px 7px',
+                              flexShrink: 0,
+                              marginTop: 1,
+                            }}
+                          >
+                            {item.due}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
