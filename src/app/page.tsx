@@ -32,7 +32,7 @@ export default function Home() {
   const displayName = isNarendra ? 'Narendra' : 'Ashika Jain'
   const userRole = isNarendra ? 'Contributor' : 'PMO'
   const userInitials = isNarendra ? 'N' : 'AJ'
-  const userImage = '/profile-user.png'
+  const userImage = isNarendra ? '/profile-male.png' : '/profile-user.png'
 
   const isSOWDetail = view === 'sow-detail' || view === 'sow-detail-v2'
 

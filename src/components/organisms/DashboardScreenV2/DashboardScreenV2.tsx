@@ -1216,7 +1216,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 <h1
                   style={{
                     fontSize: 24,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#0d212c',
                     margin: 0,
                     lineHeight: 1.15,
