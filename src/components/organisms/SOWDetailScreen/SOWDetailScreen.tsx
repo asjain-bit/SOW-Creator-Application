@@ -2967,12 +2967,12 @@ function SOWDraftTab() {
     )
   }
 
-  const EditableP = ({ id, text }: { id: string; text: string }) => (
+  const EditableP = ({ id, sectionId, text }: { id: string; sectionId: string; text: string }) => (
     <p
       ref={(el) => {
         editRefs.current[id] = el
       }}
-      contentEditable={editingId === id}
+      contentEditable={editingId === sectionId}
       suppressContentEditableWarning
       style={{
         fontSize: 13.5,
@@ -2980,12 +2980,13 @@ function SOWDraftTab() {
         lineHeight: 1.7,
         margin: '0 0 12px 0',
         outline: 'none',
-        borderRadius: 4,
-        padding: editingId === id ? '4px 6px' : 0,
-        background: editingId === id ? '#fff' : 'transparent',
-        border: editingId === id ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid transparent',
-        boxShadow: editingId === id ? '0 1px 6px rgba(0,196,196,0.08)' : 'none',
-        cursor: editingId === id ? 'text' : 'default',
+        borderRadius: 6,
+        padding: editingId === sectionId ? '6px 8px' : 0,
+        background: editingId === sectionId ? '#fff' : 'transparent',
+        border:
+          editingId === sectionId ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid transparent',
+        boxShadow: editingId === sectionId ? '0 1px 6px rgba(0,196,196,0.08)' : 'none',
+        cursor: editingId === sectionId ? 'text' : 'default',
         transition: 'background 0.15s, padding 0.15s, border-color 0.15s',
       }}
     >
@@ -3273,10 +3274,12 @@ function SOWDraftTab() {
           {/* S0: Background */}
           <SectionBlock id="ds0" num={1} title="Background">
             <EditableP
+              sectionId="ds0"
               id="ds0"
               text="Meridian Healthcare is a leading mid-market healthcare provider operating 14 hospitals and 38 outpatient clinics across the Asia-Pacific region. Over the past three years, the organisation has undergone significant expansion through acquisitions, resulting in a fragmented procurement landscape with five distinct ERP environments, no unified vendor registry, and an estimated 23% of purchase orders processed manually."
             />
             <EditableP
+              sectionId="ds0"
               id="ds0b"
               text="In response to a CFO-led cost reduction mandate, the executive team commissioned an independent operational review in Q2 2026. The review identified procurement inefficiencies as the single largest controllable cost lever, with an addressable saving of USD 6–9 million annually through process standardisation and platform consolidation. This Statement of Work sets out the scope, approach, and commercial terms for the first phase of that transformation."
             />
@@ -3285,10 +3288,12 @@ function SOWDraftTab() {
           {/* S1: Executive Summary */}
           <SectionBlock id="ds1" num={2} title="Executive Summary">
             <EditableP
+              sectionId="ds1"
               id="ds1"
               text="This Statement of Work governs the end-to-end delivery of Meridian Healthcare's Procurement Platform Transformation engagement. The objective is to reduce the average procurement cycle from 45 days to under 27 days through the implementation of an automated procure-to-pay platform, vendor onboarding workflows, and a centralised analytics dashboard."
             />
             <EditableP
+              sectionId="ds1"
               id="ds1b"
               text="The engagement is structured across three phases over six months, covering 128 procurement staff across six regional offices. The executive sponsor — jointly the CFO and CPO — has formally signed off on the transformation roadmap and a budget allocation of USD 4.2 million within the FY2027 capital expenditure plan."
             />
@@ -3297,6 +3302,7 @@ function SOWDraftTab() {
           {/* S2: Objectives */}
           <SectionBlock id="ds2" num={3} title="Objectives">
             <EditableP
+              sectionId="ds2"
               id="ds2"
               text="The primary objectives of this engagement are to: (1) consolidate five ERP procurement modules into a single procure-to-pay platform, (2) reduce the average PO cycle time from 45 to 27 days, (3) establish a unified vendor registry with automated onboarding, and (4) deliver real-time spend analytics to the CFO's office."
             />
@@ -3344,6 +3350,7 @@ function SOWDraftTab() {
           {/* S3: Scope of Work */}
           <SectionBlock id="ds3" num={4} title="Scope of Work">
             <EditableP
+              sectionId="ds3"
               id="ds3"
               text="Phase 1 focuses on three priority sub-processes: Purchase Order Automation, Vendor Onboarding, and Invoice Reconciliation. Sub-processes 4–6 are deferred to Phase 2 pending budget confirmation."
             />
@@ -3392,6 +3399,7 @@ function SOWDraftTab() {
           {/* S4: Out of Scope */}
           <SectionBlock id="ds4" num={5} title="Out of Scope">
             <EditableP
+              sectionId="ds4"
               id="ds4"
               text="The following items are explicitly out of scope for this engagement. Any requests to include them will be treated as a Change Request and priced separately."
             />
@@ -3450,6 +3458,7 @@ function SOWDraftTab() {
           {/* S5: Requirements */}
           <SectionBlock id="ds5" num={6} title="Requirements">
             <EditableP
+              sectionId="ds5"
               id="ds5"
               text="The following functional and non-functional requirements have been validated with the client in the Discovery workshop held on 12 August 2026."
             />
@@ -3534,6 +3543,7 @@ function SOWDraftTab() {
           {/* S6: Approach & Methodology */}
           <SectionBlock id="ds6" num={7} title="Approach & Methodology">
             <EditableP
+              sectionId="ds6"
               id="ds6"
               text="We will follow an Agile-Waterfall hybrid methodology, with Discovery and Architecture conducted as fixed-scope waterfall phases, and Build & Test conducted in two-week sprints. This balances the need for upfront design rigour (given the regulatory environment) with flexibility during the build phase."
             />
@@ -3597,6 +3607,7 @@ function SOWDraftTab() {
           {/* S7: Roles & Responsibilities */}
           <SectionBlock id="ds7" num={8} title="Roles & Responsibilities">
             <EditableP
+              sectionId="ds7"
               id="ds7"
               text="The following RACI matrix defines accountability across the engagement. C = Consulted, A = Accountable, R = Responsible, I = Informed."
             />
@@ -3652,6 +3663,7 @@ function SOWDraftTab() {
           {/* S8: Deliverables */}
           <SectionBlock id="ds8" num={9} title="Deliverables">
             <EditableP
+              sectionId="ds8"
               id="ds8"
               text="All deliverables are subject to formal client acceptance within 5 business days of submission. Non-response within this window constitutes deemed acceptance."
             />
@@ -3691,6 +3703,7 @@ function SOWDraftTab() {
           {/* S9: Timeline & Milestones */}
           <SectionBlock id="ds9" num={10} title="Timeline & Milestones">
             <EditableP
+              sectionId="ds9"
               id="ds9"
               text="The engagement runs from 1 November 2026 to 30 April 2027, structured across three phases with formal milestone gates at M2, M4, and M6."
             />
@@ -3736,6 +3749,7 @@ function SOWDraftTab() {
           {/* S10: Commercials */}
           <SectionBlock id="ds10" num={11} title="Commercials">
             <EditableP
+              sectionId="ds10"
               id="ds10"
               text="This is a fixed-price engagement. All travel and expenses are included within the agreed cap per Schedule B. Milestone payments are triggered on formal client acceptance of the corresponding deliverable."
             />
@@ -3780,6 +3794,7 @@ function SOWDraftTab() {
           {/* S11: Assumptions */}
           <SectionBlock id="ds11" num={12} title="Assumptions">
             <EditableP
+              sectionId="ds11"
               id="ds11"
               text="The following assumptions have been agreed with the client. If any assumption proves incorrect, a formal Change Request will be raised to assess impact on scope, timeline, and cost."
             />
@@ -3839,6 +3854,7 @@ function SOWDraftTab() {
           {/* S12: Risks & Mitigations */}
           <SectionBlock id="ds12" num={13} title="Risks & Mitigations">
             <EditableP
+              sectionId="ds12"
               id="ds12"
               text="The following risks have been identified during scoping. Each is tracked on the joint risk register maintained by the PMO."
             />
@@ -3934,6 +3950,7 @@ function SOWDraftTab() {
           {/* S13: Security */}
           <SectionBlock id="ds13" num={14} title="Security">
             <EditableP
+              sectionId="ds13"
               id="ds13"
               text="Security controls will be designed and implemented in alignment with ISO 27001, HIPAA Security Rule, and Meridian's internal Information Security Policy v3.2. The following controls are mandatory for go-live."
             />
@@ -3997,6 +4014,7 @@ function SOWDraftTab() {
           {/* S14: Architecture */}
           <SectionBlock id="ds14" num={15} title="Architecture">
             <EditableP
+              sectionId="ds14"
               id="ds14"
               text="The solution is built on a three-tier, cloud-native architecture deployed on Azure (APAC East region). All components use managed services to minimise infrastructure overhead and maximise availability."
             />
@@ -4074,6 +4092,7 @@ function SOWDraftTab() {
           {/* S15: Acceptance Criteria */}
           <SectionBlock id="ds15" num={16} title="Acceptance Criteria">
             <EditableP
+              sectionId="ds15"
               id="ds15"
               text="The following criteria must be met for each milestone to be formally accepted. The PMO will issue a signed acceptance certificate within 5 business days of receiving the deliverable."
             />
@@ -4132,6 +4151,7 @@ function SOWDraftTab() {
           {/* S16: Change Management */}
           <SectionBlock id="ds16" num={17} title="Change Management">
             <EditableP
+              sectionId="ds16"
               id="ds16"
               text="Any change to scope, timeline, or commercials must follow the Change Request process defined below. No informal scope changes are permitted."
             />
@@ -4190,6 +4210,7 @@ function SOWDraftTab() {
           {/* S17: Support & Handover */}
           <SectionBlock id="ds17" num={18} title="Support & Handover">
             <EditableP
+              sectionId="ds17"
               id="ds17"
               text="A structured hypercare period of 4 weeks post go-live is included in this SOW. Following hypercare, the engagement transitions to Meridian's internal IT operations team under the terms defined below."
             />
@@ -4247,6 +4268,7 @@ function SOWDraftTab() {
           {/* S18: SLAs */}
           <SectionBlock id="ds18" num={19} title="SLAs">
             <EditableP
+              sectionId="ds18"
               id="ds18"
               text="The following SLAs apply during the hypercare period. Post-handover SLAs are governed by Meridian's internal IT BAU agreement."
             />
@@ -4320,6 +4342,7 @@ function SOWDraftTab() {
           {/* S19: Terms & Conditions */}
           <SectionBlock id="ds19" num={20} title="Terms & Conditions">
             <EditableP
+              sectionId="ds19"
               id="ds19"
               text="This SOW is governed by the Master Services Agreement (MSA) dated 1 October 2026 between Ashika Jain Consulting and Meridian Healthcare. In the event of any conflict, the MSA takes precedence."
             />
