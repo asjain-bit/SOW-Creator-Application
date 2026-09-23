@@ -3983,6 +3983,19 @@ function SOWDraftTab() {
     text: string
     sectionTitle: string
   } | null>(null)
+  // Debounced hide so the mouse can travel from the paragraph to the comment
+  // pill (which sits outside the paragraph's own box) without losing hover.
+  const hoverHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cancelHoverHide = () => {
+    if (hoverHideTimer.current) {
+      clearTimeout(hoverHideTimer.current)
+      hoverHideTimer.current = null
+    }
+  }
+  const scheduleHoverHide = () => {
+    cancelHoverHide()
+    hoverHideTimer.current = setTimeout(() => setHoverBlock(null), 350)
+  }
   const [commentPopup, setCommentPopup] = useState<{
     top: number
     anchorText: string
@@ -5708,14 +5721,16 @@ function SOWDraftTab() {
               ref={docCardRef}
               onMouseMove={(e) => {
                 if (commentPopup) return
+                // Hovering the comment pill itself — keep the current block, just cancel the hide.
+                if ((e.target as HTMLElement).closest('[data-comment-ui]')) {
+                  cancelHoverHide()
+                  return
+                }
                 const target = (e.target as HTMLElement).closest(
                   'p, li, h2, h3, td, tr, blockquote'
                 ) as HTMLElement | null
                 const card = docCardRef.current
-                if (!target || !card || !editorRef.current?.contains(target)) {
-                  setHoverBlock(null)
-                  return
-                }
+                if (!target || !card || !editorRef.current?.contains(target)) return
                 const sectionEl = target.closest('.sow-section')
                 const sectionTitle =
                   sectionEl?.querySelector('h2')?.textContent?.trim() ??
@@ -5723,14 +5738,19 @@ function SOWDraftTab() {
                   ''
                 const rect = target.getBoundingClientRect()
                 const cardRect = card.getBoundingClientRect()
+                cancelHoverHide()
                 setHoverBlock({
                   top: rect.top - cardRect.top,
                   text: (target.textContent ?? '').trim().slice(0, 80),
                   sectionTitle,
                 })
               }}
-              onMouseLeave={() => setHoverBlock(null)}
-              onScroll={() => setHoverBlock(null)}
+              onMouseLeave={scheduleHoverHide}
+              onScroll={() => {
+                cancelHoverHide()
+                setHoverBlock(null)
+                setCommentPopup(null)
+              }}
               style={{
                 margin: '0 auto',
                 maxWidth: 820,
@@ -5761,10 +5781,13 @@ function SOWDraftTab() {
                 }}
               />
 
-              {/* Hover: floating add-comment icon in the left gutter */}
+              {/* Hover: floating "Add comment" pill in the right gutter */}
               {hoverBlock && !commentPopup && (
                 <button
                   type="button"
+                  data-comment-ui
+                  onMouseEnter={cancelHoverHide}
+                  onMouseLeave={scheduleHoverHide}
                   onClick={() =>
                     setCommentPopup({
                       top: hoverBlock.top,
@@ -5775,25 +5798,27 @@ function SOWDraftTab() {
                   title="Add comment"
                   style={{
                     position: 'absolute',
-                    left: 22,
-                    top: hoverBlock.top,
-                    width: 26,
-                    height: 26,
-                    borderRadius: '50%',
+                    right: 8,
+                    top: hoverBlock.top - 3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '7px 14px 7px 10px',
+                    borderRadius: 20,
                     border: '1.5px solid rgba(0,196,196,0.5)',
                     background: '#ffffff',
                     color: '#00a0a0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                    boxShadow: '0 3px 12px rgba(0,0,0,0.14)',
+                    whiteSpace: 'nowrap',
+                    fontSize: 12.5,
+                    fontWeight: 600,
                     zIndex: 5,
                   }}
                 >
                   <svg
-                    width="13"
-                    height="13"
+                    width="15"
+                    height="15"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -5803,16 +5828,18 @@ function SOWDraftTab() {
                   >
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
+                  Add comment
                 </button>
               )}
 
               {/* Comment popup — assign & write */}
               {commentPopup && (
                 <div
+                  data-comment-ui
                   style={{
                     position: 'absolute',
-                    left: 22,
-                    top: commentPopup.top,
+                    right: 8,
+                    top: commentPopup.top + 34,
                     width: 280,
                     background: '#fff',
                     border: '1px solid rgba(0,196,196,0.3)',
