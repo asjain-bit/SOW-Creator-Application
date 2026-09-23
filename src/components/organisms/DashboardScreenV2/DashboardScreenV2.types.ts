@@ -33,6 +33,7 @@ export interface DashboardScreenV2Props {
   userName?: string
   userRole?: string
   userInitials?: string
+  userImage?: string
   initialSOWs?: SOWItem[]
   onSignOut?: () => void
   onCreateSOW?: () => void
