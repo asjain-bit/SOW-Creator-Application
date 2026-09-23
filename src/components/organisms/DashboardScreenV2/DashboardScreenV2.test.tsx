@@ -16,10 +16,10 @@ describe('DashboardScreenV2', () => {
   it('renders 5 KPI cards', () => {
     render(<DashboardScreenV2 />)
     expect(screen.getByText('Total SOWs')).toBeTruthy()
-    expect(screen.getByText('In Progress')).toBeTruthy()
+    expect(screen.getAllByText('In Progress').length).toBeGreaterThan(0)
     expect(screen.getByText('Pending Review')).toBeTruthy()
-    expect(screen.getByText('Completed')).toBeTruthy()
-    expect(screen.getByText('Not Started')).toBeTruthy()
+    expect(screen.getByText('Pending with Me')).toBeTruthy()
+    expect(screen.getByText('With Participants')).toBeTruthy()
   })
 
   it('renders SOW table rows', async () => {
@@ -47,7 +47,9 @@ describe('DashboardScreenV2', () => {
 
   it('calls onSignOut when logout clicked', () => {
     const onSignOut = vi.fn()
-    render(<DashboardScreenV2 onSignOut={onSignOut} />)
+    render(<DashboardScreenV2 onSignOut={onSignOut} userInitials="AJ" userName="Ashika Jain" />)
+    // Sign Out is inside the user-avatar dropdown — open it first
+    fireEvent.click(screen.getByText('AJ'))
     fireEvent.click(screen.getByText('Sign Out'))
     expect(onSignOut).toHaveBeenCalledOnce()
   })
