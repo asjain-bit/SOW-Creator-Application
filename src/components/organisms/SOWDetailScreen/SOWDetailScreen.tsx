@@ -2944,1959 +2944,810 @@ const SOW_DRAFT_SECTIONS = [
 type DraftComment = { id: string; sectionId: string; text: string; assignee: string }
 
 function SOWDraftTab() {
-  const [activeSection, setActiveSection] = useState('ds1')
-  const [version, setVersion] = useState('v1.1')
-  const [versionOpen, setVersionOpen] = useState(false)
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [commentingId, setCommentingId] = useState<string | null>(null)
-  const [commentText, setCommentText] = useState('')
-  const [commentAssignee, setCommentAssignee] = useState('m1')
-  const [comments, setComments] = useState<DraftComment[]>([])
-  const [showCommentPanel, setShowCommentPanel] = useState(false)
-  const versionRef = useRef<HTMLDivElement>(null)
-  const rightRef = useRef<HTMLDivElement>(null)
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const editRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  // ── State ───────────────────────────────────────────────────────────────────
+  const [activeSectionIdx, setActiveSectionIdx] = useState(0)
+  const [hasUnsaved, setHasUnsaved] = useState(false)
+  const [activeFormats, setActiveFormats] = useState<Record<string, boolean>>({})
+  const editorRef = useRef<HTMLDivElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [hoveredTocIdx, setHoveredTocIdx] = useState<number | null>(null)
+  const [openMenuIdx, setOpenMenuIdx] = useState<number | null>(null)
+  const [hoveredScoreIdx, setHoveredScoreIdx] = useState<number | null>(null)
+  const [hoveredReviewerIdx, setHoveredReviewerIdx] = useState<number | null>(null)
+  const [approvePopupIdx, setApprovePopupIdx] = useState<number | null>(null)
+  const [rejectPopupIdx, setRejectPopupIdx] = useState<number | null>(null)
+  const [addReviewerIdx, setAddReviewerIdx] = useState<number | null>(null)
+  const [reviewerSearch, setReviewerSearch] = useState('')
+  const [approvalComment, setApprovalComment] = useState('')
+  const [showFloatingRegen, setShowFloatingRegen] = useState(false)
+  const [floatingPos, setFloatingPos] = useState({ top: 0, left: 0 })
+  const [selectedText, setSelectedText] = useState('')
+  const [savedRange, setSavedRange] = useState<Range | null>(null)
+  const [showRegenModal, setShowRegenModal] = useState(false)
+  const [regenInstructions, setRegenInstructions] = useState('')
+  const [isRegenerating, setIsRegenerating] = useState(false)
+  const [toastMsg, setToastMsg] = useState('')
 
-  useEffect(() => {
-    if (!versionOpen) return
-    function handle(e: MouseEvent) {
-      if (versionRef.current && !versionRef.current.contains(e.target as Node))
-        setVersionOpen(false)
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [versionOpen])
-
-  const scrollTo = (id: string) => {
-    setActiveSection(id)
-    const el = sectionRefs.current[id]
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
-  const versions = [
-    { id: 'v1.1', label: 'v1.1 — Current Draft', editable: true },
-    { id: 'v1.0', label: 'v1.0 — Initial Draft', editable: false },
-    { id: 'v0.9', label: 'v0.9 — Working Copy', editable: false },
-  ]
-  const selectedVersion = versions.find((v) => v.id === version) ?? versions[0]
-  const isEditable = selectedVersion.editable
-
-  const saveEdit = (id: string) => {
-    setEditingId(null)
-  }
-
-  const saveComment = () => {
-    if (!commentingId || !commentText.trim()) return
-    const m = SECTION_MEMBERS.find((x) => x.id === commentAssignee) ?? SECTION_MEMBERS[0]
-    setComments((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        sectionId: commentingId,
-        text: commentText.trim(),
-        assignee: m.name,
-      },
-    ])
-    setCommentText('')
-    setCommentingId(null)
-  }
-
-  /* Reusable row builder for table cells */
-  const cell = (s: React.CSSProperties = {}): React.CSSProperties => ({
-    padding: '8px 12px',
-    color: '#374151',
-    ...s,
-  })
-  const thStyle: React.CSSProperties = {
-    padding: '8px 12px',
-    textAlign: 'left',
-    fontWeight: 700,
-    color: '#0d212c',
-    borderBottom: '1.5px solid rgba(0,196,196,0.25)',
-    background: 'rgba(0,196,196,0.07)',
-    fontSize: 12.5,
-  }
-
-  /* Section wrapper with hover actions */
-  const SectionBlock = ({
-    id,
-    num,
-    title,
-    children,
-  }: {
-    id: string
-    num: number
+  // ── TOC data ────────────────────────────────────────────────────────────────
+  type TocItem = {
     title: string
-    children: React.ReactNode
-  }) => {
-    const isHovered = hoveredId === id
-    const isEdit = editingId === id
-    const secComments = comments.filter((c) => c.sectionId === id)
-    return (
-      <div
-        ref={(el) => {
-          sectionRefs.current[id] = el
-        }}
-        onMouseEnter={() => setHoveredId(id)}
-        onMouseLeave={() => setHoveredId(null)}
-        style={{
-          marginBottom: 36,
-          scrollMarginTop: 20,
-          position: 'relative',
-          borderRadius: 10,
-          border: '1.5px solid transparent',
-          padding: '0',
-          transition: 'border-color 0.15s',
-          background: 'transparent',
-        }}
-      >
-        {/* Section heading */}
-        <div
-          style={{
-            fontSize: 16,
-            fontWeight: 700,
-            color: '#0d212c',
-            marginBottom: 12,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <span
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              background: 'rgba(0,196,196,0.15)',
-              color: '#00a0a0',
-              fontSize: 11,
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            {num}
-          </span>
-          {title}
-          {secComments.length > 0 && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 3,
-                fontSize: 10,
-                fontWeight: 700,
-                color: '#d97706',
-                background: '#fef3c7',
-                border: '1px solid #fde68a',
-                borderRadius: 10,
-                padding: '1px 7px',
-              }}
-            >
-              <svg
-                width="9"
-                height="9"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              {secComments.length}
-            </span>
-          )}
-        </div>
-        {/* Content */}
-        {children}
-
-        {/* Hover action buttons (top-right of section) */}
-        {isHovered && !isEdit && isEditable && (
-          <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 4 }}>
-            <button
-              title="Edit section"
-              onClick={() => {
-                setEditingId(id)
-                setCommentingId(null)
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '5px 10px',
-                borderRadius: 7,
-                border: '1px solid rgba(0,196,196,0.3)',
-                background: '#fff',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#007a7a',
-                cursor: 'pointer',
-              }}
-            >
-              <svg
-                width="11"
-                height="11"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-              Edit
-            </button>
-            <button
-              title="Add comment"
-              onClick={() => {
-                setCommentingId(id)
-                setEditingId(null)
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '5px 10px',
-                borderRadius: 7,
-                border: '1px solid #fde68a',
-                background: '#fff',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#d97706',
-                cursor: 'pointer',
-              }}
-            >
-              <svg
-                width="11"
-                height="11"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              Comment
-            </button>
-          </div>
-        )}
-        {/* Inline edit Save/Cancel bar */}
-        {isEdit && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 14, justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => setEditingId(null)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: 7,
-                border: '1px solid #e2e8f0',
-                background: '#fff',
-                fontSize: 12,
-                fontWeight: 600,
-                color: '#64748b',
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => saveEdit(id)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: 7,
-                border: 'none',
-                background: '#00C4C4',
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#fff',
-                cursor: 'pointer',
-              }}
-            >
-              Save
-            </button>
-          </div>
-        )}
-        {/* comment overlay rendered at root level below */}
-      </div>
-    )
+    score: number
+    status: 'Pending' | 'Approved' | 'Rejected'
+    reviewers: string[]
+    fileName: string
   }
 
-  const EditableP = ({ id, sectionId, text }: { id: string; sectionId: string; text: string }) => (
-    <p
-      ref={(el) => {
-        editRefs.current[id] = el
-      }}
-      contentEditable={editingId === sectionId}
-      suppressContentEditableWarning
+  const [tocItems, setTocItems] = useState<TocItem[]>([
+    { title: 'Background',              score: 72, status: 'Pending',  reviewers: [],              fileName: 'RFP_Document.pdf' },
+    { title: 'Executive Summary',       score: 88, status: 'Approved', reviewers: ['Ashika Jain'], fileName: 'RFP_Document.pdf' },
+    { title: 'Objectives',             score: 51, status: 'Pending',  reviewers: [],              fileName: 'Architecture_Guidelines.pdf' },
+    { title: 'Scope of Work',           score: 65, status: 'Pending',  reviewers: ['Ashika Jain'], fileName: 'Architecture_Guidelines.pdf' },
+    { title: 'Out of Scope',            score: 79, status: 'Pending',  reviewers: [],              fileName: 'Architecture_Guidelines.pdf' },
+    { title: 'Requirements',            score: 91, status: 'Approved', reviewers: ['Rohan Mehta'], fileName: 'RFP_Document.pdf' },
+    { title: 'Approach & Methodology',  score: 81, status: 'Pending',  reviewers: [],              fileName: 'Architecture_Guidelines.pdf' },
+    { title: 'Roles & Responsibilities',score: 69, status: 'Pending',  reviewers: [],              fileName: 'Architecture_Guidelines.pdf' },
+    { title: 'Deliverables',            score: 87, status: 'Pending',  reviewers: ['Priya Sharma'],fileName: 'RFP_Document.pdf' },
+    { title: 'Timeline & Milestones',   score: 74, status: 'Pending',  reviewers: [],              fileName: 'Project_Plan.pdf' },
+    { title: 'Commercials',             score: 95, status: 'Approved', reviewers: ['Karan Bose'],  fileName: 'Commercial_Proposal.pdf' },
+    { title: 'Assumptions',             score: 83, status: 'Pending',  reviewers: ['Rohan Mehta'], fileName: 'Architecture_Guidelines.pdf' },
+    { title: 'Risks & Mitigations',     score: 86, status: 'Pending',  reviewers: [],              fileName: 'Risk_Register.pdf' },
+    { title: 'Security',                score: 62, status: 'Pending',  reviewers: [],              fileName: 'Security_Guidelines.pdf' },
+    { title: 'Architecture',            score: 77, status: 'Pending',  reviewers: ['Priya Sharma'],fileName: 'Architecture_Guidelines.pdf' },
+    { title: 'Acceptance Criteria',     score: 93, status: 'Approved', reviewers: ['Ashika Jain'], fileName: 'RFP_Document.pdf' },
+    { title: 'Change Management',       score: 58, status: 'Pending',  reviewers: [],              fileName: 'Project_Plan.pdf' },
+    { title: 'Support & Handover',      score: 97, status: 'Approved', reviewers: ['Karan Bose'],  fileName: 'Architecture_Guidelines.pdf' },
+  ])
+
+  // ── Generate document HTML ──────────────────────────────────────────────────
+  const generateHtml = (items: TocItem[]) =>
+    items.map((item, idx) => {
+      let body = ''
+      switch (item.title) {
+        case 'Project Introduction':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated detailed content for the <strong>Project Introduction</strong> section based on the extracted requirements from your RFP document. Our AI analysis indicates that this section requires further manual review to align perfectly with your internal compliance standards. Please review and modify as needed to ensure it meets your exact specifications.</p>
+          <p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed engagement covers a comprehensive digital transformation initiative designed to modernize existing technology infrastructure, improve operational efficiency, and create a scalable foundation for future business growth. The delivery team will collaborate closely with all relevant stakeholders to validate requirements and confirm assumptions throughout the engagement lifecycle.</p>`
+          break
+        case 'Project Scope':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The scope of work is explicitly bounded to the backend infrastructure migration, API Gateway deployment, and database modernization. Clear demarcation of boundaries ensures that the project delivery remains strictly on schedule and within the agreed budget constraints.</p>
+          <p style="margin-bottom:8px;line-height:1.7;color:#374151;"><strong>In-Scope Activities:</strong></p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li>Migration of 5 core relational databases (MySQL/PostgreSQL) to a fully managed cloud SQL environment featuring automated daily snapshots and point-in-time recovery.</li>
+            <li>Design and implementation of an enterprise-grade API Gateway featuring advanced rate limiting, robust JWT-based authentication, and granular analytics tracking.</li>
+            <li>Containerization of 12 legacy backend services into optimized, scalable Docker images.</li>
+            <li>Deployment of a comprehensive observability stack (monitoring, logging, and alerting) using industry-standard tools like Prometheus, Grafana, and ELK.</li>
+          </ul>
+          <p style="margin-bottom:8px;line-height:1.7;color:#374151;"><strong>Out of Scope:</strong></p>
+          <ul style="margin-bottom:12px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li>Frontend application redesign or UI/UX modifications.</li>
+            <li>Native mobile application development.</li>
+            <li>Integration with third-party legacy ERP/CRM systems not listed in the initial RFP.</li>
+          </ul>`
+          break
+        case 'Business Requirements':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following business requirements have been extracted and validated from the submitted RFP documentation. These requirements form the foundation of the proposed solution architecture and delivery approach.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
+            <li><strong>High Availability:</strong> Achieve 99.99% uptime SLA by implementing cross-region failover and automated disaster recovery.</li>
+            <li><strong>Security Posture:</strong> Achieve SOC2 and ISO 27001 compliance for the new infrastructure layer.</li>
+            <li><strong>Developer Velocity:</strong> Establish zero-touch CI/CD pipelines for continuous integration and seamless deployments.</li>
+          </ul>`
+          break
+        case 'Solution Approach':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Edge &amp; Ingress Layer:</strong> A highly available Cloud Load Balancer integrated with a Web Application Firewall (WAF) to defend against DDoS attacks.</li>
+            <li><strong>Compute Layer:</strong> Auto-scaling Kubernetes clusters spanning multiple availability zones.</li>
+            <li><strong>Data &amp; Caching Layer:</strong> Managed PostgreSQL database cluster with read-replicas and a distributed Redis caching layer.</li>
+            <li><strong>Event Streaming:</strong> Apache Kafka for asynchronous communication between microservices.</li>
+          </ul>`
+          break
+        case 'Deliverables':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The engagement will yield a series of concrete, verifiable deliverables across the project lifecycle. Acceptance of these deliverables will trigger subsequent project phases and associated commercial milestones.</p>
+          <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
+            <thead><tr style="background:rgba(0,196,196,0.07);">
+              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Deliverable</th>
+              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Description</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Architecture Design Document [Week 2]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Comprehensive blueprint detailing network topology, component interactions, and security protocols.</td></tr>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Infrastructure as Code Scripts [Week 4]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Fully parameterized Terraform and Ansible scripts for automated cloud provisioning.</td></tr>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Containerized Services [Week 8]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">12 migrated backend services packaged as Docker containers, deployed in QA environment.</td></tr>
+              <tr><td style="padding:12px;"><strong>Final Handover Package [Week 12]</strong></td><td style="padding:12px;">Complete runbooks, operational manuals, disaster recovery procedures, and formal sign-off document.</td></tr>
+            </tbody>
+          </table>`
+          break
+        case 'Roles & Responsibilities':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following table outlines the roles and responsibilities of both the delivery team and the client organization throughout the project lifecycle.</p>
+          <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
+            <thead><tr style="background:rgba(0,196,196,0.07);">
+              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Role</th>
+              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Responsibilities</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Project Manager</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Overall project coordination, stakeholder communication, risk management, and milestone tracking.</td></tr>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Solution Architect</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Technical design, architecture decisions, and quality assurance of all technical deliverables.</td></tr>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Client PMO</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Approvals, resource allocation, stakeholder alignment, and UAT sign-off.</td></tr>
+            </tbody>
+          </table>`
+          break
+        case 'Commercial Terms':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this project is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. This covers all engineering, project management, and specialized architectural consulting hours required over the 12-week period.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Milestone 1 (20% - $29,000):</strong> Project kickoff and formal SOW signing.</li>
+            <li><strong>Milestone 2 (30% - $43,500):</strong> Delivery and approval of the Architecture Design Document.</li>
+            <li><strong>Milestone 3 (30% - $43,500):</strong> Successful completion of User Acceptance Testing.</li>
+            <li><strong>Milestone 4 (20% - $29,000):</strong> Final go-live and knowledge transfer completion.</li>
+          </ul>`
+          break
+        case 'Risks & Mitigations':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, several assumptions have been made. Deviation from these assumptions may result in changes to the project timeline or budget, subject to the formal Change Request process.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Assumption 1:</strong> Client SMEs will be available for a minimum of 4 hours per week to clarify business logic and validate migration strategies.</li>
+            <li><strong>Assumption 2:</strong> The existing legacy source code is fully accessible and accurately documented.</li>
+            <li><strong>Risk:</strong> Delays in UAT sign-off by client stakeholders may push the final go-live date. <strong>Mitigation:</strong> Weekly status reports and early, frequent testing cycles will be employed to ensure alignment.</li>
+          </ul>`
+          break
+        case 'Background':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This Statement of Work has been prepared in response to the Request for Proposal (RFP) issued by the client organization. The engagement is aimed at addressing key technology modernization objectives identified through a series of discovery workshops and stakeholder interviews conducted prior to this submission.</p>
+          <p style="margin-bottom:12px;line-height:1.7;color:#374151;">The client currently operates a fragmented technology landscape with multiple legacy systems that present challenges around scalability, data integrity, and operational efficiency. This engagement proposes a structured, phased approach to address these gaps while minimizing disruption to business-as-usual operations.</p>`
+          break
+        case 'Objectives':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The primary objectives of this engagement are structured to address the core business challenges identified during the discovery phase. By executing on these objectives, the delivery team aims to deliver measurable improvements in performance, scalability, and cost efficiency.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
+            <li><strong>High Availability &amp; Resilience:</strong> Improve system reliability to achieve a 99.99% uptime SLA by implementing cross-region failover and automated disaster recovery.</li>
+            <li><strong>Application Modernization:</strong> Transition current monolithic application structure into a decoupled microservices architecture.</li>
+            <li><strong>Operational Agility:</strong> Establish zero-touch CI/CD pipelines for continuous integration and seamless zero-downtime deployments.</li>
+          </ul>`
+          break
+        case 'Out of Scope':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following items and activities are explicitly excluded from this Statement of Work. Any work falling within these categories will require a formal Change Request and may result in adjustments to cost and timeline.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li>Frontend application redesign, web portal enhancements, or any UI/UX modifications.</li>
+            <li>Native mobile application development or updates for iOS and Android platforms.</li>
+            <li>Integration with third-party legacy ERP/CRM systems not explicitly listed in the initial RFP documentation.</li>
+            <li>Data cleansing or manual data remediation prior to database migration.</li>
+            <li>Ongoing managed services or post-go-live support beyond the defined hypercare period.</li>
+          </ul>`
+          break
+        case 'Requirements':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following functional and non-functional requirements have been extracted and validated from the submitted RFP documentation. These requirements form the foundation of the proposed solution architecture.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>FR-01:</strong> The system shall support concurrent access by a minimum of 5,000 active users without performance degradation.</li>
+            <li><strong>FR-02:</strong> All data transmissions must be encrypted using TLS 1.3 or higher.</li>
+            <li><strong>FR-03:</strong> The platform must provide role-based access control (RBAC) with granular permission management.</li>
+            <li><strong>NFR-01:</strong> System response time for standard operations must not exceed 200ms at the 95th percentile.</li>
+            <li><strong>NFR-02:</strong> The solution must be deployable across AWS, GCP, and Azure without vendor lock-in dependencies.</li>
+          </ul>`
+          break
+        case 'Approach & Methodology':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The delivery team will adopt an Agile-first approach, structured around two-week sprint cycles with continuous stakeholder involvement and feedback loops. This methodology ensures transparency, early risk identification, and rapid course correction when required.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Phase 1 — Discovery &amp; Design (Weeks 1–3):</strong> Requirements validation, architecture finalization, and approval of the Architecture Design Document (ADD).</li>
+            <li><strong>Phase 2 — Infrastructure Provisioning (Weeks 4–6):</strong> Cloud environment setup, network configuration, and CI/CD pipeline establishment.</li>
+            <li><strong>Phase 3 — Development &amp; Migration (Weeks 7–10):</strong> Service containerization, database migration, and integration testing.</li>
+            <li><strong>Phase 4 — UAT &amp; Deployment (Weeks 11–14):</strong> User acceptance testing, performance tuning, production deployment, and knowledge transfer.</li>
+          </ul>`
+          break
+        case 'Timeline & Milestones':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The project is estimated to be completed over a period of 14 weeks, divided into four distinct delivery phases. This timeline is contingent upon timely approvals, resource availability from the client, and successful completion of UAT within the defined windows.</p>
+          <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
+            <thead><tr style="background:rgba(0,196,196,0.07);">
+              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Milestone</th>
+              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Target Week</th>
+              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Deliverable</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M1 — Kickoff</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 1</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Project charter signed, team onboarded</td></tr>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M2 — Architecture Sign-off</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 3</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Architecture Design Document approved</td></tr>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M3 — Infrastructure Ready</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 6</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Cloud environments provisioned and validated</td></tr>
+              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M4 — UAT Complete</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 12</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">All test cases passed, sign-off obtained</td></tr>
+              <tr><td style="padding:12px;">M5 — Go-Live</td><td style="padding:12px;">Week 14</td><td style="padding:12px;">Production deployment and handover complete</td></tr>
+            </tbody>
+          </table>`
+          break
+        case 'Commercials':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this engagement is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. This covers all engineering, project management, and specialized architectural consulting hours required over the 14-week delivery period.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Milestone 1 (20% — $29,000):</strong> Project kickoff and formal SOW signing.</li>
+            <li><strong>Milestone 2 (30% — $43,500):</strong> Delivery and approval of the Architecture Design Document.</li>
+            <li><strong>Milestone 3 (30% — $43,500):</strong> Successful completion of User Acceptance Testing.</li>
+            <li><strong>Milestone 4 (20% — $29,000):</strong> Final go-live and knowledge transfer completion.</li>
+          </ul>
+          <p style="margin-bottom:12px;line-height:1.7;color:#374151;"><em>Note: Cloud infrastructure consumption costs are explicitly excluded and will be billed directly to the client's corporate accounts.</em></p>`
+          break
+        case 'Assumptions':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, the following assumptions have been made. Deviation from any of these may result in changes to the project timeline, cost, or scope, subject to the formal Change Request process.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li>Client subject matter experts (SMEs) will be available for a minimum of 4 hours per week.</li>
+            <li>The existing legacy source code is fully accessible and can be compiled without unavailable proprietary dependencies.</li>
+            <li>Access credentials for all necessary environments will be provided within 3 business days of project kickoff.</li>
+            <li>The client will provide timely feedback on deliverables within the agreed review windows of 5 business days.</li>
+            <li>All required third-party software licenses are either already procured or will be made available by the client.</li>
+          </ul>`
+          break
+        case 'Security':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Security is a first-class concern throughout this engagement. All solution components will be designed, implemented, and tested in accordance with industry-standard security frameworks and the client's internal security policy.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Identity &amp; Access Management:</strong> Role-Based Access Control (RBAC) via Azure AD or Okta integration for Single Sign-On (SSO) across all infrastructure components.</li>
+            <li><strong>Data Encryption:</strong> All data at rest encrypted using AES-256; all data in transit encrypted using TLS 1.3.</li>
+            <li><strong>Vulnerability Management:</strong> Automated security scanning integrated into the CI/CD pipeline using OWASP ZAP and Snyk.</li>
+            <li><strong>Compliance:</strong> Solution architecture designed to meet SOC2 Type II and ISO 27001 certification requirements.</li>
+          </ul>`
+          break
+        case 'Architecture':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Edge &amp; Ingress Layer:</strong> Cloud Load Balancer with WAF integration, routing through API Gateway for authentication and rate limiting.</li>
+            <li><strong>Compute Layer:</strong> Auto-scaling Kubernetes clusters across multiple availability zones with dynamic workload distribution.</li>
+            <li><strong>Data Layer:</strong> Managed PostgreSQL with read-replicas and distributed Redis caching for high-throughput read operations.</li>
+            <li><strong>Event Streaming:</strong> Apache Kafka for reliable asynchronous communication between microservices.</li>
+            <li><strong>Observability:</strong> Prometheus + Grafana for metrics, ELK stack for centralized logging, and PagerDuty for alerting.</li>
+          </ul>`
+          break
+        case 'Acceptance Criteria':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The project will be deemed complete and ready for final sign-off when all of the following acceptance criteria have been demonstrably met in the production environment.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li>All backend services are deployed to the Kubernetes cluster and passing automated health checks.</li>
+            <li>The API Gateway is routing traffic correctly, enforcing JWT authentication, and applying configured rate limits.</li>
+            <li>The migrated cloud databases are fully synchronized and automated backup routines have been verified.</li>
+            <li>Performance tests demonstrate the infrastructure handles 200% of current peak load with sub-200ms API response times.</li>
+            <li>The client operations team has formally signed off on handover documentation and runbooks.</li>
+          </ul>`
+          break
+        case 'Change Management':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Any requests for changes to the agreed scope, timeline, or commercial terms must follow the formal Change Request (CR) process defined below. Unauthorized scope changes will not be accepted and will not form part of the delivery commitment.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Step 1:</strong> Client submits a Change Request Form describing the proposed change, business justification, and urgency.</li>
+            <li><strong>Step 2:</strong> Delivery team assesses impact on scope, timeline, and cost within 5 business days.</li>
+            <li><strong>Step 3:</strong> Impact assessment reviewed and approved by both parties' project sponsors.</li>
+            <li><strong>Step 4:</strong> Approved CR formally incorporated into the amended SOW via a signed addendum.</li>
+          </ul>`
+          break
+        case 'Support & Handover':
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Upon successful completion of the project, the delivery team will provide a structured handover to the client's internal operations team. A defined hypercare period will follow go-live to ensure operational stability and knowledge continuity.</p>
+          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+            <li><strong>Knowledge Transfer Sessions:</strong> Minimum 3 structured sessions covering infrastructure management, deployment procedures, and incident response.</li>
+            <li><strong>Documentation Handover:</strong> Complete runbooks, architectural diagrams, API documentation, and disaster recovery playbooks.</li>
+            <li><strong>Hypercare Period:</strong> 4 weeks of enhanced support post go-live with priority SLA (P1 — 2hr response, P2 — 8hr response).</li>
+            <li><strong>Transition to BAU Support:</strong> Formal transition to client's BAU support model with clear RACI documented.</li>
+          </ul>`
+          break
+        default:
+          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated content for the <strong>${item.title}</strong> section based on extracted requirements from your RFP document. Please review and modify as needed to ensure it meets your exact specifications.</p>`
+      }
+      return `<div id="sow-section-${idx}" class="sow-section" style="margin-bottom:0;">
+        <h2 style="font-size:22px;font-weight:700;color:#0d212c;margin-bottom:16px;">${item.title}</h2>
+        ${body}
+        <div style="margin-top:16px;font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Source: ${item.fileName}
+        </div>
+      </div>`
+    }).join('\n<hr style="border:0;border-top:1px solid rgba(0,196,196,0.15);margin:32px 0;" />\n')
+
+  const [contentHtml] = useState(() => generateHtml(tocItems))
+
+  // ── Set initial editor content ──────────────────────────────────────────────
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML === '') {
+      editorRef.current.innerHTML = contentHtml
+    }
+  }, [contentHtml])
+
+  // ── Scroll-spy: update active section index ─────────────────────────────────
+  useEffect(() => {
+    const scrollArea = scrollAreaRef.current
+    if (!scrollArea) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = parseInt(entry.target.id.replace('sow-section-', ''), 10)
+            if (!isNaN(idx)) setActiveSectionIdx(idx)
+          }
+        })
+      },
+      { root: scrollArea, rootMargin: '-120px 0px -50% 0px', threshold: 0 }
+    )
+    tocItems.forEach((_, idx) => {
+      const el = document.getElementById(`sow-section-${idx}`)
+      if (el) observer.observe(el)
+    })
+    return () => observer.disconnect()
+  }, [tocItems.length])
+
+  // ── Text-selection floating regenerate ─────────────────────────────────────
+  useEffect(() => {
+    const handleMouseUp = () => {
+      setTimeout(() => {
+        const sel = window.getSelection()
+        if (!sel || sel.isCollapsed || sel.rangeCount === 0) { setShowFloatingRegen(false); return }
+        const range = sel.getRangeAt(0)
+        const text = range.toString().trim()
+        if (!text || !editorRef.current?.contains(range.commonAncestorContainer)) { setShowFloatingRegen(false); return }
+        const scrollArea = scrollAreaRef.current
+        if (!scrollArea) return
+        const rect = range.getBoundingClientRect()
+        const saRect = scrollArea.getBoundingClientRect()
+        setFloatingPos({ top: rect.top - saRect.top + scrollArea.scrollTop - 44, left: rect.left - saRect.left + rect.width / 2 - 65 })
+        setSelectedText(text)
+        setSavedRange(range.cloneRange())
+        setShowFloatingRegen(true)
+      }, 10)
+    }
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => document.removeEventListener('mouseup', handleMouseUp)
+  }, [])
+
+  // ── Toolbar helpers ─────────────────────────────────────────────────────────
+  const updateFormats = () => {
+    const cmds = ['bold','italic','underline','strikeThrough','justifyLeft','justifyCenter','justifyRight','insertUnorderedList','insertOrderedList']
+    const f: Record<string, boolean> = {}
+    cmds.forEach((c) => { try { f[c] = document.queryCommandState(c) } catch { f[c] = false } })
+    setActiveFormats(f)
+  }
+
+  const execCmd = (command: string, value?: string) => {
+    if (command === 'fontSize') {
+      document.execCommand('fontSize', false, '7')
+      editorRef.current?.querySelectorAll('font[size="7"]').forEach((el) => {
+        el.removeAttribute('size');
+        (el as HTMLElement).style.fontSize = `${value}px`
+      })
+    } else if (command === 'createLink') {
+      const url = prompt('Enter link URL:')
+      if (url) document.execCommand('createLink', false, url)
+    } else if (command === 'insertTable') {
+      document.execCommand('insertHTML', false, '<table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;"><tr><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 1</td><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 2</td></tr><tr><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 3</td><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 4</td></tr></table>')
+    } else if (command === 'clearFormat') {
+      document.execCommand('removeFormat', false, undefined)
+    } else {
+      document.execCommand(command, false, value)
+    }
+    updateFormats()
+    editorRef.current?.focus()
+    setHasUnsaved(true)
+  }
+
+  const TBtn = ({ icon, command, value, title, isActive }: { icon: React.ReactNode; command: string; value?: string; title: string; isActive?: boolean }) => (
+    <button
+      title={title}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => execCmd(command, value)}
       style={{
-        fontSize: 13.5,
-        color: '#374151',
-        lineHeight: 1.7,
-        margin: '0 0 12px 0',
-        outline: 'none',
-        borderRadius: 6,
-        padding: editingId === sectionId ? '6px 8px' : 0,
-        background: editingId === sectionId ? '#fff' : 'transparent',
-        border:
-          editingId === sectionId ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid transparent',
-        boxShadow: editingId === sectionId ? '0 1px 6px rgba(0,196,196,0.08)' : 'none',
-        cursor: editingId === sectionId ? 'text' : 'default',
-        transition: 'background 0.15s, padding 0.15s, border-color 0.15s',
+        background: isActive ? 'rgba(0,196,196,0.12)' : 'transparent',
+        border: 'none',
+        borderRadius: 4,
+        padding: '5px 7px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: isActive ? '#00a0a0' : '#475569',
+        flexShrink: 0,
+        lineHeight: 0,
       }}
     >
-      {text}
-    </p>
+      {icon}
+    </button>
   )
 
-  const totalComments = comments.length
-  const openComments = comments.filter((c) => !c.text.startsWith('[resolved]')).length
+  const Sep = () => <div style={{ width: 1, height: 18, background: 'rgba(0,0,0,0.1)', margin: '0 6px', flexShrink: 0 }} />
+
+  // ── Reviewer helper ─────────────────────────────────────────────────────────
+  const allMembers = SECTION_MEMBERS.map((m) => m.name)
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(''), 3000)
+  }
+
+  // ── Score color ─────────────────────────────────────────────────────────────
+  const scoreColor = (s: number) => s >= 90 ? '#16a34a' : s >= 60 ? '#d97706' : '#ef4444'
+  const scoreBg   = (s: number) => s >= 90 ? 'rgba(22,163,74,0.1)' : s >= 60 ? 'rgba(217,119,6,0.1)' : 'rgba(239,68,68,0.1)'
+  const scoreLabel= (s: number) => s >= 90 ? 'High Confidence' : s >= 60 ? 'Medium Confidence' : 'Low Confidence'
 
   return (
     <>
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        {/* Left nav */}
-        <div
-          style={{
-            width: 250,
-            flexShrink: 0,
-            borderRight: '1px solid rgba(0,196,196,0.1)',
-            overflowY: 'auto',
-            padding: '14px 10px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          {/* Compact version selector */}
-          <div ref={versionRef} style={{ position: 'relative', marginBottom: 10 }}>
+      {/* ── Toast ─────────────────────────────────────────────────────────── */}
+      {toastMsg && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: '#0d212c', color: '#fff', padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, boxShadow: '0 4px 16px rgba(0,0,0,0.18)' }}>
+          {toastMsg}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', height: '100%', minHeight: 0, overflow: 'hidden' }}>
+
+        {/* ── Left TOC sidebar ──────────────────────────────────────────────── */}
+        <div style={{ width: 264, flexShrink: 0, borderRight: '1px solid rgba(0,196,196,0.15)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'rgba(248,252,252,0.6)' }}>
+          {/* Header */}
+          <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c' }}>Table of Contents</span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ flex: 1, background: 'rgba(0,196,196,0.08)', borderRadius: 6, padding: '5px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#00C4C4', lineHeight: 1 }}>{tocItems.length}</div>
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total</div>
+              </div>
+              <div style={{ flex: 1, background: 'rgba(245,158,11,0.08)', borderRadius: 6, padding: '5px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>{tocItems.filter(t => t.status === 'Pending').length}</div>
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Open</div>
+              </div>
+              <div style={{ flex: 1, background: 'rgba(22,163,74,0.08)', borderRadius: 6, padding: '5px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#16a34a', lineHeight: 1 }}>{tocItems.filter(t => t.status === 'Approved').length}</div>
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Approved</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section list */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }}>
+            {tocItems.map((item, idx) => {
+              const isActive = activeSectionIdx === idx
+              const isApproved = item.status === 'Approved'
+              const isRejected = item.status === 'Rejected'
+              const hasReviewer = item.reviewers.length > 0
+              return (
+                <div
+                  key={idx}
+                  onMouseEnter={() => setHoveredTocIdx(idx)}
+                  onMouseLeave={() => setHoveredTocIdx(null)}
+                  onClick={() => {
+                    setActiveSectionIdx(idx)
+                    const el = document.getElementById(`sow-section-${idx}`)
+                    const scrollArea = scrollAreaRef.current
+                    if (el && scrollArea) {
+                      const saRect = scrollArea.getBoundingClientRect()
+                      const elRect = el.getBoundingClientRect()
+                      scrollArea.scrollTo({ top: scrollArea.scrollTop + elRect.top - saRect.top - 24, behavior: 'smooth' })
+                    }
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    marginBottom: 2,
+                    cursor: 'pointer',
+                    background: isActive ? 'rgba(0,196,196,0.1)' : 'transparent',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  {/* Left: dot + title */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: isActive ? '#00C4C4' : '#94a3b8', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12.5, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
+                  </div>
+
+                  {/* Right: score + reviewer + approved tick + menu */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    {/* Status icon */}
+                    {isApproved ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><title>Approved</title><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    ) : isRejected ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><title>Rejected</title><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    ) : (
+                      <>
+                        {/* Score badge */}
+                        <div style={{ position: 'relative' }}
+                          onMouseEnter={() => setHoveredScoreIdx(idx)}
+                          onMouseLeave={() => setHoveredScoreIdx(null)}
+                        >
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 12, background: scoreBg(item.score), color: scoreColor(item.score) }}>
+                            {item.score}%
+                          </span>
+                          {hoveredScoreIdx === idx && (
+                            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid rgba(0,196,196,0.2)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 50, width: 180, padding: 10, fontSize: 11, color: '#374151', lineHeight: 1.5 }}>
+                              <div style={{ fontWeight: 700, color: scoreColor(item.score), marginBottom: 3 }}>{scoreLabel(item.score)}</div>
+                              {item.score >= 90 ? 'Strong alignment with RFP requirements and thorough detail.' : item.score >= 60 ? 'Partial alignment with RFP. Some requirements may need elaboration.' : 'Weak alignment or missing critical details. Thorough review required.'}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Reviewer icon */}
+                        {hasReviewer ? (
+                          <div style={{ position: 'relative' }}
+                            onMouseEnter={() => setHoveredReviewerIdx(idx)}
+                            onMouseLeave={() => setHoveredReviewerIdx(null)}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'default' }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            {hoveredReviewerIdx === idx && (
+                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid rgba(0,196,196,0.2)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 50, padding: '8px 12px', fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>
+                                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Reviewer{item.reviewers.length > 1 ? 's' : ''}</div>
+                                {item.reviewers.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div
+                            title="Assign Reviewer"
+                            onClick={(e) => { e.stopPropagation(); setAddReviewerIdx(idx); setOpenMenuIdx(null) }}
+                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2, borderRadius: 4, color: '#00C4C4' }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* ⋯ menu */}
+                    {(hoveredTocIdx === idx || openMenuIdx === idx) && (
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuIdx(openMenuIdx === idx ? null : idx) }}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 3px', borderRadius: 4, color: '#94a3b8', display: 'flex', alignItems: 'center' }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                        </button>
+                        {openMenuIdx === idx && (
+                          <>
+                            <div style={{ position: 'fixed', inset: 0, zIndex: 49 }} onClick={() => setOpenMenuIdx(null)} />
+                            <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, background: '#fff', border: '1px solid rgba(0,196,196,0.2)', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', zIndex: 50, minWidth: 200, padding: 6 }}>
+                              {!isApproved && (
+                                <button onClick={(e) => { e.stopPropagation(); setAddReviewerIdx(idx); setOpenMenuIdx(null) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13, color: '#374151', textAlign: 'left' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,196,196,0.07)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                                  Add Reviewer
+                                </button>
+                              )}
+                              <button onClick={(e) => { e.stopPropagation(); setOpenMenuIdx(null); showToast('Section regeneration started…') }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13, color: '#374151', textAlign: 'left' }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,196,196,0.07)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.69"/></svg>
+                                Regenerate Section
+                              </button>
+                              {!isApproved && (
+                                <button onClick={(e) => { e.stopPropagation(); setApprovePopupIdx(idx); setOpenMenuIdx(null) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13, color: '#374151', textAlign: 'left' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,196,196,0.07)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                  Approve
+                                </button>
+                              )}
+                              {!isRejected && (
+                                <button onClick={(e) => { e.stopPropagation(); setRejectPopupIdx(idx); setOpenMenuIdx(null) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13, color: '#ef4444', textAlign: 'left' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.06)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                                  Rework Required
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── Right editor area ──────────────────────────────────────────────── */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* Toolbar */}
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0, padding: '5px 12px', borderBottom: '1px solid rgba(0,196,196,0.12)', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(6px)', overflowX: 'auto', flexWrap: 'nowrap' }}>
+            {/* Undo / Redo */}
+            <TBtn title="Undo" command="undo" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>} />
+            <TBtn title="Redo" command="redo" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>} />
+            <Sep />
+            {/* Size / Style selects */}
+            <select onMouseDown={(e) => e.stopPropagation()} onChange={(e) => execCmd('fontSize', e.target.value)} defaultValue="15" title="Font Size" style={{ fontSize: 12, padding: '3px 6px', border: '1px solid rgba(0,0,0,0.13)', borderRadius: 4, background: '#fff', color: '#475569', cursor: 'pointer', marginRight: 4 }}>
+              <option value="15" disabled hidden>Size</option>
+              {[8,10,11,12,14,16,18,20,24,28,32,36,48].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select onMouseDown={(e) => e.stopPropagation()} onChange={(e) => execCmd('formatBlock', e.target.value)} defaultValue="P" title="Paragraph Style" style={{ fontSize: 12, padding: '3px 6px', border: '1px solid rgba(0,0,0,0.13)', borderRadius: 4, background: '#fff', color: '#475569', cursor: 'pointer' }}>
+              <option value="P">Normal</option>
+              <option value="H1">Heading 1</option>
+              <option value="H2">Heading 2</option>
+              <option value="H3">Heading 3</option>
+              <option value="H4">Heading 4</option>
+            </select>
+            <Sep />
+            {/* Lists + indent */}
+            <TBtn title="Bullet List" command="insertUnorderedList" isActive={activeFormats['insertUnorderedList']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/></svg>} />
+            <TBtn title="Numbered List" command="insertOrderedList" isActive={activeFormats['insertOrderedList']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4" stroke="currentColor"/><path d="M4 10h2" stroke="currentColor"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" stroke="currentColor"/></svg>} />
+            <TBtn title="Indent" command="indent" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><polyline points="7 10 11 14 7 18"/><line x1="11" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="21" y2="18"/></svg>} />
+            <TBtn title="Outdent" command="outdent" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><polyline points="11 10 7 14 11 18"/><line x1="7" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="21" y2="18"/></svg>} />
+            <Sep />
+            {/* Bold / Italic / Underline / Strikethrough */}
+            <TBtn title="Bold" command="bold" isActive={activeFormats['bold']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>} />
+            <TBtn title="Italic" command="italic" isActive={activeFormats['italic']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>} />
+            <TBtn title="Underline" command="underline" isActive={activeFormats['underline']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg>} />
+            <TBtn title="Strikethrough" command="strikeThrough" isActive={activeFormats['strikeThrough']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><path d="M16 6C16 6 14.5 4 12 4s-5 1.5-5 4c0 1.6 1 2.7 2.5 3.5"/><path d="M8 18c0 0 1.5 2 4 2s5-1.5 5-4c0-1.6-1-2.7-2.5-3.5"/></svg>} />
+            <Sep />
+            {/* Color pickers */}
+            <div title="Text Color" style={{ display: 'flex', alignItems: 'center', padding: '2px' }}>
+              <input type="color" defaultValue="#1E293B" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => execCmd('foreColor', e.target.value)} style={{ width: 24, height: 24, border: '1px solid rgba(0,0,0,0.13)', borderRadius: 4, padding: 2, cursor: 'pointer' }} />
+            </div>
+            <div title="Highlight Color" style={{ display: 'flex', alignItems: 'center', padding: '2px', marginRight: 2 }}>
+              <input type="color" defaultValue="#FFFFFF" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => execCmd('hiliteColor', e.target.value)} style={{ width: 24, height: 24, border: '1px solid rgba(0,0,0,0.13)', borderRadius: 4, padding: 2, cursor: 'pointer' }} />
+            </div>
+            <Sep />
+            {/* Alignment */}
+            <TBtn title="Align Left" command="justifyLeft" isActive={activeFormats['justifyLeft']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>} />
+            <TBtn title="Align Center" command="justifyCenter" isActive={activeFormats['justifyCenter']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>} />
+            <TBtn title="Align Right" command="justifyRight" isActive={activeFormats['justifyRight']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg>} />
+            <TBtn title="Justify" command="justifyFull" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>} />
+            <Sep />
+            {/* Link / Table */}
+            <TBtn title="Insert Link" command="createLink" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>} />
+            <TBtn title="Insert Table" command="insertTable" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>} />
+            <Sep />
+            {/* Clear formatting */}
+            <TBtn title="Clear Formatting" command="clearFormat" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>} />
+            <div style={{ flex: 1 }} />
+            {/* Save */}
             <button
-              onClick={() => setVersionOpen((o) => !o)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                width: '100%',
-                padding: '7px 10px',
-                borderRadius: 8,
-                border: '1px solid rgba(0,196,196,0.25)',
-                background: versionOpen ? 'rgba(0,196,196,0.08)' : '#f8fafc',
-                fontSize: 11.5,
-                fontWeight: 600,
-                color: '#0d212c',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
+              onClick={() => { setHasUnsaved(false); showToast('Section saved successfully.') }}
+              disabled={!hasUnsaved}
+              style={{ padding: '5px 14px', background: hasUnsaved ? '#0d212c' : '#cbd5e1', color: '#fff', border: 'none', borderRadius: 6, cursor: hasUnsaved ? 'pointer' : 'not-allowed', fontSize: 12.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, transition: 'background 0.15s' }}
             >
-              <svg
-                width="12"
-                height="12"
-                fill="none"
-                stroke="#00C4C4"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-              <span
-                style={{
-                  flex: 1,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {selectedVersion.label}
-              </span>
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  padding: '1px 5px',
-                  borderRadius: 4,
-                  background: isEditable ? 'rgba(0,196,196,0.15)' : '#f1f5f9',
-                  color: isEditable ? '#00a0a0' : '#94a3b8',
-                  flexShrink: 0,
-                }}
-              >
-                {isEditable ? 'Edit' : 'View'}
-              </span>
-              <svg
-                width="9"
-                height="9"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                style={{
-                  flexShrink: 0,
-                  transition: 'transform 0.15s',
-                  transform: versionOpen ? 'rotate(180deg)' : 'none',
-                }}
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save
             </button>
-            {versionOpen && (
+          </div>
+
+          {/* Scroll area */}
+          <div ref={scrollAreaRef} id="sow-editor-scroll-area" style={{ flex: 1, overflowY: 'auto', background: '#f1f5f9', padding: '28px 20px 64px', position: 'relative' }}>
+            {/* Document card */}
+            <div style={{ margin: '0 auto', maxWidth: 820, background: '#fff', minHeight: 900, borderRadius: 4, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: '56px 64px' }}>
               <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  marginTop: 4,
-                  background: '#fff',
-                  border: '1px solid rgba(0,196,196,0.2)',
-                  borderRadius: 10,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-                  zIndex: 50,
-                  overflow: 'hidden',
-                }}
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                onInput={() => { updateFormats(); setHasUnsaved(true) }}
+                onKeyUp={updateFormats}
+                onMouseUp={updateFormats}
+                style={{ outline: 'none', fontSize: 14.5, lineHeight: 1.75, color: '#374151', minHeight: 600 }}
+              />
+            </div>
+
+            {/* Floating regenerate */}
+            {showFloatingRegen && !showRegenModal && (
+              <div
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { setShowFloatingRegen(false); setShowRegenModal(true) }}
+                style={{ position: 'absolute', top: floatingPos.top, left: floatingPos.left, zIndex: 20, display: 'flex', alignItems: 'center', gap: 6, background: '#0d212c', color: '#fff', padding: '7px 14px', borderRadius: 24, cursor: 'pointer', boxShadow: '0 4px 12px rgba(13,33,44,0.25)', fontSize: 12.5, fontWeight: 600 }}
               >
-                {versions.map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => {
-                      setVersion(v.id)
-                      setVersionOpen(false)
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      padding: '8px 12px',
-                      fontSize: 11.5,
-                      fontWeight: v.id === version ? 700 : 500,
-                      color: v.id === version ? '#00a0a0' : '#0d212c',
-                      background: v.id === version ? 'rgba(0,196,196,0.06)' : 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {v.label}
-                    <span
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 600,
-                        padding: '1px 5px',
-                        borderRadius: 4,
-                        background: v.editable ? 'rgba(0,196,196,0.12)' : '#f1f5f9',
-                        color: v.editable ? '#00a0a0' : '#94a3b8',
-                      }}
-                    >
-                      {v.editable ? 'Edit' : 'View'}
-                    </span>
-                  </button>
-                ))}
+                ✨ Regenerate
               </div>
             )}
           </div>
-          {/* Mini comment KPIs */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 0 8px' }}>
-            <button
-              onClick={() => setShowCommentPanel((v) => !v)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: showCommentPanel ? 'rgba(0,196,196,0.08)' : 'none',
-                border: 'none',
-                borderRadius: 6,
-                padding: '3px 6px',
-                cursor: 'pointer',
-                width: '100%',
-              }}
-            >
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>
-                Total Comments
-              </span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#00C4C4' }}>
-                {totalComments}
-              </span>
-            </button>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '3px 6px',
-              }}
-            >
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Comments Open</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>
-                {openComments}
-              </span>
-            </div>
-          </div>
-          <div style={{ height: 1, background: 'rgba(0,196,196,0.1)', marginBottom: 6 }} />
-          {SOW_DRAFT_SECTIONS.map((sec) => {
-            const isActive = activeSection === sec.id
-            return (
-              <button
-                key={sec.id}
-                onClick={() => scrollTo(sec.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  padding: '8px 10px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: isActive ? 'rgba(0,196,196,0.1)' : 'transparent',
-                  color: isActive ? '#00a0a0' : '#374151',
-                  fontSize: 12,
-                  fontWeight: isActive ? 700 : 500,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'background 0.12s',
-                }}
-              >
-                <span
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: '50%',
-                    background: isActive ? 'rgba(0,196,196,0.15)' : 'rgba(0,0,0,0.06)',
-                    color: isActive ? '#00a0a0' : '#94a3b8',
-                    fontSize: 9,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  {SOW_DRAFT_SECTIONS.indexOf(sec) + 1}
-                </span>
-                {sec.title}
-                {comments.filter((c) => c.sectionId === sec.id).length > 0 && (
-                  <span
-                    style={{
-                      marginLeft: 'auto',
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: '#fef3c7',
-                      border: '1px solid #fde68a',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: '#d97706',
-                    }}
-                  >
-                    {comments.filter((c) => c.sectionId === sec.id).length}
-                  </span>
-                )}
-              </button>
-            )
-          })}
         </div>
-
-        {/* Document pane */}
-        <div ref={rightRef} style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
-          {/* S0: Background */}
-          <SectionBlock id="ds0" num={1} title="Background">
-            <EditableP
-              sectionId="ds0"
-              id="ds0"
-              text="Meridian Healthcare is a leading mid-market healthcare provider operating 14 hospitals and 38 outpatient clinics across the Asia-Pacific region. Over the past three years, the organisation has undergone significant expansion through acquisitions, resulting in a fragmented procurement landscape with five distinct ERP environments, no unified vendor registry, and an estimated 23% of purchase orders processed manually."
-            />
-            <EditableP
-              sectionId="ds0"
-              id="ds0b"
-              text="In response to a CFO-led cost reduction mandate, the executive team commissioned an independent operational review in Q2 2026. The review identified procurement inefficiencies as the single largest controllable cost lever, with an addressable saving of USD 6–9 million annually through process standardisation and platform consolidation. This Statement of Work sets out the scope, approach, and commercial terms for the first phase of that transformation."
-            />
-          </SectionBlock>
-
-          {/* S1: Executive Summary */}
-          <SectionBlock id="ds1" num={2} title="Executive Summary">
-            <EditableP
-              sectionId="ds1"
-              id="ds1"
-              text="This Statement of Work governs the end-to-end delivery of Meridian Healthcare's Procurement Platform Transformation engagement. The objective is to reduce the average procurement cycle from 45 days to under 27 days through the implementation of an automated procure-to-pay platform, vendor onboarding workflows, and a centralised analytics dashboard."
-            />
-            <EditableP
-              sectionId="ds1"
-              id="ds1b"
-              text="The engagement is structured across three phases over six months, covering 128 procurement staff across six regional offices. The executive sponsor — jointly the CFO and CPO — has formally signed off on the transformation roadmap and a budget allocation of USD 4.2 million within the FY2027 capital expenditure plan."
-            />
-          </SectionBlock>
-
-          {/* S2: Objectives */}
-          <SectionBlock id="ds2" num={3} title="Objectives">
-            <EditableP
-              sectionId="ds2"
-              id="ds2"
-              text="The primary objectives of this engagement are to: (1) consolidate five ERP procurement modules into a single procure-to-pay platform, (2) reduce the average PO cycle time from 45 to 27 days, (3) establish a unified vendor registry with automated onboarding, and (4) deliver real-time spend analytics to the CFO's office."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['OBJ', 'Objective', 'Metric', 'Target'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['O1', 'Platform Consolidation', 'Number of active ERP modules', 'From 5 to 1'],
-                  ['O2', 'Cycle Time Reduction', 'Average PO cycle time', '45 → 27 days'],
-                  ['O3', 'Vendor Onboarding', 'Onboarding lead time', '14 → 5 days'],
-                  ['O4', 'Spend Visibility', '% spend captured in analytics', 'From 41% to 95%'],
-                  ['O5', 'Compliance', '% POs with full audit trail', 'From 68% to 100%'],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(
-                          ci === 0
-                            ? { fontWeight: 700 }
-                            : ci === 3
-                              ? { fontWeight: 600, color: '#16a34a' }
-                              : {}
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S3: Scope of Work */}
-          <SectionBlock id="ds3" num={4} title="Scope of Work">
-            <EditableP
-              sectionId="ds3"
-              id="ds3"
-              text="Phase 1 focuses on three priority sub-processes: Purchase Order Automation, Vendor Onboarding, and Invoice Reconciliation. Sub-processes 4–6 are deferred to Phase 2 pending budget confirmation."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['#', 'Sub-Process', 'Phase', 'Status'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['1', 'Purchase Order Automation', 'Phase 1', 'In Scope'],
-                  ['2', 'Vendor Onboarding', 'Phase 1', 'In Scope'],
-                  ['3', 'Invoice Reconciliation', 'Phase 1', 'In Scope'],
-                  ['4', 'Contract Management', 'Phase 2', 'Deferred'],
-                  ['5', 'Supplier Performance', 'Phase 2', 'Deferred'],
-                  ['6', 'Spend Analytics', 'Phase 2', 'Deferred'],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(
-                          ci === 3
-                            ? { color: c === 'In Scope' ? '#16a34a' : '#94a3b8', fontWeight: 600 }
-                            : ci === 0
-                              ? { fontWeight: 700 }
-                              : {}
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S4: Out of Scope */}
-          <SectionBlock id="ds4" num={5} title="Out of Scope">
-            <EditableP
-              sectionId="ds4"
-              id="ds4"
-              text="The following items are explicitly out of scope for this engagement. Any requests to include them will be treated as a Change Request and priced separately."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['#', 'Item', 'Rationale'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    '1',
-                    'HR / Payroll module integration',
-                    'Separate workstream under IT Transformation Programme',
-                  ],
-                  [
-                    '2',
-                    'ERP infrastructure migration',
-                    'Owned by the internal IT team; handover point agreed at API boundary',
-                  ],
-                  [
-                    '3',
-                    'Legal contract authoring',
-                    'Out of procurement scope; governed by Legal Operations team',
-                  ],
-                  [
-                    '4',
-                    'Physical inventory management',
-                    'Addressed in separate Inventory Optimisation engagement',
-                  ],
-                  [
-                    '5',
-                    'Training content translation',
-                    'Meridian internal L&D team to handle localisation post go-live',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S5: Requirements */}
-          <SectionBlock id="ds5" num={6} title="Requirements">
-            <EditableP
-              sectionId="ds5"
-              id="ds5"
-              text="The following functional and non-functional requirements have been validated with the client in the Discovery workshop held on 12 August 2026."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['ID', 'Requirement', 'Type', 'Priority'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'FR-01',
-                    'System must support 3-way PO matching (PO / GRN / Invoice)',
-                    'Functional',
-                    'P1',
-                  ],
-                  [
-                    'FR-02',
-                    'Vendor portal must allow self-service document upload',
-                    'Functional',
-                    'P1',
-                  ],
-                  [
-                    'FR-03',
-                    'Automated escalation after 48-hour PO approval SLA breach',
-                    'Functional',
-                    'P1',
-                  ],
-                  [
-                    'FR-04',
-                    'Role-based access control for approvals (Level 1–4)',
-                    'Functional',
-                    'P1',
-                  ],
-                  [
-                    'NFR-01',
-                    'System uptime of 99.9% excluding scheduled maintenance',
-                    'Non-Functional',
-                    'P1',
-                  ],
-                  [
-                    'NFR-02',
-                    'Page load time < 2s at P95 under 500 concurrent users',
-                    'Non-Functional',
-                    'P2',
-                  ],
-                  [
-                    'NFR-03',
-                    'All data at rest and in transit encrypted (AES-256 / TLS 1.3)',
-                    'Non-Functional',
-                    'P1',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(
-                          ci === 0
-                            ? { fontWeight: 700, fontFamily: 'monospace', fontSize: 11 }
-                            : ci === 3
-                              ? { fontWeight: 600, color: c === 'P1' ? '#dc2626' : '#d97706' }
-                              : {}
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S6: Approach & Methodology */}
-          <SectionBlock id="ds6" num={7} title="Approach & Methodology">
-            <EditableP
-              sectionId="ds6"
-              id="ds6"
-              text="We will follow an Agile-Waterfall hybrid methodology, with Discovery and Architecture conducted as fixed-scope waterfall phases, and Build & Test conducted in two-week sprints. This balances the need for upfront design rigour (given the regulatory environment) with flexibility during the build phase."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Phase', 'Approach', 'Duration', 'Key Activity'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'Discovery',
-                    'Waterfall',
-                    '6 weeks',
-                    'Stakeholder workshops, current-state mapping, solution design',
-                  ],
-                  [
-                    'Architecture',
-                    'Waterfall',
-                    '4 weeks',
-                    'System design, integration specification, security review',
-                  ],
-                  [
-                    'Build',
-                    'Agile (sprints)',
-                    '10 weeks',
-                    'Iterative feature development, unit testing, peer review',
-                  ],
-                  [
-                    'Test & UAT',
-                    'Agile',
-                    '4 weeks',
-                    'Functional testing, performance testing, user acceptance',
-                  ],
-                  [
-                    'Hypercare',
-                    'Fixed',
-                    '4 weeks',
-                    'Post go-live support, issue resolution, KPI baselining',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S7: Roles & Responsibilities */}
-          <SectionBlock id="ds7" num={8} title="Roles & Responsibilities">
-            <EditableP
-              sectionId="ds7"
-              id="ds7"
-              text="The following RACI matrix defines accountability across the engagement. C = Consulted, A = Accountable, R = Responsible, I = Informed."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Activity', 'Consultant', 'PMO', 'IT', 'Finance', 'Legal'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['Solution Design', 'R/A', 'C', 'C', 'I', 'I'],
-                  ['Platform Configuration', 'R/A', 'I', 'C', 'I', 'I'],
-                  ['Data Migration', 'R', 'A', 'R', 'C', 'I'],
-                  ['UAT Coordination', 'C', 'A', 'R', 'R', 'I'],
-                  ['Change Management', 'R', 'A', 'C', 'I', 'I'],
-                  ['Go-Live Sign-off', 'C', 'A', 'R', 'C', 'I'],
-                  ['Legal Review', 'I', 'C', 'I', 'I', 'R/A'],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(
-                          ci === 0
-                            ? { fontWeight: 600 }
-                            : {
-                                textAlign: 'center',
-                                fontWeight: c.includes('A') ? 700 : 400,
-                                color: c.includes('R')
-                                  ? '#00a0a0'
-                                  : c.includes('A')
-                                    ? '#7c3aed'
-                                    : '#374151',
-                              }
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S8: Deliverables */}
-          <SectionBlock id="ds8" num={9} title="Deliverables">
-            <EditableP
-              sectionId="ds8"
-              id="ds8"
-              text="All deliverables are subject to formal client acceptance within 5 business days of submission. Non-response within this window constitutes deemed acceptance."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Deliverable', 'Description', 'Target Date', 'Owner'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['D1', 'Solution Design Document', '30 Nov 2026', 'Rohan Mehta'],
-                  ['D2', 'Configured PO Automation Module', '31 Jan 2027', 'Priya Sharma'],
-                  ['D3', 'Vendor Onboarding Portal', '28 Feb 2027', 'Karan Bose'],
-                  ['D4', 'Invoice Reconciliation Engine', '31 Mar 2027', 'Rohan Mehta'],
-                  ['D5', 'User & Admin Documentation', '14 Apr 2027', 'Priya Sharma'],
-                  ['D6', 'Go-Live Readiness Sign-off', '30 Apr 2027', 'Ashika Jain'],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S9: Timeline & Milestones */}
-          <SectionBlock id="ds9" num={10} title="Timeline & Milestones">
-            <EditableP
-              sectionId="ds9"
-              id="ds9"
-              text="The engagement runs from 1 November 2026 to 30 April 2027, structured across three phases with formal milestone gates at M2, M4, and M6."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Milestone', 'Phase', 'Date', 'Exit Criteria', 'Owner'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['M1', 'Kick-off', '1 Nov 2026', 'Project charter signed', 'Ashika Jain'],
-                  ['M2', 'Discovery', '31 Jan 2027', 'Solution design approved', 'Rohan Mehta'],
-                  ['M3', 'Build', '28 Feb 2027', 'PO & Vendor modules UAT passed', 'Priya Sharma'],
-                  [
-                    'M4',
-                    'Integration',
-                    '31 Mar 2027',
-                    'Invoice engine integrated & tested',
-                    'Karan Bose',
-                  ],
-                  ['M5', 'Training', '18 Apr 2027', 'All 128 staff trained', 'Ashika Jain'],
-                  ['M6', 'Go-Live', '30 Apr 2027', 'Executive sign-off received', 'Ashika Jain'],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S10: Commercials */}
-          <SectionBlock id="ds10" num={11} title="Commercials">
-            <EditableP
-              sectionId="ds10"
-              id="ds10"
-              text="This is a fixed-price engagement. All travel and expenses are included within the agreed cap per Schedule B. Milestone payments are triggered on formal client acceptance of the corresponding deliverable."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Milestone', 'Payment (%)', 'Amount (USD)', 'Trigger'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['M1 — Kick-off', '15%', '$630,000', 'Project charter signed'],
-                  ['M2 — Discovery', '20%', '$840,000', 'Solution design approved'],
-                  ['M3 — Build', '25%', '$1,050,000', 'UAT passed'],
-                  ['M4 — Integration', '20%', '$840,000', 'Integration sign-off'],
-                  ['M6 — Go-Live', '20%', '$840,000', 'Executive sign-off'],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell(ci === 2 ? { fontWeight: 700 } : {})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-                <tr style={{ background: 'rgba(0,196,196,0.05)' }}>
-                  <td style={cell({ fontWeight: 800 })}>Total</td>
-                  <td style={cell({ fontWeight: 800 })}>100%</td>
-                  <td style={cell({ fontWeight: 800, color: '#00a0a0' })}>$4,200,000</td>
-                  <td style={cell()}></td>
-                </tr>
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S11: Assumptions */}
-          <SectionBlock id="ds11" num={12} title="Assumptions">
-            <EditableP
-              sectionId="ds11"
-              id="ds11"
-              text="The following assumptions have been agreed with the client. If any assumption proves incorrect, a formal Change Request will be raised to assess impact on scope, timeline, and cost."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['#', 'Assumption', 'Owner'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'A1',
-                    'All data migration will be HIPAA and PDPA compliant, verified by client Legal',
-                    'Client',
-                  ],
-                  [
-                    'A2',
-                    'Source ERP data export in agreed CSV/XML format will be provided by 15 Nov 2026',
-                    'Client IT',
-                  ],
-                  ['A3', 'No scope changes beyond agreed Change Request process', 'Ashika Jain'],
-                  [
-                    'A4',
-                    'Client to provide dedicated UAT resources (min. 8 FTEs) for Phases 3–4',
-                    'Client PMO',
-                  ],
-                  [
-                    'A5',
-                    'Network connectivity between all six offices to meet NFR-02 bandwidth requirements',
-                    'Client IT',
-                  ],
-                  [
-                    'A6',
-                    'ERP migration workstream completes API boundary handover by 31 Jan 2027',
-                    'Rohan Mehta',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S12: Risks & Mitigations */}
-          <SectionBlock id="ds12" num={13} title="Risks & Mitigations">
-            <EditableP
-              sectionId="ds12"
-              id="ds12"
-              text="The following risks have been identified during scoping. Each is tracked on the joint risk register maintained by the PMO."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['ID', 'Risk', 'Likelihood', 'Impact', 'Mitigation'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'R1',
-                    'Key stakeholder unavailability delays Discovery workshops',
-                    'Medium',
-                    'High',
-                    'Escalation path via CPO; weekly steering committee',
-                  ],
-                  [
-                    'R2',
-                    'Data quality issues in source ERP extend migration timeline',
-                    'High',
-                    'High',
-                    'Data audit by 30 Oct 2026; cleanse budget reserved',
-                  ],
-                  [
-                    'R3',
-                    'Integration complexity with legacy billing system underestimated',
-                    'Medium',
-                    'High',
-                    'Spike investigation in Sprint 1; time-boxed to 5 days',
-                  ],
-                  [
-                    'R4',
-                    'Change fatigue — low user adoption post go-live',
-                    'Medium',
-                    'Medium',
-                    'Change management workstream; champion network in each office',
-                  ],
-                  [
-                    'R5',
-                    'Regulatory change affecting HIPAA requirements mid-project',
-                    'Low',
-                    'High',
-                    'Monthly Legal review; contractual clause for compliance changes',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(
-                          ci === 0
-                            ? { fontWeight: 700 }
-                            : ci === 2
-                              ? {
-                                  fontWeight: 600,
-                                  color:
-                                    c === 'High'
-                                      ? '#dc2626'
-                                      : c === 'Medium'
-                                        ? '#d97706'
-                                        : '#16a34a',
-                                }
-                              : ci === 3
-                                ? {
-                                    fontWeight: 600,
-                                    color:
-                                      c === 'High'
-                                        ? '#dc2626'
-                                        : c === 'Medium'
-                                          ? '#d97706'
-                                          : '#16a34a',
-                                  }
-                                : {}
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S13: Security */}
-          <SectionBlock id="ds13" num={14} title="Security">
-            <EditableP
-              sectionId="ds13"
-              id="ds13"
-              text="Security controls will be designed and implemented in alignment with ISO 27001, HIPAA Security Rule, and Meridian's internal Information Security Policy v3.2. The following controls are mandatory for go-live."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Control', 'Standard', 'Implementation'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'Encryption at rest',
-                    'AES-256',
-                    'All PII and financial data in DB and file store',
-                  ],
-                  [
-                    'Encryption in transit',
-                    'TLS 1.3',
-                    'All client-server and service-to-service communication',
-                  ],
-                  ['Authentication', 'SAML 2.0 / SSO', 'Federated via Meridian Azure AD'],
-                  [
-                    'Authorisation',
-                    'RBAC (4 levels)',
-                    'Configured in platform; reviewed quarterly',
-                  ],
-                  ['Audit logging', 'ISO 27001 A.12', 'All user actions logged; retained 7 years'],
-                  ['Pen testing', 'OWASP Top 10', 'Before UAT and before go-live'],
-                  [
-                    'Vulnerability scanning',
-                    'CVE feed',
-                    'Weekly automated scan; P1 patched within 24h',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(
-                          ci === 1
-                            ? { fontFamily: 'monospace', fontSize: 11, color: '#7c3aed' }
-                            : {}
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S14: Architecture */}
-          <SectionBlock id="ds14" num={15} title="Architecture">
-            <EditableP
-              sectionId="ds14"
-              id="ds14"
-              text="The solution is built on a three-tier, cloud-native architecture deployed on Azure (APAC East region). All components use managed services to minimise infrastructure overhead and maximise availability."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Layer', 'Component', 'Technology', 'Notes'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'Presentation',
-                    'Vendor & Staff Portal',
-                    'React / Next.js',
-                    'Hosted on Azure Static Web Apps',
-                  ],
-                  [
-                    'API',
-                    'Procure-to-Pay Engine',
-                    'Node.js / FastAPI',
-                    'Azure Container Apps; auto-scaling',
-                  ],
-                  [
-                    'Integration',
-                    'ERP Connector',
-                    'MuleSoft ESB',
-                    'Bi-directional sync with SAP & Oracle',
-                  ],
-                  [
-                    'Data',
-                    'Primary Database',
-                    'Azure SQL (Business Critical)',
-                    'Geo-redundant; daily backup',
-                  ],
-                  [
-                    'Data',
-                    'Document Store',
-                    'Azure Blob Storage',
-                    'Encrypted; lifecycle policy 7 years',
-                  ],
-                  ['Identity', 'IAM', 'Azure AD B2C + SAML', 'Federated SSO for all users'],
-                  [
-                    'Monitoring',
-                    'Observability',
-                    'Azure Monitor + Datadog',
-                    'Alerts, dashboards, PagerDuty integration',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(
-                          ci === 2
-                            ? { fontFamily: 'monospace', fontSize: 11, color: '#7c3aed' }
-                            : {}
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S15: Acceptance Criteria */}
-          <SectionBlock id="ds15" num={16} title="Acceptance Criteria">
-            <EditableP
-              sectionId="ds15"
-              id="ds15"
-              text="The following criteria must be met for each milestone to be formally accepted. The PMO will issue a signed acceptance certificate within 5 business days of receiving the deliverable."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Milestone', 'Criteria', 'Verification Method'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'M2 — Discovery',
-                    'Solution Design Document reviewed and signed off by CTO',
-                    'Email sign-off from CTO within 5 business days',
-                  ],
-                  [
-                    'M3 — Build',
-                    'All P1 test cases pass with zero critical defects open',
-                    'Test results report submitted by QA lead',
-                  ],
-                  [
-                    'M4 — Integration',
-                    'End-to-end PO cycle completes in < 27 days in staging environment',
-                    'Performance test report, 1,000-transaction load test',
-                  ],
-                  [
-                    'M5 — Training',
-                    '≥ 90% of staff complete training and pass post-assessment',
-                    'LMS completion report from Meridian L&D',
-                  ],
-                  [
-                    'M6 — Go-Live',
-                    'KPI baseline captured; zero P1 incidents in 10-day hypercare window',
-                    'Hypercare report signed by PMO',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S16: Change Management */}
-          <SectionBlock id="ds16" num={17} title="Change Management">
-            <EditableP
-              sectionId="ds16"
-              id="ds16"
-              text="Any change to scope, timeline, or commercials must follow the Change Request process defined below. No informal scope changes are permitted."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Step', 'Activity', 'Owner', 'SLA'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['1', 'Raise CR Form (template in Schedule C)', 'Requestor', 'Any time'],
-                  [
-                    '2',
-                    'Impact assessment (scope, cost, timeline)',
-                    'Consultant PMO',
-                    '3 business days',
-                  ],
-                  [
-                    '3',
-                    'CR presented to Steering Committee',
-                    'Ashika Jain',
-                    'Next scheduled SteerCo',
-                  ],
-                  [
-                    '4',
-                    'Client approval / rejection',
-                    'Client Sponsor',
-                    '2 business days post SteerCo',
-                  ],
-                  [
-                    '5',
-                    'CR incorporated into project baseline',
-                    'Ashika Jain',
-                    '1 business day post approval',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S17: Support & Handover */}
-          <SectionBlock id="ds17" num={18} title="Support & Handover">
-            <EditableP
-              sectionId="ds17"
-              id="ds17"
-              text="A structured hypercare period of 4 weeks post go-live is included in this SOW. Following hypercare, the engagement transitions to Meridian's internal IT operations team under the terms defined below."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Phase', 'Duration', 'Coverage', 'Owner'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'Hypercare',
-                    'Weeks 1–2 post go-live',
-                    '24×7 on-call; P1 response 1h',
-                    'Karan Bose',
-                  ],
-                  [
-                    'Hypercare',
-                    'Weeks 3–4 post go-live',
-                    'Business hours; P1 response 4h',
-                    'Priya Sharma',
-                  ],
-                  [
-                    'Handover',
-                    'End of Week 4',
-                    'Knowledge transfer, runbooks, admin credentials',
-                    'Rohan Mehta',
-                  ],
-                  [
-                    'BAU Support',
-                    'Post handover (out of scope)',
-                    'Meridian IT BAU team; ServiceNow tickets',
-                    'Meridian IT',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td key={ci} style={cell({})}>
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S18: SLAs */}
-          <SectionBlock id="ds18" num={19} title="SLAs">
-            <EditableP
-              sectionId="ds18"
-              id="ds18"
-              text="The following SLAs apply during the hypercare period. Post-handover SLAs are governed by Meridian's internal IT BAU agreement."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Priority', 'Definition', 'Response Time', 'Resolution Target'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'P1 — Critical',
-                    'Platform down or major data integrity issue',
-                    '1 hour (24×7 Weeks 1–2; 4h Weeks 3–4)',
-                    '4 hours (8h Weeks 3–4)',
-                  ],
-                  [
-                    'P2 — High',
-                    'Core feature unavailable; significant user impact',
-                    '4 business hours',
-                    '1 business day',
-                  ],
-                  [
-                    'P3 — Medium',
-                    'Non-critical feature impaired; workaround available',
-                    '1 business day',
-                    '3 business days',
-                  ],
-                  [
-                    'P4 — Low',
-                    'Cosmetic or minor issue; no operational impact',
-                    '3 business days',
-                    '10 business days',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(
-                          ci === 0
-                            ? {
-                                fontWeight: 700,
-                                color: c.startsWith('P1')
-                                  ? '#dc2626'
-                                  : c.startsWith('P2')
-                                    ? '#d97706'
-                                    : c.startsWith('P3')
-                                      ? '#2563eb'
-                                      : '#64748b',
-                              }
-                            : {}
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-
-          {/* S19: Terms & Conditions */}
-          <SectionBlock id="ds19" num={20} title="Terms & Conditions">
-            <EditableP
-              sectionId="ds19"
-              id="ds19"
-              text="This SOW is governed by the Master Services Agreement (MSA) dated 1 October 2026 between Ashika Jain Consulting and Meridian Healthcare. In the event of any conflict, the MSA takes precedence."
-            />
-            <table
-              style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}
-            >
-              <thead>
-                <tr>
-                  {['Clause', 'Summary'].map((h) => (
-                    <th key={h} style={thStyle}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  [
-                    'Payment Terms',
-                    'Net 30 from invoice date; late payment interest at 2% per month',
-                  ],
-                  [
-                    'IP Ownership',
-                    'All custom-built deliverables become client IP upon final payment; pre-existing consultant IP retained',
-                  ],
-                  [
-                    'Confidentiality',
-                    'Both parties bound by NDA (Schedule D); 3-year post-engagement term',
-                  ],
-                  [
-                    'Liability Cap',
-                    'Total liability limited to the value of fees paid under this SOW',
-                  ],
-                  [
-                    'Termination for Convenience',
-                    'Either party may terminate with 30 days written notice; fees for work completed to date are payable',
-                  ],
-                  [
-                    'Force Majeure',
-                    'Neither party liable for delays caused by events beyond reasonable control',
-                  ],
-                  [
-                    'Governing Law',
-                    'Laws of Singapore; disputes resolved by ICC arbitration in Singapore',
-                  ],
-                  [
-                    'Variation',
-                    'Any changes to these terms must be in writing and signed by both parties',
-                  ],
-                ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
-                    {row.map((c, ci) => (
-                      <td
-                        key={ci}
-                        style={cell(ci === 0 ? { fontWeight: 700, whiteSpace: 'nowrap' } : {})}
-                      >
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </SectionBlock>
-        </div>
-
-        {/* Word-style comment sidebar */}
-        {showCommentPanel && (
-          <div
-            style={{
-              width: 280,
-              flexShrink: 0,
-              borderLeft: '1px solid rgba(0,196,196,0.12)',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div
-              style={{
-                padding: '12px 14px 10px',
-                borderBottom: '1px solid rgba(0,196,196,0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexShrink: 0,
-              }}
-            >
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c' }}>
-                Comments ({comments.length})
-              </span>
-              <button
-                onClick={() => setShowCommentPanel(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#94a3b8',
-                  fontSize: 18,
-                  lineHeight: 1,
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-              {comments.length === 0 ? (
-                <div
-                  style={{
-                    padding: '24px 14px',
-                    textAlign: 'center',
-                    color: '#94a3b8',
-                    fontSize: 12,
-                  }}
-                >
-                  No comments yet
-                </div>
-              ) : (
-                comments.map((c) => {
-                  const sec = SOW_DRAFT_SECTIONS.find((s) => s.id === c.sectionId)
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => {
-                        const el = sectionRefs.current[c.sectionId]
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                      }}
-                      style={{
-                        width: '100%',
-                        textAlign: 'left',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: '1px solid rgba(0,196,196,0.07)',
-                        padding: '10px 14px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 4,
-                      }}
-                      onMouseEnter={(e) => {
-                        ;(e.currentTarget as HTMLButtonElement).style.background =
-                          'rgba(0,196,196,0.04)'
-                      }}
-                      onMouseLeave={(e) => {
-                        ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: '#00a0a0',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.03em',
-                        }}
-                      >
-                        {sec?.title ?? c.sectionId}
-                      </span>
-                      <span style={{ fontSize: 12, color: '#374151', lineHeight: 1.5 }}>
-                        {c.text}
-                      </span>
-                      <span style={{ fontSize: 11, color: '#94a3b8' }}>@{c.assignee}</span>
-                    </button>
-                  )
-                })
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Non-blocking comment panel — anchored top-right of right pane, no backdrop */}
-      {commentingId && (
-        <>
-          {/* Invisible click-outside catcher */}
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 399 }}
-            onClick={() => {
-              setCommentingId(null)
-              setCommentText('')
-            }}
-          />
-          <div
-            style={{
-              position: 'fixed',
-              top: 120,
-              right: 32,
-              zIndex: 400,
-              background: '#fff',
-              borderRadius: 14,
-              padding: '20px 22px',
-              width: 400,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.06)',
-              border: '1px solid rgba(0,196,196,0.18)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 11,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 2,
-              }}
-            >
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>Add Comment</div>
-              <button
-                onClick={() => {
-                  setCommentingId(null)
-                  setCommentText('')
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#94a3b8',
-                  fontSize: 18,
-                  lineHeight: 1,
-                  padding: '0 4px',
-                }}
-              >
-                ✕
-              </button>
+      {/* ── Approve popup ──────────────────────────────────────────────────────── */}
+      {approvePopupIdx !== null && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setApprovePopupIdx(null)}>
+          <div style={{ background: '#fff', borderRadius: 14, width: 400, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Approve Section</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>"{tocItems[approvePopupIdx]?.title}"</div>
             </div>
-            <div style={{ fontSize: 11.5, color: '#64748b' }}>
-              Section:{' '}
-              <strong style={{ color: '#0d212c' }}>
-                {SOW_DRAFT_SECTIONS.find((s) => s.id === commentingId)?.title}
-              </strong>
+            <div style={{ padding: '18px 28px' }}>
+              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Comment (optional)</label>
+              <textarea value={approvalComment} onChange={(e) => setApprovalComment(e.target.value)} placeholder="Looks good, approved." style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(0,196,196,0.25)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'inherit' }} />
             </div>
-            <textarea
-              autoFocus
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Type your comment here…"
-              style={{
-                border: '1px solid #e2e8f0',
-                borderRadius: 8,
-                padding: '10px 12px',
-                fontSize: 13,
-                fontFamily: 'inherit',
-                resize: 'vertical',
-                minHeight: 80,
-                outline: 'none',
-                background: '#f8fafc',
-                lineHeight: 1.6,
-              }}
-            />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600, flexShrink: 0 }}>
-                Assign to:
-              </span>
-              <select
-                value={commentAssignee}
-                onChange={(e) => setCommentAssignee(e.target.value)}
-                style={{
-                  flex: 1,
-                  fontSize: 12.5,
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 7,
-                  padding: '6px 10px',
-                  fontFamily: 'inherit',
-                  background: '#fff',
-                  cursor: 'pointer',
-                }}
-              >
-                {SECTION_MEMBERS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
+            <div style={{ padding: '12px 28px 20px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button onClick={() => { setApprovePopupIdx(null); setApprovalComment('') }} style={{ padding: '8px 18px', background: 'transparent', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Cancel</button>
+              <button onClick={() => {
+                setTocItems((prev) => prev.map((t, i) => i === approvePopupIdx ? { ...t, status: 'Approved' as const } : t))
+                setApprovePopupIdx(null); setApprovalComment(''); showToast('Section approved.')
+              }} style={{ padding: '8px 18px', background: '#16a34a', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}>Approve</button>
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-              <button
-                onClick={() => {
-                  setCommentingId(null)
-                  setCommentText('')
-                }}
-                style={{
-                  padding: '7px 16px',
-                  borderRadius: 8,
-                  border: '1px solid #e2e8f0',
-                  background: '#fff',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: '#64748b',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveComment}
-                style={{
-                  padding: '7px 18px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: '#00C4C4',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#fff',
-                  cursor: 'pointer',
-                }}
-              >
-                Save Comment
+          </div>
+        </div>
+      )}
+
+      {/* ── Reject popup ───────────────────────────────────────────────────────── */}
+      {rejectPopupIdx !== null && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setRejectPopupIdx(null)}>
+          <div style={{ background: '#fff', borderRadius: 14, width: 400, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(239,68,68,0.15)' }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Rework Required</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>"{tocItems[rejectPopupIdx]?.title}"</div>
+            </div>
+            <div style={{ padding: '18px 28px' }}>
+              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Feedback for rework</label>
+              <textarea value={approvalComment} onChange={(e) => setApprovalComment(e.target.value)} placeholder="Please clarify the scope boundaries and update…" style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.25)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'inherit' }} />
+            </div>
+            <div style={{ padding: '12px 28px 20px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button onClick={() => { setRejectPopupIdx(null); setApprovalComment('') }} style={{ padding: '8px 18px', background: 'transparent', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Cancel</button>
+              <button onClick={() => {
+                setTocItems((prev) => prev.map((t, i) => i === rejectPopupIdx ? { ...t, status: 'Rejected' as const } : t))
+                setRejectPopupIdx(null); setApprovalComment(''); showToast('Section marked for rework.')
+              }} style={{ padding: '8px 18px', background: '#ef4444', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}>Send for Rework</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Reviewer popup ─────────────────────────────────────────────────── */}
+      {addReviewerIdx !== null && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => { setAddReviewerIdx(null); setReviewerSearch('') }}>
+          <div style={{ background: '#fff', borderRadius: 14, width: 380, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ padding: '22px 28px 16px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Assign Reviewer</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>"{tocItems[addReviewerIdx]?.title}"</div>
+            </div>
+            <div style={{ padding: '16px 28px 20px' }}>
+              {allMembers.map((name) => {
+                const already = tocItems[addReviewerIdx]?.reviewers.includes(name)
+                const matches = name.toLowerCase().includes(reviewerSearch.toLowerCase())
+                if (!matches) return null
+                return (
+                  <label key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer', fontSize: 13, color: '#374151' }}>
+                    <input type="checkbox" defaultChecked={already} onChange={(e) => {
+                      setTocItems((prev) => prev.map((t, i) => {
+                        if (i !== addReviewerIdx) return t
+                        return { ...t, reviewers: e.target.checked ? [...t.reviewers.filter(r => r !== name), name] : t.reviewers.filter(r => r !== name) }
+                      }))
+                    }} style={{ accentColor: '#00C4C4', width: 15, height: 15 }} />
+                    {name}
+                  </label>
+                )
+              })}
+            </div>
+            <div style={{ padding: '0 28px 20px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button onClick={() => { setAddReviewerIdx(null); setReviewerSearch('') }} style={{ padding: '8px 18px', background: 'transparent', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Cancel</button>
+              <button onClick={() => { setAddReviewerIdx(null); setReviewerSearch(''); showToast('Reviewer assigned.') }} style={{ padding: '8px 18px', background: '#0d212c', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Regenerate modal ───────────────────────────────────────────────────── */}
+      {showRegenModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setShowRegenModal(false)}>
+          <div style={{ background: '#fff', borderRadius: 14, width: 420, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,196,196,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>✨</div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Regenerate Selected Content</div>
+              </div>
+              <div style={{ fontSize: 13, color: '#64748b', marginTop: 8, lineHeight: 1.5 }}>Generate an improved version of the selected content while preserving the overall document context.</div>
+            </div>
+            <div style={{ padding: '18px 28px' }}>
+              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Additional Instructions</label>
+              <textarea value={regenInstructions} onChange={(e) => setRegenInstructions(e.target.value)} disabled={isRegenerating} placeholder="Examples: Make it more professional, Improve clarity, Rewrite in formal tone…" style={{ width: '100%', minHeight: 90, padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(0,196,196,0.25)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'inherit' }} />
+            </div>
+            <div style={{ padding: '12px 28px 20px', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: 10, borderTop: '1px solid rgba(0,196,196,0.1)' }}>
+              <button disabled={isRegenerating} onClick={() => { setShowRegenModal(false); setRegenInstructions('') }} style={{ padding: '8px 18px', background: 'transparent', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500, opacity: isRegenerating ? 0.5 : 1 }}>Cancel</button>
+              <button disabled={isRegenerating || !regenInstructions.trim()} onClick={() => {
+                setIsRegenerating(true)
+                setTimeout(() => {
+                  if (savedRange) {
+                    const sel = window.getSelection()
+                    if (sel) { sel.removeAllRanges(); sel.addRange(savedRange) }
+                    document.execCommand('insertText', false, `[Improved: "${regenInstructions}"]: ${selectedText}`)
+                    setHasUnsaved(true)
+                  }
+                  setIsRegenerating(false); setShowRegenModal(false); setRegenInstructions(''); showToast('Selected content regenerated.')
+                }, 1400)
+              }} style={{ padding: '8px 18px', background: '#0d212c', border: 'none', borderRadius: 8, cursor: (isRegenerating || !regenInstructions.trim()) ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, color: '#fff', opacity: (isRegenerating || !regenInstructions.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                {isRegenerating ? 'Generating…' : '✨ Regenerate'}
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </>
   )
 }
+
 
 /* ── Generating Animation ────────────────────────────────────────────────── */
 
