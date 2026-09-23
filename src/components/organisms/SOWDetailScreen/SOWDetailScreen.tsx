@@ -1852,20 +1852,6 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
 
         const kpis = [
           {
-            label: 'Sections complete',
-            value: `${completeSections.length} / ${totalSections}`,
-            pct: secPct,
-            color: '#00C4C4',
-            sub: `${sectionsWithItems.length} have items`,
-          },
-          {
-            label: 'Items answered',
-            value: `${answeredItems} / ${totalItems}`,
-            pct: itemPct,
-            color: '#16a34a',
-            sub: `${openItems} open`,
-          },
-          {
             label: 'Assumptions',
             value: (() => {
               const total = sections.reduce(
@@ -3020,8 +3006,51 @@ function SOWDraftTab() {
     </p>
   )
 
+  const totalComments = comments.length
+  const openComments = comments.filter((c) => !c.text.startsWith('[resolved]')).length
+
   return (
     <>
+      {/* Stats bar */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 0,
+          borderBottom: '1px solid rgba(0,196,196,0.1)',
+          flexShrink: 0,
+        }}
+      >
+        {[
+          { label: 'Total Comments', value: totalComments, color: '#00C4C4' },
+          { label: 'Comments Open', value: openComments, color: '#f59e0b' },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            style={{
+              padding: '10px 20px',
+              borderRight: '1px solid rgba(0,196,196,0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {stat.label}
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 700, color: stat.color, lineHeight: 1 }}>
+              {stat.value}
+            </span>
+          </div>
+        ))}
+      </div>
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Left nav */}
         <div
