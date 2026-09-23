@@ -3964,6 +3964,117 @@ function SOWDraftTab() {
   const [approvalComment, setApprovalComment] = useState('')
   const [toastMsg, setToastMsg] = useState('')
 
+  // ── Inline document comments ────────────────────────────────────────────────
+  type CommentReply = { id: string; author: string; text: string; timestamp: string }
+  type DocComment = {
+    id: string
+    sectionTitle: string
+    anchorText: string
+    text: string
+    assignee: string
+    author: string
+    timestamp: string
+    resolved: boolean
+    replies: CommentReply[]
+  }
+  const docCardRef = useRef<HTMLDivElement>(null)
+  const [hoverBlock, setHoverBlock] = useState<{
+    top: number
+    text: string
+    sectionTitle: string
+  } | null>(null)
+  const [commentPopup, setCommentPopup] = useState<{
+    top: number
+    anchorText: string
+    sectionTitle: string
+  } | null>(null)
+  const [newCommentText, setNewCommentText] = useState('')
+  const [newCommentAssignee, setNewCommentAssignee] = useState('')
+  const [showCommentsPanel, setShowCommentsPanel] = useState(false)
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
+  const [comments, setComments] = useState<DocComment[]>([
+    {
+      id: 'c1',
+      sectionTitle: 'Background',
+      anchorText: 'The client currently operates a fragmented technology landscape',
+      text: 'Can we cite the specific legacy systems named in the RFP here instead of speaking generally?',
+      assignee: 'Rohan Mehta',
+      author: 'Ashika Jain',
+      timestamp: '2 hours ago',
+      resolved: false,
+      replies: [
+        {
+          id: 'c1r1',
+          author: 'Rohan Mehta',
+          text: 'Good catch — I’ll pull the system names from Appendix A and update this paragraph.',
+          timestamp: '1 hour ago',
+        },
+      ],
+    },
+    {
+      id: 'c2',
+      sectionTitle: 'Executive Summary',
+      anchorText: 'This is auto-generated content for the section',
+      text: 'This placeholder line needs to be replaced before we send this out — flagging for final pass.',
+      assignee: 'Priya Sharma',
+      author: 'Ashika Jain',
+      timestamp: 'Yesterday',
+      resolved: true,
+      replies: [],
+    },
+  ])
+
+  const addComment = () => {
+    if (!commentPopup || !newCommentText.trim()) return
+    setComments((prev) => [
+      ...prev,
+      {
+        id: `c${Date.now()}`,
+        sectionTitle: commentPopup.sectionTitle,
+        anchorText: commentPopup.anchorText,
+        text: newCommentText.trim(),
+        assignee: newCommentAssignee || 'Unassigned',
+        author: 'Ashika Jain',
+        timestamp: 'Just now',
+        resolved: false,
+        replies: [],
+      },
+    ])
+    setCommentPopup(null)
+    setHoverBlock(null)
+    setNewCommentText('')
+    setNewCommentAssignee('')
+  }
+
+  const addReply = (commentId: string) => {
+    const text = (replyDrafts[commentId] ?? '').trim()
+    if (!text) return
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              replies: [
+                ...c.replies,
+                {
+                  id: `${commentId}r${Date.now()}`,
+                  author: 'Ashika Jain',
+                  text,
+                  timestamp: 'Just now',
+                },
+              ],
+            }
+          : c
+      )
+    )
+    setReplyDrafts((prev) => ({ ...prev, [commentId]: '' }))
+  }
+
+  const toggleResolved = (commentId: string) =>
+    setComments((prev) =>
+      prev.map((c) => (c.id === commentId ? { ...c, resolved: !c.resolved } : c))
+    )
+
   // ── TOC data ────────────────────────────────────────────────────────────────
   type TocItem = {
     title: string
@@ -4462,6 +4573,8 @@ function SOWDraftTab() {
 
   // ── Reviewer helper ─────────────────────────────────────────────────────────
   const allMembers = SECTION_MEMBERS.map((m) => m.name)
+  const memberIdByName = (name: string) =>
+    SECTION_MEMBERS.find((m) => m.name === name)?.id ?? SECTION_MEMBERS[0].id
 
   const showToast = (msg: string) => {
     setToastMsg(msg)
@@ -4522,17 +4635,24 @@ function SOWDraftTab() {
             }}
           >
             <div style={{ display: 'flex', gap: 8 }}>
-              <div
+              <button
+                type="button"
+                onClick={() => setShowCommentsPanel((v) => !v)}
                 style={{
                   flex: 1,
-                  background: 'rgba(0,196,196,0.08)',
+                  background: showCommentsPanel ? 'rgba(0,196,196,0.18)' : 'rgba(0,196,196,0.08)',
+                  border: showCommentsPanel
+                    ? '1px solid rgba(0,196,196,0.4)'
+                    : '1px solid transparent',
                   borderRadius: 6,
                   padding: '6px 10px',
                   textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
                 }}
               >
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#00C4C4', lineHeight: 1 }}>
-                  {tocItems.length}
+                  {comments.length}
                 </div>
                 <div
                   style={{
@@ -4546,7 +4666,7 @@ function SOWDraftTab() {
                 >
                   Total Comments
                 </div>
-              </div>
+              </button>
               <div
                 style={{
                   flex: 1,
@@ -4557,7 +4677,7 @@ function SOWDraftTab() {
                 }}
               >
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>
-                  {tocItems.filter((t) => t.status === 'Pending').length}
+                  {comments.filter((c) => !c.resolved).length}
                 </div>
                 <div
                   style={{
@@ -5585,6 +5705,32 @@ function SOWDraftTab() {
           >
             {/* Document card */}
             <div
+              ref={docCardRef}
+              onMouseMove={(e) => {
+                if (commentPopup) return
+                const target = (e.target as HTMLElement).closest(
+                  'p, li, h2, h3, td, tr, blockquote'
+                ) as HTMLElement | null
+                const card = docCardRef.current
+                if (!target || !card || !editorRef.current?.contains(target)) {
+                  setHoverBlock(null)
+                  return
+                }
+                const sectionEl = target.closest('.sow-section')
+                const sectionTitle =
+                  sectionEl?.querySelector('h2')?.textContent?.trim() ??
+                  tocItems[activeSectionIdx]?.title ??
+                  ''
+                const rect = target.getBoundingClientRect()
+                const cardRect = card.getBoundingClientRect()
+                setHoverBlock({
+                  top: rect.top - cardRect.top,
+                  text: (target.textContent ?? '').trim().slice(0, 80),
+                  sectionTitle,
+                })
+              }}
+              onMouseLeave={() => setHoverBlock(null)}
+              onScroll={() => setHoverBlock(null)}
               style={{
                 margin: '0 auto',
                 maxWidth: 820,
@@ -5593,6 +5739,7 @@ function SOWDraftTab() {
                 borderRadius: 4,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
                 padding: '56px 64px',
+                position: 'relative',
               }}
             >
               <div
@@ -5613,9 +5760,382 @@ function SOWDraftTab() {
                   minHeight: 600,
                 }}
               />
+
+              {/* Hover: floating add-comment icon in the left gutter */}
+              {hoverBlock && !commentPopup && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCommentPopup({
+                      top: hoverBlock.top,
+                      anchorText: hoverBlock.text,
+                      sectionTitle: hoverBlock.sectionTitle,
+                    })
+                  }
+                  title="Add comment"
+                  style={{
+                    position: 'absolute',
+                    left: 22,
+                    top: hoverBlock.top,
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    border: '1.5px solid rgba(0,196,196,0.5)',
+                    background: '#ffffff',
+                    color: '#00a0a0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                    zIndex: 5,
+                  }}
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Comment popup — assign & write */}
+              {commentPopup && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 22,
+                    top: commentPopup.top,
+                    width: 280,
+                    background: '#fff',
+                    border: '1px solid rgba(0,196,196,0.3)',
+                    borderRadius: 10,
+                    boxShadow: '0 8px 28px rgba(0,0,0,0.16)',
+                    padding: 14,
+                    zIndex: 20,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: '#94a3b8',
+                      fontStyle: 'italic',
+                      marginBottom: 8,
+                      paddingBottom: 8,
+                      borderBottom: '1px solid rgba(0,196,196,0.15)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    &ldquo;{commentPopup.anchorText}&hellip;&rdquo;
+                  </div>
+                  <textarea
+                    autoFocus
+                    value={newCommentText}
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    placeholder="Add a comment…"
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      fontSize: 12.5,
+                      borderRadius: 6,
+                      border: '1px solid rgba(0,196,196,0.3)',
+                      outline: 'none',
+                      resize: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: 'inherit',
+                      color: '#0d212c',
+                      marginBottom: 8,
+                    }}
+                  />
+                  <select
+                    value={newCommentAssignee}
+                    onChange={(e) => setNewCommentAssignee(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '7px 8px',
+                      fontSize: 12.5,
+                      borderRadius: 6,
+                      border: '1px solid rgba(0,196,196,0.3)',
+                      outline: 'none',
+                      color: '#374151',
+                      marginBottom: 10,
+                      background: '#fff',
+                    }}
+                  >
+                    <option value="">Assign to…</option>
+                    {allMembers.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCommentPopup(null)
+                        setNewCommentText('')
+                        setNewCommentAssignee('')
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        border: '1px solid rgba(0,196,196,0.25)',
+                        background: 'transparent',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: '#64748b',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!newCommentText.trim()}
+                      onClick={addComment}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: 6,
+                        border: 'none',
+                        background: newCommentText.trim() ? '#00C4C4' : 'rgba(148,163,184,0.25)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: newCommentText.trim() ? '#ffffff' : '#94a3b8',
+                        cursor: newCommentText.trim() ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      Comment
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        {/* ── Right panel: all document comments ─────────────────────────── */}
+        {showCommentsPanel && (
+          <div
+            style={{
+              width: 320,
+              flexShrink: 0,
+              borderLeft: '1px solid rgba(0,196,196,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              background: 'rgba(248,252,252,0.6)',
+            }}
+          >
+            <div
+              style={{
+                padding: '14px 16px',
+                borderBottom: '1px solid rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                Comments ({comments.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowCommentsPanel(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  display: 'flex',
+                  padding: 2,
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+              {comments.length === 0 ? (
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: '#94a3b8',
+                    textAlign: 'center',
+                    padding: '32px 12px',
+                  }}
+                >
+                  No comments yet. Hover over any paragraph in the document and click the comment
+                  icon to add one.
+                </div>
+              ) : (
+                comments.map((c) => (
+                  <div
+                    key={c.id}
+                    style={{
+                      background: '#fff',
+                      border: '1px solid rgba(0,196,196,0.18)',
+                      borderRadius: 10,
+                      padding: 12,
+                      marginBottom: 10,
+                      opacity: c.resolved ? 0.6 : 1,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 6,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          color: '#00a0a0',
+                          background: 'rgba(0,196,196,0.1)',
+                          padding: '2px 7px',
+                          borderRadius: 5,
+                        }}
+                      >
+                        {c.sectionTitle}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleResolved(c.id)}
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          color: c.resolved ? '#16a34a' : '#94a3b8',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {c.resolved ? '✓ Resolved' : 'Resolve'}
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: '#94a3b8',
+                        fontStyle: 'italic',
+                        marginBottom: 8,
+                        paddingLeft: 8,
+                        borderLeft: '2px solid rgba(0,196,196,0.3)',
+                      }}
+                    >
+                      &ldquo;{c.anchorText}&hellip;&rdquo;
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <MemberAvatar memberId={memberIdByName(c.author)} size={22} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c' }}>
+                            {c.author}
+                          </span>
+                          <span style={{ fontSize: 10.5, color: '#94a3b8' }}>{c.timestamp}</span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 12.5,
+                            color: '#374151',
+                            lineHeight: 1.5,
+                            marginTop: 2,
+                          }}
+                        >
+                          {c.text}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 10.5,
+                            color: '#00a0a0',
+                            marginTop: 4,
+                            fontWeight: 600,
+                          }}
+                        >
+                          → {c.assignee}
+                        </div>
+                      </div>
+                    </div>
+
+                    {c.replies.map((r) => (
+                      <div
+                        key={r.id}
+                        style={{ display: 'flex', gap: 8, marginLeft: 14, marginBottom: 6 }}
+                      >
+                        <MemberAvatar memberId={memberIdByName(r.author)} size={18} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0d212c' }}>
+                              {r.author}
+                            </span>
+                            <span style={{ fontSize: 10, color: '#94a3b8' }}>{r.timestamp}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.5 }}>
+                            {r.text}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <input
+                        type="text"
+                        value={replyDrafts[c.id] ?? ''}
+                        onChange={(e) =>
+                          setReplyDrafts((prev) => ({ ...prev, [c.id]: e.target.value }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') addReply(c.id)
+                        }}
+                        placeholder="Reply…"
+                        style={{
+                          flex: 1,
+                          padding: '6px 9px',
+                          fontSize: 12,
+                          borderRadius: 6,
+                          border: '1px solid rgba(0,196,196,0.25)',
+                          outline: 'none',
+                          color: '#0d212c',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addReply(c.id)}
+                        disabled={!(replyDrafts[c.id] ?? '').trim()}
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: 6,
+                          border: 'none',
+                          background: (replyDrafts[c.id] ?? '').trim()
+                            ? '#00C4C4'
+                            : 'rgba(148,163,184,0.2)',
+                          color: (replyDrafts[c.id] ?? '').trim() ? '#fff' : '#94a3b8',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: (replyDrafts[c.id] ?? '').trim() ? 'pointer' : 'not-allowed',
+                        }}
+                      >
+                        Reply
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Approve popup ──────────────────────────────────────────────────────── */}
