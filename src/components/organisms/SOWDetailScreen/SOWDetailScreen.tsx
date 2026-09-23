@@ -2130,6 +2130,61 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
   const allItemIds = sections.flatMap((s) => s.items.map((i) => i.id))
   const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
+  const kpis = [
+    {
+      label: 'Assumptions',
+      value: (() => {
+        const total = sections.reduce(
+          (n, s) => n + s.items.filter((i) => i.type === 'assumption').length,
+          0
+        )
+        const done = sections.reduce(
+          (n, s) => n + s.items.filter((i) => i.type === 'assumption' && i.answered).length,
+          0
+        )
+        return `${done} / ${total}`
+      })(),
+      pct: (() => {
+        const total = sections.reduce(
+          (n, s) => n + s.items.filter((i) => i.type === 'assumption').length,
+          0
+        )
+        const done = sections.reduce(
+          (n, s) => n + s.items.filter((i) => i.type === 'assumption' && i.answered).length,
+          0
+        )
+        return total > 0 ? Math.round((done / total) * 100) : 0
+      })(),
+      color: '#8b5cf6',
+    },
+    {
+      label: 'Questions',
+      value: (() => {
+        const total = sections.reduce(
+          (n, s) => n + s.items.filter((i) => i.type === 'question').length,
+          0
+        )
+        const done = sections.reduce(
+          (n, s) => n + s.items.filter((i) => i.type === 'question' && i.answered).length,
+          0
+        )
+        return `${done} / ${total}`
+      })(),
+      pct: (() => {
+        const total = sections.reduce(
+          (n, s) => n + s.items.filter((i) => i.type === 'question').length,
+          0
+        )
+        const done = sections.reduce(
+          (n, s) => n + s.items.filter((i) => i.type === 'question' && i.answered).length,
+          0
+        )
+        return total > 0 ? Math.round((done / total) * 100) : 0
+      })(),
+      color: '#f59e0b',
+    },
+  ]
+
   return (
     <div
       style={{
@@ -2140,160 +2195,6 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
         overflow: 'hidden',
       }}
     >
-      {/* ── Progress summary strip ── */}
-      {(() => {
-        const totalSections = sections.length
-        const sectionsWithItems = sections.filter((s) => s.items.length > 0)
-        const completeSections = sections.filter(
-          (s) => s.items.length > 0 && s.items.every((i) => i.answered)
-        )
-        const totalItems = sections.reduce((n, s) => n + s.items.length, 0)
-        const answeredItems = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.answered).length,
-          0
-        )
-        const openItems = totalItems - answeredItems
-        const secPct =
-          totalSections > 0 ? Math.round((completeSections.length / totalSections) * 100) : 0
-        const itemPct = totalItems > 0 ? Math.round((answeredItems / totalItems) * 100) : 0
-
-        const kpis = [
-          {
-            label: 'Assumptions',
-            value: (() => {
-              const total = sections.reduce(
-                (n, s) => n + s.items.filter((i) => i.type === 'assumption').length,
-                0
-              )
-              const done = sections.reduce(
-                (n, s) => n + s.items.filter((i) => i.type === 'assumption' && i.answered).length,
-                0
-              )
-              return `${done} / ${total}`
-            })(),
-            pct: (() => {
-              const total = sections.reduce(
-                (n, s) => n + s.items.filter((i) => i.type === 'assumption').length,
-                0
-              )
-              const done = sections.reduce(
-                (n, s) => n + s.items.filter((i) => i.type === 'assumption' && i.answered).length,
-                0
-              )
-              return total > 0 ? Math.round((done / total) * 100) : 0
-            })(),
-            color: '#8b5cf6',
-            sub: 'answered',
-          },
-          {
-            label: 'Questions',
-            value: (() => {
-              const total = sections.reduce(
-                (n, s) => n + s.items.filter((i) => i.type === 'question').length,
-                0
-              )
-              const done = sections.reduce(
-                (n, s) => n + s.items.filter((i) => i.type === 'question' && i.answered).length,
-                0
-              )
-              return `${done} / ${total}`
-            })(),
-            pct: (() => {
-              const total = sections.reduce(
-                (n, s) => n + s.items.filter((i) => i.type === 'question').length,
-                0
-              )
-              const done = sections.reduce(
-                (n, s) => n + s.items.filter((i) => i.type === 'question' && i.answered).length,
-                0
-              )
-              return total > 0 ? Math.round((done / total) * 100) : 0
-            })(),
-            color: '#f59e0b',
-            sub: 'answered',
-          },
-        ]
-
-        return (
-          <div
-            style={{
-              display: 'flex',
-              gap: 1,
-              borderBottom: '1px solid rgba(0,196,196,0.12)',
-              background: 'rgba(248,252,252,0.7)',
-              flexShrink: 0,
-            }}
-          >
-            {kpis.map((k, ki) => (
-              <div
-                key={ki}
-                style={{
-                  flex: 1,
-                  padding: '10px 18px',
-                  borderRight: ki < kpis.length - 1 ? '1px solid rgba(0,196,196,0.1)' : 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 5,
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: '#94a3b8',
-                      fontWeight: 600,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                    }}
-                  >
-                    {k.label}
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: k.color }}>{k.pct}%</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 5,
-                      borderRadius: 99,
-                      background: 'rgba(0,0,0,0.07)',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${k.pct}%`,
-                        height: '100%',
-                        borderRadius: 99,
-                        background: k.color,
-                        transition: 'width 0.4s ease',
-                      }}
-                    />
-                  </div>
-                  <span
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: '#0d212c',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {k.value}
-                  </span>
-                </div>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>{k.sub}</span>
-              </div>
-            ))}
-          </div>
-        )
-      })()}
-
       {/* ── Two-pane layout ── */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
         {/* ── Left pane ── */}
@@ -2308,9 +2209,39 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
             background: 'rgba(248,252,252,0.6)',
           }}
         >
+          {/* Mini KPIs */}
           <div
             style={{
-              padding: '16px 16px 10px',
+              padding: '8px 12px',
+              borderBottom: '1px solid rgba(0,196,196,0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 5,
+            }}
+          >
+            {kpis.map((k, ki) => (
+              <div key={ki} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', flex: 1 }}>
+                  {k.label}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: k.color }}>{k.pct}%</span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#0d212c',
+                    minWidth: 34,
+                    textAlign: 'right',
+                  }}
+                >
+                  {k.value}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              padding: '8px 16px 6px',
               borderBottom: '1px solid rgba(0,196,196,0.1)',
               display: 'flex',
               alignItems: 'center',
@@ -3331,69 +3262,6 @@ function SOWDraftTab() {
 
   return (
     <>
-      {/* Stats bar */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 0,
-          borderBottom: '1px solid rgba(0,196,196,0.1)',
-          flexShrink: 0,
-        }}
-      >
-        <button
-          onClick={() => setShowCommentPanel((v) => !v)}
-          style={{
-            padding: '10px 20px',
-            borderRight: '1px solid rgba(0,196,196,0.08)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            background: showCommentPanel ? 'rgba(0,196,196,0.06)' : 'none',
-            border: 'none',
-            cursor: 'pointer',
-            textAlign: 'left',
-          }}
-        >
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: '#94a3b8',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}
-          >
-            Total Comments
-          </span>
-          <span style={{ fontSize: 18, fontWeight: 700, color: '#00C4C4', lineHeight: 1 }}>
-            {totalComments}
-          </span>
-        </button>
-        <div
-          style={{
-            padding: '10px 20px',
-            borderRight: '1px solid rgba(0,196,196,0.08)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: '#94a3b8',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}
-          >
-            Comments Open
-          </span>
-          <span style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>
-            {openComments}
-          </span>
-        </div>
-      </div>
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Left nav */}
         <div
@@ -3534,6 +3402,43 @@ function SOWDraftTab() {
                 ))}
               </div>
             )}
+          </div>
+          {/* Mini comment KPIs */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 0 8px' }}>
+            <button
+              onClick={() => setShowCommentPanel((v) => !v)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: showCommentPanel ? 'rgba(0,196,196,0.08)' : 'none',
+                border: 'none',
+                borderRadius: 6,
+                padding: '3px 6px',
+                cursor: 'pointer',
+                width: '100%',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+                Total Comments
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#00C4C4' }}>
+                {totalComments}
+              </span>
+            </button>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '3px 6px',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Comments Open</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>
+                {openComments}
+              </span>
+            </div>
           </div>
           <div style={{ height: 1, background: 'rgba(0,196,196,0.1)', marginBottom: 6 }} />
           {SOW_DRAFT_SECTIONS.map((sec) => {
