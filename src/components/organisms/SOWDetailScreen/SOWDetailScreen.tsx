@@ -206,7 +206,7 @@ function FilePreviewModal({ file, onClose }: { file: UploadedFile; onClose: () =
 function OverviewTab({ files }: { files: UploadedFile[] }) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
   return (
-    <div style={{ padding: '24px 28px' }}>
+    <div style={{ padding: '20px 16px' }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
           Uploaded Documents
@@ -408,7 +408,7 @@ function FormTab({ files: _files, onSubmit }: { files: UploadedFile[]; onSubmit:
 
   if (isLoading) {
     return (
-      <div style={{ padding: '32px 28px' }}>
+      <div style={{ padding: '20px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
           <div
             style={{
@@ -462,7 +462,7 @@ function FormTab({ files: _files, onSubmit }: { files: UploadedFile[]; onSubmit:
   }
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 820 }}>
+    <div style={{ padding: '20px 16px', maxWidth: 820 }}>
       {/* ── AI Agent block ── */}
       <div
         style={{
@@ -886,7 +886,7 @@ function AddSectionModal({
         style={{
           background: '#fff',
           borderRadius: 16,
-          padding: '28px 32px',
+          padding: '20px 16px',
           width: 480,
           maxWidth: '90vw',
           boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
@@ -1444,7 +1444,7 @@ function AddItemModal({
         style={{
           background: '#fff',
           borderRadius: 16,
-          padding: '28px 28px 24px',
+          padding: '20px 16px 16px',
           width: 480,
           boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
         }}
@@ -3230,7 +3230,7 @@ function SOWDraftTab() {
         </div>
 
         {/* Document pane */}
-        <div ref={rightRef} style={{ flex: 1, overflowY: 'auto', padding: '28px 36px' }}>
+        <div ref={rightRef} style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
           {/* S0: Background */}
           <SectionBlock id="ds0" num={1} title="Background">
             <EditableP
@@ -4663,7 +4663,7 @@ function ShimmerDraft() {
         ))}
       </div>
       <div
-        style={{ flex: 1, padding: '28px 36px', display: 'flex', flexDirection: 'column', gap: 16 }}
+        style={{ flex: 1, padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}
       >
         <div
           style={{
@@ -4753,7 +4753,7 @@ function SendForReviewModal({
         style={{
           background: '#fff',
           borderRadius: 18,
-          padding: '28px 28px 24px',
+          padding: '20px 16px 16px',
           width: 440,
           boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
           position: 'relative',
@@ -5098,7 +5098,7 @@ export function SOWDetailScreen({
       </div>
 
       {/* Header area */}
-      <div style={{ flexShrink: 0, padding: '8px 12px 0' }}>
+      <div style={{ flexShrink: 0, padding: '8px 0 0' }}>
         {/* Single-line header: glass back button + title + status badge (no background behind title) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           {/* Back button — glass-morphic box */}
@@ -5180,7 +5180,7 @@ export function SOWDetailScreen({
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
-          margin: '0 12px 12px',
+          margin: '0 0 0',
           background: 'rgba(255,255,255,0.72)',
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
@@ -5470,7 +5470,7 @@ export function SOWDetailScreen({
               />
             ))}
           {activeTab === 'audit-log' && (
-            <div style={{ padding: '28px 28px' }}>
+            <div style={{ padding: '20px 16px' }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', marginBottom: 16 }}>
                 Audit Log
               </div>
