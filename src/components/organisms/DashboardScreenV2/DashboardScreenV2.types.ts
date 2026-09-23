@@ -40,4 +40,7 @@ export interface DashboardScreenV2Props {
   activeNav?: ActiveNav
   contentOverride?: React.ReactNode
   className?: string
+  onNavHome?: () => void
+  onNavAllSOWs?: () => void
+  onOpenSOWV2?: () => void
 }

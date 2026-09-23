@@ -353,7 +353,7 @@ function SortIcon({ col, sortCol, sortDir }: { col: SortCol; sortCol: SortCol; s
 type AllSOWsSortCol =
   'name' | 'client' | 'createdBy' | 'createdDate' | 'lastUpdated' | 'status' | null
 
-function AllSOWsView({ sows }: { sows: SOWItem[] }) {
+function AllSOWsView({ sows, onOpenSOWV2 }: { sows: SOWItem[]; onOpenSOWV2?: () => void }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [creatorFilter, setCreatorFilter] = useState<string | null>(null)
@@ -634,10 +634,13 @@ function AllSOWsView({ sows }: { sows: SOWItem[] }) {
                 filtered.map((row, idx) => (
                   <tr
                     key={row.id}
+                    onClick={() => {
+                      if (idx === 1) onOpenSOWV2?.()
+                    }}
                     style={{
                       borderBottom:
                         idx < filtered.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined,
-                      cursor: 'pointer',
+                      cursor: idx === 1 ? 'pointer' : 'default',
                       transition: 'background 0.12s',
                     }}
                     onMouseEnter={(e) => {
@@ -780,6 +783,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   activeNav = 'dashboard',
   contentOverride,
   className = '',
+  onNavHome,
+  onNavAllSOWs,
+  onOpenSOWV2,
 }) => {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [homeView, setHomeView] = useState<'home' | 'all-sows'>('home')
@@ -1001,8 +1007,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 <button
                   key={id}
                   onClick={() => {
-                    if (id === 'dashboard') setHomeView('home')
-                    else if (id === 'my-sows') setHomeView('all-sows')
+                    if (id === 'dashboard') {
+                      setHomeView('home')
+                      onNavHome?.()
+                    } else if (id === 'my-sows') {
+                      setHomeView('all-sows')
+                      onNavAllSOWs?.()
+                    }
                   }}
                   className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl cursor-pointer transition-all gap-1"
                   style={
@@ -1211,7 +1222,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">{contentOverride}</div>
           ) : homeView === 'all-sows' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <AllSOWsView sows={initialSOWs} />
+              <AllSOWsView sows={initialSOWs} onOpenSOWV2={onOpenSOWV2} />
             </div>
           ) : (
             /* Scrollable inner content */
