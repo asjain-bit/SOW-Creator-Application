@@ -226,7 +226,7 @@ function StatusBadge({ status }: { status: SOWStatus }) {
   }
   return (
     <span
-      className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${styles[status]}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-normal ${styles[status]}`}
     >
       {status}
     </span>
@@ -272,7 +272,7 @@ function FilterDropdown({
                 border: '1px solid rgba(255,255,255,0.8)',
               }
         }
-        className="flex items-center gap-1.5 h-9 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer text-[#64748b]"
+        className="flex items-center gap-1.5 h-9 px-3 text-xs font-normal rounded-lg transition-all cursor-pointer text-[#64748b]"
       >
         {active ? `${label}: ${active}` : label}
         <svg
@@ -420,11 +420,11 @@ function AllSOWsView({ sows, onOpenSOWV2 }: { sows: SOWItem[]; onOpenSOWV2?: () 
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0d212c', margin: 0 }}>All SOWs</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', margin: 0 }}>All SOWs</h2>
           <span
             style={{
               fontSize: 12,
-              fontWeight: 600,
+              fontWeight: 500,
               color: '#64748b',
               background: 'rgba(0,196,196,0.1)',
               borderRadius: 8,
@@ -590,7 +590,7 @@ function AllSOWsView({ sows, onOpenSOWV2 }: { sows: SOWItem[]; onOpenSOWV2?: () 
                       padding: '11px 14px',
                       textAlign: 'left',
                       fontSize: 10,
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: '#94a3b8',
                       textTransform: 'uppercase',
                       letterSpacing: '0.07em',
@@ -655,7 +655,7 @@ function AllSOWsView({ sows, onOpenSOWV2 }: { sows: SOWItem[]; onOpenSOWV2?: () 
                       style={{
                         padding: '11px 14px',
                         fontSize: 13,
-                        fontWeight: 600,
+                        fontWeight: 500,
                         color: '#0d212c',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -776,6 +776,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   userName = 'Ashika',
   userRole = 'PMO',
   userInitials = 'AJ',
+  userImage = '/profile-user.png',
   initialSOWs = DEFAULT_SOWS,
   onSignOut,
   onCreateSOW,
@@ -795,7 +796,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const [sortCol, setSortCol] = useState<SortCol>(null)
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [page, setPage] = useState(1)
-  const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [rowsPerPage, setRowsPerPage] = useState(7)
   const [openRpp, setOpenRpp] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [displayedRows, setDisplayedRows] = useState<SOWItem[]>(initialSOWs)
@@ -872,7 +873,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
     <div
       className={`h-screen w-screen max-h-screen overflow-hidden flex flex-col font-sans relative ${className}`}
       data-testid="dashboard-screen-v2-container"
-      style={{ background: '#e8f8f8' }}
+      style={{ background: '#f6fbfb' }}
     >
       {/* ─── ANIMATED RADIAL GRADIENT BACKGROUND ─────────────────────────── */}
       <div
@@ -885,22 +886,22 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
           pointerEvents: 'none',
         }}
       >
-        {/* Base static gradient */}
+        {/* Base static gradient - lightened for clarity */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             background:
-              'radial-gradient(ellipse 75% 65% at 15% 18%, #00c4c472 0%, transparent 60%), radial-gradient(ellipse 55% 50% at 80% 14%, #1ad3db44 0%, transparent 55%), radial-gradient(ellipse 50% 55% at 68% 82%, #00a8a838 0%, transparent 52%), radial-gradient(ellipse 65% 45% at 38% 88%, #b2f0f055 0%, transparent 58%)',
+              'radial-gradient(ellipse 75% 65% at 15% 18%, rgba(0, 196, 196, 0.16) 0%, transparent 60%), radial-gradient(ellipse 55% 50% at 80% 14%, rgba(26, 211, 219, 0.12) 0%, transparent 55%), radial-gradient(ellipse 50% 55% at 68% 82%, rgba(0, 168, 168, 0.08) 0%, transparent 52%), radial-gradient(ellipse 65% 45% at 38% 88%, rgba(178, 240, 240, 0.22) 0%, transparent 58%)',
           }}
         />
-        {/* Slow colour-breathing overlay — hue-rotates across the teal range, no movement */}
+        {/* Slow colour-breathing overlay — subtle teal range */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             background:
-              'radial-gradient(ellipse 90% 80% at 50% 40%, #00c4c422 0%, transparent 70%), radial-gradient(ellipse 60% 60% at 85% 70%, #008f8f28 0%, transparent 55%)',
+              'radial-gradient(ellipse 90% 80% at 50% 40%, rgba(0, 196, 196, 0.08) 0%, transparent 70%), radial-gradient(ellipse 60% 60% at 85% 70%, rgba(0, 143, 143, 0.06) 0%, transparent 55%)',
             animation: 'bgBreathe 12s ease-in-out infinite alternate',
           }}
         />
@@ -914,36 +915,36 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
       </div>
 
       {/* All content sits above the animated background */}
-      <div className="relative flex h-full gap-3 p-3" style={{ zIndex: 1 }}>
+      <div className="relative flex h-full gap-[12px] p-[12px]" style={{ zIndex: 1 }}>
         {/* ─── LEFT SIDEBAR ─────────────────────────────────────────────── */}
         <nav
-          className="flex flex-col shrink-0 rounded-2xl overflow-hidden"
+          className="flex flex-col shrink-0 rounded-2xl relative"
           style={{
-            width: 76,
-            background: 'rgba(8,26,26,0.82)',
+            width: 96,
+            background: '#04232D',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(0,196,196,0.18)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.28), 1px 0 0 rgba(0,196,196,0.08) inset',
+            border: '1px solid rgba(255,255,255,0.06)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.28)',
           }}
         >
           {/* Logo area — centered, no text */}
           <div
             className="flex items-center justify-center py-5 shrink-0"
-            style={{ borderBottom: '1px solid rgba(0,196,196,0.12)' }}
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
           >
             <Image
-              src="/dark-logo.png"
+              src="/m42-white-logo.png"
               alt="M42 Logo"
-              width={36}
+              width={40}
               height={20}
-              className="h-5 w-auto object-contain brightness-0 invert"
+              className="h-5 w-auto object-contain"
               priority
             />
           </div>
 
           {/* Nav items — icon above label, centered */}
-          <div className="flex flex-col gap-1 px-2 py-4 flex-1">
+          <div className="flex flex-col gap-1.5 px-2 py-4 flex-1">
             {(
               [
                 {
@@ -971,31 +972,20 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   ),
                 },
                 {
-                  id: 'templates' as ActiveNav,
-                  label: 'Templates',
+                  id: 'notifications' as ActiveNav,
+                  label: 'Notifications',
+                  badge: 2,
                   icon: (
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth="1.8"
-                      d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 14a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1v-5zm10 0a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1v-5z"
+                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                     />
                   ),
                 },
-                {
-                  id: 'analytics' as ActiveNav,
-                  label: 'Analytics',
-                  icon: (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.8"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  ),
-                },
-              ] as { id: ActiveNav; label: string; icon: React.ReactNode }[]
-            ).map(({ id, label, icon }) => {
+              ] as { id: ActiveNav; label: string; icon: React.ReactNode; badge?: number }[]
+            ).map(({ id, label, icon, badge }) => {
               const isActive = contentOverride
                 ? activeNav === id
                 : id === 'dashboard'
@@ -1015,38 +1005,56 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       onNavAllSOWs?.()
                     }
                   }}
-                  className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl cursor-pointer transition-all gap-1"
+                  className="flex flex-col items-center justify-center w-full py-2.5 px-1 rounded-xl cursor-pointer transition-all gap-1.5 relative border-0"
                   style={
                     isActive
                       ? {
-                          background: 'rgba(0,196,196,0.18)',
-                          border: '1px solid rgba(0,196,196,0.28)',
-                          color: '#7df0f0',
+                          background: '#053546',
+                          border: 'none',
+                          color: '#ffffff',
                         }
                       : {
                           background: 'transparent',
-                          border: '1px solid transparent',
-                          color: 'rgba(180,230,230,0.6)',
+                          border: 'none',
+                          color: '#99A2A8',
                         }
                   }
                   onMouseEnter={(e) => {
                     if (!isActive) {
                       ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.08)'
-                      ;(e.currentTarget as HTMLButtonElement).style.color = '#a8ecec'
+                        'rgba(5,53,70,0.45)'
+                      ;(e.currentTarget as HTMLButtonElement).style.color = '#ffffff'
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) {
                       ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                      ;(e.currentTarget as HTMLButtonElement).style.color = 'rgba(180,230,230,0.6)'
+                      ;(e.currentTarget as HTMLButtonElement).style.color = '#99A2A8'
                     }
                   }}
                 >
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {icon}
-                  </svg>
-                  <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 500, lineHeight: 1 }}>
+                  <span className="relative">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {icon}
+                    </svg>
+                    {badge != null && (
+                      <span
+                        className="absolute -top-1 -right-1.5 w-4 h-4 bg-[#00C4C4] rounded-full text-white flex items-center justify-center shadow-xs"
+                        style={{ fontSize: 9, fontWeight: 600 }}
+                      >
+                        {badge}
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: isActive ? 600 : 400,
+                      lineHeight: 1.1,
+                      textAlign: 'center',
+                      color: 'inherit',
+                    }}
+                  >
                     {label}
                   </span>
                 </button>
@@ -1054,86 +1062,58 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             })}
           </div>
 
-          {/* Bottom: alerts + user (with sign-out dropdown) */}
+          {/* Bottom: user avatar & name (no fill, no stroke) */}
           <div
             className="px-2 py-4 shrink-0 flex flex-col gap-1"
-            style={{ borderTop: '1px solid rgba(0,196,196,0.12)' }}
+            style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
           >
-            {/* Alerts */}
-            <button
-              className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl cursor-pointer transition-all gap-1 relative"
-              style={{
-                background: 'transparent',
-                border: '1px solid transparent',
-                color: 'rgba(180,230,230,0.6)',
-              }}
-              onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.08)'
-                ;(e.currentTarget as HTMLButtonElement).style.color = '#a8ecec'
-              }}
-              onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                ;(e.currentTarget as HTMLButtonElement).style.color = 'rgba(180,230,230,0.6)'
-              }}
-            >
-              <span className="relative">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.8"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-                <span
-                  className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#00C4C4] rounded-full text-white flex items-center justify-center"
-                  style={{ fontSize: 8, fontWeight: 700 }}
-                >
-                  2
-                </span>
-              </span>
-              <span style={{ fontSize: 10, fontWeight: 500, lineHeight: 1 }}>Alerts</span>
-            </button>
-
             {/* User avatar — click opens sign-out dropdown */}
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl cursor-pointer transition-all gap-1"
+                className="flex flex-col items-center justify-center w-full py-2 rounded-xl cursor-pointer transition-all gap-1.5 border-0"
                 style={{
-                  background: userMenuOpen ? 'rgba(0,196,196,0.14)' : 'rgba(0,196,196,0.08)',
-                  border: `1px solid ${userMenuOpen ? 'rgba(0,196,196,0.3)' : 'transparent'}`,
-                  color: '#e0fafa',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#99A2A8',
                 }}
               >
-                <div className="w-7 h-7 rounded-full bg-[#00C4C4] text-white text-xs font-bold flex items-center justify-center">
-                  {userInitials}
+                <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                  <Image
+                    src={userImage || '/profile-user.png'}
+                    alt={userName}
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-cover"
+                  />
+                  <span className="sr-only">{userInitials}</span>
                 </div>
                 <span
                   style={{
-                    fontSize: 10,
-                    fontWeight: 500,
-                    lineHeight: 1,
-                    color: 'rgba(180,230,230,0.7)',
+                    fontSize: 12,
+                    fontWeight: 400,
+                    lineHeight: 1.1,
+                    color: '#99A2A8',
+                    textAlign: 'center',
+                    wordBreak: 'break-word',
                   }}
                 >
                   {userName}
                 </span>
               </button>
 
-              {/* Sign-out dropdown */}
+              {/* Sign-out dropdown positioned to the right of nav to avoid clipping */}
               {userMenuOpen && (
                 <div
                   style={{
                     position: 'absolute',
-                    bottom: 'calc(100% + 8px)',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    minWidth: 148,
-                    background: 'rgba(8,26,26,0.96)',
+                    left: 'calc(100% + 12px)',
+                    bottom: 0,
+                    minWidth: 160,
+                    background: '#04232D',
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(0,196,196,0.22)',
+                    border: '1px solid #053546',
                     borderRadius: 12,
                     boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                     zIndex: 200,
@@ -1144,13 +1124,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div
                     style={{
                       padding: '12px 14px 10px',
-                      borderBottom: '1px solid rgba(0,196,196,0.12)',
+                      borderBottom: '1px solid rgba(255,255,255,0.08)',
                     }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#e0fafa' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>
                       {userName}
                     </div>
-                    <div style={{ fontSize: 11, color: 'rgba(180,230,230,0.55)', marginTop: 1 }}>
+                    <div style={{ fontSize: 11, color: '#99A2A8', marginTop: 1 }}>
                       {userRole}
                     </div>
                   </div>
@@ -1171,7 +1151,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       cursor: 'pointer',
                       color: '#fca5a5',
                       fontSize: 13,
-                      fontWeight: 500,
+                      fontWeight: 400,
                       textAlign: 'left',
                       transition: 'background 0.15s',
                       fontFamily: 'inherit',
@@ -1206,8 +1186,15 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
           </div>
         </nav>
 
-        {/* ─── MAIN CONTENT AREA ────────────────────────────────────────── */}
-        <main className="flex-1 flex flex-col overflow-hidden min-h-0">
+        {/* ─── MAIN CONTENT (BOUNDING BOX REMOVED) ───────────────────────── */}
+        <main
+          style={{
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
+          }}
+          className="flex-1 flex flex-col overflow-hidden min-h-0"
+        >
           {/* When a content override is provided (e.g. SOW detail), render it directly */}
           {contentOverride ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">{contentOverride}</div>
@@ -1216,14 +1203,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
               <AllSOWsView sows={initialSOWs} onOpenSOWV2={onOpenSOWV2} />
             </div>
           ) : (
-            /* Scrollable inner content */
-            <div className="flex-1 overflow-y-auto p-6">
+            /* Scrollable inner content with consistent 12px padding all around */
+            <div className="flex-1 overflow-y-auto p-0">
               {/* Greeting + Create SOW CTA */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-5">
                 <h1
                   style={{
                     fontSize: 24,
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color: '#0d212c',
                     margin: 0,
                     lineHeight: 1.15,
@@ -1236,7 +1223,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     setShowCreateModal(true)
                     onCreateSOW?.()
                   }}
-                  className="flex items-center gap-2 bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-md transition-colors cursor-pointer border-0"
+                  className="flex items-center gap-2 bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-colors cursor-pointer border-0"
                   style={{ boxShadow: '0 4px 20px rgba(0,196,196,0.35)' }}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1262,7 +1249,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     padding: '16px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
+                    gap: 8,
                     boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
                   }}
                 >
@@ -1311,20 +1298,12 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       </svg>
                     </div>
                   </div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: '#0d212c', lineHeight: 1 }}>
+                  <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
                     8
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: '#16a34a',
-                        background: '#dcfce7',
-                        borderRadius: 6,
-                        padding: '2px 7px',
-                      }}
-                    >
+                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
                       +2 this month
                     </span>
                   </div>
@@ -1339,7 +1318,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     padding: '16px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
+                    gap: 8,
                     boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
                   }}
                 >
@@ -1388,29 +1367,16 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       </svg>
                     </div>
                   </div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: '#0d212c', lineHeight: 1 }}>
+                  <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
                     3
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {[
-                      ['Form', '#e0f2fe', '#0284c7'],
-                      ['Structure', '#f0fdf4', '#16a34a'],
-                      ['Draft', '#fef3c7', '#d97706'],
-                    ].map(([label, bg, color]) => (
-                      <span
-                        key={label}
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          color,
-                          background: bg,
-                          borderRadius: 5,
-                          padding: '2px 6px',
-                        }}
-                      >
-                        {label}
-                      </span>
-                    ))}
+                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Form</span>
+                    <span style={{ fontSize: 11, color: '#cbd5e1' }}>·</span>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Structure</span>
+                    <span style={{ fontSize: 11, color: '#cbd5e1' }}>·</span>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Draft</span>
                   </div>
                 </div>
 
@@ -1423,7 +1389,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     padding: '16px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
+                    gap: 8,
                     boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
                   }}
                 >
@@ -1472,38 +1438,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       </svg>
                     </div>
                   </div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: '#dc2626', lineHeight: 1 }}>
+                  <div style={{ fontSize: 36, fontWeight: 600, color: '#dc2626', lineHeight: 1 }}>
                     4
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {[
-                      ['SOW Form', 2],
-                      ['SOW Draft', 1],
-                      ['Approve', 1],
-                    ].map(([label, count]) => (
-                      <div
-                        key={String(label)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <span style={{ fontSize: 10, color: '#64748b' }}>{label}</span>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: '#dc2626',
-                            background: '#fee2e2',
-                            borderRadius: 5,
-                            padding: '1px 6px',
-                          }}
-                        >
-                          {count}
-                        </span>
-                      </div>
-                    ))}
+                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+                      Average of questions answered 68%
+                    </span>
                   </div>
                 </div>
 
@@ -1516,7 +1458,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     padding: '16px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
+                    gap: 8,
                     boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
                   }}
                 >
@@ -1565,35 +1507,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       </svg>
                     </div>
                   </div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: '#0d212c', lineHeight: 1 }}>
+                  <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
                     2
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div
-                        style={{
-                          flex: 1,
-                          height: 4,
-                          borderRadius: 4,
-                          background: '#e9d5ff',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: '68%',
-                            height: '100%',
-                            background: '#7c3aed',
-                            borderRadius: 4,
-                          }}
-                        />
-                      </div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed' }}>68%</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 10, color: '#64748b' }}>Answered</span>
-                      <span style={{ fontSize: 10, color: '#64748b' }}>12 open</span>
-                    </div>
+                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+                      12 Total of all SOW questions open
+                    </span>
                   </div>
                 </div>
 
@@ -1606,7 +1527,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     padding: '16px 18px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
+                    gap: 8,
                     boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
                   }}
                 >
@@ -1655,20 +1576,12 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       </svg>
                     </div>
                   </div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: '#0d212c', lineHeight: 1 }}>
+                  <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
                     3
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: '#d97706',
-                        background: '#fef3c7',
-                        borderRadius: 6,
-                        padding: '2px 7px',
-                      }}
-                    >
+                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
                       +1 this month
                     </span>
                   </div>
@@ -1676,9 +1589,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
               </div>
 
               {/* ─── BOTTOM: ACTIVE SOWs (3/5) + DUE THIS WEEK (2/5) ────── */}
-              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'stretch' }}>
                 {/* Active SOWs — 3/5 */}
-                <div style={{ flex: 3, minWidth: 0 }}>
+                <div style={{ flex: 3, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   {/* Section header */}
                   <div
                     style={{
@@ -1686,16 +1599,17 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       marginBottom: 12,
+                      height: 36,
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0d212c' }}>
                         Active SOWs
                       </span>
                       <span
                         style={{
                           fontSize: 11,
-                          fontWeight: 600,
+                          fontWeight: 400,
                           color: '#64748b',
                           background: 'rgba(0,196,196,0.1)',
                           borderRadius: 6,
@@ -1793,6 +1707,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       borderRadius: 14,
                       overflow: 'hidden',
                       boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      flex: 1,
                     }}
                   >
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -1817,7 +1735,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 padding: '10px 14px',
                                 textAlign: 'left',
                                 fontSize: 10,
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 color: '#94a3b8',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.07em',
@@ -1843,7 +1761,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       </thead>
                       <tbody>
                         {isSearching ? (
-                          Array.from({ length: 5 }).map((_, i) => (
+                          Array.from({ length: 7 }).map((_, i) => (
                             <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                               {[38, 22, 22, 18].map((w, j) => (
                                 <td key={j} style={{ padding: '11px 14px' }}>
@@ -1860,13 +1778,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                               ))}
                             </tr>
                           ))
-                        ) : paginatedRows.slice(0, 5).length > 0 ? (
-                          paginatedRows.slice(0, 5).map((row, idx) => (
+                        ) : paginatedRows.slice(0, 7).length > 0 ? (
+                          paginatedRows.slice(0, 7).map((row, idx) => (
                             <tr
                               key={row.id}
                               style={{
                                 borderBottom:
-                                  idx < Math.min(paginatedRows.length, 5) - 1
+                                  idx < Math.min(paginatedRows.length, 7) - 1
                                     ? '1px solid rgba(0,196,196,0.07)'
                                     : undefined,
                                 cursor: 'pointer',
@@ -1884,7 +1802,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 style={{
                                   padding: '11px 14px',
                                   fontSize: 13,
-                                  fontWeight: 600,
+                                  fontWeight: 500,
                                   color: '#0d212c',
                                   maxWidth: 0,
                                 }}
@@ -1974,29 +1892,21 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 </div>
 
                 {/* Due This Week — 2/5 */}
-                <div style={{ flex: 2, minWidth: 0 }}>
+                <div style={{ flex: 2, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       marginBottom: 12,
+                      height: 36,
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0d212c' }}>
                         Due This Week
                       </span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: '#dc2626',
-                          background: '#fee2e2',
-                          borderRadius: 6,
-                          padding: '2px 8px',
-                        }}
-                      >
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-normal bg-[#fee2e2] text-[#dc2626] border border-red-200/60">
                         3 urgent
                       </span>
                     </div>
@@ -2008,126 +1918,190 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       borderRadius: 14,
                       overflow: 'hidden',
                       boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      flex: 1,
                     }}
                   >
-                    {[
-                      {
-                        name: 'Meridian Healthcare',
-                        action: 'SOW Draft review',
-                        due: 'Today',
-                        urgency: 'high' as const,
-                      },
-                      {
-                        name: 'Acme Corp',
-                        action: 'Approve Form submission',
-                        due: 'Tomorrow',
-                        urgency: 'high' as const,
-                      },
-                      {
-                        name: 'TechSphere',
-                        action: 'Answer 4 open questions',
-                        due: 'Wed',
-                        urgency: 'medium' as const,
-                      },
-                      {
-                        name: 'Globex Inc',
-                        action: 'Complete SOW Structure',
-                        due: 'Thu',
-                        urgency: 'medium' as const,
-                      },
-                      {
-                        name: 'Zenith Ltd',
-                        action: 'Final sign-off pending',
-                        due: 'Fri',
-                        urgency: 'low' as const,
-                      },
-                    ].map((item, idx, arr) => {
-                      const urgencyColor =
-                        item.urgency === 'high'
-                          ? '#dc2626'
-                          : item.urgency === 'medium'
-                            ? '#d97706'
-                            : '#64748b'
-                      const urgencyBg =
-                        item.urgency === 'high'
-                          ? '#fee2e2'
-                          : item.urgency === 'medium'
-                            ? '#fef3c7'
-                            : '#f1f5f9'
-                      return (
-                        <div
-                          key={idx}
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr
                           style={{
-                            padding: '12px 14px',
-                            borderBottom:
-                              idx < arr.length - 1 ? '1px solid rgba(0,196,196,0.08)' : undefined,
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: 10,
-                            cursor: 'pointer',
-                            transition: 'background 0.12s',
-                          }}
-                          onMouseEnter={(e) => {
-                            ;(e.currentTarget as HTMLDivElement).style.background =
-                              'rgba(0,196,196,0.04)'
-                          }}
-                          onMouseLeave={(e) => {
-                            ;(e.currentTarget as HTMLDivElement).style.background = ''
+                            background: 'rgba(0,196,196,0.05)',
+                            borderBottom: '1px solid rgba(0,196,196,0.1)',
                           }}
                         >
-                          <div
+                          <th
                             style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              background: urgencyColor,
-                              marginTop: 5,
-                              flexShrink: 0,
-                            }}
-                          />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 600,
-                                color: '#0d212c',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {item.name}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: 11,
-                                color: '#64748b',
-                                marginTop: 2,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {item.action}
-                            </div>
-                          </div>
-                          <span
-                            style={{
+                              width: '76%',
+                              padding: '10px 14px',
+                              textAlign: 'left',
                               fontSize: 10,
-                              fontWeight: 700,
-                              color: urgencyColor,
-                              background: urgencyBg,
-                              borderRadius: 5,
-                              padding: '2px 7px',
-                              flexShrink: 0,
-                              marginTop: 1,
+                              fontWeight: 600,
+                              color: '#94a3b8',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.07em',
                             }}
                           >
-                            {item.due}
-                          </span>
-                        </div>
-                      )
-                    })}
+                            Sow
+                          </th>
+                          <th
+                            style={{
+                              width: '24%',
+                              padding: '10px 14px',
+                              textAlign: 'left',
+                              fontSize: 10,
+                              fontWeight: 600,
+                              color: '#94a3b8',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.07em',
+                            }}
+                          >
+                            Due Day
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          {
+                            name: 'Meridian Healthcare',
+                            action: 'SOW Draft review',
+                            due: 'Today',
+                            urgency: 'high' as const,
+                          },
+                          {
+                            name: 'Acme Corp',
+                            action: 'Approve Form submission',
+                            due: 'Tomorrow',
+                            urgency: 'high' as const,
+                          },
+                          {
+                            name: 'CyberShield',
+                            action: 'Security compliance review',
+                            due: 'Tomorrow',
+                            urgency: 'high' as const,
+                          },
+                          {
+                            name: 'TechSphere',
+                            action: 'Answer 4 open questions',
+                            due: 'Wed',
+                            urgency: 'medium' as const,
+                          },
+                          {
+                            name: 'Globex Inc',
+                            action: 'Complete SOW Structure',
+                            due: 'Thu',
+                            urgency: 'medium' as const,
+                          },
+                          {
+                            name: 'Orion Group',
+                            action: 'Budget & pricing sign-off',
+                            due: 'Thu',
+                            urgency: 'medium' as const,
+                          },
+                          {
+                            name: 'Zenith Ltd',
+                            action: 'Final sign-off pending',
+                            due: 'Fri',
+                            urgency: 'low' as const,
+                          },
+                        ].map((item, idx, arr) => {
+                          const urgencyColor =
+                            item.urgency === 'high'
+                              ? '#dc2626'
+                              : item.urgency === 'medium'
+                                ? '#d97706'
+                                : '#64748b'
+                          const chipStyles =
+                            item.urgency === 'high'
+                              ? 'bg-[#fee2e2] text-[#dc2626] border border-red-200/60'
+                              : item.urgency === 'medium'
+                                ? 'bg-[#fef3c7] text-[#d97706] border border-amber-200/60'
+                                : 'bg-[#f1f5f9] text-[#64748b] border border-slate-200/60'
+                          return (
+                            <tr
+                              key={idx}
+                              style={{
+                                borderBottom:
+                                  idx < arr.length - 1
+                                    ? '1px solid rgba(0,196,196,0.07)'
+                                    : undefined,
+                                cursor: 'pointer',
+                                transition: 'background 0.12s',
+                              }}
+                              onMouseEnter={(e) => {
+                                ;(e.currentTarget as HTMLTableRowElement).style.background =
+                                  'rgba(0,196,196,0.04)'
+                              }}
+                              onMouseLeave={(e) => {
+                                ;(e.currentTarget as HTMLTableRowElement).style.background = ''
+                              }}
+                            >
+                              <td style={{ padding: '11px 14px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                                  <div
+                                    style={{
+                                      width: 6,
+                                      height: 6,
+                                      borderRadius: '50%',
+                                      background: urgencyColor,
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                                    <div
+                                      style={{
+                                        fontSize: 13,
+                                        fontWeight: 500,
+                                        color: '#0d212c',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {item.name}
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: 11,
+                                        color: '#64748b',
+                                        marginTop: 1,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {item.action}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-normal shrink-0 ${chipStyles}`}
+                                >
+                                  {item.due}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                    {/* Matching footer */}
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderTop: '1px solid rgba(0,196,196,0.08)',
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                      }}
+                    >
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#94a3b8' }}>
+                        7 items this week
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
