@@ -2690,6 +2690,7 @@ function SOWDraftTab() {
   const [commentText, setCommentText] = useState('')
   const [commentAssignee, setCommentAssignee] = useState('m1')
   const [comments, setComments] = useState<DraftComment[]>([])
+  const [showCommentPanel, setShowCommentPanel] = useState(false)
   const versionRef = useRef<HTMLDivElement>(null)
   const rightRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -2849,24 +2850,7 @@ function SOWDraftTab() {
         </div>
         {/* Content */}
         {children}
-        {/* Saved comments */}
-        {secComments.map((c) => (
-          <div
-            key={c.id}
-            style={{
-              marginTop: 10,
-              padding: '10px 14px',
-              borderRadius: 8,
-              background: '#fffbeb',
-              border: '1px solid #fde68a',
-              fontSize: 12,
-              color: '#92400e',
-            }}
-          >
-            <span style={{ fontWeight: 700 }}>@{c.assignee}: </span>
-            {c.text}
-          </div>
-        ))}
+
         {/* Hover action buttons (top-right of section) */}
         {isHovered && !isEdit && isEditable && (
           <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 4 }}>
@@ -2998,8 +2982,11 @@ function SOWDraftTab() {
         outline: 'none',
         borderRadius: 4,
         padding: editingId === id ? '4px 6px' : 0,
-        background: editingId === id ? 'rgba(0,196,196,0.04)' : 'transparent',
-        transition: 'background 0.15s, padding 0.15s',
+        background: editingId === id ? '#fff' : 'transparent',
+        border: editingId === id ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid transparent',
+        boxShadow: editingId === id ? '0 1px 6px rgba(0,196,196,0.08)' : 'none',
+        cursor: editingId === id ? 'text' : 'default',
+        transition: 'background 0.15s, padding 0.15s, border-color 0.15s',
       }}
     >
       {text}
@@ -3020,36 +3007,59 @@ function SOWDraftTab() {
           flexShrink: 0,
         }}
       >
-        {[
-          { label: 'Total Comments', value: totalComments, color: '#00C4C4' },
-          { label: 'Comments Open', value: openComments, color: '#f59e0b' },
-        ].map((stat) => (
-          <div
-            key={stat.label}
+        <button
+          onClick={() => setShowCommentPanel((v) => !v)}
+          style={{
+            padding: '10px 20px',
+            borderRight: '1px solid rgba(0,196,196,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            background: showCommentPanel ? 'rgba(0,196,196,0.06)' : 'none',
+            border: 'none',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <span
             style={{
-              padding: '10px 20px',
-              borderRight: '1px solid rgba(0,196,196,0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#94a3b8',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
             }}
           >
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#94a3b8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              {stat.label}
-            </span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: stat.color, lineHeight: 1 }}>
-              {stat.value}
-            </span>
-          </div>
-        ))}
+            Total Comments
+          </span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#00C4C4', lineHeight: 1 }}>
+            {totalComments}
+          </span>
+        </button>
+        <div
+          style={{
+            padding: '10px 20px',
+            borderRight: '1px solid rgba(0,196,196,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#94a3b8',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Comments Open
+          </span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>
+            {openComments}
+          </span>
+        </div>
       </div>
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Left nav */}
@@ -4375,6 +4385,110 @@ function SOWDraftTab() {
             </table>
           </SectionBlock>
         </div>
+
+        {/* Word-style comment sidebar */}
+        {showCommentPanel && (
+          <div
+            style={{
+              width: 280,
+              flexShrink: 0,
+              borderLeft: '1px solid rgba(0,196,196,0.12)',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div
+              style={{
+                padding: '12px 14px 10px',
+                borderBottom: '1px solid rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c' }}>
+                Comments ({comments.length})
+              </span>
+              <button
+                onClick={() => setShowCommentPanel(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  fontSize: 18,
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+              {comments.length === 0 ? (
+                <div
+                  style={{
+                    padding: '24px 14px',
+                    textAlign: 'center',
+                    color: '#94a3b8',
+                    fontSize: 12,
+                  }}
+                >
+                  No comments yet
+                </div>
+              ) : (
+                comments.map((c) => {
+                  const sec = SOW_DRAFT_SECTIONS.find((s) => s.id === c.sectionId)
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        const el = sectionRefs.current[c.sectionId]
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(0,196,196,0.07)',
+                        padding: '10px 14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4,
+                      }}
+                      onMouseEnter={(e) => {
+                        ;(e.currentTarget as HTMLButtonElement).style.background =
+                          'rgba(0,196,196,0.04)'
+                      }}
+                      onMouseLeave={(e) => {
+                        ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: '#00a0a0',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.03em',
+                        }}
+                      >
+                        {sec?.title ?? c.sectionId}
+                      </span>
+                      <span style={{ fontSize: 12, color: '#374151', lineHeight: 1.5 }}>
+                        {c.text}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#94a3b8' }}>@{c.assignee}</span>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Non-blocking comment panel — anchored top-right of right pane, no backdrop */}
