@@ -3272,8 +3272,8 @@ function SOWDraftTab() {
                   ['O3', 'Vendor Onboarding', 'Onboarding lead time', '14 → 5 days'],
                   ['O4', 'Spend Visibility', '% spend captured in analytics', 'From 41% to 95%'],
                   ['O5', 'Compliance', '% POs with full audit trail', 'From 68% to 100%'],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -3320,8 +3320,8 @@ function SOWDraftTab() {
                   ['4', 'Contract Management', 'Phase 2', 'Deferred'],
                   ['5', 'Supplier Performance', 'Phase 2', 'Deferred'],
                   ['6', 'Spend Analytics', 'Phase 2', 'Deferred'],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -3387,8 +3387,8 @@ function SOWDraftTab() {
                     'Training content translation',
                     'Meridian internal L&D team to handle localisation post go-live',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
                         {c}
@@ -3462,8 +3462,8 @@ function SOWDraftTab() {
                     'Non-Functional',
                     'P1',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -3534,8 +3534,8 @@ function SOWDraftTab() {
                     '4 weeks',
                     'Post go-live support, issue resolution, KPI baselining',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
                         {c}
@@ -3574,8 +3574,8 @@ function SOWDraftTab() {
                   ['Change Management', 'R', 'A', 'C', 'I', 'I'],
                   ['Go-Live Sign-off', 'C', 'A', 'R', 'C', 'I'],
                   ['Legal Review', 'I', 'C', 'I', 'I', 'R/A'],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -3628,8 +3628,8 @@ function SOWDraftTab() {
                   ['D4', 'Invoice Reconciliation Engine', '31 Mar 2027', 'Rohan Mehta'],
                   ['D5', 'User & Admin Documentation', '14 Apr 2027', 'Priya Sharma'],
                   ['D6', 'Go-Live Readiness Sign-off', '30 Apr 2027', 'Ashika Jain'],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
                         {c}
@@ -3673,8 +3673,8 @@ function SOWDraftTab() {
                   ],
                   ['M5', 'Training', '18 Apr 2027', 'All 128 staff trained', 'Ashika Jain'],
                   ['M6', 'Go-Live', '30 Apr 2027', 'Executive sign-off received', 'Ashika Jain'],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
                         {c}
@@ -3711,8 +3711,8 @@ function SOWDraftTab() {
                   ['M3 — Build', '25%', '$1,050,000', 'UAT passed'],
                   ['M4 — Integration', '20%', '$840,000', 'Integration sign-off'],
                   ['M6 — Go-Live', '20%', '$840,000', 'Executive sign-off'],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell(ci === 2 ? { fontWeight: 700 } : {})}>
                         {c}
@@ -3776,8 +3776,8 @@ function SOWDraftTab() {
                     'ERP migration workstream completes API boundary handover by 31 Jan 2027',
                     'Rohan Mehta',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
                         {c}
@@ -3844,8 +3844,8 @@ function SOWDraftTab() {
                     'High',
                     'Monthly Legal review; contractual clause for compliance changes',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -3927,8 +3927,8 @@ function SOWDraftTab() {
                     'CVE feed',
                     'Weekly automated scan; P1 patched within 24h',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -4004,8 +4004,8 @@ function SOWDraftTab() {
                     'Azure Monitor + Datadog',
                     'Alerts, dashboards, PagerDuty integration',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -4069,8 +4069,8 @@ function SOWDraftTab() {
                     'KPI baseline captured; zero P1 incidents in 10-day hypercare window',
                     'Hypercare report signed by PMO',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
                         {c}
@@ -4127,8 +4127,8 @@ function SOWDraftTab() {
                     'Ashika Jain',
                     '1 business day post approval',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell(ci === 0 ? { fontWeight: 700 } : {})}>
                         {c}
@@ -4184,8 +4184,8 @@ function SOWDraftTab() {
                     'Meridian IT BAU team; ServiceNow tickets',
                     'Meridian IT',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td key={ci} style={cell({})}>
                         {c}
@@ -4241,8 +4241,8 @@ function SOWDraftTab() {
                     '3 business days',
                     '10 business days',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -4322,8 +4322,8 @@ function SOWDraftTab() {
                     'Variation',
                     'Any changes to these terms must be in writing and signed by both parties',
                   ],
-                ].map((row) => (
-                  <tr key={row[0]} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
+                ].map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,196,196,0.07)' }}>
                     {row.map((c, ci) => (
                       <td
                         key={ci}
@@ -5382,7 +5382,7 @@ export function SOWDetailScreen({
       </div>
       {/* end header area */}
 
-      {/* ── Tab content ── */}
+      {/* ── Tab content — subtle glass box ── */}
       <div
         style={{
           flex: 1,
@@ -5391,6 +5391,13 @@ export function SOWDetailScreen({
           flexDirection: 'column',
           overflow: activeTab === 'structure' ? 'hidden' : 'auto',
           position: 'relative',
+          margin: '0 20px 16px',
+          background: 'rgba(255,255,255,0.55)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
+          border: '1px solid rgba(255,255,255,0.65)',
+          borderRadius: 16,
+          boxShadow: '0 4px 24px rgba(0,196,196,0.07), 0 1px 0 rgba(255,255,255,0.7) inset',
         }}
       >
         {/* Generating overlay */}
