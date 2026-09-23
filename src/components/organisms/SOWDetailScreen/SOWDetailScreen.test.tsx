@@ -46,7 +46,7 @@ describe('SOWDetailScreen', () => {
   it('calls onBack when back button clicked', () => {
     const onBack = vi.fn()
     render(<SOWDetailScreen onBack={onBack} />)
-    fireEvent.click(screen.getByText('My SOWs'))
+    fireEvent.click(screen.getByTitle('Back to My SOWs'))
     expect(onBack).toHaveBeenCalledOnce()
   })
 
