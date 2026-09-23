@@ -4340,29 +4340,32 @@ function SOWDraftTab() {
         </div>
       </div>
 
-      {/* Floating comment overlay */}
+      {/* Non-blocking comment panel — anchored top-right of right pane, no backdrop */}
       {commentingId && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,0.25)' }}
-          onClick={() => {
-            setCommentingId(null)
-            setCommentText('')
-          }}
-        >
+        <>
+          {/* Invisible click-outside catcher */}
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 399 }}
+            onClick={() => {
+              setCommentingId(null)
+              setCommentText('')
+            }}
+          />
           <div
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%,-50%)',
+              position: 'fixed',
+              top: 120,
+              right: 32,
+              zIndex: 400,
               background: '#fff',
               borderRadius: 14,
-              padding: '22px 24px',
-              width: 380,
-              boxShadow: '0 16px 48px rgba(0,0,0,0.18)',
+              padding: '20px 22px',
+              width: 320,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.06)',
+              border: '1px solid rgba(0,196,196,0.18)',
               display: 'flex',
               flexDirection: 'column',
-              gap: 12,
+              gap: 11,
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -4478,7 +4481,7 @@ function SOWDraftTab() {
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   )
@@ -5028,17 +5031,7 @@ export function SOWDetailScreen({
   }
 
   return (
-    <div
-      className={className}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        fontFamily: 'inherit',
-        minHeight: 0,
-        position: 'relative',
-      }}
-    >
+    <>
       {/* ── Sticky header: breadcrumb + title + tabs ── */}
       {/* Invite success toast */}
       <div
@@ -5535,6 +5528,6 @@ export function SOWDetailScreen({
           onConfirm={handleSendForReview}
         />
       )}
-    </div>
+    </>
   )
 }
