@@ -307,9 +307,7 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
               <CheckCircle2 size={16} color="#0284c7" />
             </div>
           </div>
-          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
-            6
-          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>6</div>
           <div
             style={{
               height: 1,
@@ -364,9 +362,7 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
               <Layers size={16} color="#7c3aed" />
             </div>
           </div>
-          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
-            6
-          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>6</div>
           <div
             style={{
               height: 1,
@@ -599,6 +595,236 @@ function RichTextField({
   )
 }
 
+/* ── Form Loading Animation & Shimmer Skeleton ──────────────────────────── */
+
+function FormGeneratingAnimation() {
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 24px',
+        gap: 28,
+      }}
+    >
+      <style>{`
+        @keyframes sow-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+        @keyframes sow-pulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+        @keyframes sow-dot{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+        @keyframes sow-shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+      `}</style>
+      <div
+        style={{
+          position: 'relative',
+          width: 140,
+          height: 160,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div style={{ animation: 'sow-float 2.8s ease-in-out infinite' }}>
+          <svg width="100" height="130" viewBox="0 0 100 130" fill="none">
+            <rect
+              x="12"
+              y="8"
+              width="68"
+              height="96"
+              rx="10"
+              fill="rgba(0,196,196,0.08)"
+              stroke="#00C4C4"
+              strokeWidth="2"
+            />
+            {/* Form field lines inside icon */}
+            <rect x="22" y="22" width="28" height="5" rx="2" fill="rgba(0,196,196,0.4)" />
+            <rect
+              x="22"
+              y="32"
+              width="48"
+              height="12"
+              rx="3"
+              fill="rgba(0,196,196,0.15)"
+              stroke="rgba(0,196,196,0.3)"
+              strokeWidth="0.8"
+            />
+            <rect x="22" y="50" width="28" height="5" rx="2" fill="rgba(0,196,196,0.4)" />
+            <rect
+              x="22"
+              y="60"
+              width="48"
+              height="12"
+              rx="3"
+              fill="rgba(0,196,196,0.15)"
+              stroke="rgba(0,196,196,0.3)"
+              strokeWidth="0.8"
+            />
+            <rect x="22" y="78" width="28" height="5" rx="2" fill="rgba(0,196,196,0.4)" />
+            <rect
+              x="22"
+              y="88"
+              width="48"
+              height="12"
+              rx="3"
+              fill="rgba(0,196,196,0.15)"
+              stroke="rgba(0,196,196,0.3)"
+              strokeWidth="0.8"
+            />
+          </svg>
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 14,
+            animation: 'sow-pulse 1.6s ease-in-out infinite',
+            animationDelay: '0s',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18">
+            <path d="M9 1l2 6h6l-5 3.5 2 6L9 13l-5 3.5 2-6L1 7h6z" fill="#00C4C4" opacity=".7" />
+          </svg>
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            top: 28,
+            left: 4,
+            animation: 'sow-pulse 2s ease-in-out infinite',
+            animationDelay: '.5s',
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <path
+              d="M6 .5l1.5 4H12L8.5 7l1.5 4L6 8.5 2 11l1.5-4L0 4.5h4.5z"
+              fill="#7ff0f0"
+              opacity=".6"
+            />
+          </svg>
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 20,
+            right: 8,
+            animation: 'sow-pulse 1.8s ease-in-out infinite',
+            animationDelay: '.9s',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14">
+            <path
+              d="M7 .5l1.8 5H13L9 8l1.8 5L7 10 3.2 13 5 8 1 5.5h4.2z"
+              fill="#00a0a0"
+              opacity=".5"
+            />
+          </svg>
+        </div>
+      </div>
+      <div style={{ textAlign: 'center', maxWidth: 380 }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 10 }}>
+          Analysing Documents for Form
+        </div>
+        <div style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.65, marginBottom: 18 }}>
+          Our Intake Agent is analysing your uploaded files to pre-fill commitments, project scope,
+          and business outcomes.
+        </div>
+        <div style={{ display: 'flex', gap: 7, justifyContent: 'center', marginBottom: 12 }}>
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: '50%',
+                background: '#00C4C4',
+                animation: 'sow-dot 1.4s ease-in-out infinite',
+                animationDelay: `${i * 0.22}s`,
+              }}
+            />
+          ))}
+        </div>
+        <div style={{ fontSize: 11, color: '#94a3b8' }}>This usually takes just a few seconds…</div>
+      </div>
+    </div>
+  )
+}
+
+function ShimmerForm() {
+  const sk: React.CSSProperties = {
+    background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)',
+    backgroundSize: '800px 100%',
+    animation: 'sow-shimmer 1.5s infinite',
+    borderRadius: 6,
+  }
+
+  return (
+    <div style={{ padding: '20px 16px', maxWidth: 820 }}>
+      {/* Commitments Card Shimmer */}
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.7)',
+          border: '1px solid rgba(0,196,196,0.15)',
+          borderRadius: 14,
+          padding: '16px 20px',
+          marginBottom: 16,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ ...sk, height: 16, width: 140 }} />
+          <div style={{ ...sk, height: 12, width: 180 }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          {[90, 75, 82, 68].map((w, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 8,
+                padding: '10px 14px',
+              }}
+            >
+              <div style={{ ...sk, width: 6, height: 6, borderRadius: '50%', flexShrink: 0 }} />
+              <div style={{ ...sk, height: 12, width: `${w}%`, flex: 1 }} />
+              <div style={{ ...sk, width: 14, height: 14, borderRadius: 4, flexShrink: 0 }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ ...sk, height: 38, width: '100%', borderRadius: 8 }} />
+      </div>
+
+      {/* Form Fields Shimmer */}
+      {[140, 180, 160, 120, 150].map((labelW, i) => (
+        <div
+          key={i}
+          style={{
+            marginBottom: 18,
+            background: 'rgba(255,255,255,0.7)',
+            border: '1px solid rgba(0,196,196,0.12)',
+            borderRadius: 12,
+            padding: '16px 20px',
+          }}
+        >
+          <div style={{ ...sk, height: 13, width: labelW, marginBottom: 10 }} />
+          <div style={{ ...sk, height: i === 0 ? 38 : 72, width: '100%', borderRadius: 8 }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function FormTab({
   files: _files,
   onReady,
@@ -608,7 +834,7 @@ function FormTab({
   onReady?: () => void
   onSubmit: () => void
 }) {
-  const [isLoading, setIsLoading] = useState(true)
+  const [loadingState, setLoadingState] = useState<'generating' | 'shimmer' | 'ready'>('generating')
   const [formData, setFormData] = useState<SOWFormData>({
     commitments: [],
     clientName: '',
@@ -621,18 +847,23 @@ function FormTab({
     otherContext: '',
   })
   const [newCommitment, setNewCommitment] = useState('')
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timer1Ref = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timer2Ref = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    timerRef.current = setTimeout(() => {
-      setFormData(MOCK_FORM_DATA)
-      setIsLoading(false)
-      onReady?.()
-    }, 4000)
+    timer1Ref.current = setTimeout(() => {
+      setLoadingState('shimmer')
+      timer2Ref.current = setTimeout(() => {
+        setFormData(MOCK_FORM_DATA)
+        setLoadingState('ready')
+        onReady?.()
+      }, 1500)
+    }, 2500)
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
+      if (timer1Ref.current) clearTimeout(timer1Ref.current)
+      if (timer2Ref.current) clearTimeout(timer2Ref.current)
     }
-  }, [onReady])
+  }, [])
 
   const addCommitment = () => {
     if (!newCommitment.trim()) return
@@ -655,59 +886,12 @@ function FormTab({
         : [...prev.tags, tag],
     }))
 
-  if (isLoading) {
-    return (
-      <div style={{ padding: '20px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-          <div
-            style={{
-              width: 18,
-              height: 18,
-              border: '2.5px solid #00C4C4',
-              borderTopColor: 'transparent',
-              borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite',
-            }}
-          />
-          <span style={{ fontSize: 14, color: '#64748b' }}>
-            Intake Agent is analysing your documents…
-          </span>
-        </div>
-        {[180, 120, 200, 150, 180].map((w, i) => (
-          <div
-            key={i}
-            style={{
-              marginBottom: 20,
-              background: 'rgba(255,255,255,0.7)',
-              border: '1px solid rgba(0,196,196,0.12)',
-              borderRadius: 12,
-              padding: '16px 20px',
-            }}
-          >
-            <div
-              style={{
-                height: 12,
-                width: w,
-                background: 'rgba(0,196,196,0.15)',
-                borderRadius: 6,
-                marginBottom: 10,
-                animation: 'pulse 1.4s ease-in-out infinite',
-              }}
-            />
-            <div
-              style={{
-                height: 72,
-                background: 'rgba(0,196,196,0.08)',
-                borderRadius: 8,
-                animation: 'pulse 1.4s ease-in-out infinite',
-                animationDelay: `${i * 0.15}s`,
-              }}
-            />
-          </div>
-        ))}
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}`}</style>
-      </div>
-    )
+  if (loadingState === 'generating') {
+    return <FormGeneratingAnimation />
+  }
+
+  if (loadingState === 'shimmer') {
+    return <ShimmerForm />
   }
 
   return (
@@ -1596,7 +1780,14 @@ function AddItemModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Close Cross Icon */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
               Add to {sectionTitle}
@@ -1660,7 +1851,9 @@ function AddItemModal({
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>Question</div>
-              <div style={{ fontSize: 11, color: '#64748b' }}>Clarification or inquiry required from team / vendor</div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>
+                Clarification or inquiry required from team / vendor
+              </div>
             </div>
           </label>
 
@@ -1696,18 +1889,32 @@ function AddItemModal({
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>Assumption</div>
-              <div style={{ fontSize: 11, color: '#64748b' }}>Premise or condition taken as granted for this section</div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>
+                Premise or condition taken as granted for this section
+              </div>
             </div>
           </label>
         </div>
 
         {/* Textarea Description */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+          <label
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#64748b',
+              marginBottom: 6,
+            }}
+          >
             {type === 'question' ? 'Question Text' : 'Assumption Description'}
           </label>
           <textarea
-            placeholder={type === 'question' ? 'Enter the question to be answered…' : 'Enter the assumption details…'}
+            placeholder={
+              type === 'question'
+                ? 'Enter the question to be answered…'
+                : 'Enter the assumption details…'
+            }
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={3}
@@ -1728,7 +1935,15 @@ function AddItemModal({
 
         {/* Assign to Dropdown Field (empty by default) */}
         <div ref={dropdownRef} style={{ position: 'relative', marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+          <label
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#64748b',
+              marginBottom: 6,
+            }}
+          >
             Assign to
           </label>
           <button
@@ -1833,7 +2048,9 @@ function AddItemModal({
                       {m.initials}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>{m.name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
+                        {m.name}
+                      </div>
                       <div style={{ fontSize: 11, color: '#94a3b8' }}>PMO Member</div>
                     </div>
                     {isSel && <Check size={14} color="#00C4C4" />}
@@ -2130,58 +2347,42 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
   const allItemIds = sections.flatMap((s) => s.items.map((i) => i.id))
   const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
+  const kpiQuestions = (() => {
+    const total = sections.reduce(
+      (n, s) => n + s.items.filter((i) => i.type === 'question').length,
+      0
+    )
+    const done = sections.reduce(
+      (n, s) => n + s.items.filter((i) => i.type === 'question' && i.answered).length,
+      0
+    )
+    return { total, done, pct: total > 0 ? Math.round((done / total) * 100) : 0 }
+  })()
+  const kpiAssumptions = (() => {
+    const total = sections.reduce(
+      (n, s) => n + s.items.filter((i) => i.type === 'assumption').length,
+      0
+    )
+    const done = sections.reduce(
+      (n, s) => n + s.items.filter((i) => i.type === 'assumption' && i.answered).length,
+      0
+    )
+    return { total, done, pct: total > 0 ? Math.round((done / total) * 100) : 0 }
+  })()
   const kpis = [
     {
-      label: 'Assumptions',
-      value: (() => {
-        const total = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.type === 'assumption').length,
-          0
-        )
-        const done = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.type === 'assumption' && i.answered).length,
-          0
-        )
-        return `${done} / ${total}`
-      })(),
-      pct: (() => {
-        const total = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.type === 'assumption').length,
-          0
-        )
-        const done = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.type === 'assumption' && i.answered).length,
-          0
-        )
-        return total > 0 ? Math.round((done / total) * 100) : 0
-      })(),
-      color: '#8b5cf6',
+      label: 'Questions',
+      total: kpiQuestions.total,
+      done: kpiQuestions.done,
+      pct: kpiQuestions.pct,
+      color: '#f59e0b',
     },
     {
-      label: 'Questions',
-      value: (() => {
-        const total = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.type === 'question').length,
-          0
-        )
-        const done = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.type === 'question' && i.answered).length,
-          0
-        )
-        return `${done} / ${total}`
-      })(),
-      pct: (() => {
-        const total = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.type === 'question').length,
-          0
-        )
-        const done = sections.reduce(
-          (n, s) => n + s.items.filter((i) => i.type === 'question' && i.answered).length,
-          0
-        )
-        return total > 0 ? Math.round((done / total) * 100) : 0
-      })(),
-      color: '#f59e0b',
+      label: 'Assumptions',
+      total: kpiAssumptions.total,
+      done: kpiAssumptions.done,
+      pct: kpiAssumptions.pct,
+      color: '#8b5cf6',
     },
   ]
 
@@ -2220,21 +2421,26 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
             }}
           >
             {kpis.map((k, ki) => (
-              <div key={ki} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', flex: 1 }}>
+              <div
+                key={ki}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', flex: 1 }}>
                   {k.label}
                 </span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: k.color }}>{k.pct}%</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#0d212c' }}>
+                  {k.done}/{k.total}
+                </span>
                 <span
                   style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: '#0d212c',
-                    minWidth: 34,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: k.color,
+                    minWidth: 36,
                     textAlign: 'right',
                   }}
                 >
-                  {k.value}
+                  {k.pct}%
                 </span>
               </div>
             ))}
@@ -2242,7 +2448,6 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
           <div
             style={{
               padding: '8px 16px 6px',
-              borderBottom: '1px solid rgba(0,196,196,0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -2424,9 +2629,7 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
                   color: '#00a0a0',
                   userSelect: 'none',
                 }}
-                onClick={() =>
-                  allSelected ? clearSelection() : setSelected(new Set(allItemIds))
-                }
+                onClick={() => (allSelected ? clearSelection() : setSelected(new Set(allItemIds)))}
               >
                 <div
                   style={{
@@ -2959,13 +3162,6 @@ function SOWDraftTab() {
   const [addReviewerIdx, setAddReviewerIdx] = useState<number | null>(null)
   const [reviewerSearch, setReviewerSearch] = useState('')
   const [approvalComment, setApprovalComment] = useState('')
-  const [showFloatingRegen, setShowFloatingRegen] = useState(false)
-  const [floatingPos, setFloatingPos] = useState({ top: 0, left: 0 })
-  const [selectedText, setSelectedText] = useState('')
-  const [savedRange, setSavedRange] = useState<Range | null>(null)
-  const [showRegenModal, setShowRegenModal] = useState(false)
-  const [regenInstructions, setRegenInstructions] = useState('')
-  const [isRegenerating, setIsRegenerating] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
 
   // ── TOC data ────────────────────────────────────────────────────────────────
@@ -2978,37 +3174,146 @@ function SOWDraftTab() {
   }
 
   const [tocItems, setTocItems] = useState<TocItem[]>([
-    { title: 'Background',              score: 72, status: 'Pending',  reviewers: [],              fileName: 'RFP_Document.pdf' },
-    { title: 'Executive Summary',       score: 88, status: 'Approved', reviewers: ['Ashika Jain'], fileName: 'RFP_Document.pdf' },
-    { title: 'Objectives',             score: 51, status: 'Pending',  reviewers: [],              fileName: 'Architecture_Guidelines.pdf' },
-    { title: 'Scope of Work',           score: 65, status: 'Pending',  reviewers: ['Ashika Jain'], fileName: 'Architecture_Guidelines.pdf' },
-    { title: 'Out of Scope',            score: 79, status: 'Pending',  reviewers: [],              fileName: 'Architecture_Guidelines.pdf' },
-    { title: 'Requirements',            score: 91, status: 'Approved', reviewers: ['Rohan Mehta'], fileName: 'RFP_Document.pdf' },
-    { title: 'Approach & Methodology',  score: 81, status: 'Pending',  reviewers: [],              fileName: 'Architecture_Guidelines.pdf' },
-    { title: 'Roles & Responsibilities',score: 69, status: 'Pending',  reviewers: [],              fileName: 'Architecture_Guidelines.pdf' },
-    { title: 'Deliverables',            score: 87, status: 'Pending',  reviewers: ['Priya Sharma'],fileName: 'RFP_Document.pdf' },
-    { title: 'Timeline & Milestones',   score: 74, status: 'Pending',  reviewers: [],              fileName: 'Project_Plan.pdf' },
-    { title: 'Commercials',             score: 95, status: 'Approved', reviewers: ['Karan Bose'],  fileName: 'Commercial_Proposal.pdf' },
-    { title: 'Assumptions',             score: 83, status: 'Pending',  reviewers: ['Rohan Mehta'], fileName: 'Architecture_Guidelines.pdf' },
-    { title: 'Risks & Mitigations',     score: 86, status: 'Pending',  reviewers: [],              fileName: 'Risk_Register.pdf' },
-    { title: 'Security',                score: 62, status: 'Pending',  reviewers: [],              fileName: 'Security_Guidelines.pdf' },
-    { title: 'Architecture',            score: 77, status: 'Pending',  reviewers: ['Priya Sharma'],fileName: 'Architecture_Guidelines.pdf' },
-    { title: 'Acceptance Criteria',     score: 93, status: 'Approved', reviewers: ['Ashika Jain'], fileName: 'RFP_Document.pdf' },
-    { title: 'Change Management',       score: 58, status: 'Pending',  reviewers: [],              fileName: 'Project_Plan.pdf' },
-    { title: 'Support & Handover',      score: 97, status: 'Approved', reviewers: ['Karan Bose'],  fileName: 'Architecture_Guidelines.pdf' },
+    {
+      title: 'Background',
+      score: 72,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'RFP_Document.pdf',
+    },
+    {
+      title: 'Executive Summary',
+      score: 88,
+      status: 'Approved',
+      reviewers: ['Ashika Jain'],
+      fileName: 'RFP_Document.pdf',
+    },
+    {
+      title: 'Objectives',
+      score: 51,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'Architecture_Guidelines.pdf',
+    },
+    {
+      title: 'Scope of Work',
+      score: 65,
+      status: 'Pending',
+      reviewers: ['Ashika Jain'],
+      fileName: 'Architecture_Guidelines.pdf',
+    },
+    {
+      title: 'Out of Scope',
+      score: 79,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'Architecture_Guidelines.pdf',
+    },
+    {
+      title: 'Requirements',
+      score: 91,
+      status: 'Approved',
+      reviewers: ['Rohan Mehta'],
+      fileName: 'RFP_Document.pdf',
+    },
+    {
+      title: 'Approach & Methodology',
+      score: 81,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'Architecture_Guidelines.pdf',
+    },
+    {
+      title: 'Roles & Responsibilities',
+      score: 69,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'Architecture_Guidelines.pdf',
+    },
+    {
+      title: 'Deliverables',
+      score: 87,
+      status: 'Pending',
+      reviewers: ['Priya Sharma'],
+      fileName: 'RFP_Document.pdf',
+    },
+    {
+      title: 'Timeline & Milestones',
+      score: 74,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'Project_Plan.pdf',
+    },
+    {
+      title: 'Commercials',
+      score: 95,
+      status: 'Approved',
+      reviewers: ['Karan Bose'],
+      fileName: 'Commercial_Proposal.pdf',
+    },
+    {
+      title: 'Assumptions',
+      score: 83,
+      status: 'Pending',
+      reviewers: ['Rohan Mehta'],
+      fileName: 'Architecture_Guidelines.pdf',
+    },
+    {
+      title: 'Risks & Mitigations',
+      score: 86,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'Risk_Register.pdf',
+    },
+    {
+      title: 'Security',
+      score: 62,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'Security_Guidelines.pdf',
+    },
+    {
+      title: 'Architecture',
+      score: 77,
+      status: 'Pending',
+      reviewers: ['Priya Sharma'],
+      fileName: 'Architecture_Guidelines.pdf',
+    },
+    {
+      title: 'Acceptance Criteria',
+      score: 93,
+      status: 'Approved',
+      reviewers: ['Ashika Jain'],
+      fileName: 'RFP_Document.pdf',
+    },
+    {
+      title: 'Change Management',
+      score: 58,
+      status: 'Pending',
+      reviewers: [],
+      fileName: 'Project_Plan.pdf',
+    },
+    {
+      title: 'Support & Handover',
+      score: 97,
+      status: 'Approved',
+      reviewers: ['Karan Bose'],
+      fileName: 'Architecture_Guidelines.pdf',
+    },
   ])
 
   // ── Generate document HTML ──────────────────────────────────────────────────
   const generateHtml = (items: TocItem[]) =>
-    items.map((item, idx) => {
-      let body = ''
-      switch (item.title) {
-        case 'Project Introduction':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated detailed content for the <strong>Project Introduction</strong> section based on the extracted requirements from your RFP document. Our AI analysis indicates that this section requires further manual review to align perfectly with your internal compliance standards. Please review and modify as needed to ensure it meets your exact specifications.</p>
+    items
+      .map((item, idx) => {
+        let body = ''
+        switch (item.title) {
+          case 'Project Introduction':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated detailed content for the <strong>Project Introduction</strong> section based on the extracted requirements from your RFP document. Our AI analysis indicates that this section requires further manual review to align perfectly with your internal compliance standards. Please review and modify as needed to ensure it meets your exact specifications.</p>
           <p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed engagement covers a comprehensive digital transformation initiative designed to modernize existing technology infrastructure, improve operational efficiency, and create a scalable foundation for future business growth. The delivery team will collaborate closely with all relevant stakeholders to validate requirements and confirm assumptions throughout the engagement lifecycle.</p>`
-          break
-        case 'Project Scope':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The scope of work is explicitly bounded to the backend infrastructure migration, API Gateway deployment, and database modernization. Clear demarcation of boundaries ensures that the project delivery remains strictly on schedule and within the agreed budget constraints.</p>
+            break
+          case 'Project Scope':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The scope of work is explicitly bounded to the backend infrastructure migration, API Gateway deployment, and database modernization. Clear demarcation of boundaries ensures that the project delivery remains strictly on schedule and within the agreed budget constraints.</p>
           <p style="margin-bottom:8px;line-height:1.7;color:#374151;"><strong>In-Scope Activities:</strong></p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li>Migration of 5 core relational databases (MySQL/PostgreSQL) to a fully managed cloud SQL environment featuring automated daily snapshots and point-in-time recovery.</li>
@@ -3022,27 +3327,27 @@ function SOWDraftTab() {
             <li>Native mobile application development.</li>
             <li>Integration with third-party legacy ERP/CRM systems not listed in the initial RFP.</li>
           </ul>`
-          break
-        case 'Business Requirements':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following business requirements have been extracted and validated from the submitted RFP documentation. These requirements form the foundation of the proposed solution architecture and delivery approach.</p>
+            break
+          case 'Business Requirements':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following business requirements have been extracted and validated from the submitted RFP documentation. These requirements form the foundation of the proposed solution architecture and delivery approach.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
             <li><strong>High Availability:</strong> Achieve 99.99% uptime SLA by implementing cross-region failover and automated disaster recovery.</li>
             <li><strong>Security Posture:</strong> Achieve SOC2 and ISO 27001 compliance for the new infrastructure layer.</li>
             <li><strong>Developer Velocity:</strong> Establish zero-touch CI/CD pipelines for continuous integration and seamless deployments.</li>
           </ul>`
-          break
-        case 'Solution Approach':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
+            break
+          case 'Solution Approach':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Edge &amp; Ingress Layer:</strong> A highly available Cloud Load Balancer integrated with a Web Application Firewall (WAF) to defend against DDoS attacks.</li>
             <li><strong>Compute Layer:</strong> Auto-scaling Kubernetes clusters spanning multiple availability zones.</li>
             <li><strong>Data &amp; Caching Layer:</strong> Managed PostgreSQL database cluster with read-replicas and a distributed Redis caching layer.</li>
             <li><strong>Event Streaming:</strong> Apache Kafka for asynchronous communication between microservices.</li>
           </ul>`
-          break
-        case 'Deliverables':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The engagement will yield a series of concrete, verifiable deliverables across the project lifecycle. Acceptance of these deliverables will trigger subsequent project phases and associated commercial milestones.</p>
+            break
+          case 'Deliverables':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The engagement will yield a series of concrete, verifiable deliverables across the project lifecycle. Acceptance of these deliverables will trigger subsequent project phases and associated commercial milestones.</p>
           <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
             <thead><tr style="background:rgba(0,196,196,0.07);">
               <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Deliverable</th>
@@ -3055,9 +3360,9 @@ function SOWDraftTab() {
               <tr><td style="padding:12px;"><strong>Final Handover Package [Week 12]</strong></td><td style="padding:12px;">Complete runbooks, operational manuals, disaster recovery procedures, and formal sign-off document.</td></tr>
             </tbody>
           </table>`
-          break
-        case 'Roles & Responsibilities':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following table outlines the roles and responsibilities of both the delivery team and the client organization throughout the project lifecycle.</p>
+            break
+          case 'Roles & Responsibilities':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following table outlines the roles and responsibilities of both the delivery team and the client organization throughout the project lifecycle.</p>
           <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
             <thead><tr style="background:rgba(0,196,196,0.07);">
               <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Role</th>
@@ -3069,39 +3374,39 @@ function SOWDraftTab() {
               <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Client PMO</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Approvals, resource allocation, stakeholder alignment, and UAT sign-off.</td></tr>
             </tbody>
           </table>`
-          break
-        case 'Commercial Terms':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this project is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. This covers all engineering, project management, and specialized architectural consulting hours required over the 12-week period.</p>
+            break
+          case 'Commercial Terms':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this project is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. This covers all engineering, project management, and specialized architectural consulting hours required over the 12-week period.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Milestone 1 (20% - $29,000):</strong> Project kickoff and formal SOW signing.</li>
             <li><strong>Milestone 2 (30% - $43,500):</strong> Delivery and approval of the Architecture Design Document.</li>
             <li><strong>Milestone 3 (30% - $43,500):</strong> Successful completion of User Acceptance Testing.</li>
             <li><strong>Milestone 4 (20% - $29,000):</strong> Final go-live and knowledge transfer completion.</li>
           </ul>`
-          break
-        case 'Risks & Mitigations':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, several assumptions have been made. Deviation from these assumptions may result in changes to the project timeline or budget, subject to the formal Change Request process.</p>
+            break
+          case 'Risks & Mitigations':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, several assumptions have been made. Deviation from these assumptions may result in changes to the project timeline or budget, subject to the formal Change Request process.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Assumption 1:</strong> Client SMEs will be available for a minimum of 4 hours per week to clarify business logic and validate migration strategies.</li>
             <li><strong>Assumption 2:</strong> The existing legacy source code is fully accessible and accurately documented.</li>
             <li><strong>Risk:</strong> Delays in UAT sign-off by client stakeholders may push the final go-live date. <strong>Mitigation:</strong> Weekly status reports and early, frequent testing cycles will be employed to ensure alignment.</li>
           </ul>`
-          break
-        case 'Background':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This Statement of Work has been prepared in response to the Request for Proposal (RFP) issued by the client organization. The engagement is aimed at addressing key technology modernization objectives identified through a series of discovery workshops and stakeholder interviews conducted prior to this submission.</p>
+            break
+          case 'Background':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This Statement of Work has been prepared in response to the Request for Proposal (RFP) issued by the client organization. The engagement is aimed at addressing key technology modernization objectives identified through a series of discovery workshops and stakeholder interviews conducted prior to this submission.</p>
           <p style="margin-bottom:12px;line-height:1.7;color:#374151;">The client currently operates a fragmented technology landscape with multiple legacy systems that present challenges around scalability, data integrity, and operational efficiency. This engagement proposes a structured, phased approach to address these gaps while minimizing disruption to business-as-usual operations.</p>`
-          break
-        case 'Objectives':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The primary objectives of this engagement are structured to address the core business challenges identified during the discovery phase. By executing on these objectives, the delivery team aims to deliver measurable improvements in performance, scalability, and cost efficiency.</p>
+            break
+          case 'Objectives':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The primary objectives of this engagement are structured to address the core business challenges identified during the discovery phase. By executing on these objectives, the delivery team aims to deliver measurable improvements in performance, scalability, and cost efficiency.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
             <li><strong>High Availability &amp; Resilience:</strong> Improve system reliability to achieve a 99.99% uptime SLA by implementing cross-region failover and automated disaster recovery.</li>
             <li><strong>Application Modernization:</strong> Transition current monolithic application structure into a decoupled microservices architecture.</li>
             <li><strong>Operational Agility:</strong> Establish zero-touch CI/CD pipelines for continuous integration and seamless zero-downtime deployments.</li>
           </ul>`
-          break
-        case 'Out of Scope':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following items and activities are explicitly excluded from this Statement of Work. Any work falling within these categories will require a formal Change Request and may result in adjustments to cost and timeline.</p>
+            break
+          case 'Out of Scope':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following items and activities are explicitly excluded from this Statement of Work. Any work falling within these categories will require a formal Change Request and may result in adjustments to cost and timeline.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li>Frontend application redesign, web portal enhancements, or any UI/UX modifications.</li>
             <li>Native mobile application development or updates for iOS and Android platforms.</li>
@@ -3109,9 +3414,9 @@ function SOWDraftTab() {
             <li>Data cleansing or manual data remediation prior to database migration.</li>
             <li>Ongoing managed services or post-go-live support beyond the defined hypercare period.</li>
           </ul>`
-          break
-        case 'Requirements':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following functional and non-functional requirements have been extracted and validated from the submitted RFP documentation. These requirements form the foundation of the proposed solution architecture.</p>
+            break
+          case 'Requirements':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following functional and non-functional requirements have been extracted and validated from the submitted RFP documentation. These requirements form the foundation of the proposed solution architecture.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>FR-01:</strong> The system shall support concurrent access by a minimum of 5,000 active users without performance degradation.</li>
             <li><strong>FR-02:</strong> All data transmissions must be encrypted using TLS 1.3 or higher.</li>
@@ -3119,18 +3424,18 @@ function SOWDraftTab() {
             <li><strong>NFR-01:</strong> System response time for standard operations must not exceed 200ms at the 95th percentile.</li>
             <li><strong>NFR-02:</strong> The solution must be deployable across AWS, GCP, and Azure without vendor lock-in dependencies.</li>
           </ul>`
-          break
-        case 'Approach & Methodology':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The delivery team will adopt an Agile-first approach, structured around two-week sprint cycles with continuous stakeholder involvement and feedback loops. This methodology ensures transparency, early risk identification, and rapid course correction when required.</p>
+            break
+          case 'Approach & Methodology':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The delivery team will adopt an Agile-first approach, structured around two-week sprint cycles with continuous stakeholder involvement and feedback loops. This methodology ensures transparency, early risk identification, and rapid course correction when required.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Phase 1 — Discovery &amp; Design (Weeks 1–3):</strong> Requirements validation, architecture finalization, and approval of the Architecture Design Document (ADD).</li>
             <li><strong>Phase 2 — Infrastructure Provisioning (Weeks 4–6):</strong> Cloud environment setup, network configuration, and CI/CD pipeline establishment.</li>
             <li><strong>Phase 3 — Development &amp; Migration (Weeks 7–10):</strong> Service containerization, database migration, and integration testing.</li>
             <li><strong>Phase 4 — UAT &amp; Deployment (Weeks 11–14):</strong> User acceptance testing, performance tuning, production deployment, and knowledge transfer.</li>
           </ul>`
-          break
-        case 'Timeline & Milestones':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The project is estimated to be completed over a period of 14 weeks, divided into four distinct delivery phases. This timeline is contingent upon timely approvals, resource availability from the client, and successful completion of UAT within the defined windows.</p>
+            break
+          case 'Timeline & Milestones':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The project is estimated to be completed over a period of 14 weeks, divided into four distinct delivery phases. This timeline is contingent upon timely approvals, resource availability from the client, and successful completion of UAT within the defined windows.</p>
           <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
             <thead><tr style="background:rgba(0,196,196,0.07);">
               <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Milestone</th>
@@ -3145,9 +3450,9 @@ function SOWDraftTab() {
               <tr><td style="padding:12px;">M5 — Go-Live</td><td style="padding:12px;">Week 14</td><td style="padding:12px;">Production deployment and handover complete</td></tr>
             </tbody>
           </table>`
-          break
-        case 'Commercials':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this engagement is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. This covers all engineering, project management, and specialized architectural consulting hours required over the 14-week delivery period.</p>
+            break
+          case 'Commercials':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this engagement is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. This covers all engineering, project management, and specialized architectural consulting hours required over the 14-week delivery period.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Milestone 1 (20% — $29,000):</strong> Project kickoff and formal SOW signing.</li>
             <li><strong>Milestone 2 (30% — $43,500):</strong> Delivery and approval of the Architecture Design Document.</li>
@@ -3155,9 +3460,9 @@ function SOWDraftTab() {
             <li><strong>Milestone 4 (20% — $29,000):</strong> Final go-live and knowledge transfer completion.</li>
           </ul>
           <p style="margin-bottom:12px;line-height:1.7;color:#374151;"><em>Note: Cloud infrastructure consumption costs are explicitly excluded and will be billed directly to the client's corporate accounts.</em></p>`
-          break
-        case 'Assumptions':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, the following assumptions have been made. Deviation from any of these may result in changes to the project timeline, cost, or scope, subject to the formal Change Request process.</p>
+            break
+          case 'Assumptions':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, the following assumptions have been made. Deviation from any of these may result in changes to the project timeline, cost, or scope, subject to the formal Change Request process.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li>Client subject matter experts (SMEs) will be available for a minimum of 4 hours per week.</li>
             <li>The existing legacy source code is fully accessible and can be compiled without unavailable proprietary dependencies.</li>
@@ -3165,18 +3470,18 @@ function SOWDraftTab() {
             <li>The client will provide timely feedback on deliverables within the agreed review windows of 5 business days.</li>
             <li>All required third-party software licenses are either already procured or will be made available by the client.</li>
           </ul>`
-          break
-        case 'Security':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Security is a first-class concern throughout this engagement. All solution components will be designed, implemented, and tested in accordance with industry-standard security frameworks and the client's internal security policy.</p>
+            break
+          case 'Security':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Security is a first-class concern throughout this engagement. All solution components will be designed, implemented, and tested in accordance with industry-standard security frameworks and the client's internal security policy.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Identity &amp; Access Management:</strong> Role-Based Access Control (RBAC) via Azure AD or Okta integration for Single Sign-On (SSO) across all infrastructure components.</li>
             <li><strong>Data Encryption:</strong> All data at rest encrypted using AES-256; all data in transit encrypted using TLS 1.3.</li>
             <li><strong>Vulnerability Management:</strong> Automated security scanning integrated into the CI/CD pipeline using OWASP ZAP and Snyk.</li>
             <li><strong>Compliance:</strong> Solution architecture designed to meet SOC2 Type II and ISO 27001 certification requirements.</li>
           </ul>`
-          break
-        case 'Architecture':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
+            break
+          case 'Architecture':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Edge &amp; Ingress Layer:</strong> Cloud Load Balancer with WAF integration, routing through API Gateway for authentication and rate limiting.</li>
             <li><strong>Compute Layer:</strong> Auto-scaling Kubernetes clusters across multiple availability zones with dynamic workload distribution.</li>
@@ -3184,9 +3489,9 @@ function SOWDraftTab() {
             <li><strong>Event Streaming:</strong> Apache Kafka for reliable asynchronous communication between microservices.</li>
             <li><strong>Observability:</strong> Prometheus + Grafana for metrics, ELK stack for centralized logging, and PagerDuty for alerting.</li>
           </ul>`
-          break
-        case 'Acceptance Criteria':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The project will be deemed complete and ready for final sign-off when all of the following acceptance criteria have been demonstrably met in the production environment.</p>
+            break
+          case 'Acceptance Criteria':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The project will be deemed complete and ready for final sign-off when all of the following acceptance criteria have been demonstrably met in the production environment.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li>All backend services are deployed to the Kubernetes cluster and passing automated health checks.</li>
             <li>The API Gateway is routing traffic correctly, enforcing JWT authentication, and applying configured rate limits.</li>
@@ -3194,29 +3499,29 @@ function SOWDraftTab() {
             <li>Performance tests demonstrate the infrastructure handles 200% of current peak load with sub-200ms API response times.</li>
             <li>The client operations team has formally signed off on handover documentation and runbooks.</li>
           </ul>`
-          break
-        case 'Change Management':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Any requests for changes to the agreed scope, timeline, or commercial terms must follow the formal Change Request (CR) process defined below. Unauthorized scope changes will not be accepted and will not form part of the delivery commitment.</p>
+            break
+          case 'Change Management':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Any requests for changes to the agreed scope, timeline, or commercial terms must follow the formal Change Request (CR) process defined below. Unauthorized scope changes will not be accepted and will not form part of the delivery commitment.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Step 1:</strong> Client submits a Change Request Form describing the proposed change, business justification, and urgency.</li>
             <li><strong>Step 2:</strong> Delivery team assesses impact on scope, timeline, and cost within 5 business days.</li>
             <li><strong>Step 3:</strong> Impact assessment reviewed and approved by both parties' project sponsors.</li>
             <li><strong>Step 4:</strong> Approved CR formally incorporated into the amended SOW via a signed addendum.</li>
           </ul>`
-          break
-        case 'Support & Handover':
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Upon successful completion of the project, the delivery team will provide a structured handover to the client's internal operations team. A defined hypercare period will follow go-live to ensure operational stability and knowledge continuity.</p>
+            break
+          case 'Support & Handover':
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Upon successful completion of the project, the delivery team will provide a structured handover to the client's internal operations team. A defined hypercare period will follow go-live to ensure operational stability and knowledge continuity.</p>
           <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
             <li><strong>Knowledge Transfer Sessions:</strong> Minimum 3 structured sessions covering infrastructure management, deployment procedures, and incident response.</li>
             <li><strong>Documentation Handover:</strong> Complete runbooks, architectural diagrams, API documentation, and disaster recovery playbooks.</li>
             <li><strong>Hypercare Period:</strong> 4 weeks of enhanced support post go-live with priority SLA (P1 — 2hr response, P2 — 8hr response).</li>
             <li><strong>Transition to BAU Support:</strong> Formal transition to client's BAU support model with clear RACI documented.</li>
           </ul>`
-          break
-        default:
-          body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated content for the <strong>${item.title}</strong> section based on extracted requirements from your RFP document. Please review and modify as needed to ensure it meets your exact specifications.</p>`
-      }
-      return `<div id="sow-section-${idx}" class="sow-section" style="margin-bottom:0;">
+            break
+          default:
+            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated content for the <strong>${item.title}</strong> section based on extracted requirements from your RFP document. Please review and modify as needed to ensure it meets your exact specifications.</p>`
+        }
+        return `<div id="sow-section-${idx}" class="sow-section" style="margin-bottom:0;">
         <h2 style="font-size:22px;font-weight:700;color:#0d212c;margin-bottom:16px;">${item.title}</h2>
         ${body}
         <div style="margin-top:16px;font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px;">
@@ -3224,7 +3529,8 @@ function SOWDraftTab() {
           Source: ${item.fileName}
         </div>
       </div>`
-    }).join('\n<hr style="border:0;border-top:1px solid rgba(0,196,196,0.15);margin:32px 0;" />\n')
+      })
+      .join('\n<hr style="border:0;border-top:1px solid rgba(0,196,196,0.15);margin:32px 0;" />\n')
 
   const [contentHtml] = useState(() => generateHtml(tocItems))
 
@@ -3257,34 +3563,27 @@ function SOWDraftTab() {
     return () => observer.disconnect()
   }, [tocItems.length])
 
-  // ── Text-selection floating regenerate ─────────────────────────────────────
-  useEffect(() => {
-    const handleMouseUp = () => {
-      setTimeout(() => {
-        const sel = window.getSelection()
-        if (!sel || sel.isCollapsed || sel.rangeCount === 0) { setShowFloatingRegen(false); return }
-        const range = sel.getRangeAt(0)
-        const text = range.toString().trim()
-        if (!text || !editorRef.current?.contains(range.commonAncestorContainer)) { setShowFloatingRegen(false); return }
-        const scrollArea = scrollAreaRef.current
-        if (!scrollArea) return
-        const rect = range.getBoundingClientRect()
-        const saRect = scrollArea.getBoundingClientRect()
-        setFloatingPos({ top: rect.top - saRect.top + scrollArea.scrollTop - 44, left: rect.left - saRect.left + rect.width / 2 - 65 })
-        setSelectedText(text)
-        setSavedRange(range.cloneRange())
-        setShowFloatingRegen(true)
-      }, 10)
-    }
-    document.addEventListener('mouseup', handleMouseUp)
-    return () => document.removeEventListener('mouseup', handleMouseUp)
-  }, [])
-
   // ── Toolbar helpers ─────────────────────────────────────────────────────────
   const updateFormats = () => {
-    const cmds = ['bold','italic','underline','strikeThrough','justifyLeft','justifyCenter','justifyRight','insertUnorderedList','insertOrderedList']
+    const cmds = [
+      'bold',
+      'italic',
+      'underline',
+      'strikeThrough',
+      'justifyLeft',
+      'justifyCenter',
+      'justifyRight',
+      'insertUnorderedList',
+      'insertOrderedList',
+    ]
     const f: Record<string, boolean> = {}
-    cmds.forEach((c) => { try { f[c] = document.queryCommandState(c) } catch { f[c] = false } })
+    cmds.forEach((c) => {
+      try {
+        f[c] = document.queryCommandState(c)
+      } catch {
+        f[c] = false
+      }
+    })
     setActiveFormats(f)
   }
 
@@ -3292,14 +3591,18 @@ function SOWDraftTab() {
     if (command === 'fontSize') {
       document.execCommand('fontSize', false, '7')
       editorRef.current?.querySelectorAll('font[size="7"]').forEach((el) => {
-        el.removeAttribute('size');
-        (el as HTMLElement).style.fontSize = `${value}px`
+        el.removeAttribute('size')
+        ;(el as HTMLElement).style.fontSize = `${value}px`
       })
     } else if (command === 'createLink') {
       const url = prompt('Enter link URL:')
       if (url) document.execCommand('createLink', false, url)
     } else if (command === 'insertTable') {
-      document.execCommand('insertHTML', false, '<table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;"><tr><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 1</td><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 2</td></tr><tr><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 3</td><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 4</td></tr></table>')
+      document.execCommand(
+        'insertHTML',
+        false,
+        '<table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;"><tr><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 1</td><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 2</td></tr><tr><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 3</td><td style="padding:8px;border:1px solid rgba(0,196,196,0.2);">Cell 4</td></tr></table>'
+      )
     } else if (command === 'clearFormat') {
       document.execCommand('removeFormat', false, undefined)
     } else {
@@ -3310,7 +3613,19 @@ function SOWDraftTab() {
     setHasUnsaved(true)
   }
 
-  const TBtn = ({ icon, command, value, title, isActive }: { icon: React.ReactNode; command: string; value?: string; title: string; isActive?: boolean }) => (
+  const TBtn = ({
+    icon,
+    command,
+    value,
+    title,
+    isActive,
+  }: {
+    icon: React.ReactNode
+    command: string
+    value?: string
+    title: string
+    isActive?: boolean
+  }) => (
     <button
       title={title}
       onMouseDown={(e) => e.preventDefault()}
@@ -3333,7 +3648,17 @@ function SOWDraftTab() {
     </button>
   )
 
-  const Sep = () => <div style={{ width: 1, height: 18, background: 'rgba(0,0,0,0.1)', margin: '0 6px', flexShrink: 0 }} />
+  const Sep = () => (
+    <div
+      style={{
+        width: 1,
+        height: 18,
+        background: 'rgba(0,0,0,0.1)',
+        margin: '0 6px',
+        flexShrink: 0,
+      }}
+    />
+  )
 
   // ── Reviewer helper ─────────────────────────────────────────────────────────
   const allMembers = SECTION_MEMBERS.map((m) => m.name)
@@ -3344,40 +3669,135 @@ function SOWDraftTab() {
   }
 
   // ── Score color ─────────────────────────────────────────────────────────────
-  const scoreColor = (s: number) => s >= 90 ? '#16a34a' : s >= 60 ? '#d97706' : '#ef4444'
-  const scoreBg   = (s: number) => s >= 90 ? 'rgba(22,163,74,0.1)' : s >= 60 ? 'rgba(217,119,6,0.1)' : 'rgba(239,68,68,0.1)'
-  const scoreLabel= (s: number) => s >= 90 ? 'High Confidence' : s >= 60 ? 'Medium Confidence' : 'Low Confidence'
+  const scoreColor = (s: number) => (s >= 90 ? '#16a34a' : s >= 60 ? '#d97706' : '#ef4444')
+  const scoreBg = (s: number) =>
+    s >= 90 ? 'rgba(22,163,74,0.1)' : s >= 60 ? 'rgba(217,119,6,0.1)' : 'rgba(239,68,68,0.1)'
+  const scoreLabel = (s: number) =>
+    s >= 90 ? 'High Confidence' : s >= 60 ? 'Medium Confidence' : 'Low Confidence'
 
   return (
     <>
       {/* ── Toast ─────────────────────────────────────────────────────────── */}
       {toastMsg && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: '#0d212c', color: '#fff', padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, boxShadow: '0 4px 16px rgba(0,0,0,0.18)' }}>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 9999,
+            background: '#0d212c',
+            color: '#fff',
+            padding: '10px 18px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 500,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+          }}
+        >
           {toastMsg}
         </div>
       )}
 
       <div style={{ display: 'flex', height: '100%', minHeight: 0, overflow: 'hidden' }}>
-
         {/* ── Left TOC sidebar ──────────────────────────────────────────────── */}
-        <div style={{ width: 264, flexShrink: 0, borderRight: '1px solid rgba(0,196,196,0.15)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'rgba(248,252,252,0.6)' }}>
-          {/* Header */}
-          <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c' }}>Table of Contents</span>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <div style={{ flex: 1, background: 'rgba(0,196,196,0.08)', borderRadius: 6, padding: '5px 8px', textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#00C4C4', lineHeight: 1 }}>{tocItems.length}</div>
-                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total</div>
+        <div
+          style={{
+            width: 264,
+            flexShrink: 0,
+            borderRight: '1px solid rgba(0,196,196,0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            background: 'rgba(248,252,252,0.6)',
+          }}
+        >
+          {/* Header: KPIs first */}
+          <div
+            style={{
+              padding: '12px 14px 10px',
+              borderBottom: '1px solid rgba(0,196,196,0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div
+                style={{
+                  flex: 1,
+                  background: 'rgba(0,196,196,0.08)',
+                  borderRadius: 6,
+                  padding: '6px 10px',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#00C4C4', lineHeight: 1 }}>
+                  {tocItems.length}
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: '#64748b',
+                    marginTop: 3,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  Total Comments
+                </div>
               </div>
-              <div style={{ flex: 1, background: 'rgba(245,158,11,0.08)', borderRadius: 6, padding: '5px 8px', textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>{tocItems.filter(t => t.status === 'Pending').length}</div>
-                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Open</div>
-              </div>
-              <div style={{ flex: 1, background: 'rgba(22,163,74,0.08)', borderRadius: 6, padding: '5px 8px', textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#16a34a', lineHeight: 1 }}>{tocItems.filter(t => t.status === 'Approved').length}</div>
-                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Approved</div>
+              <div
+                style={{
+                  flex: 1,
+                  background: 'rgba(245,158,11,0.08)',
+                  borderRadius: 6,
+                  padding: '6px 10px',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>
+                  {tocItems.filter((t) => t.status === 'Pending').length}
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: '#64748b',
+                    marginTop: 3,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  Open Comments
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Sections subheader */}
+          <div
+            style={{
+              padding: '8px 14px 6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              Sections
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>
+              {tocItems.length}
+            </span>
           </div>
 
           {/* Section list */}
@@ -3399,7 +3819,10 @@ function SOWDraftTab() {
                     if (el && scrollArea) {
                       const saRect = scrollArea.getBoundingClientRect()
                       const elRect = el.getBoundingClientRect()
-                      scrollArea.scrollTo({ top: scrollArea.scrollTop + elRect.top - saRect.top - 24, behavior: 'smooth' })
+                      scrollArea.scrollTo({
+                        top: scrollArea.scrollTop + elRect.top - saRect.top - 24,
+                        behavior: 'smooth',
+                      })
                     }
                   }}
                   style={{
@@ -3414,47 +3837,187 @@ function SOWDraftTab() {
                     transition: 'background 0.15s',
                   }}
                 >
-                  {/* Left: dot + title */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: isActive ? '#00C4C4' : '#94a3b8', flexShrink: 0 }} />
-                    <span style={{ fontSize: 12.5, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</span>
+                  {/* Left: numbered circle + title */}
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}
+                  >
+                    <div
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        background: isActive ? '#00C4C4' : 'rgba(148,163,184,0.15)',
+                        border: isActive ? 'none' : '1.5px solid #cbd5e1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: isActive ? '#fff' : '#64748b',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {idx + 1}
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: isActive ? 600 : 500,
+                        color: isActive ? '#00a0a0' : '#374151',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {item.title}
+                    </span>
                   </div>
 
                   {/* Right: score + reviewer + approved tick + menu */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                     {/* Status icon */}
                     {isApproved ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><title>Approved</title><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#16a34a"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <title>Approved</title>
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
                     ) : isRejected ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><title>Rejected</title><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#ef4444"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <title>Rejected</title>
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                      </svg>
                     ) : (
                       <>
                         {/* Score badge */}
-                        <div style={{ position: 'relative' }}
+                        <div
+                          style={{ position: 'relative' }}
                           onMouseEnter={() => setHoveredScoreIdx(idx)}
                           onMouseLeave={() => setHoveredScoreIdx(null)}
                         >
-                          <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 12, background: scoreBg(item.score), color: scoreColor(item.score) }}>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              padding: '2px 7px',
+                              borderRadius: 12,
+                              background: scoreBg(item.score),
+                              color: scoreColor(item.score),
+                            }}
+                          >
                             {item.score}%
                           </span>
                           {hoveredScoreIdx === idx && (
-                            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid rgba(0,196,196,0.2)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 50, width: 180, padding: 10, fontSize: 11, color: '#374151', lineHeight: 1.5 }}>
-                              <div style={{ fontWeight: 700, color: scoreColor(item.score), marginBottom: 3 }}>{scoreLabel(item.score)}</div>
-                              {item.score >= 90 ? 'Strong alignment with RFP requirements and thorough detail.' : item.score >= 60 ? 'Partial alignment with RFP. Some requirements may need elaboration.' : 'Weak alignment or missing critical details. Thorough review required.'}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: 'calc(100% + 6px)',
+                                right: 0,
+                                background: '#fff',
+                                border: '1px solid rgba(0,196,196,0.2)',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                                zIndex: 50,
+                                width: 180,
+                                padding: 10,
+                                fontSize: 11,
+                                color: '#374151',
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontWeight: 700,
+                                  color: scoreColor(item.score),
+                                  marginBottom: 3,
+                                }}
+                              >
+                                {scoreLabel(item.score)}
+                              </div>
+                              {item.score >= 90
+                                ? 'Strong alignment with RFP requirements and thorough detail.'
+                                : item.score >= 60
+                                  ? 'Partial alignment with RFP. Some requirements may need elaboration.'
+                                  : 'Weak alignment or missing critical details. Thorough review required.'}
                             </div>
                           )}
                         </div>
 
                         {/* Reviewer icon */}
                         {hasReviewer ? (
-                          <div style={{ position: 'relative' }}
+                          <div
+                            style={{ position: 'relative' }}
                             onMouseEnter={() => setHoveredReviewerIdx(idx)}
                             onMouseLeave={() => setHoveredReviewerIdx(null)}
                           >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'default' }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <svg
+                              width="15"
+                              height="15"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#94a3b8"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              style={{ cursor: 'default' }}
+                            >
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
                             {hoveredReviewerIdx === idx && (
-                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid rgba(0,196,196,0.2)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 50, padding: '8px 12px', fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>
-                                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Reviewer{item.reviewers.length > 1 ? 's' : ''}</div>
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: 'calc(100% + 6px)',
+                                  right: 0,
+                                  background: '#fff',
+                                  border: '1px solid rgba(0,196,196,0.2)',
+                                  borderRadius: 8,
+                                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                                  zIndex: 50,
+                                  padding: '8px 12px',
+                                  fontSize: 12,
+                                  color: '#374151',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    color: '#94a3b8',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    marginBottom: 2,
+                                  }}
+                                >
+                                  Reviewer{item.reviewers.length > 1 ? 's' : ''}
+                                </div>
                                 {item.reviewers.join(', ')}
                               </div>
                             )}
@@ -3462,10 +4025,35 @@ function SOWDraftTab() {
                         ) : (
                           <div
                             title="Assign Reviewer"
-                            onClick={(e) => { e.stopPropagation(); setAddReviewerIdx(idx); setOpenMenuIdx(null) }}
-                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2, borderRadius: 4, color: '#00C4C4' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setAddReviewerIdx(idx)
+                              setOpenMenuIdx(null)
+                            }}
+                            style={{
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: 2,
+                              borderRadius: 4,
+                              color: '#00C4C4',
+                            }}
                           >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                            <svg
+                              width="15"
+                              height="15"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                              <circle cx="8.5" cy="7" r="4" />
+                              <line x1="20" y1="8" x2="20" y2="14" />
+                              <line x1="23" y1="11" x2="17" y2="11" />
+                            </svg>
                           </div>
                         )}
                       </>
@@ -3475,46 +4063,177 @@ function SOWDraftTab() {
                     {(hoveredTocIdx === idx || openMenuIdx === idx) && (
                       <div style={{ position: 'relative' }}>
                         <button
-                          onClick={(e) => { e.stopPropagation(); setOpenMenuIdx(openMenuIdx === idx ? null : idx) }}
-                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 3px', borderRadius: 4, color: '#94a3b8', display: 'flex', alignItems: 'center' }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenMenuIdx(openMenuIdx === idx ? null : idx)
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '2px 3px',
+                            borderRadius: 4,
+                            color: '#94a3b8',
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="1.5" />
+                            <circle cx="12" cy="12" r="1.5" />
+                            <circle cx="12" cy="19" r="1.5" />
+                          </svg>
                         </button>
                         {openMenuIdx === idx && (
                           <>
-                            <div style={{ position: 'fixed', inset: 0, zIndex: 49 }} onClick={() => setOpenMenuIdx(null)} />
-                            <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, background: '#fff', border: '1px solid rgba(0,196,196,0.2)', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', zIndex: 50, minWidth: 200, padding: 6 }}>
+                            <div
+                              style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+                              onClick={() => setOpenMenuIdx(null)}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: 'calc(100% + 4px)',
+                                right: 0,
+                                background: '#fff',
+                                border: '1px solid rgba(0,196,196,0.2)',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                                zIndex: 50,
+                                minWidth: 200,
+                                padding: 6,
+                              }}
+                            >
                               {!isApproved && (
-                                <button onClick={(e) => { e.stopPropagation(); setAddReviewerIdx(idx); setOpenMenuIdx(null) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13, color: '#374151', textAlign: 'left' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,196,196,0.07)'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setAddReviewerIdx(idx)
+                                    setOpenMenuIdx(null)
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '9px 12px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    cursor: 'pointer',
+                                    fontSize: 13,
+                                    color: '#374151',
+                                    textAlign: 'left',
+                                  }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background = 'rgba(0,196,196,0.07)')
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background = 'transparent')
+                                  }
                                 >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="8.5" cy="7" r="4" />
+                                    <line x1="20" y1="8" x2="20" y2="14" />
+                                    <line x1="23" y1="11" x2="17" y2="11" />
+                                  </svg>
                                   Add Reviewer
                                 </button>
                               )}
-                              <button onClick={(e) => { e.stopPropagation(); setOpenMenuIdx(null); showToast('Section regeneration started…') }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13, color: '#374151', textAlign: 'left' }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,196,196,0.07)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                              >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.69"/></svg>
-                                Regenerate Section
-                              </button>
                               {!isApproved && (
-                                <button onClick={(e) => { e.stopPropagation(); setApprovePopupIdx(idx); setOpenMenuIdx(null) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13, color: '#374151', textAlign: 'left' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0,196,196,0.07)'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setApprovePopupIdx(idx)
+                                    setOpenMenuIdx(null)
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '9px 12px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    cursor: 'pointer',
+                                    fontSize: 13,
+                                    color: '#374151',
+                                    textAlign: 'left',
+                                  }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background = 'rgba(0,196,196,0.07)')
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background = 'transparent')
+                                  }
                                 >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
                                   Approve
                                 </button>
                               )}
                               {!isRejected && (
-                                <button onClick={(e) => { e.stopPropagation(); setRejectPopupIdx(idx); setOpenMenuIdx(null) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 13, color: '#ef4444', textAlign: 'left' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.06)'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setRejectPopupIdx(idx)
+                                    setOpenMenuIdx(null)
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '9px 12px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    cursor: 'pointer',
+                                    fontSize: 13,
+                                    color: '#ef4444',
+                                    textAlign: 'left',
+                                  }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background = 'transparent')
+                                  }
                                 >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polyline points="9 14 4 9 9 4" />
+                                    <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+                                  </svg>
                                   Rework Required
                                 </button>
                               )}
@@ -3531,20 +4250,111 @@ function SOWDraftTab() {
         </div>
 
         {/* ── Right editor area ──────────────────────────────────────────────── */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
           {/* Toolbar */}
-          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0, padding: '5px 12px', borderBottom: '1px solid rgba(0,196,196,0.12)', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(6px)', overflowX: 'auto', flexWrap: 'nowrap' }}>
+          <div
+            style={{
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0,
+              padding: '5px 12px',
+              borderBottom: '1px solid rgba(0,196,196,0.12)',
+              background: 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(6px)',
+              overflowX: 'auto',
+              flexWrap: 'nowrap',
+            }}
+          >
             {/* Undo / Redo */}
-            <TBtn title="Undo" command="undo" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>} />
-            <TBtn title="Redo" command="redo" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>} />
+            <TBtn
+              title="Undo"
+              command="undo"
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 14 4 9 9 4" />
+                  <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Redo"
+              command="redo"
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="15 14 20 9 15 4" />
+                  <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
+                </svg>
+              }
+            />
             <Sep />
             {/* Size / Style selects */}
-            <select onMouseDown={(e) => e.stopPropagation()} onChange={(e) => execCmd('fontSize', e.target.value)} defaultValue="15" title="Font Size" style={{ fontSize: 12, padding: '3px 6px', border: '1px solid rgba(0,0,0,0.13)', borderRadius: 4, background: '#fff', color: '#475569', cursor: 'pointer', marginRight: 4 }}>
-              <option value="15" disabled hidden>Size</option>
-              {[8,10,11,12,14,16,18,20,24,28,32,36,48].map(s => <option key={s} value={s}>{s}</option>)}
+            <select
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => execCmd('fontSize', e.target.value)}
+              defaultValue="15"
+              title="Font Size"
+              style={{
+                fontSize: 12,
+                padding: '3px 6px',
+                border: '1px solid rgba(0,0,0,0.13)',
+                borderRadius: 4,
+                background: '#fff',
+                color: '#475569',
+                cursor: 'pointer',
+                marginRight: 4,
+              }}
+            >
+              <option value="15" disabled hidden>
+                Size
+              </option>
+              {[8, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48].map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
-            <select onMouseDown={(e) => e.stopPropagation()} onChange={(e) => execCmd('formatBlock', e.target.value)} defaultValue="P" title="Paragraph Style" style={{ fontSize: 12, padding: '3px 6px', border: '1px solid rgba(0,0,0,0.13)', borderRadius: 4, background: '#fff', color: '#475569', cursor: 'pointer' }}>
+            <select
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => execCmd('formatBlock', e.target.value)}
+              defaultValue="P"
+              title="Paragraph Style"
+              style={{
+                fontSize: 12,
+                padding: '3px 6px',
+                border: '1px solid rgba(0,0,0,0.13)',
+                borderRadius: 4,
+                background: '#fff',
+                color: '#475569',
+                cursor: 'pointer',
+              }}
+            >
               <option value="P">Normal</option>
               <option value="H1">Heading 1</option>
               <option value="H2">Heading 2</option>
@@ -3553,97 +4363,572 @@ function SOWDraftTab() {
             </select>
             <Sep />
             {/* Lists + indent */}
-            <TBtn title="Bullet List" command="insertUnorderedList" isActive={activeFormats['insertUnorderedList']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/></svg>} />
-            <TBtn title="Numbered List" command="insertOrderedList" isActive={activeFormats['insertOrderedList']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4" stroke="currentColor"/><path d="M4 10h2" stroke="currentColor"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" stroke="currentColor"/></svg>} />
-            <TBtn title="Indent" command="indent" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><polyline points="7 10 11 14 7 18"/><line x1="11" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="21" y2="18"/></svg>} />
-            <TBtn title="Outdent" command="outdent" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><polyline points="11 10 7 14 11 18"/><line x1="7" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="21" y2="18"/></svg>} />
+            <TBtn
+              title="Bullet List"
+              command="insertUnorderedList"
+              isActive={activeFormats['insertUnorderedList']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <circle cx="3" cy="6" r="1" fill="currentColor" stroke="none" />
+                  <circle cx="3" cy="12" r="1" fill="currentColor" stroke="none" />
+                  <circle cx="3" cy="18" r="1" fill="currentColor" stroke="none" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Numbered List"
+              command="insertOrderedList"
+              isActive={activeFormats['insertOrderedList']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="10" y1="6" x2="21" y2="6" />
+                  <line x1="10" y1="12" x2="21" y2="12" />
+                  <line x1="10" y1="18" x2="21" y2="18" />
+                  <path d="M4 6h1v4" stroke="currentColor" />
+                  <path d="M4 10h2" stroke="currentColor" />
+                  <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" stroke="currentColor" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Indent"
+              command="indent"
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <polyline points="7 10 11 14 7 18" />
+                  <line x1="11" y1="14" x2="21" y2="14" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Outdent"
+              command="outdent"
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <polyline points="11 10 7 14 11 18" />
+                  <line x1="7" y1="14" x2="21" y2="14" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              }
+            />
             <Sep />
             {/* Bold / Italic / Underline / Strikethrough */}
-            <TBtn title="Bold" command="bold" isActive={activeFormats['bold']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>} />
-            <TBtn title="Italic" command="italic" isActive={activeFormats['italic']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>} />
-            <TBtn title="Underline" command="underline" isActive={activeFormats['underline']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg>} />
-            <TBtn title="Strikethrough" command="strikeThrough" isActive={activeFormats['strikeThrough']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><path d="M16 6C16 6 14.5 4 12 4s-5 1.5-5 4c0 1.6 1 2.7 2.5 3.5"/><path d="M8 18c0 0 1.5 2 4 2s5-1.5 5-4c0-1.6-1-2.7-2.5-3.5"/></svg>} />
+            <TBtn
+              title="Bold"
+              command="bold"
+              isActive={activeFormats['bold']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
+                  <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Italic"
+              command="italic"
+              isActive={activeFormats['italic']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="19" y1="4" x2="10" y2="4" />
+                  <line x1="14" y1="20" x2="5" y2="20" />
+                  <line x1="15" y1="4" x2="9" y2="20" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Underline"
+              command="underline"
+              isActive={activeFormats['underline']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3" />
+                  <line x1="4" y1="21" x2="20" y2="21" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Strikethrough"
+              command="strikeThrough"
+              isActive={activeFormats['strikeThrough']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <path d="M16 6C16 6 14.5 4 12 4s-5 1.5-5 4c0 1.6 1 2.7 2.5 3.5" />
+                  <path d="M8 18c0 0 1.5 2 4 2s5-1.5 5-4c0-1.6-1-2.7-2.5-3.5" />
+                </svg>
+              }
+            />
             <Sep />
             {/* Color pickers */}
-            <div title="Text Color" style={{ display: 'flex', alignItems: 'center', padding: '2px' }}>
-              <input type="color" defaultValue="#1E293B" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => execCmd('foreColor', e.target.value)} style={{ width: 24, height: 24, border: '1px solid rgba(0,0,0,0.13)', borderRadius: 4, padding: 2, cursor: 'pointer' }} />
+            <div
+              title="Text Color"
+              style={{ display: 'flex', alignItems: 'center', padding: '2px' }}
+            >
+              <input
+                type="color"
+                defaultValue="#1E293B"
+                onMouseDown={(e) => e.stopPropagation()}
+                onChange={(e) => execCmd('foreColor', e.target.value)}
+                style={{
+                  width: 24,
+                  height: 24,
+                  border: '1px solid rgba(0,0,0,0.13)',
+                  borderRadius: 4,
+                  padding: 2,
+                  cursor: 'pointer',
+                }}
+              />
             </div>
-            <div title="Highlight Color" style={{ display: 'flex', alignItems: 'center', padding: '2px', marginRight: 2 }}>
-              <input type="color" defaultValue="#FFFFFF" onMouseDown={(e) => e.stopPropagation()} onChange={(e) => execCmd('hiliteColor', e.target.value)} style={{ width: 24, height: 24, border: '1px solid rgba(0,0,0,0.13)', borderRadius: 4, padding: 2, cursor: 'pointer' }} />
+            <div
+              title="Highlight Color"
+              style={{ display: 'flex', alignItems: 'center', padding: '2px', marginRight: 2 }}
+            >
+              <input
+                type="color"
+                defaultValue="#FFFFFF"
+                onMouseDown={(e) => e.stopPropagation()}
+                onChange={(e) => execCmd('hiliteColor', e.target.value)}
+                style={{
+                  width: 24,
+                  height: 24,
+                  border: '1px solid rgba(0,0,0,0.13)',
+                  borderRadius: 4,
+                  padding: 2,
+                  cursor: 'pointer',
+                }}
+              />
             </div>
             <Sep />
             {/* Alignment */}
-            <TBtn title="Align Left" command="justifyLeft" isActive={activeFormats['justifyLeft']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>} />
-            <TBtn title="Align Center" command="justifyCenter" isActive={activeFormats['justifyCenter']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>} />
-            <TBtn title="Align Right" command="justifyRight" isActive={activeFormats['justifyRight']} icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg>} />
-            <TBtn title="Justify" command="justifyFull" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>} />
+            <TBtn
+              title="Align Left"
+              command="justifyLeft"
+              isActive={activeFormats['justifyLeft']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="15" y2="12" />
+                  <line x1="3" y1="18" x2="18" y2="18" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Align Center"
+              command="justifyCenter"
+              isActive={activeFormats['justifyCenter']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="6" y1="12" x2="18" y2="12" />
+                  <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Align Right"
+              command="justifyRight"
+              isActive={activeFormats['justifyRight']}
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="9" y1="12" x2="21" y2="12" />
+                  <line x1="6" y1="18" x2="21" y2="18" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Justify"
+              command="justifyFull"
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              }
+            />
             <Sep />
             {/* Link / Table */}
-            <TBtn title="Insert Link" command="createLink" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>} />
-            <TBtn title="Insert Table" command="insertTable" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>} />
+            <TBtn
+              title="Insert Link"
+              command="createLink"
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+              }
+            />
+            <TBtn
+              title="Insert Table"
+              command="insertTable"
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <line x1="3" y1="9" x2="21" y2="9" />
+                  <line x1="3" y1="15" x2="21" y2="15" />
+                  <line x1="9" y1="3" x2="9" y2="21" />
+                  <line x1="15" y1="3" x2="15" y2="21" />
+                </svg>
+              }
+            />
             <Sep />
             {/* Clear formatting */}
-            <TBtn title="Clear Formatting" command="clearFormat" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>} />
+            <TBtn
+              title="Clear Formatting"
+              command="clearFormat"
+              icon={
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4 7h16" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12" />
+                  <path d="M9 7V4h6v3" />
+                </svg>
+              }
+            />
             <div style={{ flex: 1 }} />
             {/* Save */}
             <button
-              onClick={() => { setHasUnsaved(false); showToast('Section saved successfully.') }}
+              onClick={() => {
+                setHasUnsaved(false)
+                showToast('Section saved successfully.')
+              }}
               disabled={!hasUnsaved}
-              style={{ padding: '5px 14px', background: hasUnsaved ? '#0d212c' : '#cbd5e1', color: '#fff', border: 'none', borderRadius: 6, cursor: hasUnsaved ? 'pointer' : 'not-allowed', fontSize: 12.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, transition: 'background 0.15s' }}
+              style={{
+                padding: '5px 14px',
+                background: hasUnsaved ? '#0d212c' : '#cbd5e1',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: hasUnsaved ? 'pointer' : 'not-allowed',
+                fontSize: 12.5,
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                flexShrink: 0,
+                transition: 'background 0.15s',
+              }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
               Save
             </button>
           </div>
 
           {/* Scroll area */}
-          <div ref={scrollAreaRef} id="sow-editor-scroll-area" style={{ flex: 1, overflowY: 'auto', background: '#f1f5f9', padding: '28px 20px 64px', position: 'relative' }}>
+          <div
+            ref={scrollAreaRef}
+            id="sow-editor-scroll-area"
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              background: '#f1f5f9',
+              padding: '28px 20px 64px',
+              position: 'relative',
+            }}
+          >
             {/* Document card */}
-            <div style={{ margin: '0 auto', maxWidth: 820, background: '#fff', minHeight: 900, borderRadius: 4, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: '56px 64px' }}>
+            <div
+              style={{
+                margin: '0 auto',
+                maxWidth: 820,
+                background: '#fff',
+                minHeight: 900,
+                borderRadius: 4,
+                boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+                padding: '56px 64px',
+              }}
+            >
               <div
                 ref={editorRef}
                 contentEditable
                 suppressContentEditableWarning
-                onInput={() => { updateFormats(); setHasUnsaved(true) }}
+                onInput={() => {
+                  updateFormats()
+                  setHasUnsaved(true)
+                }}
                 onKeyUp={updateFormats}
                 onMouseUp={updateFormats}
-                style={{ outline: 'none', fontSize: 14.5, lineHeight: 1.75, color: '#374151', minHeight: 600 }}
+                style={{
+                  outline: 'none',
+                  fontSize: 14.5,
+                  lineHeight: 1.75,
+                  color: '#374151',
+                  minHeight: 600,
+                }}
               />
             </div>
-
-            {/* Floating regenerate */}
-            {showFloatingRegen && !showRegenModal && (
-              <div
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { setShowFloatingRegen(false); setShowRegenModal(true) }}
-                style={{ position: 'absolute', top: floatingPos.top, left: floatingPos.left, zIndex: 20, display: 'flex', alignItems: 'center', gap: 6, background: '#0d212c', color: '#fff', padding: '7px 14px', borderRadius: 24, cursor: 'pointer', boxShadow: '0 4px 12px rgba(13,33,44,0.25)', fontSize: 12.5, fontWeight: 600 }}
-              >
-                ✨ Regenerate
-              </div>
-            )}
           </div>
         </div>
       </div>
 
       {/* ── Approve popup ──────────────────────────────────────────────────────── */}
       {approvePopupIdx !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => setApprovePopupIdx(null)}>
-          <div style={{ background: '#fff', borderRadius: 14, width: 400, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(13,33,44,0.4)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setApprovePopupIdx(null)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 14,
+              width: 400,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}
+            >
               <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Approve Section</div>
-              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>"{tocItems[approvePopupIdx]?.title}"</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
+                &quot;{tocItems[approvePopupIdx]?.title}&quot;
+              </div>
             </div>
             <div style={{ padding: '18px 28px' }}>
-              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Comment (optional)</label>
-              <textarea value={approvalComment} onChange={(e) => setApprovalComment(e.target.value)} placeholder="Looks good, approved." style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(0,196,196,0.25)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'inherit' }} />
+              <label
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: '#374151',
+                  display: 'block',
+                  marginBottom: 6,
+                }}
+              >
+                Comment (optional)
+              </label>
+              <textarea
+                value={approvalComment}
+                onChange={(e) => setApprovalComment(e.target.value)}
+                placeholder="Looks good, approved."
+                style={{
+                  width: '100%',
+                  minHeight: 80,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: '1px solid rgba(0,196,196,0.25)',
+                  fontSize: 13,
+                  resize: 'none',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                }}
+              />
             </div>
-            <div style={{ padding: '12px 28px 20px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button onClick={() => { setApprovePopupIdx(null); setApprovalComment('') }} style={{ padding: '8px 18px', background: 'transparent', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Cancel</button>
-              <button onClick={() => {
-                setTocItems((prev) => prev.map((t, i) => i === approvePopupIdx ? { ...t, status: 'Approved' as const } : t))
-                setApprovePopupIdx(null); setApprovalComment(''); showToast('Section approved.')
-              }} style={{ padding: '8px 18px', background: '#16a34a', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}>Approve</button>
+            <div
+              style={{
+                padding: '12px 28px 20px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 10,
+              }}
+            >
+              <button
+                onClick={() => {
+                  setApprovePopupIdx(null)
+                  setApprovalComment('')
+                }}
+                style={{
+                  padding: '8px 18px',
+                  background: 'transparent',
+                  border: '1px solid rgba(0,196,196,0.25)',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setTocItems((prev) =>
+                    prev.map((t, i) =>
+                      i === approvePopupIdx ? { ...t, status: 'Approved' as const } : t
+                    )
+                  )
+                  setApprovePopupIdx(null)
+                  setApprovalComment('')
+                  showToast('Section approved.')
+                }}
+                style={{
+                  padding: '8px 18px',
+                  background: '#16a34a',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#fff',
+                }}
+              >
+                Approve
+              </button>
             </div>
           </div>
         </div>
@@ -3651,23 +4936,115 @@ function SOWDraftTab() {
 
       {/* ── Reject popup ───────────────────────────────────────────────────────── */}
       {rejectPopupIdx !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => setRejectPopupIdx(null)}>
-          <div style={{ background: '#fff', borderRadius: 14, width: 400, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(239,68,68,0.15)' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(13,33,44,0.4)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setRejectPopupIdx(null)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 14,
+              width: 400,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(239,68,68,0.15)' }}
+            >
               <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Rework Required</div>
-              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>"{tocItems[rejectPopupIdx]?.title}"</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
+                &quot;{tocItems[rejectPopupIdx]?.title}&quot;
+              </div>
             </div>
             <div style={{ padding: '18px 28px' }}>
-              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Feedback for rework</label>
-              <textarea value={approvalComment} onChange={(e) => setApprovalComment(e.target.value)} placeholder="Please clarify the scope boundaries and update…" style={{ width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.25)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'inherit' }} />
+              <label
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: '#374151',
+                  display: 'block',
+                  marginBottom: 6,
+                }}
+              >
+                Feedback for rework
+              </label>
+              <textarea
+                value={approvalComment}
+                onChange={(e) => setApprovalComment(e.target.value)}
+                placeholder="Please clarify the scope boundaries and update…"
+                style={{
+                  width: '100%',
+                  minHeight: 80,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  fontSize: 13,
+                  resize: 'none',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                }}
+              />
             </div>
-            <div style={{ padding: '12px 28px 20px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button onClick={() => { setRejectPopupIdx(null); setApprovalComment('') }} style={{ padding: '8px 18px', background: 'transparent', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Cancel</button>
-              <button onClick={() => {
-                setTocItems((prev) => prev.map((t, i) => i === rejectPopupIdx ? { ...t, status: 'Rejected' as const } : t))
-                setRejectPopupIdx(null); setApprovalComment(''); showToast('Section marked for rework.')
-              }} style={{ padding: '8px 18px', background: '#ef4444', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}>Send for Rework</button>
+            <div
+              style={{
+                padding: '12px 28px 20px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 10,
+              }}
+            >
+              <button
+                onClick={() => {
+                  setRejectPopupIdx(null)
+                  setApprovalComment('')
+                }}
+                style={{
+                  padding: '8px 18px',
+                  background: 'transparent',
+                  border: '1px solid rgba(0,196,196,0.25)',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setTocItems((prev) =>
+                    prev.map((t, i) =>
+                      i === rejectPopupIdx ? { ...t, status: 'Rejected' as const } : t
+                    )
+                  )
+                  setRejectPopupIdx(null)
+                  setApprovalComment('')
+                  showToast('Section marked for rework.')
+                }}
+                style={{
+                  padding: '8px 18px',
+                  background: '#ef4444',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#fff',
+                }}
+              >
+                Send for Rework
+              </button>
             </div>
           </div>
         </div>
@@ -3675,12 +5052,39 @@ function SOWDraftTab() {
 
       {/* ── Add Reviewer popup ─────────────────────────────────────────────────── */}
       {addReviewerIdx !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => { setAddReviewerIdx(null); setReviewerSearch('') }}>
-          <div style={{ background: '#fff', borderRadius: 14, width: 380, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '22px 28px 16px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(13,33,44,0.4)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => {
+            setAddReviewerIdx(null)
+            setReviewerSearch('')
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 14,
+              width: 380,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{ padding: '22px 28px 16px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}
+            >
               <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Assign Reviewer</div>
-              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>"{tocItems[addReviewerIdx]?.title}"</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
+                &quot;{tocItems[addReviewerIdx]?.title}&quot;
+              </div>
             </div>
             <div style={{ padding: '16px 28px 20px' }}>
               {allMembers.map((name) => {
@@ -3688,57 +5092,84 @@ function SOWDraftTab() {
                 const matches = name.toLowerCase().includes(reviewerSearch.toLowerCase())
                 if (!matches) return null
                 return (
-                  <label key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer', fontSize: 13, color: '#374151' }}>
-                    <input type="checkbox" defaultChecked={already} onChange={(e) => {
-                      setTocItems((prev) => prev.map((t, i) => {
-                        if (i !== addReviewerIdx) return t
-                        return { ...t, reviewers: e.target.checked ? [...t.reviewers.filter(r => r !== name), name] : t.reviewers.filter(r => r !== name) }
-                      }))
-                    }} style={{ accentColor: '#00C4C4', width: 15, height: 15 }} />
+                  <label
+                    key={name}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '8px 0',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      color: '#374151',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      defaultChecked={already}
+                      onChange={(e) => {
+                        setTocItems((prev) =>
+                          prev.map((t, i) => {
+                            if (i !== addReviewerIdx) return t
+                            return {
+                              ...t,
+                              reviewers: e.target.checked
+                                ? [...t.reviewers.filter((r) => r !== name), name]
+                                : t.reviewers.filter((r) => r !== name),
+                            }
+                          })
+                        )
+                      }}
+                      style={{ accentColor: '#00C4C4', width: 15, height: 15 }}
+                    />
                     {name}
                   </label>
                 )
               })}
             </div>
-            <div style={{ padding: '0 28px 20px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button onClick={() => { setAddReviewerIdx(null); setReviewerSearch('') }} style={{ padding: '8px 18px', background: 'transparent', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>Cancel</button>
-              <button onClick={() => { setAddReviewerIdx(null); setReviewerSearch(''); showToast('Reviewer assigned.') }} style={{ padding: '8px 18px', background: '#0d212c', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}>Done</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Regenerate modal ───────────────────────────────────────────────────── */}
-      {showRegenModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => setShowRegenModal(false)}>
-          <div style={{ background: '#fff', borderRadius: 14, width: 420, boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,196,196,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>✨</div>
-                <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Regenerate Selected Content</div>
-              </div>
-              <div style={{ fontSize: 13, color: '#64748b', marginTop: 8, lineHeight: 1.5 }}>Generate an improved version of the selected content while preserving the overall document context.</div>
-            </div>
-            <div style={{ padding: '18px 28px' }}>
-              <label style={{ fontSize: 12.5, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Additional Instructions</label>
-              <textarea value={regenInstructions} onChange={(e) => setRegenInstructions(e.target.value)} disabled={isRegenerating} placeholder="Examples: Make it more professional, Improve clarity, Rewrite in formal tone…" style={{ width: '100%', minHeight: 90, padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(0,196,196,0.25)', fontSize: 13, resize: 'none', outline: 'none', fontFamily: 'inherit' }} />
-            </div>
-            <div style={{ padding: '12px 28px 20px', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: 10, borderTop: '1px solid rgba(0,196,196,0.1)' }}>
-              <button disabled={isRegenerating} onClick={() => { setShowRegenModal(false); setRegenInstructions('') }} style={{ padding: '8px 18px', background: 'transparent', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500, opacity: isRegenerating ? 0.5 : 1 }}>Cancel</button>
-              <button disabled={isRegenerating || !regenInstructions.trim()} onClick={() => {
-                setIsRegenerating(true)
-                setTimeout(() => {
-                  if (savedRange) {
-                    const sel = window.getSelection()
-                    if (sel) { sel.removeAllRanges(); sel.addRange(savedRange) }
-                    document.execCommand('insertText', false, `[Improved: "${regenInstructions}"]: ${selectedText}`)
-                    setHasUnsaved(true)
-                  }
-                  setIsRegenerating(false); setShowRegenModal(false); setRegenInstructions(''); showToast('Selected content regenerated.')
-                }, 1400)
-              }} style={{ padding: '8px 18px', background: '#0d212c', border: 'none', borderRadius: 8, cursor: (isRegenerating || !regenInstructions.trim()) ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, color: '#fff', opacity: (isRegenerating || !regenInstructions.trim()) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                {isRegenerating ? 'Generating…' : '✨ Regenerate'}
+            <div
+              style={{
+                padding: '0 28px 20px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 10,
+              }}
+            >
+              <button
+                onClick={() => {
+                  setAddReviewerIdx(null)
+                  setReviewerSearch('')
+                }}
+                style={{
+                  padding: '8px 18px',
+                  background: 'transparent',
+                  border: '1px solid rgba(0,196,196,0.25)',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setAddReviewerIdx(null)
+                  setReviewerSearch('')
+                  showToast('Reviewer assigned.')
+                }}
+                style={{
+                  padding: '8px 18px',
+                  background: '#0d212c',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#fff',
+                }}
+              >
+                Done
               </button>
             </div>
           </div>
@@ -3747,7 +5178,6 @@ function SOWDraftTab() {
     </>
   )
 }
-
 
 /* ── Generating Animation ────────────────────────────────────────────────── */
 
@@ -4254,6 +5684,7 @@ export function SOWDetailScreen({
   const [isStructureUnlocked, setIsStructureUnlocked] = useState(sowVariant === 'v2')
   const [isDraftUnlocked, setIsDraftUnlocked] = useState(false)
   const [isFormReady, setIsFormReady] = useState(false)
+  const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
   const [draftGenState, setDraftGenState] = useState<DraftGenState>('idle')
   const [inviteToast, setInviteToast] = useState(false)
   const [showReviewModal, setShowReviewModal] = useState(false)
@@ -4268,11 +5699,11 @@ export function SOWDetailScreen({
   }
 
   const handleGenerateDraft = () => {
+    setIsDraftUnlocked(true)
+    setActiveTab('sow-draft')
     setDraftGenState('generating')
     setTimeout(() => {
       setDraftGenState('shimmer')
-      setIsDraftUnlocked(true)
-      setActiveTab('sow-draft')
       setTimeout(() => {
         setDraftGenState('ready')
       }, 2000)
@@ -4513,21 +5944,21 @@ export function SOWDetailScreen({
                       gap: 6,
                       padding: '6px 14px',
                       borderRadius: 8,
-                      border: '1.5px solid rgba(234,88,12,0.4)',
-                      background: 'rgba(234,88,12,0.08)',
+                      border: '1.5px solid rgba(0,196,196,0.35)',
+                      background: 'rgba(0,196,196,0.07)',
                       fontSize: 12,
                       fontWeight: 700,
-                      color: '#c2410c',
+                      color: '#00a0a0',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
                     }}
                     onMouseEnter={(e) => {
                       ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(234,88,12,0.15)'
+                        'rgba(0,196,196,0.14)'
                     }}
                     onMouseLeave={(e) => {
                       ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(234,88,12,0.08)'
+                        'rgba(0,196,196,0.07)'
                     }}
                   >
                     <svg
@@ -4669,48 +6100,98 @@ export function SOWDetailScreen({
                   </svg>
                 </button>
               ) : activeTab === 'structure' ? (
-                <button
-                  onClick={handleGenerateDraft}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 8,
-                    border: '1.5px solid rgba(0,196,196,0.5)',
-                    background: 'rgba(0,196,196,0.12)',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#007a7a',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background =
-                      'rgba(0,196,196,0.22)'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background =
-                      'rgba(0,196,196,0.12)'
-                  }}
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
+                !hasInvitedParticipants ? (
+                  <button
+                    onClick={() => {
+                      showInviteToast()
+                      setHasInvitedParticipants(true)
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      border: '1.5px solid rgba(0,196,196,0.5)',
+                      background: 'rgba(0,196,196,0.12)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#007a7a',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      ;(e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(0,196,196,0.22)'
+                    }}
+                    onMouseLeave={(e) => {
+                      ;(e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(0,196,196,0.12)'
+                    }}
                   >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                  </svg>
-                  Generate Draft
-                </button>
+                    <svg
+                      width="13"
+                      height="13"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="8.5" cy="7" r="4" />
+                      <line x1="20" y1="8" x2="20" y2="14" />
+                      <line x1="17" y1="11" x2="23" y2="11" />
+                    </svg>
+                    Invite Participants
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleGenerateDraft}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      border: '1.5px solid rgba(0,196,196,0.5)',
+                      background: 'rgba(0,196,196,0.12)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#007a7a',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      ;(e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(0,196,196,0.22)'
+                    }}
+                    onMouseLeave={(e) => {
+                      ;(e.currentTarget as HTMLButtonElement).style.background =
+                        'rgba(0,196,196,0.12)'
+                    }}
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    Generate Draft
+                  </button>
+                )
               ) : null}
             </div>
           </div>
@@ -4775,7 +6256,15 @@ export function SOWDetailScreen({
               />
             ))}
           {activeTab === 'audit-log' && (
-            <div style={{ flex: 1, padding: '16px', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <div
+              style={{
+                flex: 1,
+                padding: '16px',
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <AuditLogView />
             </div>
           )}
