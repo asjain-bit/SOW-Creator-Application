@@ -2796,10 +2796,10 @@ function SOWDraftTab() {
           scrollMarginTop: 20,
           position: 'relative',
           borderRadius: 10,
-          border: isEdit ? '1.5px solid #00C4C4' : '1.5px solid transparent',
-          padding: isEdit ? '14px 16px' : '0',
-          transition: 'border-color 0.15s, padding 0.15s',
-          background: isEdit ? 'rgba(0,196,196,0.02)' : 'transparent',
+          border: '1.5px solid transparent',
+          padding: '0',
+          transition: 'border-color 0.15s',
+          background: 'transparent',
         }}
       >
         {/* Section heading */}
@@ -3188,13 +3188,21 @@ function SOWDraftTab() {
               >
                 <span
                   style={{
-                    width: 5,
-                    height: 5,
+                    width: 18,
+                    height: 18,
                     borderRadius: '50%',
-                    background: isActive ? '#00C4C4' : '#cbd5e1',
+                    background: isActive ? 'rgba(0,196,196,0.15)' : 'rgba(0,0,0,0.06)',
+                    color: isActive ? '#00a0a0' : '#94a3b8',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     flexShrink: 0,
                   }}
-                />
+                >
+                  {SOW_DRAFT_SECTIONS.indexOf(sec) + 1}
+                </span>
                 {sec.title}
                 {comments.filter((c) => c.sectionId === sec.id).length > 0 && (
                   <span
@@ -4360,7 +4368,7 @@ function SOWDraftTab() {
               background: '#fff',
               borderRadius: 14,
               padding: '20px 22px',
-              width: 320,
+              width: 400,
               boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.06)',
               border: '1px solid rgba(0,196,196,0.18)',
               display: 'flex',
@@ -5090,7 +5098,7 @@ export function SOWDetailScreen({
       </div>
 
       {/* Header area */}
-      <div style={{ flexShrink: 0, padding: '12px 20px 0' }}>
+      <div style={{ flexShrink: 0, padding: '8px 12px 0' }}>
         {/* Single-line header: glass back button + title + status badge (no background behind title) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           {/* Back button — glass-morphic box */}
@@ -5134,7 +5142,7 @@ export function SOWDetailScreen({
           <h1
             style={{
               margin: 0,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: 700,
               color: '#0d212c',
               lineHeight: 1.2,
@@ -5172,7 +5180,7 @@ export function SOWDetailScreen({
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
-          margin: '0 20px 16px',
+          margin: '0 12px 12px',
           background: 'rgba(255,255,255,0.72)',
           backdropFilter: 'blur(18px)',
           WebkitBackdropFilter: 'blur(18px)',
@@ -5199,6 +5207,7 @@ export function SOWDetailScreen({
               gap: 0,
               alignItems: 'center',
               borderBottom: 'none',
+              padding: '4px 8px 0',
             }}
           >
             {tabs.map((tab) => {
@@ -5208,7 +5217,7 @@ export function SOWDetailScreen({
                   key={tab.id}
                   onClick={() => !tab.locked && setActiveTab(tab.id)}
                   style={{
-                    padding: '10px 18px',
+                    padding: '12px 18px',
                     background: 'none',
                     border: 'none',
                     borderBottom: isActive ? '2.5px solid #00C4C4' : '2.5px solid transparent',
@@ -5238,7 +5247,7 @@ export function SOWDetailScreen({
               )
             })}
             {/* CTA pinned to the right of the tab strip */}
-            <div style={{ marginLeft: 'auto', paddingRight: 4 }}>
+            <div style={{ marginLeft: 'auto', paddingRight: 10 }}>
               {showGenerateDraft ? (
                 draftGenState === 'ready' ? (
                   <button
