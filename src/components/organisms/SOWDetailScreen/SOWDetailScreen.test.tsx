@@ -53,6 +53,6 @@ describe('SOWDetailScreen', () => {
   it('switches to Audit Log tab', () => {
     render(<SOWDetailScreen />)
     fireEvent.click(screen.getByText('Audit Log'))
-    expect(screen.getByText('Audit Log', { selector: 'div' })).toBeTruthy()
+    expect(screen.getByText(/SOW Project Initialized/i)).toBeTruthy()
   })
 })

@@ -5,8 +5,30 @@ import { LoginScreen } from '@/components/organisms/LoginScreen'
 import { DashboardScreenV2 } from '@/components/organisms/DashboardScreenV2'
 import { SOWDetailScreen } from '@/components/organisms/SOWDetailScreen'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
+import type { SOWItem } from '@/components/organisms/DashboardScreenV2/DashboardScreenV2.types'
 
-type AppView = 'dashboard' | 'sow-detail' | 'sow-detail-v2'
+type AppView = 'dashboard' | 'sow-detail' | 'sow-detail-v2' | 'sow-detail-meridian'
+
+const CONTRIBUTOR_SOWS: SOWItem[] = [
+  {
+    id: 'sow-meridian',
+    name: 'Procurement Platform Modernization',
+    client: 'Meridian Healthcare',
+    createdBy: 'Ashika Jain',
+    createdDate: 'Sep 02, 2026',
+    lastUpdated: 'Today, 9:10 AM',
+    status: 'In Progress',
+  },
+  {
+    id: 'sow-2',
+    name: 'Digital Workplace Enablement',
+    client: 'Globex Inc',
+    createdBy: 'Ashika Jain',
+    createdDate: 'Aug 10, 2026',
+    lastUpdated: 'Aug 28, 2026',
+    status: 'In Progress',
+  },
+]
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -34,7 +56,8 @@ export default function Home() {
   const userInitials = isNarendra ? 'N' : 'AJ'
   const userImage = isNarendra ? '/profile-male.png' : '/profile-user.png'
 
-  const isSOWDetail = view === 'sow-detail' || view === 'sow-detail-v2'
+  const isSOWDetail =
+    view === 'sow-detail' || view === 'sow-detail-v2' || view === 'sow-detail-meridian'
 
   return (
     <DashboardScreenV2
@@ -42,6 +65,7 @@ export default function Home() {
       userRole={userRole}
       userInitials={userInitials}
       userImage={userImage}
+      initialSOWs={isNarendra ? CONTRIBUTOR_SOWS : undefined}
       onSignOut={() => setIsLoggedIn(false)}
       activeNav={isSOWDetail ? 'my-sows' : 'dashboard'}
       contentOverride={
@@ -55,6 +79,15 @@ export default function Home() {
             sowVariant="v2"
             onBack={() => setView('dashboard')}
           />
+        ) : view === 'sow-detail-meridian' ? (
+          <SOWDetailScreen
+            sowName="Meridian Healthcare — Procurement Platform Modernization"
+            sowStatus="In Progress"
+            sowVariant="meridian"
+            viewerRole="contributor"
+            currentMemberId="m5"
+            onBack={() => setView('dashboard')}
+          />
         ) : undefined
       }
       onProceedToSOW={(files: UploadedFile[]) => {
@@ -65,6 +98,7 @@ export default function Home() {
       onNavAllSOWs={() => setView('dashboard')}
       onNavAuditLog={() => setView('dashboard')}
       onOpenSOWV2={() => setView('sow-detail-v2')}
+      onOpenSOWContributor={() => setView('sow-detail-meridian')}
     />
   )
 }

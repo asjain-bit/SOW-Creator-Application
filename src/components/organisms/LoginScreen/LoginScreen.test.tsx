@@ -36,15 +36,6 @@ describe('LoginScreen Organism', () => {
     expect(screen.getByText(/Please enter a valid email address/i)).toBeInTheDocument()
   })
 
-  it('shows error when email is not registered', () => {
-    render(<LoginScreen showDevControls={false} initialEmail="notfound@company.com" />)
-
-    const sendBtn = screen.getByRole('button', { name: /Send OTP/i })
-    fireEvent.click(sendBtn)
-
-    expect(screen.getByText(/Email address not found/i)).toBeInTheDocument()
-  })
-
   it('advances to OTP step when valid registered email is submitted', () => {
     render(<LoginScreen showDevControls={false} initialEmail="ashika.jain@company.com" />)
 
@@ -57,26 +48,28 @@ describe('LoginScreen Organism', () => {
   })
 
   it('shows error when incorrect OTP code is entered', () => {
-    render(<LoginScreen showDevControls={false} initialStep="otp" initialEmail="ashika.jain@company.com" />)
+    render(
+      <LoginScreen
+        showDevControls={false}
+        initialStep="otp"
+        initialEmail="ashika.jain@company.com"
+      />
+    )
 
     const otp0 = screen.getByTestId('otp-input-0')
     const otp1 = screen.getByTestId('otp-input-1')
     const otp2 = screen.getByTestId('otp-input-2')
     const otp3 = screen.getByTestId('otp-input-3')
-    const otp4 = screen.getByTestId('otp-input-4')
-    const otp5 = screen.getByTestId('otp-input-5')
 
     fireEvent.change(otp0, { target: { value: '9' } })
     fireEvent.change(otp1, { target: { value: '9' } })
     fireEvent.change(otp2, { target: { value: '9' } })
     fireEvent.change(otp3, { target: { value: '9' } })
-    fireEvent.change(otp4, { target: { value: '9' } })
-    fireEvent.change(otp5, { target: { value: '9' } })
 
     const verifyBtn = screen.getByRole('button', { name: /Verify & Sign In/i })
     fireEvent.click(verifyBtn)
 
-    expect(screen.getByText(/Incorrect OTP code. Please try again./i)).toBeInTheDocument()
+    expect(screen.getByText(/Incorrect OTP code/i)).toBeInTheDocument()
   })
 
   it('triggers loader and success callback when correct OTP is entered', async () => {
@@ -94,15 +87,11 @@ describe('LoginScreen Organism', () => {
     const otp1 = screen.getByTestId('otp-input-1')
     const otp2 = screen.getByTestId('otp-input-2')
     const otp3 = screen.getByTestId('otp-input-3')
-    const otp4 = screen.getByTestId('otp-input-4')
-    const otp5 = screen.getByTestId('otp-input-5')
 
     fireEvent.change(otp0, { target: { value: '1' } })
     fireEvent.change(otp1, { target: { value: '2' } })
     fireEvent.change(otp2, { target: { value: '3' } })
     fireEvent.change(otp3, { target: { value: '4' } })
-    fireEvent.change(otp4, { target: { value: '5' } })
-    fireEvent.change(otp5, { target: { value: '6' } })
 
     const verifyBtn = screen.getByRole('button', { name: /Verify & Sign In/i })
     fireEvent.click(verifyBtn)

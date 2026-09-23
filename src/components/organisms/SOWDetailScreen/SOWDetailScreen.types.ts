@@ -56,5 +56,7 @@ export interface SOWDetailScreenProps {
   onBack?: () => void
   className?: string
   showGenerateDraft?: boolean
-  sowVariant?: 'v1' | 'v2'
+  sowVariant?: 'v1' | 'v2' | 'meridian'
+  viewerRole?: 'pmo' | 'contributor'
+  currentMemberId?: string
 }

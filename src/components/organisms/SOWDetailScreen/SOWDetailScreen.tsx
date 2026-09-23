@@ -829,28 +829,40 @@ function FormTab({
   files: _files,
   onReady,
   onSubmit: _onSubmit,
+  skipLoading = false,
 }: {
   files: UploadedFile[]
   onReady?: () => void
   onSubmit: () => void
+  skipLoading?: boolean
 }) {
-  const [loadingState, setLoadingState] = useState<'generating' | 'shimmer' | 'ready'>('generating')
-  const [formData, setFormData] = useState<SOWFormData>({
-    commitments: [],
-    clientName: '',
-    description: '',
-    businessOutcome: '',
-    importanceValue: '',
-    inScope: '',
-    outOfScope: '',
-    tags: [],
-    otherContext: '',
-  })
+  const [loadingState, setLoadingState] = useState<'generating' | 'shimmer' | 'ready'>(
+    skipLoading ? 'ready' : 'generating'
+  )
+  const [formData, setFormData] = useState<SOWFormData>(
+    skipLoading
+      ? MOCK_FORM_DATA
+      : {
+          commitments: [],
+          clientName: '',
+          description: '',
+          businessOutcome: '',
+          importanceValue: '',
+          inScope: '',
+          outOfScope: '',
+          tags: [],
+          otherContext: '',
+        }
+  )
   const [newCommitment, setNewCommitment] = useState('')
   const timer1Ref = useRef<ReturnType<typeof setTimeout> | null>(null)
   const timer2Ref = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    if (skipLoading) {
+      onReady?.()
+      return
+    }
     timer1Ref.current = setTimeout(() => {
       setLoadingState('shimmer')
       timer2Ref.current = setTimeout(() => {
@@ -1370,6 +1382,7 @@ const SECTION_MEMBERS: SectionMember[] = [
   { id: 'm2', name: 'Rohan Mehta', initials: 'RM', color: '#8b5cf6' },
   { id: 'm3', name: 'Priya Sharma', initials: 'PS', color: '#f59e0b' },
   { id: 'm4', name: 'Karan Bose', initials: 'KB', color: '#ef4444' },
+  { id: 'm5', name: 'Narendra Patel', initials: 'NP', color: '#16a34a' },
 ]
 
 function memberById(id: string) {
@@ -1379,43 +1392,22 @@ function memberById(id: string) {
 const INITIAL_SECTIONS: SOWSection[] = [
   {
     id: 's1',
-    title: 'Executive Summary',
-    assignedMembers: ['m1', 'm2', 'm3'],
+    title: 'Background',
+    assignedMembers: ['m1', 'm2'],
     items: [
       {
-        id: 'i1a',
+        id: 's1a',
         type: 'assumption',
-        text: 'Procurement cycle is currently 45 days on average and will reduce to under 27 days post-implementation.',
+        text: 'Client has been operating on legacy systems for 7+ years and has executive mandate for modernisation.',
         assignedTo: 'm1',
         answered: true,
       },
       {
-        id: 'i1b',
-        type: 'assumption',
-        text: 'Client has 120+ procurement staff who will require role-based training across 6 regional offices.',
-        assignedTo: 'm2',
-        answered: true,
-      },
-      {
-        id: 'i1c',
-        type: 'assumption',
-        text: 'All stakeholders have been identified and project governance structure is fully in place.',
-        assignedTo: 'm3',
-        answered: true,
-      },
-      {
-        id: 'i1d',
+        id: 's1b',
         type: 'question',
-        text: 'Has the executive sponsor formally signed off on the transformation roadmap and budget allocation?',
-        assignedTo: 'm1',
-        answered: true,
-      },
-      {
-        id: 'i1e',
-        type: 'question',
-        text: 'Are there any board-level dependencies that could affect the go-live timeline in Q2 2026?',
+        text: 'Has the client formally documented the current-state pain points and shared them with the delivery team?',
         assignedTo: 'm2',
-        answered: true,
+        answered: false,
       },
     ],
     assumptions: [],
@@ -1423,22 +1415,29 @@ const INITIAL_SECTIONS: SOWSection[] = [
   },
   {
     id: 's2',
-    title: 'Scope of Work',
-    assignedMembers: ['m1', 'm4'],
+    title: 'Executive Summary',
+    assignedMembers: ['m1', 'm2', 'm3'],
     items: [
       {
-        id: 'i2a',
-        type: 'question',
-        text: 'Which of the 6 procurement sub-processes listed in Appendix A are considered highest priority for Phase 1?',
+        id: 's2a',
+        type: 'assumption',
+        text: 'Procurement cycle is currently 45 days on average and will reduce to under 27 days post-implementation.',
         assignedTo: 'm1',
         answered: true,
       },
       {
-        id: 'i2b',
+        id: 's2b',
+        type: 'assumption',
+        text: 'Client has 120+ procurement staff who will require role-based training across 6 regional offices.',
+        assignedTo: 'm2',
+        answered: true,
+      },
+      {
+        id: 's2c',
         type: 'question',
-        text: 'Is third-party vendor onboarding for Phase 1 capped at 50 vendors, or can that number flex based on business need?',
-        assignedTo: 'm4',
-        answered: false,
+        text: 'Has the executive sponsor formally signed off on the transformation roadmap and budget allocation?',
+        assignedTo: 'm3',
+        answered: true,
       },
     ],
     assumptions: [],
@@ -1446,21 +1445,21 @@ const INITIAL_SECTIONS: SOWSection[] = [
   },
   {
     id: 's3',
-    title: 'Deliverables',
-    assignedMembers: ['m2', 'm3'],
+    title: 'Objectives',
+    assignedMembers: ['m1'],
     items: [
       {
-        id: 'i3a',
-        type: 'assumption',
-        text: 'Cloud platform delivery is expected within 6 calendar months from project kick-off date.',
-        assignedTo: 'm2',
+        id: 's3a',
+        type: 'question',
+        text: "Are the stated objectives SMART and aligned to the client's FY26 OKRs?",
+        assignedTo: 'm1',
         answered: false,
       },
       {
-        id: 'i3b',
-        type: 'question',
-        text: "Does documentation scope include API reference for the client's internal developer team, or is it limited to user and admin guides?",
-        assignedTo: 'm3',
+        id: 's3b',
+        type: 'assumption',
+        text: 'Primary objective is cost reduction of 15% within 18 months of go-live.',
+        assignedTo: 'm1',
         answered: false,
       },
     ],
@@ -1469,33 +1468,179 @@ const INITIAL_SECTIONS: SOWSection[] = [
   },
   {
     id: 's4',
-    title: 'Timeline & Milestones',
-    assignedMembers: ['m1', 'm2'],
-    items: [],
+    title: 'Scope of Work',
+    assignedMembers: ['m1', 'm4'],
+    items: [
+      {
+        id: 's4a',
+        type: 'question',
+        text: 'Which of the 6 procurement sub-processes listed in Appendix A are considered highest priority for Phase 1?',
+        assignedTo: 'm1',
+        answered: true,
+      },
+      {
+        id: 's4b',
+        type: 'question',
+        text: 'Is third-party vendor onboarding for Phase 1 capped at 50 vendors, or can that number flex?',
+        assignedTo: 'm4',
+        answered: false,
+      },
+    ],
     assumptions: [],
     questions: [],
   },
   {
     id: 's5',
+    title: 'Out of Scope',
+    assignedMembers: ['m2'],
+    items: [
+      {
+        id: 's5a',
+        type: 'assumption',
+        text: 'Legacy data archival beyond 5 years is explicitly out of scope for this engagement.',
+        assignedTo: 'm2',
+        answered: true,
+      },
+      {
+        id: 's5b',
+        type: 'question',
+        text: 'Should third-party integrations not listed in Appendix B be formally excluded via a written boundary document?',
+        assignedTo: 'm2',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's6',
+    title: 'Requirements',
+    assignedMembers: ['m1', 'm3'],
+    items: [
+      {
+        id: 's6a',
+        type: 'assumption',
+        text: 'Functional requirements have been baselined in the RFP and will not change materially during delivery.',
+        assignedTo: 'm1',
+        answered: false,
+      },
+      {
+        id: 's6b',
+        type: 'question',
+        text: 'Are there any accessibility (WCAG 2.1 AA) or localisation requirements not captured in the RFP?',
+        assignedTo: 'm3',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's7',
+    title: 'Approach & Methodology',
+    assignedMembers: ['m2'],
+    items: [
+      {
+        id: 's7a',
+        type: 'assumption',
+        text: 'Agile delivery using 2-week sprints with fortnightly client showcase sessions.',
+        assignedTo: 'm2',
+        answered: true,
+      },
+      {
+        id: 's7b',
+        type: 'question',
+        text: 'Does the client prefer SAFe or Scrum at scale for the programme layer?',
+        assignedTo: 'm2',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's8',
+    title: 'Roles & Responsibilities',
+    assignedMembers: ['m3', 'm4'],
+    items: [
+      {
+        id: 's8a',
+        type: 'question',
+        text: 'Who is the designated client Product Owner and do they have decision-making authority for scope changes?',
+        assignedTo: 'm3',
+        answered: false,
+      },
+      {
+        id: 's8b',
+        type: 'assumption',
+        text: 'Client will provide a dedicated BA resource for requirements elaboration throughout delivery.',
+        assignedTo: 'm4',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's9',
+    title: 'Deliverables',
+    assignedMembers: ['m2', 'm3'],
+    items: [
+      {
+        id: 's9a',
+        type: 'assumption',
+        text: 'Cloud platform delivery is expected within 6 calendar months from project kick-off date.',
+        assignedTo: 'm2',
+        answered: false,
+      },
+      {
+        id: 's9b',
+        type: 'question',
+        text: "Does documentation scope include API reference for the client's internal developer team?",
+        assignedTo: 'm3',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's10',
+    title: 'Timeline & Milestones',
+    assignedMembers: ['m1', 'm2'],
+    items: [
+      {
+        id: 's10a',
+        type: 'assumption',
+        text: 'Project kick-off is planned for November 2026 subject to contract signature by 31 October.',
+        assignedTo: 'm1',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's11',
     title: 'Commercials',
     assignedMembers: ['m1', 'm3'],
     items: [
       {
-        id: 'i5a',
+        id: 's11a',
         type: 'assumption',
         text: 'Fixed price engagement with no scope creep clauses beyond the agreed Change Request process.',
         assignedTo: 'm1',
         answered: false,
       },
       {
-        id: 'i5b',
+        id: 's11b',
         type: 'assumption',
         text: 'Travel and expenses are included in the fixed price up to the agreed cap specified in Schedule B.',
         assignedTo: 'm3',
         answered: false,
       },
       {
-        id: 'i5c',
+        id: 's11c',
         type: 'question',
         text: 'Are milestone payments tied strictly to phase completion acceptance, or is a calendar date trigger also acceptable?',
         assignedTo: 'm1',
@@ -1506,21 +1651,145 @@ const INITIAL_SECTIONS: SOWSection[] = [
     questions: [],
   },
   {
-    id: 's6',
-    title: 'Assumptions & Risks',
+    id: 's12',
+    title: 'Assumptions',
     assignedMembers: ['m2', 'm4'],
     items: [
       {
-        id: 'i6a',
+        id: 's12a',
         type: 'assumption',
         text: 'All data migration must be HIPAA compliant — client will provide formal compliance sign-off before migration begins.',
         assignedTo: 'm2',
         answered: false,
       },
       {
-        id: 'i6b',
+        id: 's12b',
         type: 'question',
         text: 'Has the client confirmed availability of key stakeholders for workshops within 5 business days of request?',
+        assignedTo: 'm4',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's13',
+    title: 'Risks & Mitigations',
+    assignedMembers: ['m1'],
+    items: [
+      {
+        id: 's13a',
+        type: 'question',
+        text: 'Have all Tier-1 risks been reviewed by the client Risk Committee and formally accepted?',
+        assignedTo: 'm1',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's14',
+    title: 'Security',
+    assignedMembers: ['m3'],
+    items: [
+      {
+        id: 's14a',
+        type: 'assumption',
+        text: "Solution must comply with ISO 27001 and client's internal security policy v3.2.",
+        assignedTo: 'm3',
+        answered: false,
+      },
+      {
+        id: 's14b',
+        type: 'question',
+        text: 'Is penetration testing required pre-UAT, and who is responsible for scheduling and cost?',
+        assignedTo: 'm3',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's15',
+    title: 'Architecture',
+    assignedMembers: ['m2', 'm4'],
+    items: [
+      {
+        id: 's15a',
+        type: 'assumption',
+        text: 'Target state is a cloud-native microservices architecture hosted on Azure.',
+        assignedTo: 'm2',
+        answered: true,
+      },
+      {
+        id: 's15b',
+        type: 'question',
+        text: 'Are there any on-premise components that must remain due to data sovereignty constraints?',
+        assignedTo: 'm4',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's16',
+    title: 'Acceptance Criteria',
+    assignedMembers: ['m1', 'm3'],
+    items: [
+      {
+        id: 's16a',
+        type: 'question',
+        text: 'Has the client defined measurable UAT pass/fail criteria for each major deliverable?',
+        assignedTo: 'm1',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's17',
+    title: 'Change Management',
+    assignedMembers: ['m2'],
+    items: [
+      {
+        id: 's17a',
+        type: 'assumption',
+        text: 'A formal change control board (CCB) will be established within 4 weeks of project kick-off.',
+        assignedTo: 'm2',
+        answered: false,
+      },
+      {
+        id: 's17b',
+        type: 'question',
+        text: 'What is the agreed SLA for processing a change request through the CCB?',
+        assignedTo: 'm2',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's18',
+    title: 'Support & Handover',
+    assignedMembers: ['m1', 'm4'],
+    items: [
+      {
+        id: 's18a',
+        type: 'assumption',
+        text: 'Hypercare period of 4 weeks post go-live is included, after which support transitions to client BAU team.',
+        assignedTo: 'm1',
+        answered: false,
+      },
+      {
+        id: 's18b',
+        type: 'question',
+        text: 'Has the client nominated a BAU support lead who will participate in knowledge-transfer sessions?',
         assignedTo: 'm4',
         answered: false,
       },
@@ -1533,53 +1802,26 @@ const INITIAL_SECTIONS: SOWSection[] = [
 const INITIAL_SECTIONS_V2: SOWSection[] = [
   {
     id: 's1',
-    title: 'Executive Summary',
-    assignedMembers: ['m1', 'm2', 'm3'],
+    title: 'Background',
+    assignedMembers: ['m1', 'm2'],
     items: [
       {
-        id: 'i1a',
+        id: 's1a',
         type: 'assumption',
-        text: 'Procurement cycle is currently 45 days on average and will reduce to under 27 days post-implementation.',
+        text: 'Client has been operating on legacy systems for 7+ years and has executive mandate for modernisation.',
         assignedTo: 'm1',
         answered: true,
         response:
-          'Confirmed. Current average is 44.5 days per Q3 benchmarking report. Target of ≤27 days is achievable with automation of approval workflows.',
+          'Confirmed. Legacy ERP dates to 2016. Board resolution passed March 2026 mandating full modernisation by Q2 2027.',
       },
       {
-        id: 'i1b',
-        type: 'assumption',
-        text: 'Client has 120+ procurement staff who will require role-based training across 6 regional offices.',
+        id: 's1b',
+        type: 'question',
+        text: 'Has the client formally documented the current-state pain points and shared them with the delivery team?',
         assignedTo: 'm2',
         answered: true,
         response:
-          'Verified with HR data. 128 staff total across 6 offices. Training plan drafted — 3-day onsite per office, staggered over 8 weeks.',
-      },
-      {
-        id: 'i1c',
-        type: 'assumption',
-        text: 'All stakeholders have been identified and project governance structure is fully in place.',
-        assignedTo: 'm3',
-        answered: true,
-        response:
-          'Governance charter signed off 12 Sept. RACI published to all stakeholders. Weekly steering committee scheduled from Oct 1.',
-      },
-      {
-        id: 'i1d',
-        type: 'question',
-        text: 'Has the executive sponsor formally signed off on the transformation roadmap and budget allocation?',
-        assignedTo: 'm1',
-        answered: true,
-        response:
-          'Yes — CFO and CPO co-signed the roadmap on 18 Sept 2026. Budget of $4.2M allocated in FY2027 capex plan.',
-      },
-      {
-        id: 'i1e',
-        type: 'question',
-        text: 'Are there any board-level dependencies that could affect the go-live timeline in Q2 2026?',
-        assignedTo: 'm2',
-        answered: true,
-        response:
-          'No blocking board dependencies. M&A activity paused until H2 2027. ERP migration (separate workstream) will complete by Jan 2027 — no overlap risk.',
+          'Yes — AS-IS process maps shared via SharePoint on 5 Sept. 12 critical pain points identified and prioritised.',
       },
     ],
     assumptions: [],
@@ -1587,24 +1829,34 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
   },
   {
     id: 's2',
-    title: 'Scope of Work',
-    assignedMembers: ['m1', 'm4'],
+    title: 'Executive Summary',
+    assignedMembers: ['m1', 'm2', 'm3'],
     items: [
       {
-        id: 'i2a',
-        type: 'question',
-        text: 'Which of the 6 procurement sub-processes listed in Appendix A are considered highest priority for Phase 1?',
+        id: 's2a',
+        type: 'assumption',
+        text: 'Procurement cycle is currently 45 days on average and will reduce to under 27 days post-implementation.',
         assignedTo: 'm1',
         answered: true,
         response:
-          'Priority sub-processes for Phase 1: (1) Purchase Order Automation, (2) Vendor Onboarding, (3) Invoice Reconciliation. Sub-processes 4–6 deferred to Phase 2.',
+          'Confirmed. Current average is 44.5 days per Q3 benchmarking report. Target is achievable with automation.',
       },
       {
-        id: 'i2b',
+        id: 's2b',
+        type: 'assumption',
+        text: 'Client has 120+ procurement staff who will require role-based training across 6 regional offices.',
+        assignedTo: 'm2',
+        answered: true,
+        response: 'Verified with HR data. 128 staff total across 6 offices. Training plan drafted.',
+      },
+      {
+        id: 's2c',
         type: 'question',
-        text: 'Is third-party vendor onboarding for Phase 1 capped at 50 vendors, or can that number flex based on business need?',
-        assignedTo: 'm4',
-        answered: false,
+        text: 'Has the executive sponsor formally signed off on the transformation roadmap and budget allocation?',
+        assignedTo: 'm3',
+        answered: true,
+        response:
+          'Yes — CFO and CPO co-signed the roadmap on 18 Sept 2026. Budget of $4.2M allocated in FY2027 capex plan.',
       },
     ],
     assumptions: [],
@@ -1612,23 +1864,23 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
   },
   {
     id: 's3',
-    title: 'Deliverables',
-    assignedMembers: ['m2', 'm3'],
+    title: 'Objectives',
+    assignedMembers: ['m1'],
     items: [
       {
-        id: 'i3a',
-        type: 'assumption',
-        text: 'Cloud platform delivery is expected within 6 calendar months from project kick-off date.',
-        assignedTo: 'm2',
+        id: 's3a',
+        type: 'question',
+        text: "Are the stated objectives SMART and aligned to the client's FY26 OKRs?",
+        assignedTo: 'm1',
         answered: true,
         response:
-          'Kick-off confirmed for 1 Nov 2026. Delivery target is 30 Apr 2027. Milestone gates at M2 (Jan), M4 (Mar), M6 (Apr).',
+          'Objectives reviewed against OKR framework. All 4 primary objectives are SMART. Aligned to 3 of 5 FY26 OKRs.',
       },
       {
-        id: 'i3b',
-        type: 'question',
-        text: "Does documentation scope include API reference for the client's internal developer team, or is it limited to user and admin guides?",
-        assignedTo: 'm3',
+        id: 's3b',
+        type: 'assumption',
+        text: 'Primary objective is cost reduction of 15% within 18 months of go-live.',
+        assignedTo: 'm1',
         answered: false,
       },
     ],
@@ -1637,33 +1889,197 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
   },
   {
     id: 's4',
-    title: 'Timeline & Milestones',
-    assignedMembers: ['m1', 'm2'],
-    items: [],
+    title: 'Scope of Work',
+    assignedMembers: ['m1', 'm4'],
+    items: [
+      {
+        id: 's4a',
+        type: 'question',
+        text: 'Which of the 6 procurement sub-processes listed in Appendix A are considered highest priority for Phase 1?',
+        assignedTo: 'm1',
+        answered: true,
+        response:
+          'Sub-processes 1 (PO creation), 3 (invoice matching), and 5 (vendor onboarding) confirmed as Phase 1 priorities by CPO on 20 Sept.',
+      },
+      {
+        id: 's4b',
+        type: 'question',
+        text: 'Is third-party vendor onboarding for Phase 1 capped at 50 vendors, or can that number flex?',
+        assignedTo: 'm4',
+        answered: false,
+      },
+    ],
     assumptions: [],
     questions: [],
   },
   {
     id: 's5',
+    title: 'Out of Scope',
+    assignedMembers: ['m2'],
+    items: [
+      {
+        id: 's5a',
+        type: 'assumption',
+        text: 'Legacy data archival beyond 5 years is explicitly out of scope for this engagement.',
+        assignedTo: 'm2',
+        answered: true,
+        response: 'Confirmed in Scope Boundary doc v1.2 signed by both parties on 15 Sept.',
+      },
+      {
+        id: 's5b',
+        type: 'question',
+        text: 'Should third-party integrations not listed in Appendix B be formally excluded via a written boundary document?',
+        assignedTo: 'm2',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's6',
+    title: 'Requirements',
+    assignedMembers: ['m1', 'm3'],
+    items: [
+      {
+        id: 's6a',
+        type: 'assumption',
+        text: 'Functional requirements have been baselined in the RFP and will not change materially during delivery.',
+        assignedTo: 'm1',
+        answered: true,
+        response: 'RFP v2.1 accepted as baseline. Change control process defined in Section 17.',
+      },
+      {
+        id: 's6b',
+        type: 'question',
+        text: 'Are there any accessibility (WCAG 2.1 AA) or localisation requirements not captured in the RFP?',
+        assignedTo: 'm3',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's7',
+    title: 'Approach & Methodology',
+    assignedMembers: ['m2'],
+    items: [
+      {
+        id: 's7a',
+        type: 'assumption',
+        text: 'Agile delivery using 2-week sprints with fortnightly client showcase sessions.',
+        assignedTo: 'm2',
+        answered: true,
+        response:
+          'Sprint cadence agreed in Project Initiation doc. Showcases booked every second Friday from kick-off.',
+      },
+      {
+        id: 's7b',
+        type: 'question',
+        text: 'Does the client prefer SAFe or Scrum at scale for the programme layer?',
+        assignedTo: 'm2',
+        answered: true,
+        response:
+          'Client confirmed Scrum at scale. Programme-level ceremonies to be agreed at kick-off.',
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's8',
+    title: 'Roles & Responsibilities',
+    assignedMembers: ['m3', 'm4'],
+    items: [
+      {
+        id: 's8a',
+        type: 'question',
+        text: 'Who is the designated client Product Owner and do they have decision-making authority for scope changes?',
+        assignedTo: 'm3',
+        answered: true,
+        response:
+          'Priya Nair confirmed as PO (Head of Digital, direct report to CPO). Has authority up to $50K scope changes; above that requires CPO sign-off.',
+      },
+      {
+        id: 's8b',
+        type: 'assumption',
+        text: 'Client will provide a dedicated BA resource for requirements elaboration throughout delivery.',
+        assignedTo: 'm4',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's9',
+    title: 'Deliverables',
+    assignedMembers: ['m2', 'm3'],
+    items: [
+      {
+        id: 's9a',
+        type: 'assumption',
+        text: 'Cloud platform delivery is expected within 6 calendar months from project kick-off date.',
+        assignedTo: 'm2',
+        answered: true,
+        response:
+          'Timeline validated against resource plan. 6 months achievable with current staffing.',
+      },
+      {
+        id: 's9b',
+        type: 'question',
+        text: "Does documentation scope include API reference for the client's internal developer team?",
+        assignedTo: 'm3',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's10',
+    title: 'Timeline & Milestones',
+    assignedMembers: ['m1', 'm2'],
+    items: [
+      {
+        id: 's10a',
+        type: 'assumption',
+        text: 'Project kick-off is planned for November 2026 subject to contract signature by 31 October.',
+        assignedTo: 'm1',
+        answered: true,
+        response:
+          'Contract red-line review complete. Legal expects signature by 28 Oct. Kick-off provisionally booked for 3 Nov 2026.',
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's11',
     title: 'Commercials',
     assignedMembers: ['m1', 'm3'],
     items: [
       {
-        id: 'i5a',
+        id: 's11a',
         type: 'assumption',
         text: 'Fixed price engagement with no scope creep clauses beyond the agreed Change Request process.',
         assignedTo: 'm1',
-        answered: false,
+        answered: true,
+        response:
+          'Confirmed fixed price. Change Request process detailed in commercial schedule. Max 10% variance band agreed.',
       },
       {
-        id: 'i5b',
+        id: 's11b',
         type: 'assumption',
         text: 'Travel and expenses are included in the fixed price up to the agreed cap specified in Schedule B.',
         assignedTo: 'm3',
-        answered: false,
+        answered: true,
+        response:
+          'Schedule B cap set at $45K. Any overrun requires written approval from both CFOs.',
       },
       {
-        id: 'i5c',
+        id: 's11c',
         type: 'question',
         text: 'Are milestone payments tied strictly to phase completion acceptance, or is a calendar date trigger also acceptable?',
         assignedTo: 'm1',
@@ -1674,19 +2090,21 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
     questions: [],
   },
   {
-    id: 's6',
-    title: 'Assumptions & Risks',
+    id: 's12',
+    title: 'Assumptions',
     assignedMembers: ['m2', 'm4'],
     items: [
       {
-        id: 'i6a',
+        id: 's12a',
         type: 'assumption',
         text: 'All data migration must be HIPAA compliant — client will provide formal compliance sign-off before migration begins.',
         assignedTo: 'm2',
-        answered: false,
+        answered: true,
+        response:
+          'HIPAA BAA signed 10 Sept. DPO confirmed sign-off workflow: 10 business days before migration window.',
       },
       {
-        id: 'i6b',
+        id: 's12b',
         type: 'question',
         text: 'Has the client confirmed availability of key stakeholders for workshops within 5 business days of request?',
         assignedTo: 'm4',
@@ -1696,9 +2114,151 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
     assumptions: [],
     questions: [],
   },
+  {
+    id: 's13',
+    title: 'Risks & Mitigations',
+    assignedMembers: ['m1'],
+    items: [
+      {
+        id: 's13a',
+        type: 'question',
+        text: 'Have all Tier-1 risks been reviewed by the client Risk Committee and formally accepted?',
+        assignedTo: 'm1',
+        answered: true,
+        response:
+          'Risk Committee reviewed 8 Tier-1 risks on 16 Sept. 6 accepted, 2 require additional mitigation plans by 30 Sept.',
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's14',
+    title: 'Security',
+    assignedMembers: ['m3'],
+    items: [
+      {
+        id: 's14a',
+        type: 'assumption',
+        text: "Solution must comply with ISO 27001 and client's internal security policy v3.2.",
+        assignedTo: 'm3',
+        answered: true,
+        response:
+          'Architecture review board confirmed ISO 27001 alignment. Security policy v3.2 shared — 3 controls flagged for resolution.',
+      },
+      {
+        id: 's14b',
+        type: 'question',
+        text: 'Is penetration testing required pre-UAT, and who is responsible for scheduling and cost?',
+        assignedTo: 'm3',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's15',
+    title: 'Architecture',
+    assignedMembers: ['m2', 'm4'],
+    items: [
+      {
+        id: 's15a',
+        type: 'assumption',
+        text: 'Target state is a cloud-native microservices architecture hosted on Azure.',
+        assignedTo: 'm2',
+        answered: true,
+        response:
+          'Azure confirmed as strategic cloud provider. Architecture Decision Record signed off by CTO on 12 Sept.',
+      },
+      {
+        id: 's15b',
+        type: 'question',
+        text: 'Are there any on-premise components that must remain due to data sovereignty constraints?',
+        assignedTo: 'm4',
+        answered: true,
+        response:
+          'Two components must remain on-prem: identity provider and document archive. Hybrid connectivity via ExpressRoute.',
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's16',
+    title: 'Acceptance Criteria',
+    assignedMembers: ['m1', 'm3'],
+    items: [
+      {
+        id: 's16a',
+        type: 'question',
+        text: 'Has the client defined measurable UAT pass/fail criteria for each major deliverable?',
+        assignedTo: 'm1',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's17',
+    title: 'Change Management',
+    assignedMembers: ['m2'],
+    items: [
+      {
+        id: 's17a',
+        type: 'assumption',
+        text: 'A formal change control board (CCB) will be established within 4 weeks of project kick-off.',
+        assignedTo: 'm2',
+        answered: true,
+        response:
+          'CCB charter drafted. Membership agreed: client PO, delivery PM, architecture lead, and finance rep. First meeting scheduled for Week 5.',
+      },
+      {
+        id: 's17b',
+        type: 'question',
+        text: 'What is the agreed SLA for processing a change request through the CCB?',
+        assignedTo: 'm2',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
+  {
+    id: 's18',
+    title: 'Support & Handover',
+    assignedMembers: ['m1', 'm4'],
+    items: [
+      {
+        id: 's18a',
+        type: 'assumption',
+        text: 'Hypercare period of 4 weeks post go-live is included, after which support transitions to client BAU team.',
+        assignedTo: 'm1',
+        answered: true,
+        response:
+          'Hypercare SLA agreed: P1 response 1h, P2 4h, P3 1 business day. Transition plan to be delivered 2 weeks before go-live.',
+      },
+      {
+        id: 's18b',
+        type: 'question',
+        text: 'Has the client nominated a BAU support lead who will participate in knowledge-transfer sessions?',
+        assignedTo: 'm4',
+        answered: false,
+      },
+    ],
+    assumptions: [],
+    questions: [],
+  },
 ]
 
-/* ── Member avatar chip ── */
+// Meridian Healthcare — contributor (Narendra) has a handful of items assigned to him ('m5')
+// scattered across sections; everything else keeps the original assignee.
+const MERIDIAN_SECTIONS: SOWSection[] = INITIAL_SECTIONS_V2.map((sec, si) => ({
+  ...sec,
+  items: sec.items.map((it, ii) => (si % 3 === 0 && ii === 0 ? { ...it, assignedTo: 'm5' } : it)),
+}))
+
 function MemberAvatar({ memberId, size = 24 }: { memberId: string; size?: number }) {
   const m = memberById(memberId)
   return (
@@ -2228,7 +2788,16 @@ function SectionDotMenu({ onRename, onDelete }: { onRename: () => void; onDelete
   )
 }
 
-function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?: SOWSection[] }) {
+function StructureTab({
+  initialSections = INITIAL_SECTIONS,
+  viewerRole = 'pmo',
+  currentMemberId = 'm5',
+}: {
+  initialSections?: SOWSection[]
+  viewerRole?: 'pmo' | 'contributor'
+  currentMemberId?: string
+}) {
+  const isContributor = viewerRole === 'contributor'
   const [sections, setSections] = useState<SOWSection[]>(initialSections)
   const [activeId, setActiveId] = useState<string>(initialSections[0].id)
   const [showAddSectionModal, setShowAddSectionModal] = useState(false)
@@ -2347,23 +2916,39 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
   const allItemIds = sections.flatMap((s) => s.items.map((i) => i.id))
   const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
+  // Contributors only ever see their own assigned items, in sections that have at least one.
+  const visibleSections = isContributor
+    ? sections
+        .map((s) => ({ ...s, items: s.items.filter((i) => i.assignedTo === currentMemberId) }))
+        .filter((s) => s.items.length > 0)
+    : sections
+
+  const answerItem = (itemId: string, response: string) => {
+    setSections((prev) =>
+      prev.map((s) => ({
+        ...s,
+        items: s.items.map((it) => (it.id === itemId ? { ...it, answered: true, response } : it)),
+      }))
+    )
+  }
+
   const kpiQuestions = (() => {
-    const total = sections.reduce(
+    const total = visibleSections.reduce(
       (n, s) => n + s.items.filter((i) => i.type === 'question').length,
       0
     )
-    const done = sections.reduce(
+    const done = visibleSections.reduce(
       (n, s) => n + s.items.filter((i) => i.type === 'question' && i.answered).length,
       0
     )
     return { total, done, pct: total > 0 ? Math.round((done / total) * 100) : 0 }
   })()
   const kpiAssumptions = (() => {
-    const total = sections.reduce(
+    const total = visibleSections.reduce(
       (n, s) => n + s.items.filter((i) => i.type === 'assumption').length,
       0
     )
-    const done = sections.reduce(
+    const done = visibleSections.reduce(
       (n, s) => n + s.items.filter((i) => i.type === 'assumption' && i.answered).length,
       0
     )
@@ -2410,40 +2995,65 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
             background: 'rgba(248,252,252,0.6)',
           }}
         >
-          {/* Mini KPIs */}
+          {/* Mini KPIs — card style matching SOW Draft */}
           <div
             style={{
-              padding: '8px 12px',
+              padding: '10px 12px',
               borderBottom: '1px solid rgba(0,196,196,0.1)',
               display: 'flex',
-              flexDirection: 'column',
-              gap: 5,
+              gap: 6,
             }}
           >
-            {kpis.map((k, ki) => (
-              <div
-                key={ki}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}
-              >
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#475569', flex: 1 }}>
-                  {k.label}
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#0d212c' }}>
-                  {k.done}/{k.total}
-                </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: k.color,
-                    minWidth: 36,
-                    textAlign: 'right',
-                  }}
-                >
-                  {k.pct}%
-                </span>
+            <div
+              style={{
+                flex: 1,
+                background: 'rgba(245,158,11,0.08)',
+                borderRadius: 6,
+                padding: '6px 10px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>
+                {kpiQuestions.done}/{kpiQuestions.total}
               </div>
-            ))}
+              <div
+                style={{
+                  fontSize: 10,
+                  color: '#64748b',
+                  marginTop: 3,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Questions
+              </div>
+            </div>
+            <div
+              style={{
+                flex: 1,
+                background: 'rgba(139,92,246,0.08)',
+                borderRadius: 6,
+                padding: '6px 10px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#8b5cf6', lineHeight: 1 }}>
+                {kpiAssumptions.done}/{kpiAssumptions.total}
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: '#64748b',
+                  marginTop: 3,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Assumptions
+              </div>
+            </div>
           </div>
           <div
             style={{
@@ -2464,11 +3074,11 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
             >
               Sections
             </span>
-            <span style={{ fontSize: 11, color: '#94a3b8' }}>{sections.length}</span>
+            <span style={{ fontSize: 11, color: '#94a3b8' }}>{visibleSections.length}</span>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
-            {sections.map((sec, idx) => {
+            {visibleSections.map((sec, idx) => {
               const isActive = activeId === sec.id
               const isHovered = hoveredSection === sec.id
               return (
@@ -2533,7 +3143,7 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
                     </span>
                   </button>
                   {/* Three-dot menu — visible on hover/active */}
-                  {(isHovered || isActive) && (
+                  {!isContributor && (isHovered || isActive) && (
                     <div
                       style={{
                         position: 'absolute',
@@ -2561,52 +3171,54 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
           </div>
 
           {/* Add section — centered at bottom */}
-          <div style={{ padding: '10px 10px 14px', borderTop: '1px solid rgba(0,196,196,0.1)' }}>
-            <button
-              onClick={() => setShowAddSectionModal(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 7,
-                width: '100%',
-                padding: '9px 12px',
-                borderRadius: 8,
-                border: '1.5px dashed rgba(0,196,196,0.35)',
-                background: 'transparent',
-                cursor: 'pointer',
-                color: '#00a0a0',
-                fontSize: 13,
-                fontWeight: 600,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
-              }}
-              onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-              }}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
+          {!isContributor && (
+            <div style={{ padding: '10px 10px 14px', borderTop: '1px solid rgba(0,196,196,0.1)' }}>
+              <button
+                onClick={() => setShowAddSectionModal(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 7,
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: 8,
+                  border: '1.5px dashed rgba(0,196,196,0.35)',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  color: '#00a0a0',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                }}
               >
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Add Section
-            </button>
-          </div>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Add Section
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Right pane ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           {/* Bulk-action bar (appears when items are selected) */}
-          {hasSelection && (
+          {!isContributor && hasSelection && (
             <div
               style={{
                 padding: '10px 28px',
@@ -2831,7 +3443,7 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
           )}
 
           <div ref={rightPaneRef} style={{ flex: 1, overflowY: 'auto', padding: '0 0 40px' }}>
-            {sections.map((sec, idx) => {
+            {visibleSections.map((sec, idx) => {
               const assumptions = sec.items.filter((i) => i.type === 'assumption')
               const questions = sec.items.filter((i) => i.type === 'question')
               return (
@@ -2844,7 +3456,7 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
                   style={{
                     padding: '24px 28px',
                     borderBottom:
-                      idx < sections.length - 1 ? '1px solid rgba(0,196,196,0.1)' : 'none',
+                      idx < visibleSections.length - 1 ? '1px solid rgba(0,196,196,0.1)' : 'none',
                   }}
                 >
                   {/* Section header */}
@@ -2878,35 +3490,37 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
                       ))}
                     </div>
                     {/* Add item CTA */}
-                    <button
-                      onClick={() => setAddItemFor(sec.id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        padding: '5px 12px',
-                        borderRadius: 7,
-                        border: '1.5px solid rgba(0,196,196,0.3)',
-                        background: 'rgba(0,196,196,0.05)',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: '#00a0a0',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.8"
-                        strokeLinecap="round"
+                    {!isContributor && (
+                      <button
+                        onClick={() => setAddItemFor(sec.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          padding: '5px 12px',
+                          borderRadius: 7,
+                          border: '1.5px solid rgba(0,196,196,0.3)',
+                          background: 'rgba(0,196,196,0.05)',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: '#00a0a0',
+                          cursor: 'pointer',
+                        }}
                       >
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                      Add
-                    </button>
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.8"
+                          strokeLinecap="round"
+                        >
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        Add
+                      </button>
+                    )}
                   </div>
 
                   {/* Items list */}
@@ -2934,6 +3548,8 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
                           isSelected={selected.has(item.id)}
                           hasAnySelected={hasSelection}
                           onToggle={() => toggleSelect(item.id)}
+                          isContributor={isContributor}
+                          onAnswer={(text) => answerItem(item.id, text)}
                         />
                       ))}
                       {questions.map((item, qi) => (
@@ -2944,6 +3560,8 @@ function StructureTab({ initialSections = INITIAL_SECTIONS }: { initialSections?
                           isSelected={selected.has(item.id)}
                           hasAnySelected={hasSelection}
                           onToggle={() => toggleSelect(item.id)}
+                          isContributor={isContributor}
+                          onAnswer={(text) => answerItem(item.id, text)}
                         />
                       ))}
                     </div>
@@ -2986,14 +3604,20 @@ function ItemRow({
   isSelected,
   hasAnySelected,
   onToggle,
+  isContributor = false,
+  onAnswer,
 }: {
   item: SectionItem
   label: string
   isSelected: boolean
   hasAnySelected: boolean
   onToggle: () => void
+  isContributor?: boolean
+  onAnswer?: (text: string) => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [draft, setDraft] = useState(item.response ?? '')
+  const [editing, setEditing] = useState(false)
   const isAssumption = item.type === 'assumption'
   const m = memberById(item.assignedTo)
   const showCheckbox = hovered || isSelected || hasAnySelected
@@ -3014,35 +3638,37 @@ function ItemRow({
       }}
     >
       {/* Checkbox */}
-      <div
-        style={{
-          width: 16,
-          flexShrink: 0,
-          marginTop: 2,
-          opacity: showCheckbox ? 1 : 0,
-          transition: 'opacity 0.1s',
-        }}
-      >
-        <button
-          type="button"
-          onClick={onToggle}
+      {!isContributor && (
+        <div
           style={{
             width: 16,
-            height: 16,
-            borderRadius: 4,
-            border: isSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
-            background: isSelected ? '#00C4C4' : '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            padding: 0,
-            transition: 'all 0.12s ease',
+            flexShrink: 0,
+            marginTop: 2,
+            opacity: showCheckbox ? 1 : 0,
+            transition: 'opacity 0.1s',
           }}
         >
-          {isSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={onToggle}
+            style={{
+              width: 16,
+              height: 16,
+              borderRadius: 4,
+              border: isSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+              background: isSelected ? '#00C4C4' : '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              padding: 0,
+              transition: 'all 0.12s ease',
+            }}
+          >
+            {isSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
+          </button>
+        </div>
+      )}
 
       {/* Label tag */}
       <span
@@ -3064,7 +3690,7 @@ function ItemRow({
       {/* Text + optional response thread */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.55 }}>{item.text}</span>
-        {item.response && (
+        {item.response && !editing && (
           <div
             style={{
               marginTop: 8,
@@ -3101,9 +3727,130 @@ function ItemRow({
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
             </div>
-            <span style={{ fontSize: 12, color: '#0d7b7b', lineHeight: 1.55, fontStyle: 'italic' }}>
+            <span
+              style={{
+                fontSize: 12,
+                color: '#0d7b7b',
+                lineHeight: 1.55,
+                fontStyle: 'italic',
+                flex: 1,
+              }}
+            >
               {item.response}
             </span>
+            {isContributor && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft(item.response ?? '')
+                  setEditing(true)
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: '#00a0a0',
+                  flexShrink: 0,
+                }}
+              >
+                Edit
+              </button>
+            )}
+          </div>
+        )}
+        {isContributor && (!item.response || editing) && (
+          <div
+            style={{
+              marginTop: 8,
+              paddingTop: 8,
+              borderTop: '1px solid rgba(0,196,196,0.18)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}
+          >
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Type your answer…"
+              rows={2}
+              style={{
+                width: '100%',
+                padding: '7px 10px',
+                fontSize: 12.5,
+                borderRadius: 6,
+                border: '1px solid rgba(0,196,196,0.3)',
+                outline: 'none',
+                resize: 'vertical',
+                boxSizing: 'border-box',
+                fontFamily: 'inherit',
+                color: '#0d212c',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() =>
+                  setDraft(
+                    isAssumption
+                      ? 'Confirmed — validated with the client stakeholder and captured for the record.'
+                      : 'Yes, confirmed with the client team; details captured and will be reflected in the final SOW.'
+                  )
+                }
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 10px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(139,92,246,0.35)',
+                  background: 'rgba(139,92,246,0.07)',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: '#7c3aed',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
+                </svg>
+                Answer with AI
+              </button>
+              <button
+                type="button"
+                disabled={!draft.trim()}
+                onClick={() => {
+                  onAnswer?.(draft.trim())
+                  setEditing(false)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 12px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(0,196,196,0.5)',
+                  background: draft.trim() ? 'rgba(0,196,196,0.12)' : 'rgba(0,196,196,0.05)',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: draft.trim() ? '#007a7a' : '#94a3b8',
+                  cursor: draft.trim() ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Save Answer
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -5678,10 +6425,15 @@ export function SOWDetailScreen({
   className,
   showGenerateDraft = false,
   sowVariant = 'v1',
+  viewerRole = 'pmo',
+  currentMemberId = 'm5',
 }: SOWDetailScreenProps) {
+  const isContributor = viewerRole === 'contributor'
   type DraftGenState = 'idle' | 'generating' | 'shimmer' | 'ready'
   const [activeTab, setActiveTab] = useState<SOWTab>(sowVariant === 'v2' ? 'structure' : 'overview')
-  const [isStructureUnlocked, setIsStructureUnlocked] = useState(sowVariant === 'v2')
+  const [isStructureUnlocked, setIsStructureUnlocked] = useState(
+    sowVariant === 'v2' || isContributor
+  )
   const [isDraftUnlocked, setIsDraftUnlocked] = useState(false)
   const [isFormReady, setIsFormReady] = useState(false)
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
@@ -5934,7 +6686,7 @@ export function SOWDetailScreen({
             })}
             {/* CTA pinned to the right of the tab strip */}
             <div style={{ marginLeft: 'auto', paddingRight: 10 }}>
-              {showGenerateDraft ? (
+              {isContributor ? null : showGenerateDraft ? (
                 draftGenState === 'ready' ? (
                   <button
                     onClick={() => setShowReviewModal(true)}
@@ -6099,99 +6851,53 @@ export function SOWDetailScreen({
                     <path d="M12 5l7 7-7 7" />
                   </svg>
                 </button>
-              ) : activeTab === 'structure' ? (
-                !hasInvitedParticipants ? (
-                  <button
-                    onClick={() => {
-                      showInviteToast()
-                      setHasInvitedParticipants(true)
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 14px',
-                      borderRadius: 8,
-                      border: '1.5px solid rgba(0,196,196,0.5)',
-                      background: 'rgba(0,196,196,0.12)',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#007a7a',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.15s',
-                    }}
-                    onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.22)'
-                    }}
-                    onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.12)'
-                    }}
+              ) : activeTab === 'structure' && !hasInvitedParticipants ? (
+                <button
+                  onClick={() => {
+                    showInviteToast()
+                    setHasInvitedParticipants(true)
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    border: '1.5px solid rgba(0,196,196,0.5)',
+                    background: 'rgba(0,196,196,0.12)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#007a7a',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background =
+                      'rgba(0,196,196,0.22)'
+                  }}
+                  onMouseLeave={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background =
+                      'rgba(0,196,196,0.12)'
+                  }}
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    viewBox="0 0 24 24"
                   >
-                    <svg
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="8.5" cy="7" r="4" />
-                      <line x1="20" y1="8" x2="20" y2="14" />
-                      <line x1="17" y1="11" x2="23" y2="11" />
-                    </svg>
-                    Invite Participants
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleGenerateDraft}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 14px',
-                      borderRadius: 8,
-                      border: '1.5px solid rgba(0,196,196,0.5)',
-                      background: 'rgba(0,196,196,0.12)',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#007a7a',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.15s',
-                    }}
-                    onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.22)'
-                    }}
-                    onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.12)'
-                    }}
-                  >
-                    <svg
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                    </svg>
-                    Generate Draft
-                  </button>
-                )
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="8.5" cy="7" r="4" />
+                    <line x1="20" y1="8" x2="20" y2="14" />
+                    <line x1="17" y1="11" x2="23" y2="11" />
+                  </svg>
+                  Invite Participants
+                </button>
               ) : null}
             </div>
           </div>
@@ -6229,12 +6935,21 @@ export function SOWDetailScreen({
               files={uploadedFiles}
               onReady={() => setIsFormReady(true)}
               onSubmit={handleFormSubmit}
+              skipLoading={isContributor}
             />
           )}
           {activeTab === 'structure' &&
             (isStructureUnlocked ? (
               <StructureTab
-                initialSections={sowVariant === 'v2' ? INITIAL_SECTIONS_V2 : INITIAL_SECTIONS}
+                initialSections={
+                  sowVariant === 'meridian'
+                    ? MERIDIAN_SECTIONS
+                    : sowVariant === 'v2'
+                      ? INITIAL_SECTIONS_V2
+                      : INITIAL_SECTIONS
+                }
+                viewerRole={viewerRole}
+                currentMemberId={currentMemberId}
               />
             ) : (
               <LockedTabState

@@ -789,7 +789,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   onNavAllSOWs,
   onNavAuditLog,
   onOpenSOWV2,
+  onOpenSOWContributor,
 }) => {
+  const isContributor = userRole === 'Contributor'
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log'>('home')
   const [activeTab, setActiveTab] = useState<ActiveTab>('my')
@@ -917,7 +919,17 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
       </div>
 
       {/* All content sits above the animated background */}
-      <div className="relative flex h-full" style={{ zIndex: 1, paddingTop: 20, paddingBottom: 12, paddingLeft: 12, paddingRight: 12, gap: 20 }}>
+      <div
+        className="relative flex h-full"
+        style={{
+          zIndex: 1,
+          paddingTop: 20,
+          paddingBottom: 12,
+          paddingLeft: 12,
+          paddingRight: 12,
+          gap: 20,
+        }}
+      >
         {/* ─── LEFT SIDEBAR ─────────────────────────────────────────────── */}
         <nav
           className="flex flex-col shrink-0 rounded-2xl relative"
@@ -1036,7 +1048,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   }}
                 >
                   <span className="relative">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       {icon}
                     </svg>
                     {badge != null && (
@@ -1132,9 +1150,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>
                       {userName}
                     </div>
-                    <div style={{ fontSize: 11, color: '#99A2A8', marginTop: 1 }}>
-                      {userRole}
-                    </div>
+                    <div style={{ fontSize: 11, color: '#99A2A8', marginTop: 1 }}>{userRole}</div>
                   </div>
                   {/* Sign out option */}
                   <button
@@ -1224,24 +1240,26 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 >
                   Hi {userName} 👋
                 </h1>
-                <button
-                  onClick={() => {
-                    setShowCreateModal(true)
-                    onCreateSOW?.()
-                  }}
-                  className="flex items-center gap-2 bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-colors cursor-pointer border-0"
-                  style={{ boxShadow: '0 4px 20px rgba(0,196,196,0.35)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.5"
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  Create New SOW
-                </button>
+                {!isContributor && (
+                  <button
+                    onClick={() => {
+                      setShowCreateModal(true)
+                      onCreateSOW?.()
+                    }}
+                    className="flex items-center gap-2 bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-colors cursor-pointer border-0"
+                    style={{ boxShadow: '0 4px 20px rgba(0,196,196,0.35)' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2.5"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Create New SOW
+                  </button>
+                )}
               </div>
 
               {/* ─── KPI CARDS ──────────────────────────────────────────────── */}
@@ -1307,7 +1325,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
                     8
                   </div>
-                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div
+                    style={{
+                      height: 1,
+                      background: 'rgba(0,196,196,0.12)',
+                      width: '100%',
+                      margin: '4px 0 2px 0',
+                    }}
+                  />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: '#16a34a' }}>
                       +2 this month ↗
@@ -1376,7 +1401,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
                     3
                   </div>
-                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div
+                    style={{
+                      height: 1,
+                      background: 'rgba(0,196,196,0.12)',
+                      width: '100%',
+                      margin: '4px 0 2px 0',
+                    }}
+                  />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: '#16a34a' }}>
                       +1 from last month ↗
@@ -1445,7 +1477,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div style={{ fontSize: 36, fontWeight: 600, color: '#dc2626', lineHeight: 1 }}>
                     4
                   </div>
-                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div
+                    style={{
+                      height: 1,
+                      background: 'rgba(0,196,196,0.12)',
+                      width: '100%',
+                      margin: '4px 0 2px 0',
+                    }}
+                  />
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
                       Average of questions answered 68%
@@ -1514,7 +1553,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
                     2
                   </div>
-                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div
+                    style={{
+                      height: 1,
+                      background: 'rgba(0,196,196,0.12)',
+                      width: '100%',
+                      margin: '4px 0 2px 0',
+                    }}
+                  />
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
                       12 Total of all SOW questions open
@@ -1583,7 +1629,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
                     2
                   </div>
-                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div
+                    style={{
+                      height: 1,
+                      background: 'rgba(0,196,196,0.12)',
+                      width: '100%',
+                      margin: '4px 0 2px 0',
+                    }}
+                  />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: '#16a34a' }}>
                       +1 this month ↗
@@ -1786,6 +1839,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           paginatedRows.slice(0, 7).map((row, idx) => (
                             <tr
                               key={row.id}
+                              onClick={() => {
+                                if (isContributor && idx === 0) onOpenSOWContributor?.()
+                              }}
                               style={{
                                 height: 60,
                                 borderBottom:
