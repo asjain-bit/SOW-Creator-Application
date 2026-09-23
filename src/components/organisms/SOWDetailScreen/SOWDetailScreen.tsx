@@ -5161,15 +5161,44 @@ export function SOWDetailScreen({
           </span>
           <div style={{ flex: 1 }} />
         </div>
+      </div>
+      {/* end header area */}
 
-        {/* Tab bar + CTA — free, no box */}
-        <div>
+      {/* ── Glass box: tab strip + content ── */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          margin: '0 20px 16px',
+          background: 'rgba(255,255,255,0.72)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
+          border: '1px solid rgba(255,255,255,0.75)',
+          borderRadius: 16,
+          boxShadow: '0 4px 24px rgba(0,196,196,0.08), 0 1px 0 rgba(255,255,255,0.8) inset',
+          overflow: activeTab === 'structure' ? 'hidden' : 'auto',
+        }}
+      >
+        {/* Tab strip — top section of glass box */}
+        <div
+          style={{
+            flexShrink: 0,
+            background: 'rgba(255,255,255,0.35)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            borderBottom: '1px solid rgba(0,196,196,0.13)',
+            borderRadius: '16px 16px 0 0',
+          }}
+        >
           <div
             style={{
               display: 'flex',
               gap: 0,
               alignItems: 'center',
-              borderBottom: '1px solid rgba(0,196,196,0.15)',
+              borderBottom: 'none',
             }}
           >
             {tabs.map((tab) => {
@@ -5378,89 +5407,82 @@ export function SOWDetailScreen({
             </div>
           </div>
         </div>
-        {/* end glass card tabs wrapper */}
-      </div>
-      {/* end header area */}
+        {/* end tab strip */}
 
-      {/* ── Tab content — subtle glass box ── */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: activeTab === 'structure' ? 'hidden' : 'auto',
-          position: 'relative',
-          margin: '0 20px 16px',
-          background: 'rgba(255,255,255,0.55)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-          border: '1px solid rgba(255,255,255,0.65)',
-          borderRadius: 16,
-          boxShadow: '0 4px 24px rgba(0,196,196,0.07), 0 1px 0 rgba(255,255,255,0.7) inset',
-        }}
-      >
-        {/* Generating overlay */}
-        {draftGenState === 'generating' && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 50,
-              background: '#f8fafc',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <GeneratingAnimation />
-          </div>
-        )}
-        {activeTab === 'overview' && <OverviewTab files={uploadedFiles} />}
-        {activeTab === 'form' && <FormTab files={uploadedFiles} onSubmit={handleFormSubmit} />}
-        {activeTab === 'structure' &&
-          (isStructureUnlocked ? (
-            <StructureTab
-              initialSections={sowVariant === 'v2' ? INITIAL_SECTIONS_V2 : INITIAL_SECTIONS}
-            />
-          ) : (
-            <LockedTabState
-              title="Structure Not Yet Available"
-              description="Submit the Form tab to unlock Structure, where you can review sections, assumptions, and questions."
-            />
-          ))}
-        {activeTab === 'sow-draft' &&
-          (isDraftUnlocked ? (
-            draftGenState === 'shimmer' ? (
-              <ShimmerDraft />
-            ) : (
-              <SOWDraftTab />
-            )
-          ) : (
-            <LockedTabState
-              title="SOW Draft Not Yet Available"
-              description="Complete the Structure tab and click Generate Draft to unlock the SOW Draft."
-            />
-          ))}
-        {activeTab === 'audit-log' && (
-          <div style={{ padding: '28px 28px' }}>
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', marginBottom: 16 }}>
-              Audit Log
-            </div>
+        {/* Tab content — fills the rest of the glass box */}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+          }}
+        >
+          {/* Generating overlay */}
+          {draftGenState === 'generating' && (
             <div
               style={{
-                background: '#fff',
-                border: '1px solid rgba(0,196,196,0.15)',
-                borderRadius: 10,
-                padding: '20px 24px',
-                color: '#64748b',
-                fontSize: 14,
+                position: 'absolute',
+                inset: 0,
+                zIndex: 50,
+                background: '#f8fafc',
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
-              No activity recorded yet. Actions taken on this SOW will appear here.
+              <GeneratingAnimation />
             </div>
-          </div>
-        )}
+          )}
+          {activeTab === 'overview' && <OverviewTab files={uploadedFiles} />}
+          {activeTab === 'form' && <FormTab files={uploadedFiles} onSubmit={handleFormSubmit} />}
+          {activeTab === 'structure' &&
+            (isStructureUnlocked ? (
+              <StructureTab
+                initialSections={sowVariant === 'v2' ? INITIAL_SECTIONS_V2 : INITIAL_SECTIONS}
+              />
+            ) : (
+              <LockedTabState
+                title="Structure Not Yet Available"
+                description="Submit the Form tab to unlock Structure, where you can review sections, assumptions, and questions."
+              />
+            ))}
+          {activeTab === 'sow-draft' &&
+            (isDraftUnlocked ? (
+              draftGenState === 'shimmer' ? (
+                <ShimmerDraft />
+              ) : (
+                <SOWDraftTab />
+              )
+            ) : (
+              <LockedTabState
+                title="SOW Draft Not Yet Available"
+                description="Complete the Structure tab and click Generate Draft to unlock the SOW Draft."
+              />
+            ))}
+          {activeTab === 'audit-log' && (
+            <div style={{ padding: '28px 28px' }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', marginBottom: 16 }}>
+                Audit Log
+              </div>
+              <div
+                style={{
+                  background: '#fff',
+                  border: '1px solid rgba(0,196,196,0.15)',
+                  borderRadius: 10,
+                  padding: '20px 24px',
+                  color: '#64748b',
+                  fontSize: 14,
+                }}
+              >
+                No activity recorded yet. Actions taken on this SOW will appear here.
+              </div>
+            </div>
+          )}
+        </div>
+        {/* end tab content */}
       </div>
+      {/* end glass box */}
 
       {/* Review sent toast */}
       <div
