@@ -323,6 +323,7 @@ function UploadFileRow({ file, onRemove }: { file: UploadedFile; onRemove: (id: 
 /* ── Main modal ──────────────────────────────────────────────────────────── */
 export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose, onProceed }) => {
   const [files, setFiles] = useState<UploadedFile[]>([])
+  const [clientName, setClientName] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
   const [isDropzoneHovered, setIsDropzoneHovered] = useState(false)
   const [sizeError, setSizeError] = useState('')
@@ -336,6 +337,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
   useEffect(() => {
     if (!isOpen) {
       setFiles([])
+      setClientName('')
       setIsDragOver(false)
       setIsDropzoneHovered(false)
       setSizeError('')
@@ -499,6 +501,30 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-7 pb-7 flex flex-col gap-4">
+            
+            {/* Client Name Input */}
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                Client Name <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Enter client name"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  border: '1px solid #cbd5e1',
+                  fontSize: 14,
+                  outline: 'none',
+                  color: '#0d212c',
+                  background: '#fff',
+                }}
+              />
+            </div>
+
             {/* Drop zone */}
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -611,22 +637,22 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
           >
             <button
               onClick={handleProceed}
-              disabled={!allUploaded || anyUploading}
+              disabled={!allUploaded || anyUploading || !clientName.trim()}
               className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-xl transition-all cursor-pointer border-0 disabled:cursor-not-allowed"
               style={{
-                background: allUploaded
+                background: allUploaded && clientName.trim()
                   ? 'var(--action-primary-bg-default)'
                   : 'var(--bg-surface-3)',
-                color: allUploaded ? 'var(--action-primary-text)' : 'var(--text-disabled)',
-                boxShadow: allUploaded ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
+                color: allUploaded && clientName.trim() ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+                boxShadow: allUploaded && clientName.trim() ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
               }}
               onMouseEnter={(e) => {
-                if (allUploaded)
+                if (allUploaded && clientName.trim())
                   (e.currentTarget as HTMLButtonElement).style.background =
                     'var(--action-primary-bg-hover)'
               }}
               onMouseLeave={(e) => {
-                if (allUploaded)
+                if (allUploaded && clientName.trim())
                   (e.currentTarget as HTMLButtonElement).style.background =
                     'var(--action-primary-bg-default)'
               }}

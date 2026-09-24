@@ -2287,6 +2287,7 @@ const MERIDIAN_OVERRIDES: Record<
 
 const MERIDIAN_SECTIONS: SOWSection[] = INITIAL_SECTIONS_V2.map((sec) => ({
   ...sec,
+  assignedMembers: Array.from(new Set([...sec.assignedMembers, 'm5'])),
   items: sec.items.map((it) => {
     const o = MERIDIAN_OVERRIDES[it.id]
     return o ? { ...it, ...o, response: o.response } : it
@@ -3023,11 +3024,10 @@ function StructureTab({
     >
       {/* ── Two-pane layout ── */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {/* ── Left pane ── */}
-        <div
-          style={{
-            width: 264,
-            flexShrink: 0,
+          <div
+            style={{
+              width: 330,
+              flexShrink: 0,
             borderRight: '1px solid rgba(0,196,196,0.15)',
             display: 'flex',
             flexDirection: 'column',
@@ -3092,6 +3092,31 @@ function StructureTab({
                 }}
               >
                 Assumptions
+              </div>
+            </div>
+            <div
+              style={{
+                flex: 1,
+                background: 'rgba(0,196,196,0.08)',
+                borderRadius: 6,
+                padding: '6px 10px',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#00a0a0', lineHeight: 1 }}>
+                {((kpiQuestions.total + kpiAssumptions.total) > 0 ? Math.round(((kpiQuestions.done + kpiAssumptions.done) / (kpiQuestions.total + kpiAssumptions.total)) * 100) : 0)}%
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: '#64748b',
+                  marginTop: 3,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Completeness
               </div>
             </div>
           </div>
@@ -3672,8 +3697,8 @@ function ItemRow({
         gap: 9,
         padding: '10px 13px',
         borderRadius: 9,
-        border: `1px solid ${isSelected ? '#00C4C4' : 'rgba(0,196,196,0.18)'}`,
-        background: isSelected ? 'rgba(0,196,196,0.06)' : 'rgba(0,196,196,0.04)',
+        border: `1px solid ${isSelected ? '#00C4C4' : '#e2e8f0'}`,
+        background: isSelected ? 'rgba(0,196,196,0.06)' : '#ffffff',
         transition: 'border-color 0.12s, background 0.12s',
       }}
     >
@@ -3714,7 +3739,7 @@ function ItemRow({
       <span
         style={{
           fontSize: 11,
-          fontWeight: 700,
+          fontWeight: 600,
           color: '#00a0a0',
           background: 'rgba(0,196,196,0.12)',
           padding: '2px 7px',

@@ -47,14 +47,19 @@ export default function Home() {
     )
   }
 
+  const isRiza = userEmail.toLowerCase().includes('riza')
   const isNarendra =
     userEmail.toLowerCase().includes('npatel') ||
     userEmail.toLowerCase().includes('narendra') ||
     userEmail.toLowerCase().includes('contributor')
-  const displayName = isNarendra ? 'Narendra' : 'Ashika Jain'
-  const userRole = isNarendra ? 'Contributor' : 'PMO'
-  const userInitials = isNarendra ? 'N' : 'AJ'
-  const userImage = isNarendra ? '/profile-male.png' : '/profile-user.png'
+  const isClientOrContributor = isNarendra || isRiza
+
+  const displayName = isRiza ? 'Riza' : isNarendra ? 'Narendra' : 'Ashika Jain'
+  const userRole = isRiza ? 'Client' : isNarendra ? 'Contributor' : 'PMO'
+  const userInitials = isRiza ? 'R' : isNarendra ? 'N' : 'AJ'
+  const userImage = isRiza 
+    ? '/profile-female.png' 
+    : isNarendra ? '/profile-male.png' : '/profile-user.png'
 
   const isSOWDetail =
     view === 'sow-detail' || view === 'sow-detail-v2' || view === 'sow-detail-meridian'
@@ -65,7 +70,7 @@ export default function Home() {
       userRole={userRole}
       userInitials={userInitials}
       userImage={userImage}
-      initialSOWs={isNarendra ? CONTRIBUTOR_SOWS : undefined}
+      initialSOWs={isClientOrContributor ? CONTRIBUTOR_SOWS : undefined}
       onSignOut={() => setIsLoggedIn(false)}
       activeNav={isSOWDetail ? 'my-sows' : 'dashboard'}
       contentOverride={
@@ -86,6 +91,11 @@ export default function Home() {
             sowVariant="meridian"
             viewerRole="contributor"
             currentMemberId="m5"
+            uploadedFiles={[
+              { name: 'Meridian_RFP.pdf', size: '2.4 MB', type: 'pdf' },
+              { name: 'Vendor_MSA_Template.docx', size: '1.2 MB', type: 'docx' },
+              { name: 'Procurement_Requirements.xlsx', size: '845 KB', type: 'xlsx' }
+            ]}
             onBack={() => setView('dashboard')}
           />
         ) : undefined

@@ -304,6 +304,33 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   )}
                 </div>
 
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', fontSize: 11, marginTop: -8, marginBottom: 12 }}>
+                  <div style={{ color: '#64748b', marginBottom: 8, fontWeight: 500 }}>Select a demo profile:</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div 
+                      onClick={() => { setEmail('ashika.jain@company.com'); setEmailError(''); }}
+                      style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', color: '#0d212c' }}
+                    >
+                      <span>PMO Lead</span>
+                      <span style={{ fontWeight: 600 }}>ashika.jain@company.com</span>
+                    </div>
+                    <div 
+                      onClick={() => { setEmail('npatel@gmail.com'); setEmailError(''); }}
+                      style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', color: '#0d212c' }}
+                    >
+                      <span>Contributor</span>
+                      <span style={{ fontWeight: 600 }}>npatel@gmail.com</span>
+                    </div>
+                    <div 
+                      onClick={() => { setEmail('riza@gmail.com'); setEmailError(''); }}
+                      style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', color: '#0d212c' }}
+                    >
+                      <span>Client</span>
+                      <span style={{ fontWeight: 600 }}>riza@gmail.com</span>
+                    </div>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   id="send-otp-btn"
@@ -401,6 +428,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       Resend OTP
                     </button>
                   )}
+                </div>
+
+                <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', marginTop: -4, marginBottom: 8 }}>
+                  Test OTP: <b>1234</b>
                 </div>
 
                 {/* Submit OTP CTA */}

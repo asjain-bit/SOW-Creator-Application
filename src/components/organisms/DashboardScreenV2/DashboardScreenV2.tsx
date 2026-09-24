@@ -18,6 +18,7 @@ import {
   ActiveNav,
 } from './DashboardScreenV2.types'
 import { CreateSOWModal } from '@/components/molecules/CreateSOWModal'
+import { FileText, CheckCircle2, Layers, Clock } from 'lucide-react'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
 import { AuditLogView } from '../AuditLogView'
 
@@ -791,7 +792,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   onOpenSOWV2,
   onOpenSOWContributor,
 }) => {
-  const isContributor = userRole === 'Contributor'
+  const isContributor = userRole === 'Contributor' || userRole === 'Client'
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log'>('home')
   const [activeTab, setActiveTab] = useState<ActiveTab>('my')
@@ -1263,7 +1264,234 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
               </div>
 
               {/* ─── KPI CARDS ──────────────────────────────────────────────── */}
-              <div className="grid grid-cols-5 gap-3 mb-6">
+              {isContributor ? (
+                <div className="grid grid-cols-4 gap-3 mb-6">
+                  {/* 1. Total Documents */}
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.6)',
+                      border: '1px solid rgba(255,255,255,0.85)',
+                      borderRadius: 16,
+                      padding: '16px 18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: '#94a3b8',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                        }}
+                      >
+                        My Assigned Sections
+                      </span>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          background: '#e0f9f9',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Layers size={16} color="#00a0a0" />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
+                      2
+                    </div>
+                    <div
+                      style={{
+                        height: 1,
+                        background: 'rgba(0,196,196,0.12)',
+                        width: '100%',
+                        margin: '4px 0 2px 0',
+                      }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+                        Sections assigned to you
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 2. Commitments */}
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.6)',
+                      border: '1px solid rgba(255,255,255,0.85)',
+                      borderRadius: 16,
+                      padding: '16px 18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: '#94a3b8',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                        }}
+                      >
+                        Pending Questions
+                      </span>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          background: '#e0f2fe',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Clock size={16} color="#0284c7" />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>4</div>
+                    <div
+                      style={{
+                        height: 1,
+                        background: 'rgba(0,196,196,0.12)',
+                        width: '100%',
+                        margin: '4px 0 2px 0',
+                      }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+                        Questions awaiting your response
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3. Sections of SOW */}
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.6)',
+                      border: '1px solid rgba(255,255,255,0.85)',
+                      borderRadius: 16,
+                      padding: '16px 18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: '#94a3b8',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                        }}
+                      >
+                        Completed Questions
+                      </span>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          background: '#f3e8ff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <CheckCircle2 size={16} color="#7c3aed" />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>2</div>
+                    <div
+                      style={{
+                        height: 1,
+                        background: 'rgba(0,196,196,0.12)',
+                        width: '100%',
+                        margin: '4px 0 2px 0',
+                      }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+                        Questions answered by you
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 4. Review Status */}
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.6)',
+                      border: '1px solid rgba(255,255,255,0.85)',
+                      borderRadius: 16,
+                      padding: '16px 18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: '#94a3b8',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                        }}
+                      >
+                        Overall Progress
+                      </span>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          background: '#fef3c7',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <FileText size={16} color="#d97706" />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 600, color: '#d97706', lineHeight: 1.38 }}>
+                      33%
+                    </div>
+                    <div
+                      style={{
+                        height: 1,
+                        background: 'rgba(0,196,196,0.12)',
+                        width: '100%',
+                        margin: '4px 0 2px 0',
+                      }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
+                        Your progress across assigned sections
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-5 gap-3 mb-6">
                 {/* 1 — Total SOWs */}
                 <div
                   style={{
@@ -1644,6 +1872,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   </div>
                 </div>
               </div>
+            )}
 
               {/* ─── BOTTOM: ACTIVE SOWs (3/5) + DUE THIS WEEK (2/5) ────── */}
               <div style={{ display: 'flex', gap: 16, alignItems: 'stretch' }}>
@@ -1840,7 +2069,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             <tr
                               key={row.id}
                               onClick={() => {
-                                if (isContributor && idx === 0) onOpenSOWContributor?.()
+                                if (isContributor) {
+                                  if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
+                                    onOpenSOWContributor?.()
+                                  } else if (row.name.includes('Digital Workplace Enablement') || idx === 1) {
+                                    onOpenSecondSOWContributor?.()
+                                  }
+                                }
                               }}
                               style={{
                                 height: 60,
