@@ -1997,7 +1997,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                   if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
                                     onOpenSOWContributor?.()
                                   } else if (row.name.includes('Digital Workplace Enablement') || idx === 1) {
-                                    onOpenSecondSOWContributor?.()
+                                    onOpenSOWContributor?.()
                                   }
                                 }
                               }}
