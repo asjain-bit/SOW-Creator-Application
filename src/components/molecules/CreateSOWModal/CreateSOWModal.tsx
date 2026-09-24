@@ -502,14 +502,14 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-7 pb-7 flex flex-col gap-4">
             
-            {/* Client Name Input */}
+            {/* SOW Name Input */}
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                Client Name <span style={{ color: '#ef4444' }}>*</span>
+                SOW Name <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input
                 type="text"
-                placeholder="Enter client name"
+                placeholder="Enter SOW name"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
                 style={{
