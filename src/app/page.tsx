@@ -92,9 +92,9 @@ export default function Home() {
             viewerRole="contributor"
             currentMemberId="m5"
             uploadedFiles={[
-              { name: 'Meridian_RFP.pdf', size: '2.4 MB', type: 'pdf' },
-              { name: 'Vendor_MSA_Template.docx', size: '1.2 MB', type: 'docx' },
-              { name: 'Procurement_Requirements.xlsx', size: '845 KB', type: 'xlsx' }
+              { id: '1', name: 'Meridian_RFP.pdf', size: '2.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
+              { id: '2', name: 'Vendor_MSA_Template.docx', size: '1.2 MB', type: 'application/msword', status: 'complete', progress: 100 },
+              { id: '3', name: 'Procurement_Requirements.xlsx', size: '845 KB', type: 'application/vnd.ms-excel', status: 'complete', progress: 100 }
             ]}
             onBack={() => setView('dashboard')}
           />
