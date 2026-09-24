@@ -1491,7 +1491,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-5 gap-3 mb-6">
+                <div className="grid grid-cols-4 gap-3 mb-6">
                 {/* 1 — Total SOWs */}
                 <div
                   style={{
@@ -1640,82 +1640,6 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: '#16a34a' }}>
                       +1 from last month ↗
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3 — Pending with Me */}
-                <div
-                  style={{
-                    background: 'rgba(255,255,255,0.8)',
-                    border: '1px solid rgba(255,255,255,0.9)',
-                    borderRadius: 16,
-                    padding: '16px 18px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: '#94a3b8',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                      }}
-                    >
-                      Pending with Me
-                    </span>
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 10,
-                        background: '#fee2e2',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="#dc2626"
-                        strokeWidth="1.8"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 36, fontWeight: 600, color: '#dc2626', lineHeight: 1 }}>
-                    4
-                  </div>
-                  <div
-                    style={{
-                      height: 1,
-                      background: 'rgba(0,196,196,0.12)',
-                      width: '100%',
-                      margin: '4px 0 2px 0',
-                    }}
-                  />
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
-                      Average of questions answered 68%
                     </span>
                   </div>
                 </div>
