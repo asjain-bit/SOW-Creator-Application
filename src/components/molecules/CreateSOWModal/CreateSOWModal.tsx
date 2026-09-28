@@ -324,6 +324,7 @@ function UploadFileRow({ file, onRemove }: { file: UploadedFile; onRemove: (id: 
 export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose, onProceed }) => {
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [clientName, setClientName] = useState('')
+  const [tokenConsumption, setTokenConsumption] = useState<number | ''>('')
   const [isDragOver, setIsDragOver] = useState(false)
   const [isDropzoneHovered, setIsDropzoneHovered] = useState(false)
   const [sizeError, setSizeError] = useState('')
@@ -338,6 +339,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
     if (!isOpen) {
       setFiles([])
       setClientName('')
+      setTokenConsumption('')
       setIsDragOver(false)
       setIsDropzoneHovered(false)
       setSizeError('')
@@ -525,6 +527,29 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
               />
             </div>
 
+            {/* Token Consumption Input */}
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                Token Consumption <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                type="number"
+                placeholder="0"
+                value={tokenConsumption}
+                onChange={(e) => setTokenConsumption(e.target.value === '' ? '' : Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  border: '1px solid #cbd5e1',
+                  fontSize: 14,
+                  outline: 'none',
+                  color: '#0d212c',
+                  background: '#fff',
+                }}
+              />
+            </div>
+
             {/* Drop zone */}
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -536,7 +561,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
               className="rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 py-12 px-6 cursor-pointer transition-all"
               style={{
                 borderColor: dropzoneActive ? 'var(--brand-cyan-500)' : 'var(--border-default)',
-                background: dropzoneActive ? 'var(--brand-cyan-50)' : 'var(--bg-surface-1)',
+                background: dropzoneActive ? '#f8fafc' : 'var(--bg-surface-1)',
               }}
             >
               <div
@@ -576,10 +601,12 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   </span>
                 </p>
                 <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
-                  Supports PDF, DOCX and PPT · Max {MAX_SIZE_MB} MB
+                  Supports PDF, DOCX and PPT · Max 10 documents · Max {MAX_SIZE_MB} MB
                 </p>
               </div>
             </div>
+
+
 
             <input
               ref={fileInputRef}
@@ -637,22 +664,22 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
           >
             <button
               onClick={handleProceed}
-              disabled={!allUploaded || anyUploading || !clientName.trim()}
+              disabled={!allUploaded || anyUploading || !clientName.trim() || tokenConsumption === ''}
               className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-xl transition-all cursor-pointer border-0 disabled:cursor-not-allowed"
               style={{
-                background: allUploaded && clientName.trim()
+                background: allUploaded && clientName.trim() && tokenConsumption !== ''
                   ? 'var(--action-primary-bg-default)'
                   : 'var(--bg-surface-3)',
-                color: allUploaded && clientName.trim() ? 'var(--action-primary-text)' : 'var(--text-disabled)',
-                boxShadow: allUploaded && clientName.trim() ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
+                color: allUploaded && clientName.trim() && tokenConsumption !== '' ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+                boxShadow: allUploaded && clientName.trim() && tokenConsumption !== '' ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
               }}
               onMouseEnter={(e) => {
-                if (allUploaded && clientName.trim())
+                if (allUploaded && clientName.trim() && tokenConsumption !== '')
                   (e.currentTarget as HTMLButtonElement).style.background =
                     'var(--action-primary-bg-hover)'
               }}
               onMouseLeave={(e) => {
-                if (allUploaded && clientName.trim())
+                if (allUploaded && clientName.trim() && tokenConsumption !== '')
                   (e.currentTarget as HTMLButtonElement).style.background =
                     'var(--action-primary-bg-default)'
               }}

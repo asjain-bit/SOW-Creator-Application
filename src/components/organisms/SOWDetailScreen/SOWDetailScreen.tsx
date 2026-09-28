@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Check, X, ChevronDown, CheckCircle2, FileText, Clock, Layers } from 'lucide-react'
-import { AuditLogView } from '../AuditLogView'
+import { AuditLogView, addGlobalAuditLog } from '../AuditLogView'
 import type {
   SOWDetailScreenProps,
   SOWTab,
@@ -547,24 +547,32 @@ function RichTextField({
   label,
   value,
   onChange,
+  citation,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
+  citation?: string
 }) {
   return (
     <div style={{ marginBottom: 18 }}>
-      <label
-        style={{
-          display: 'block',
-          fontSize: 13,
-          fontWeight: 600,
-          color: '#0d212c',
-          marginBottom: 6,
-        }}
-      >
-        {label}
-      </label>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
+        <label
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#0d212c',
+          }}
+        >
+          {label}
+        </label>
+        {citation && (
+          <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+            Source: {citation}
+          </span>
+        )}
+      </div>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -911,11 +919,22 @@ function FormTab({
       {/* ── Commitments card ── */}
       <SectionCard
         title={
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
-            Commitments
-            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
-              List the key deliverables and obligations.
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+              Commitments
+              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
+                List the key deliverables and obligations.
+              </span>
+            </div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: '2px 8px', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
+                <polyline points="14 2 14 8 20 8" />
+                <path d="M2 15h10" />
+                <path d="m9 18 3-3-3-3" />
+              </svg>
+              <span style={{ fontSize: 10, color: '#64748b', fontWeight: 500 }}>Vendor_MSA_Template.docx (Page 13)</span>
+            </div>
           </div>
         }
       >
@@ -1018,17 +1037,21 @@ function FormTab({
         }
       >
         <div style={{ marginBottom: 16 }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#0d212c',
-              marginBottom: 6,
-            }}
-          >
-            Client Name
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
+            <label
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#0d212c',
+              }}
+            >
+              Client Name
+            </label>
+            <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+              Source: Procurement_Requirements.xlsx (Page 1)
+            </span>
+          </div>
           <input
             value={formData.clientName}
             onChange={(e) => setFormData((prev) => ({ ...prev, clientName: e.target.value }))}
@@ -1057,26 +1080,31 @@ function FormTab({
           label="Description"
           value={formData.description}
           onChange={(v) => setFormData((p) => ({ ...p, description: v }))}
+          citation="Meridian_RFP.pdf (Page 3)"
         />
         <RichTextField
           label="Business Outcome"
           value={formData.businessOutcome}
           onChange={(v) => setFormData((p) => ({ ...p, businessOutcome: v }))}
+          citation="Meridian_RFP.pdf (Page 4)"
         />
         <RichTextField
           label="Importance & Value of Solution"
           value={formData.importanceValue}
           onChange={(v) => setFormData((p) => ({ ...p, importanceValue: v }))}
+          citation="Meridian_RFP.pdf (Page 5)"
         />
         <RichTextField
           label="In Scope"
           value={formData.inScope}
           onChange={(v) => setFormData((p) => ({ ...p, inScope: v }))}
+          citation="Vendor_MSA_Template.docx (Page 12)"
         />
         <RichTextField
           label="Out of Scope"
           value={formData.outOfScope}
           onChange={(v) => setFormData((p) => ({ ...p, outOfScope: v }))}
+          citation="Vendor_MSA_Template.docx (Page 14)"
         />
 
         {/* Tags */}
@@ -1124,7 +1152,9 @@ function FormTab({
         <div>
           <label
             style={{
-              display: 'block',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               fontSize: 13,
               fontWeight: 600,
               color: '#0d212c',
@@ -1132,6 +1162,15 @@ function FormTab({
             }}
           >
             Any Other Relevant Context
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: '2px 8px', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
+                <polyline points="14 2 14 8 20 8" />
+                <path d="M2 15h10" />
+                <path d="m9 18 3-3-3-3" />
+              </svg>
+              <span style={{ fontSize: 10, color: '#64748b', fontWeight: 500 }}>Vendor_MSA_Template.docx (Page 15)</span>
+            </div>
           </label>
           <textarea
             value={formData.otherContext}
@@ -1177,6 +1216,8 @@ function AddSectionModal({
 }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string}[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -1299,13 +1340,13 @@ function AddSectionModal({
               marginBottom: 6,
             }}
           >
-            Brief Description <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
+            Instructions
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder="Describe the purpose and scope of this section…"
+            placeholder="Provide instructions for generating this section..."
             style={{
               width: '100%',
               padding: '10px 12px',
@@ -1330,6 +1371,110 @@ function AddSectionModal({
           />
         </div>
 
+        <div style={{ marginBottom: 24 }}>
+          <label
+            style={{
+              display: 'block',
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#0d212c',
+              marginBottom: 6,
+            }}
+          >
+            Knowledge Base <span style={{ color: '#ef4444' }}>*</span>
+          </label>
+          <input
+            type="file"
+            multiple
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              if (e.target.files) {
+                const newFiles = Array.from(e.target.files).map(f => ({
+                  name: f.name,
+                  type: f.name.endsWith('.pdf') ? 'PDF' : f.name.endsWith('.docx') ? 'DOCX' : 'TXT'
+                }))
+                setUploadedFiles(prev => [...prev, ...newFiles])
+              }
+            }}
+          />
+          <div
+            style={{
+              width: '100%',
+              padding: '24px 12px',
+              border: '1.5px dashed #cbd5e1',
+              borderRadius: 8,
+              textAlign: 'center',
+              background: '#f8fafc',
+              cursor: 'pointer',
+              marginBottom: uploadedFiles.length > 0 ? 12 : 0,
+            }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <div style={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>
+              <span style={{ color: '#00a0a0', fontWeight: 600 }}>Click to browse</span> or drag & drop documents here
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+              Supports PDF, DOCX, XLSX (Max 10MB)
+            </div>
+          </div>
+          {uploadedFiles.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {uploadedFiles.map((file, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 14px',
+                    background: '#fff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      background: file.type === 'PDF' ? '#fef2f2' : file.type === 'DOCX' ? '#eff6ff' : '#f8fafc',
+                      borderRadius: 8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={file.type === 'PDF' ? '#ef4444' : file.type === 'DOCX' ? '#3b82f6' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {file.name}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setUploadedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      padding: 4,
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <button
             onClick={onClose}
@@ -1348,23 +1493,23 @@ function AddSectionModal({
           </button>
           <button
             onClick={handleAdd}
-            disabled={!title.trim()}
+            disabled={!title.trim() || uploadedFiles.length === 0}
             style={{
               padding: '9px 20px',
-              background: title.trim() ? '#00C4C4' : '#cbd5e1',
+              background: (title.trim() && uploadedFiles.length > 0) ? '#00C4C4' : '#cbd5e1',
               color: '#fff',
               border: 'none',
               borderRadius: 8,
               fontSize: 13,
               fontWeight: 700,
-              cursor: title.trim() ? 'pointer' : 'not-allowed',
+              cursor: (title.trim() && uploadedFiles.length > 0) ? 'pointer' : 'not-allowed',
               transition: 'background 0.15s',
             }}
             onMouseEnter={(e) => {
-              if (title.trim()) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
+              if (title.trim() && uploadedFiles.length > 0) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
             }}
             onMouseLeave={(e) => {
-              if (title.trim()) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
+              if (title.trim() && uploadedFiles.length > 0) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
             }}
           >
             Add Section
@@ -2827,10 +2972,14 @@ function StructureTab({
   initialSections = INITIAL_SECTIONS,
   viewerRole = 'pmo',
   currentMemberId = 'm5',
+  onScoreChange,
+  disableAnswer = false,
 }: {
   initialSections?: SOWSection[]
   viewerRole?: 'pmo' | 'contributor'
   currentMemberId?: string
+  onScoreChange?: (score: number) => void
+  disableAnswer?: boolean
 }) {
   const isContributor = viewerRole === 'contributor'
   const [sections, setSections] = useState<SOWSection[]>(initialSections)
@@ -2840,6 +2989,14 @@ function StructureTab({
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [hoveredSection, setHoveredSection] = useState<string | null>(null)
   const [assignDropdownOpen, setAssignDropdownOpen] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onConfirm: (reason: string, text: string) => void
+  } | null>(null)
+  const [clientQueueModalOpen, setClientQueueModalOpen] = useState(false)
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState<string | null>(null)
   const assignDropdownRef = useRef<HTMLDivElement>(null)
   const rightPaneRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -2934,10 +3091,30 @@ function StructureTab({
     setSections((prev) =>
       prev.map((s) => ({
         ...s,
-        items: s.items.map((it) => (selected.has(it.id) ? { ...it, assignedTo: memberId } : it)),
+        items: s.items.map((it) => {
+          if (!selected.has(it.id) || it.inClientQueue) return it
+          const currentAssignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
+          const newAssignees = currentAssignees.includes(memberId)
+            ? currentAssignees.filter((m: string) => m !== memberId)
+            : [...currentAssignees, memberId]
+          return { ...it, assignedTo: newAssignees }
+        }),
       }))
     )
-    clearSelection()
+  }
+
+  const toggleClientQueue = (itemId: string) => {
+    setSections((prev) =>
+      prev.map((s) => ({
+        ...s,
+        items: s.items.map((it) => {
+          if (it.id === itemId) {
+            return { ...it, inClientQueue: !it.inClientQueue, assignedTo: [] }
+          }
+          return it
+        }),
+      }))
+    )
   }
 
   const bulkDelete = () => {
@@ -2964,11 +3141,33 @@ function StructureTab({
         .filter((s) => s.items.length > 0)
     : sections
 
-  const answerItem = (itemId: string, response: string) => {
+  const answerItem = (itemId: string, response: string, isAiGenerated: boolean, isEdited: boolean) => {
+    let itemName = ''
     setSections((prev) =>
       prev.map((s) => ({
         ...s,
-        items: s.items.map((it) => (it.id === itemId ? { ...it, answered: true, response } : it)),
+        items: s.items.map((it) => {
+          if (it.id === itemId) {
+            itemName = it.text
+            return { ...it, answered: true, response }
+          }
+          return it
+        }),
+      }))
+    )
+    if (itemName) {
+      const action = isAiGenerated
+        ? (isEdited ? 'Edited AI-Generated Answer' : 'Answer Generated using AI')
+        : 'Manually Answered Question'
+      addGlobalAuditLog(action, `Answered: "${itemName.substring(0, 50)}..."`, isContributor ? 'Narendra (Contributor)' : 'Ashika Jain (PMO)', 'form')
+    }
+  }
+
+  const deleteItem = (itemId: string) => {
+    setSections((prev) =>
+      prev.map((s) => ({
+        ...s,
+        items: s.items.filter((it) => it.id !== itemId),
       }))
     )
   }
@@ -2995,6 +3194,12 @@ function StructureTab({
     )
     return { total, done, pct: total > 0 ? Math.round((done / total) * 100) : 0 }
   })()
+  const completionScore = ((kpiQuestions.total + kpiAssumptions.total) > 0 ? Math.round(((kpiQuestions.done + kpiAssumptions.done) / (kpiQuestions.total + kpiAssumptions.total)) * 100) : 0)
+  const queuedCount = sections.flatMap(s => s.items).filter(it => it.inClientQueue).length
+
+  useEffect(() => {
+    onScoreChange?.(completionScore)
+  }, [completionScore, onScoreChange])
   const kpis = [
     {
       label: 'Questions',
@@ -3104,7 +3309,7 @@ function StructureTab({
               }}
             >
               <div style={{ fontSize: 16, fontWeight: 700, color: '#00a0a0', lineHeight: 1 }}>
-                {((kpiQuestions.total + kpiAssumptions.total) > 0 ? Math.round(((kpiQuestions.done + kpiAssumptions.done) / (kpiQuestions.total + kpiAssumptions.total)) * 100) : 0)}%
+                {completionScore}%
               </div>
               <div
                 style={{
@@ -3226,7 +3431,14 @@ function StructureTab({
                               prev.map((s) => (s.id === sec.id ? { ...s, title: t.trim() } : s))
                             )
                         }}
-                        onDelete={() => deleteSection(sec.id)}
+                        onDelete={() => {
+                          setDeleteConfirm({
+                            isOpen: true,
+                            title: 'Delete Section',
+                            message: 'Are you sure you want to delete this section?',
+                            onConfirm: (reason, text) => deleteSection(sec.id)
+                          })
+                        }}
                       />
                     </div>
                   )}
@@ -3257,7 +3469,7 @@ function StructureTab({
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
+                  ;(e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
                 }}
                 onMouseLeave={(e) => {
                   ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
@@ -3282,6 +3494,42 @@ function StructureTab({
 
         {/* ── Right pane ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          {/* Top Actions */}
+          {!isContributor && (
+            <div style={{ padding: '8px 28px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', justifyContent: 'flex-end', background: '#fff' }}>
+              <button
+                onClick={() => setClientQueueModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'none',
+                  border: 'none',
+                  color: '#0d212c',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                }}
+                title="Client Queue"
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                  <path d="M16 3.13a4 4 0 010 7.75" />
+                </svg>
+                {queuedCount} in Client Queue
+              </button>
+            </div>
+          )}
           {/* Bulk-action bar (appears when items are selected) */}
           {!isContributor && hasSelection && (
             <div
@@ -3404,12 +3652,19 @@ function StructureTab({
                     >
                       Select member
                     </div>
-                    {SECTION_MEMBERS.map((m) => (
+                    {SECTION_MEMBERS.map((m) => {
+                      const allItemIdsArray = Array.from(selected)
+                      const isAssigned = allItemIdsArray.length > 0 && allItemIdsArray.every(id => {
+                        const it = sections.flatMap(s => s.items).find(x => x.id === id)
+                        if (!it) return false
+                        const assignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
+                        return assignees.includes(m.id)
+                      })
+                      return (
                       <button
                         key={m.id}
                         onClick={() => {
                           bulkAssign(m.id)
-                          setAssignDropdownOpen(false)
                         }}
                         style={{
                           display: 'flex',
@@ -3433,6 +3688,23 @@ function StructureTab({
                           ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
                         }}
                       >
+                        <div style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: 4,
+                          border: isAssigned ? 'none' : '1px solid #cbd5e1',
+                          background: isAssigned ? '#00C4C4' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {isAssigned && (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
                         <div
                           style={{
                             width: 28,
@@ -3457,13 +3729,19 @@ function StructureTab({
                           <div style={{ fontSize: 11, color: '#94a3b8' }}>PMO Member</div>
                         </div>
                       </button>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
               <div style={{ height: 16, width: 1, background: 'rgba(0,196,196,0.25)' }} />
               <button
-                onClick={bulkDelete}
+                onClick={() => setDeleteConfirm({
+                  isOpen: true,
+                  title: 'Bulk Delete',
+                  message: `Are you sure you want to delete ${selected.size} selected items?`,
+                  onConfirm: (reason, text) => bulkDelete()
+                })}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -3543,8 +3821,10 @@ function StructureTab({
                     >
                       {idx + 1}
                     </span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', flex: 1 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
                       {sec.title}
+                        <div style={{ display: 'flex', gap: 4 }}>
+                        </div>
                     </span>
                     {/* Assigned members */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -3614,7 +3894,15 @@ function StructureTab({
                           hasAnySelected={hasSelection}
                           onToggle={() => toggleSelect(item.id)}
                           isContributor={isContributor}
-                          onAnswer={(text) => answerItem(item.id, text)}
+                          disableAnswer={disableAnswer}
+                          onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
+                          onToggleQueue={() => toggleClientQueue(item.id)}
+                          onDelete={() => setDeleteConfirm({
+                            isOpen: true,
+                            title: 'Delete Assumption',
+                            message: 'Are you sure you want to delete this assumption?',
+                            onConfirm: (reason, text) => deleteItem(item.id)
+                          })}
                         />
                       ))}
                       {questions.map((item, qi) => (
@@ -3626,9 +3914,45 @@ function StructureTab({
                           hasAnySelected={hasSelection}
                           onToggle={() => toggleSelect(item.id)}
                           isContributor={isContributor}
-                          onAnswer={(text) => answerItem(item.id, text)}
+                          disableAnswer={disableAnswer}
+                          onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
+                          onToggleQueue={() => toggleClientQueue(item.id)}
+                          onDelete={() => setDeleteConfirm({
+                            isOpen: true,
+                            title: 'Delete Question',
+                            message: 'Are you sure you want to delete this question?',
+                            onConfirm: (reason, text) => deleteItem(item.id)
+                          })}
                         />
                       ))}
+                    </div>
+                  )}
+                  {!isContributor && (
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start', marginTop: 12 }}>
+                      <button
+                        title="Helpful"
+                        onClick={() => setFeedbackModalOpen(sec.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 20, cursor: 'pointer', padding: '6px 12px', color: '#64748b', fontSize: 12, fontWeight: 600 }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = '#10b981'; e.currentTarget.style.borderColor = '#10b981'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                        Helpful
+                      </button>
+                      <button
+                        title="Not Helpful"
+                        onClick={() => setFeedbackModalOpen(sec.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 20, cursor: 'pointer', padding: '6px 12px', color: '#64748b', fontSize: 12, fontWeight: 600 }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = '#ef4444'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
+                        </svg>
+                        Not Helpful
+                      </button>
                     </div>
                   )}
                 </div>
@@ -3643,6 +3967,34 @@ function StructureTab({
         <AddSectionModal
           onClose={() => setShowAddSectionModal(false)}
           onAdd={(t, _d) => addSection(t)}
+        />
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteConfirm?.isOpen && (
+        <DeleteConfirmModal
+          title={deleteConfirm.title}
+          message={deleteConfirm.message}
+          onConfirm={(reason, text) => {
+             deleteConfirm.onConfirm(reason, text)
+             setDeleteConfirm(null)
+          }}
+          onClose={() => setDeleteConfirm(null)}
+        />
+      )}
+      {clientQueueModalOpen && (
+        <ClientQueueModal
+          items={sections.flatMap(s => s.items).filter(i => i.inClientQueue)}
+          onClose={() => setClientQueueModalOpen(false)}
+        />
+      )}
+      {feedbackModalOpen && (
+        <FeedbackModal
+          onClose={() => setFeedbackModalOpen(null)}
+          onSubmit={(text) => {
+             // In a real app this would send the feedback to backend
+             setFeedbackModalOpen(null)
+          }}
         />
       )}
       {addItemFor &&
@@ -3670,7 +4022,10 @@ function ItemRow({
   hasAnySelected,
   onToggle,
   isContributor = false,
+  disableAnswer = false,
   onAnswer,
+  onDelete,
+  onToggleQueue,
 }: {
   item: SectionItem
   label: string
@@ -3678,11 +4033,17 @@ function ItemRow({
   hasAnySelected: boolean
   onToggle: () => void
   isContributor?: boolean
-  onAnswer?: (text: string) => void
+  disableAnswer?: boolean
+  onAnswer?: (text: string, isAiGenerated: boolean, isEdited: boolean) => void
+  onDelete?: () => void
+  onToggleQueue?: () => void
 }) {
   const [hovered, setHovered] = useState(false)
   const [draft, setDraft] = useState(item.response ?? '')
   const [editing, setEditing] = useState(false)
+  const [isAiGenerated, setIsAiGenerated] = useState(false)
+  const [isEditedAi, setIsEditedAi] = useState(false)
+  const [hasAttachedDoc, setHasAttachedDoc] = useState(false)
   const isAssumption = item.type === 'assumption'
   const m = memberById(item.assignedTo)
   const showCheckbox = hovered || isSelected || hasAnySelected
@@ -3803,7 +4164,7 @@ function ItemRow({
             >
               {item.response}
             </span>
-            {isContributor && (
+            {!disableAnswer && (
               <button
                 type="button"
                 onClick={() => {
@@ -3825,7 +4186,7 @@ function ItemRow({
             )}
           </div>
         )}
-        {isContributor && (!item.response || editing) && (
+        {!disableAnswer && (!item.response || editing) && (
           <div
             style={{
               marginTop: 8,
@@ -3838,7 +4199,10 @@ function ItemRow({
           >
             <textarea
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value)
+                if (isAiGenerated) setIsEditedAi(true)
+              }}
               placeholder="Type your answer…"
               rows={2}
               style={{
@@ -3854,16 +4218,51 @@ function ItemRow({
                 color: '#0d212c',
               }}
             />
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <label>
+                <input
+                  type="file"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setHasAttachedDoc(true)
+                      const extracted = "Based on the attached document, the requirement is confirmed."
+                      setDraft(draft ? draft + '\n' + extracted : extracted)
+                      setIsAiGenerated(true)
+                      setIsEditedAi(false)
+                    }
+                  }}
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '5px 10px',
+                    borderRadius: 6,
+                    border: '1px solid rgba(14,165,233,0.35)',
+                    background: 'rgba(14,165,233,0.07)',
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    color: '#0ea5e9',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                  {hasAttachedDoc ? 'Doc Attached' : 'Upload Doc'}
+                </div>
+              </label>
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
                   setDraft(
                     isAssumption
                       ? 'Confirmed — validated with the client stakeholder and captured for the record.'
                       : 'Yes, confirmed with the client team; details captured and will be reflected in the final SOW.'
                   )
-                }
+                  setIsAiGenerated(true)
+                  setIsEditedAi(false)
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -3896,7 +4295,7 @@ function ItemRow({
                 type="button"
                 disabled={!draft.trim()}
                 onClick={() => {
-                  onAnswer?.(draft.trim())
+                  onAnswer?.(draft.trim(), isAiGenerated, isEditedAi)
                   setEditing(false)
                 }}
                 style={{
@@ -3933,12 +4332,82 @@ function ItemRow({
         )}
       </div>
 
-      {/* Assigned to */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, marginTop: 2 }}>
-        <MemberAvatar memberId={item.assignedTo} size={20} />
-        <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>
-          {m.name.split(' ')[0]}
-        </span>
+      {/* Assigned to & Delete */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          {Array.isArray(item.assignedTo) && item.assignedTo.length > 0 ? (
+            item.assignedTo.map((a, i) => {
+              const mem = memberById(a)
+              return (
+                <div key={a} style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: i > 0 ? -4 : 0 }}>
+                  <MemberAvatar memberId={a} size={20} />
+                  <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>
+                    {mem.name.split(' ')[0]}
+                  </span>
+                </div>
+              )
+            })
+          ) : typeof item.assignedTo === 'string' && item.assignedTo ? (
+            <>
+              <MemberAvatar memberId={item.assignedTo} size={20} />
+              <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>
+                {memberById(item.assignedTo).name.split(' ')[0]}
+              </span>
+            </>
+          ) : (
+            <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
+          )}
+        </div>
+        {!isContributor && (
+          <button
+            onClick={() => onToggleQueue?.()}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: item.inClientQueue ? '#22c55e' : '#cbd5e1',
+              padding: 4,
+              opacity: item.inClientQueue || hovered ? 1 : 0,
+              transition: 'all 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            title={item.inClientQueue ? "Remove from Client Queue" : "Add to Client Queue"}
+            onMouseEnter={(e) => {
+              if (!item.inClientQueue) (e.currentTarget as HTMLButtonElement).style.color = '#22c55e'
+            }}
+            onMouseLeave={(e) => {
+              if (!item.inClientQueue) (e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        )}
+        {!isContributor && (
+          <button
+            onClick={() => {
+              onDelete?.()
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#ef4444',
+              padding: 2,
+              opacity: hovered ? 1 : 0,
+              transition: 'opacity 0.1s',
+            }}
+            title="Delete Question"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   )
@@ -5084,7 +5553,7 @@ function SOWDraftTab() {
                                     textAlign: 'left',
                                   }}
                                   onMouseEnter={(e) =>
-                                    (e.currentTarget.style.background = 'rgba(0,196,196,0.07)')
+                                    (e.currentTarget.style.background = '#f8fafc')
                                   }
                                   onMouseLeave={(e) =>
                                     (e.currentTarget.style.background = 'transparent')
@@ -5130,7 +5599,7 @@ function SOWDraftTab() {
                                     textAlign: 'left',
                                   }}
                                   onMouseEnter={(e) =>
-                                    (e.currentTarget.style.background = 'rgba(0,196,196,0.07)')
+                                    (e.currentTarget.style.background = '#f8fafc')
                                   }
                                   onMouseLeave={(e) =>
                                     (e.currentTarget.style.background = 'transparent')
@@ -7061,11 +7530,13 @@ export function SOWDetailScreen({
   )
   const [isDraftUnlocked, setIsDraftUnlocked] = useState(false)
   const [isFormReady, setIsFormReady] = useState(false)
+  const [isFormEditable, setIsFormEditable] = useState(false)
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
   const [draftGenState, setDraftGenState] = useState<DraftGenState>('idle')
   const [inviteToast, setInviteToast] = useState(false)
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [reviewSentToast, setReviewSentToast] = useState(false)
+  const [completionScore, setCompletionScore] = useState(0)
   const inviteToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reviewToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -7099,6 +7570,7 @@ export function SOWDetailScreen({
   const handleFormSubmit = () => {
     setIsStructureUnlocked(true)
     setActiveTab('structure')
+    setIsFormEditable(false)
   }
 
   return (
@@ -7331,12 +7803,10 @@ export function SOWDetailScreen({
                         whiteSpace: 'nowrap',
                       }}
                       onMouseEnter={(e) => {
-                        ;(e.currentTarget as HTMLButtonElement).style.background =
-                          'rgba(0,196,196,0.14)'
+                        ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
                       }}
                       onMouseLeave={(e) => {
-                        ;(e.currentTarget as HTMLButtonElement).style.background =
-                          'rgba(0,196,196,0.07)'
+                        ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
                       }}
                     >
                       <svg
@@ -7395,27 +7865,32 @@ export function SOWDetailScreen({
                 ) : (
                   <button
                     onClick={handleGenerateDraft}
+                    disabled={completionScore < 80}
+                    title={completionScore < 80 ? "80% completion required to generate draft" : ""}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
                       padding: '6px 14px',
                       borderRadius: 8,
-                      border: '1.5px solid rgba(0,196,196,0.5)',
-                      background: 'rgba(0,196,196,0.12)',
+                      border: completionScore < 80 ? '1.5px solid #e2e8f0' : '1.5px solid rgba(0,196,196,0.5)',
+                      background: completionScore < 80 ? '#f8fafc' : 'rgba(0,196,196,0.12)',
                       fontSize: 12,
                       fontWeight: 600,
-                      color: '#007a7a',
-                      cursor: 'pointer',
+                      color: completionScore < 80 ? '#94a3b8' : '#007a7a',
+                      cursor: completionScore < 80 ? 'not-allowed' : 'pointer',
+                      opacity: completionScore < 80 ? 0.6 : 1,
                       whiteSpace: 'nowrap',
                     }}
                     onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.22)'
+                      if (completionScore >= 80) {
+                        ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(0,196,196,0.12)'
+                      if (completionScore >= 80) {
+                        ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)'
+                      }
                     }}
                   >
                     <svg
@@ -7437,7 +7912,25 @@ export function SOWDetailScreen({
                   </button>
                 )
               ) : activeTab === 'form' && isFormReady ? (
-                <button
+                isStructureUnlocked && !isFormEditable ? (
+                  <button
+                    onClick={() => setIsFormEditable(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: 'transparent',
+                      border: 'none',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#00a0a0',
+                      cursor: 'pointer',
+                      padding: '6px 14px',
+                    }}
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <button
                   onClick={handleFormSubmit}
                   style={{
                     display: 'flex',
@@ -7455,12 +7948,10 @@ export function SOWDetailScreen({
                     transition: 'all 0.15s',
                   }}
                   onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background =
-                      'rgba(0,196,196,0.14)'
+                    ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
                   }}
                   onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background =
-                      'rgba(0,196,196,0.07)'
+                    ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
                   }}
                 >
                   Submit Form
@@ -7478,6 +7969,7 @@ export function SOWDetailScreen({
                     <path d="M12 5l7 7-7 7" />
                   </svg>
                 </button>
+                )
               ) : activeTab === 'structure' && !hasInvitedParticipants ? (
                 <button
                   onClick={() => {
@@ -7562,7 +8054,7 @@ export function SOWDetailScreen({
               files={uploadedFiles}
               onReady={() => setIsFormReady(true)}
               onSubmit={handleFormSubmit}
-              skipLoading={isContributor}
+              skipLoading={isContributor || isStructureUnlocked}
             />
           )}
           {activeTab === 'structure' &&
@@ -7577,6 +8069,8 @@ export function SOWDetailScreen({
                 }
                 viewerRole={viewerRole}
                 currentMemberId={currentMemberId}
+                onScoreChange={setCompletionScore}
+                disableAnswer={sowVariant === 'v1' && !isContributor}
               />
             ) : (
               <LockedTabState
@@ -7679,5 +8173,285 @@ export function SOWDetailScreen({
         />
       )}
     </>
+  )
+}
+
+function DeleteConfirmModal({
+  title,
+  message,
+  onConfirm,
+  onClose,
+}: {
+  title: string
+  message: string
+  onConfirm: (reason: string, text: string) => void
+  onClose: () => void
+}) {
+  const [reason, setReason] = useState('')
+  const [text, setText] = useState('')
+  const predefinedReasons = ['Irrelevant', 'Not applicable']
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: 24,
+          padding: '32px 24px',
+          width: 460,
+          maxWidth: '90vw',
+          position: 'relative',
+          textAlign: 'center',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+        }}
+      >
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#94a3b8',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+        
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: '#fef2f2',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+        </div>
+
+        <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+          {title}
+        </div>
+        <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24 }}>
+          {message}
+        </div>
+
+
+
+        <div style={{ textAlign: 'left', marginBottom: 6, fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+          Reason
+        </div>
+        <textarea
+          placeholder="Type a reason..."
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value)
+            setReason('') // clear chip selection if manually typing
+          }}
+          rows={3}
+          style={{
+            width: '100%',
+            padding: '10px 14px',
+            borderRadius: 10,
+            border: '1.5px solid #cbd5e1',
+            fontSize: 14,
+            marginBottom: 16,
+            outline: 'none',
+            color: '#0d212c',
+            resize: 'none',
+          }}
+          onFocus={(e) => e.target.style.borderColor = '#94a3b8'}
+          onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+        />
+
+        {/* Reason Selection */}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-start', marginBottom: 24 }}>
+          {predefinedReasons.map(r => (
+            <button
+              key={r}
+              onClick={() => {
+                setReason(r)
+                setText(r)
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 20,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: reason === r ? '#f1f5f9' : '#ffffff',
+                color: '#475569',
+                border: reason === r ? '1.5px solid #cbd5e1' : '1.5px solid #e2e8f0',
+              }}
+              onMouseEnter={(e) => {
+                if (reason !== r) { e.currentTarget.style.background = '#f8fafc' }
+              }}
+              onMouseLeave={(e) => {
+                if (reason !== r) { e.currentTarget.style.background = '#ffffff' }
+              }}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: '12px',
+              borderRadius: 12,
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              color: '#0d212c',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(reason, text)}
+            disabled={!text.trim()}
+            style={{
+              flex: 1,
+              padding: '12px',
+              borderRadius: 12,
+              background: text.trim() ? '#ef4444' : '#fca5a5',
+              border: 'none',
+              color: '#ffffff',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: text.trim() ? 'pointer' : 'not-allowed',
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ClientQueueModal({
+  items,
+  onClose
+}: {
+  items: SectionItem[]
+  onClose: () => void
+}) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 600, maxWidth: '90vw', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        </button>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue</div>
+        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>Questions and Assumptions to be sent to the client.</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 400, overflowY: 'auto', marginBottom: 20 }}>
+          {items.length === 0 ? (
+            <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '20px 0' }}>No items in queue.</div>
+          ) : items.map((it) => (
+            <div key={it.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px', borderRadius: 12, border: '1px solid rgba(0,196,196,0.15)', background: '#fff', fontSize: 14, color: '#0d212c', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+               <div style={{ flexShrink: 0, marginTop: 2, color: '#00C4C4' }}>
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                   <line x1="22" y1="2" x2="11" y2="13"></line>
+                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                 </svg>
+               </div>
+               <div style={{ flex: 1, lineHeight: 1.5 }}>
+                 <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                   {it.type === 'question' ? 'Question' : 'Assumption'}
+                 </div>
+                 {it.question || it.text}
+               </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => {
+              alert('Invite sent!')
+              onClose()
+            }}
+            style={{
+              padding: '12px 24px',
+              borderRadius: 12,
+              background: '#00C4C4',
+              border: 'none',
+              color: '#fff',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(0,196,196,0.25)'
+            }}
+          >
+            Send Invite
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FeedbackModal({
+  onClose,
+  onSubmit
+}: {
+  onClose: () => void
+  onSubmit: (text: string) => void
+}) {
+  const [feedback, setFeedback] = useState('')
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 420, maxWidth: '90vw', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        </button>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Provide Feedback</div>
+        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>How can we improve these generated items?</div>
+        <textarea
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          placeholder="Tell us what went wrong..."
+          rows={4}
+          style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #cbd5e1', fontSize: 14, outline: 'none', color: '#0d212c', resize: 'vertical', marginBottom: 20 }}
+          onFocus={(e) => e.target.style.borderColor = '#00C4C4'}
+          onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+        />
+        <button
+          onClick={() => onSubmit(feedback)}
+          disabled={!feedback.trim()}
+          style={{ width: '100%', padding: '12px', borderRadius: 10, background: feedback.trim() ? '#00C4C4' : '#f1f5f9', color: feedback.trim() ? '#fff' : '#94a3b8', border: 'none', fontSize: 14, fontWeight: 700, cursor: feedback.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s' }}
+        >
+          Submit Feedback
+        </button>
+      </div>
+    </div>
   )
 }

@@ -13,9 +13,10 @@ export interface SectionItem {
   id: string
   type: 'assumption' | 'question'
   text: string
-  assignedTo: string // member id
+  assignedTo: string | string[] // member id(s)
   answered: boolean
   response?: string // answer text shown as thread below the item
+  inClientQueue?: boolean // flag for client queue
 }
 
 export interface SOWSection {

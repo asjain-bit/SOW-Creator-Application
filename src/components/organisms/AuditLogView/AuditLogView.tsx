@@ -21,7 +21,7 @@ export interface AuditEvent {
   icon: 'upload' | 'analysis' | 'form' | 'structure' | 'reviewers' | 'draft'
 }
 
-const MOCK_AUDIT_LOGS: AuditEvent[] = [
+export let MOCK_AUDIT_LOGS: AuditEvent[] = [
   {
     id: 'AUD-106',
     timestamp: '23 Sept 2026, 06:42 PM',
@@ -77,6 +77,27 @@ const MOCK_AUDIT_LOGS: AuditEvent[] = [
     icon: 'upload',
   },
 ]
+
+let globalLogId = 107
+
+export function addGlobalAuditLog(action: string, description: string, actor: string, icon: AuditEvent['icon'] = 'structure') {
+  const newLog: AuditEvent = {
+    id: `AUD-${globalLogId++}`,
+    timestamp: new Date().toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).replace(',', ''),
+    action,
+    description,
+    actor,
+    icon,
+  }
+  MOCK_AUDIT_LOGS = [newLog, ...MOCK_AUDIT_LOGS]
+}
 
 export interface AuditLogViewProps {
   onBackToDashboard?: () => void

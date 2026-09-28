@@ -355,7 +355,7 @@ function SortIcon({ col, sortCol, sortDir }: { col: SortCol; sortCol: SortCol; s
 type AllSOWsSortCol =
   'name' | 'client' | 'createdBy' | 'createdDate' | 'lastUpdated' | 'status' | null
 
-function AllSOWsView({ sows, onOpenSOWV2 }: { sows: SOWItem[]; onOpenSOWV2?: () => void }) {
+function AllSOWsView({ sows, onOpenSOWV2, onOpenSOWContributor }: { sows: SOWItem[]; onOpenSOWV2?: () => void; onOpenSOWContributor?: () => void }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [creatorFilter, setCreatorFilter] = useState<string | null>(null)
@@ -637,17 +637,23 @@ function AllSOWsView({ sows, onOpenSOWV2 }: { sows: SOWItem[]; onOpenSOWV2?: () 
                   <tr
                     key={row.id}
                     onClick={() => {
-                      if (idx === 1) onOpenSOWV2?.()
+                      if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
+                        onOpenSOWContributor?.()
+                      } else if (idx === 1 || row.name.includes('Digital Workplace Enablement')) {
+                        onOpenSOWV2?.()
+                      } else {
+                        onOpenSOWV2?.()
+                      }
                     }}
                     style={{
                       borderBottom:
-                        idx < filtered.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined,
-                      cursor: idx === 1 ? 'pointer' : 'default',
+                        idx < filtered.length - 1 ? '1px solid #f1f5f9' : undefined,
+                      cursor: 'pointer',
                       transition: 'background 0.12s',
                     }}
                     onMouseEnter={(e) => {
                       ;(e.currentTarget as HTMLTableRowElement).style.background =
-                        'rgba(0,196,196,0.04)'
+                        '#f8fafc'
                     }}
                     onMouseLeave={(e) => {
                       ;(e.currentTarget as HTMLTableRowElement).style.background = ''
@@ -806,6 +812,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const [isSearching, setIsSearching] = useState(false)
   const [displayedRows, setDisplayedRows] = useState<SOWItem[]>(initialSOWs)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const rppRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
@@ -941,6 +948,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             WebkitBackdropFilter: 'blur(24px)',
             border: '1px solid rgba(255,255,255,0.06)',
             boxShadow: '0 8px 40px rgba(0,0,0,0.28)',
+            zIndex: 100,
           }}
         >
           {/* Logo area — centered, no text */}
@@ -1131,13 +1139,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     left: 'calc(100% + 12px)',
                     bottom: 0,
                     minWidth: 160,
-                    background: '#04232D',
+                    background: '#ffffff',
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
-                    border: '1px solid #053546',
+                    border: '1px solid #e2e8f0',
                     borderRadius: 12,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                    zIndex: 200,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                    zIndex: 9999,
                     overflow: 'hidden',
                   }}
                 >
@@ -1145,19 +1153,19 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div
                     style={{
                       padding: '12px 14px 10px',
-                      borderBottom: '1px solid rgba(255,255,255,0.08)',
+                      borderBottom: '1px solid #e2e8f0',
                     }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
                       {userName}
                     </div>
-                    <div style={{ fontSize: 11, color: '#99A2A8', marginTop: 1 }}>{userRole}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{userRole}</div>
                   </div>
                   {/* Sign out option */}
                   <button
                     onClick={() => {
                       setUserMenuOpen(false)
-                      onSignOut?.()
+                      setShowLogoutConfirm(true)
                     }}
                     style={{
                       display: 'flex',
@@ -1168,19 +1176,18 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
-                      color: '#fca5a5',
+                      color: '#ef4444',
                       fontSize: 13,
                       fontWeight: 400,
                       textAlign: 'left',
-                      transition: 'background 0.15s',
+                      transition: 'color 0.15s',
                       fontFamily: 'inherit',
                     }}
                     onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background =
-                        'rgba(239,68,68,0.12)'
+                      ;(e.currentTarget as HTMLButtonElement).style.color = '#dc2626'
                     }}
                     onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
+                      ;(e.currentTarget as HTMLButtonElement).style.color = '#ef4444'
                     }}
                   >
                     <svg
@@ -1219,7 +1226,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">{contentOverride}</div>
           ) : homeView === 'all-sows' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <AllSOWsView sows={initialSOWs} onOpenSOWV2={onOpenSOWV2} />
+              <AllSOWsView sows={initialSOWs} onOpenSOWV2={onOpenSOWV2} onOpenSOWContributor={onOpenSOWContributor} />
             </div>
           ) : homeView === 'audit-log' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
@@ -1993,12 +2000,12 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             <tr
                               key={row.id}
                               onClick={() => {
-                                if (isContributor) {
-                                  if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
-                                    onOpenSOWContributor?.()
-                                  } else if (row.name.includes('Digital Workplace Enablement') || idx === 1) {
-                                    onOpenSOWContributor?.()
-                                  }
+                                if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
+                                  onOpenSOWContributor?.()
+                                } else if (idx === 1 || row.name.includes('Digital Workplace Enablement')) {
+                                  onOpenSOWV2?.()
+                                } else {
+                                  onOpenSOWV2?.()
                                 }
                               }}
                               style={{
@@ -2012,7 +2019,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                               }}
                               onMouseEnter={(e) => {
                                 ;(e.currentTarget as HTMLTableRowElement).style.background =
-                                  'rgba(0,196,196,0.04)'
+                                  '#f8fafc'
                               }}
                               onMouseLeave={(e) => {
                                 ;(e.currentTarget as HTMLTableRowElement).style.background = ''
@@ -2246,14 +2253,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 height: 60,
                                 borderBottom:
                                   idx < arr.length - 1
-                                    ? '1px solid rgba(0,196,196,0.07)'
+                                    ? '1px solid #f1f5f9'
                                     : undefined,
                                 cursor: 'pointer',
                                 transition: 'background 0.12s',
                               }}
                               onMouseEnter={(e) => {
                                 ;(e.currentTarget as HTMLTableRowElement).style.background =
-                                  'rgba(0,196,196,0.04)'
+                                  '#f8fafc'
                               }}
                               onMouseLeave={(e) => {
                                 ;(e.currentTarget as HTMLTableRowElement).style.background = ''
@@ -2342,6 +2349,117 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             onProceedToSOW?.(uploadedFiles)
           }}
         />
+      )}
+
+      {showLogoutConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowLogoutConfirm(false)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 24px',
+              width: 420,
+              maxWidth: '90vw',
+              position: 'relative',
+              textAlign: 'center',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            }}
+          >
+            <button
+              onClick={() => setShowLogoutConfirm(false)}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: '#fef2f2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#0d212c', marginBottom: 8 }}>
+              Confirm Logout
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 32 }}>
+              Are you sure you want to log out of SOW Creator?
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false)
+                  onSignOut?.()
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#e60000',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
