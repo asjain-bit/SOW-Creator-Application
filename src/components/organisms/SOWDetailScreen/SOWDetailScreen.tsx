@@ -8387,7 +8387,7 @@ function ClientQueueModal({
                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
                    {it.type === 'question' ? 'Question' : 'Assumption'}
                  </div>
-                 {it.question || it.text}
+                 {it.text}
                </div>
             </div>
           ))}
