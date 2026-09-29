@@ -4045,7 +4045,6 @@ function ItemRow({
   const [isEditedAi, setIsEditedAi] = useState(false)
   const [hasAttachedDoc, setHasAttachedDoc] = useState(false)
   const isAssumption = item.type === 'assumption'
-  const m = memberById(item.assignedTo)
   const showCheckbox = hovered || isSelected || hasAnySelected
 
   return (
