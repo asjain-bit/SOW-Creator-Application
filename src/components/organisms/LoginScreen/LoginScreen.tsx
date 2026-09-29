@@ -18,6 +18,7 @@ import { LoginScreenProps, LoginStep } from './LoginScreen.types'
 const REGISTERED_EMAILS = [
   'ashika.jain@company.com',
   'npatel@gmail.com',
+  'ishitawork@gmail.com',
   'user@company.com',
   'admin@company.com',
   'demo@sowcreator.com',
@@ -320,6 +321,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     >
                       <span>Contributor</span>
                       <span style={{ fontWeight: 600 }}>npatel@gmail.com</span>
+                    </div>
+                    <div 
+                      onClick={() => { setEmail('ishitawork@gmail.com'); setEmailError(''); }}
+                      style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', color: '#0d212c' }}
+                    >
+                      <span>Reviewer</span>
+                      <span style={{ fontWeight: 600 }}>ishitawork@gmail.com</span>
                     </div>
                     <div 
                       onClick={() => { setEmail('riza@gmail.com'); setEmailError(''); }}

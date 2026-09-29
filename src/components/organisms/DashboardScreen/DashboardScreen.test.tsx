@@ -59,7 +59,7 @@ describe('DashboardScreen Organism', () => {
     const handleSignOut = vi.fn()
     render(<DashboardScreen onSignOut={handleSignOut} />)
 
-    const signOutBtn = screen.getByRole('button', { name: 'Sign Out' })
+    const signOutBtn = screen.getByRole('button', { name: 'Logout' })
     fireEvent.click(signOutBtn)
 
     expect(handleSignOut).toHaveBeenCalledTimes(1)

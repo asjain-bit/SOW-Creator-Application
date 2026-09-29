@@ -19,6 +19,8 @@ const ACCEPTED_TYPES: Record<string, string> = {
   'image/jpeg': 'JPG',
   'application/vnd.ms-powerpoint': 'PPT',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PPTX',
+  'application/vnd.ms-excel': 'XLS',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
 }
 
 const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',')
@@ -35,37 +37,7 @@ function FileIcon({ type }: { type: string }) {
 
   if (t === 'PDF') {
     return (
-      <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-        style={{ background: '#fff1f2' }}
-      >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
-            stroke="#e11d48"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <polyline
-            points="14 2 14 8 20 8"
-            stroke="#e11d48"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <text
-            x="6.5"
-            y="18"
-            fontSize="5.5"
-            fontWeight="700"
-            fill="#e11d48"
-            fontFamily="sans-serif"
-          >
-            PDF
-          </text>
-        </svg>
-      </div>
+      <img src="/icons/pdf-icon.png" alt="PDF" style={{ width: 36, height: 36, objectFit: 'contain' }} />
     )
   }
 
@@ -144,22 +116,13 @@ function FileIcon({ type }: { type: string }) {
 
   if (t === 'PNG' || t === 'JPG' || t === 'JPEG') {
     return (
-      <div
-        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-        style={{ background: '#f0fdf4' }}
-      >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-          <rect x="3" y="3" width="18" height="18" rx="2" stroke="#16a34a" strokeWidth="1.6" />
-          <circle cx="8.5" cy="8.5" r="1.5" fill="#16a34a" />
-          <path
-            d="M21 15l-5-5L5 21"
-            stroke="#16a34a"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
+      <img src="/icons/jpg-icon.png" alt="Image" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+    )
+  }
+
+  if (t === 'XLS' || t === 'XLSX') {
+    return (
+      <img src="/icons/xls-icon.png" alt="Excel" style={{ width: 36, height: 36, objectFit: 'contain' }} />
     )
   }
 
@@ -324,6 +287,7 @@ function UploadFileRow({ file, onRemove }: { file: UploadedFile; onRemove: (id: 
 export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose, onProceed }) => {
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [clientName, setClientName] = useState('')
+  const [sowDeadline, setSowDeadline] = useState('')
   const [tokenConsumption, setTokenConsumption] = useState<number | ''>('')
   const [isDragOver, setIsDragOver] = useState(false)
   const [isDropzoneHovered, setIsDropzoneHovered] = useState(false)
@@ -339,6 +303,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
     if (!isOpen) {
       setFiles([])
       setClientName('')
+      setSowDeadline('')
       setTokenConsumption('')
       setIsDragOver(false)
       setIsDropzoneHovered(false)
@@ -458,7 +423,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
       >
         <div
           className="relative w-full rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-          style={{ background: 'var(--bg-modal)', maxHeight: '90vh', maxWidth: 680 }}
+          style={{ background: 'var(--bg-modal)', maxHeight: '90vh', maxWidth: 700 }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-sow-modal-title"
@@ -524,6 +489,33 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   color: '#0d212c',
                   background: '#fff',
                 }}
+                onFocus={(e) => e.target.style.borderColor = '#94a3b8'}
+                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+              />
+            </div>
+
+            {/* SOW Deadline Input */}
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                SOW Deadline <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                type="date"
+                min={new Date().toISOString().split('T')[0]}
+                value={sowDeadline}
+                onChange={(e) => setSowDeadline(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  border: '1px solid #cbd5e1',
+                  fontSize: 14,
+                  outline: 'none',
+                  color: '#0d212c',
+                  background: '#fff',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#94a3b8'}
+                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
               />
             </div>
 
@@ -547,6 +539,8 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   color: '#0d212c',
                   background: '#fff',
                 }}
+                onFocus={(e) => e.target.style.borderColor = '#94a3b8'}
+                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
               />
             </div>
 
@@ -601,7 +595,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   </span>
                 </p>
                 <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
-                  Supports PDF, DOCX and PPT · Max 10 documents · Max {MAX_SIZE_MB} MB
+                Supports PDF, DOCX and PPT · Max 10 documents · Max {MAX_SIZE_MB} MB
                 </p>
               </div>
             </div>
@@ -664,22 +658,22 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
           >
             <button
               onClick={handleProceed}
-              disabled={!allUploaded || anyUploading || !clientName.trim() || tokenConsumption === ''}
+              disabled={!allUploaded || anyUploading || !clientName.trim() || tokenConsumption === '' || !sowDeadline}
               className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-xl transition-all cursor-pointer border-0 disabled:cursor-not-allowed"
               style={{
-                background: allUploaded && clientName.trim() && tokenConsumption !== ''
+                background: allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline
                   ? 'var(--action-primary-bg-default)'
                   : 'var(--bg-surface-3)',
-                color: allUploaded && clientName.trim() && tokenConsumption !== '' ? 'var(--action-primary-text)' : 'var(--text-disabled)',
-                boxShadow: allUploaded && clientName.trim() && tokenConsumption !== '' ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
+                color: allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+                boxShadow: allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
               }}
               onMouseEnter={(e) => {
-                if (allUploaded && clientName.trim() && tokenConsumption !== '')
+                if (allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline)
                   (e.currentTarget as HTMLButtonElement).style.background =
                     'var(--action-primary-bg-hover)'
               }}
               onMouseLeave={(e) => {
-                if (allUploaded && clientName.trim() && tokenConsumption !== '')
+                if (allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline)
                   (e.currentTarget as HTMLButtonElement).style.background =
                     'var(--action-primary-bg-default)'
               }}

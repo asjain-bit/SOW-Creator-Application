@@ -8,7 +8,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Check, X, ChevronDown, CheckCircle2, FileText, Clock, Layers } from 'lucide-react'
+import { Check, X, ChevronDown, CheckCircle2, FileText, Clock, Layers, MessageSquare } from 'lucide-react'
 import { AuditLogView, addGlobalAuditLog } from '../AuditLogView'
 import type {
   SOWDetailScreenProps,
@@ -20,13 +20,14 @@ import type {
   SectionMember,
 } from './SOWDetailScreen.types'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
+import { useToast } from '@/contexts/ToastContext'
 
 /* ── Tab config ──────────────────────────────────────────────────────────── */
 
 function buildTabs(structureUnlocked: boolean, draftUnlocked = false) {
   return [
     { id: 'overview' as SOWTab, label: 'Overview', locked: false },
-    { id: 'form' as SOWTab, label: 'Form', locked: false },
+    { id: 'form' as SOWTab, label: 'Context', locked: false },
     { id: 'structure' as SOWTab, label: 'Structure', locked: !structureUnlocked },
     { id: 'sow-draft' as SOWTab, label: 'SOW Draft', locked: !draftUnlocked },
     { id: 'audit-log' as SOWTab, label: 'Audit Log', locked: false },
@@ -60,6 +61,14 @@ const FILE_ICONS: Record<string, string> = {
   jpeg: '🖼️',
   ppt: '📊',
   pptx: '📊',
+}
+
+function FileIconElement({ ext }: { ext: string }) {
+  const e = ext.toLowerCase();
+  if (e === 'pdf') return <img src="/icons/pdf-icon.png" alt="PDF" style={{ width: 28, height: 28, objectFit: 'contain' }} />;
+  if (e === 'png' || e === 'jpg' || e === 'jpeg') return <img src="/icons/jpg-icon.png" alt="Image" style={{ width: 28, height: 28, objectFit: 'contain' }} />;
+  if (e === 'xls' || e === 'xlsx') return <img src="/icons/xls-icon.png" alt="Excel" style={{ width: 28, height: 28, objectFit: 'contain' }} />;
+  return <span style={{ fontSize: 24 }}>{FILE_ICONS[e] ?? '📄'}</span>;
 }
 function getFileExt(name: string) {
   return name.split('.').pop()?.toLowerCase() ?? ''
@@ -163,7 +172,7 @@ function FilePreviewModal({ file, onClose }: { file: UploadedFile; onClose: () =
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 28 }}>{FILE_ICONS[getFileExt(file.name)] ?? '📄'}</span>
+            <FileIconElement ext={getFileExt(file.name)} />
             <div>
               <div style={{ fontWeight: 600, fontSize: 16, color: '#0d212c' }}>{file.name}</div>
               <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 2 }}>
@@ -200,6 +209,133 @@ function FilePreviewModal({ file, onClose }: { file: UploadedFile; onClose: () =
         >
           Document preview will be available once processed by the AI engine.
         </div>
+      </div>
+    </div>
+  )
+}
+
+function SOWWorkflowStepper() {
+  const steps = [
+    { label: 'Context', status: 'done', sublabel: 'Completed', stepIndex: 1 },
+    { label: 'Planning', status: 'done', sublabel: 'Completed', stepIndex: 2 },
+    { label: 'Questions', status: 'active', sublabel: 'In Progress', stepIndex: 3 },
+    { label: 'Draft', status: 'pending', sublabel: 'Not Started', stepIndex: 4 },
+    { label: 'Review', status: 'pending', sublabel: 'Not Started', stepIndex: 5 },
+    { label: 'Approval', status: 'pending', sublabel: 'Not Started', stepIndex: 6 },
+    { label: 'Finalized', status: 'pending', sublabel: 'Not Started', stepIndex: 7 },
+  ];
+
+  return (
+    <div style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: '16px 8px 12px' }}>
+      <div style={{ marginBottom: 24 }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>SOW Workflow</span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
+        {steps.map((s, idx) => {
+          const isDone = s.status === 'done';
+          const isActive = s.status === 'active';
+          return (
+            <React.Fragment key={s.label}>
+              {/* Step item */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 80, zIndex: 1 }}>
+                {isDone ? (
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: '#10b981',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  </div>
+                ) : isActive ? (
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: '#00C4C4',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      boxShadow: '0 2px 8px rgba(0,196,196,0.35)',
+                    }}
+                  >
+                    {s.stepIndex}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: '#eef2f6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#64748b',
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {s.stepIndex}
+                  </div>
+                )}
+
+                {/* Text below */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, marginTop: 10 }}>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: isDone ? '#16a34a' : isActive ? '#00a0a0' : '#475569',
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 500,
+                      color: isActive ? '#00a0a0' : '#94a3b8',
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {s.sublabel}
+                  </span>
+                </div>
+              </div>
+
+              {/* Connecting line between steps */}
+              {idx < steps.length - 1 && (
+                <div
+                  style={{
+                    flex: 1,
+                    marginTop: 15,
+                    height: idx < 2 ? 3 : 0,
+                    background: idx < 2 ? '#00C4C4' : 'transparent',
+                    borderTop: idx >= 2 ? '2px dotted #cbd5e1' : 'none',
+                    borderRadius: idx < 2 ? 2 : 0,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   )
@@ -251,7 +387,7 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
             </div>
           </div>
           <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
-            {files.length > 0 ? files.length : 2}
+            {files.length}
           </div>
           <div
             style={{
@@ -263,7 +399,7 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
           />
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
-              RFP & Vendor MSA Attached · 4.2 MB
+              {files.length > 0 ? `${files.length} Reference Documents Attached` : 'No documents attached'}
             </span>
           </div>
         </div>
@@ -459,30 +595,30 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
                 alignItems: 'center',
                 gap: 12,
                 padding: '14px 16px',
-                background: 'rgba(255,255,255,0.8)',
-                border: '1px solid rgba(0,196,196,0.18)',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
                 borderRadius: 12,
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'all 0.15s',
-                boxShadow: '0 2px 8px rgba(0,196,196,0.04)',
+                transition: 'all 0.15s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
               onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#00C4C4'
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#cbd5e1'
                 ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
                 ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-                  '0 4px 14px rgba(0,196,196,0.14)'
+                  '0 4px 12px rgba(0,0,0,0.06)'
               }}
               onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,196,196,0.18)'
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'
                 ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
                 ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-                  '0 2px 8px rgba(0,196,196,0.04)'
+                  '0 1px 3px rgba(0,0,0,0.04)'
               }}
             >
-              <span style={{ fontSize: 24, flexShrink: 0 }}>
-                {FILE_ICONS[getFileExt(file.name)] ?? '📄'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, flexShrink: 0 }}>
+                <FileIconElement ext={getFileExt(file.name)} />
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
@@ -509,6 +645,11 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
         </div>
       )}
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+
+      {/* ── Workflow Stepper (below docs) ── */}
+      <div style={{ marginTop: 24 }}>
+        <SOWWorkflowStepper />
+      </div>
     </div>
   )
 }
@@ -548,11 +689,13 @@ function RichTextField({
   value,
   onChange,
   citation,
+  isEditable = true,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   citation?: string
+  isEditable?: boolean
 }) {
   return (
     <div style={{ marginBottom: 18 }}>
@@ -576,6 +719,7 @@ function RichTextField({
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        readOnly={!isEditable}
         rows={3}
         style={{
           width: '100%',
@@ -835,15 +979,24 @@ function ShimmerForm() {
 
 function FormTab({
   files: _files,
+  showUploadedDocs = false,
   onReady,
   onSubmit: _onSubmit,
   skipLoading = false,
+  onDirtyChange,
+  formVersions = [],
+  isEditable = true,
 }: {
   files: UploadedFile[]
+  showUploadedDocs?: boolean
   onReady?: () => void
   onSubmit: () => void
   skipLoading?: boolean
+  onDirtyChange?: (dirty: boolean) => void
+  formVersions?: { id: string; timestamp: string }[]
+  isEditable?: boolean
 }) {
+  const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
   const [loadingState, setLoadingState] = useState<'generating' | 'shimmer' | 'ready'>(
     skipLoading ? 'ready' : 'generating'
   )
@@ -885,6 +1038,18 @@ function FormTab({
     }
   }, [])
 
+  const initialDataRef = useRef<SOWFormData | null>(null)
+  
+  useEffect(() => {
+    if (loadingState === 'ready') {
+      if (!initialDataRef.current) {
+        initialDataRef.current = formData
+      } else if (formData !== initialDataRef.current) {
+        onDirtyChange?.(true)
+      }
+    }
+  }, [formData, loadingState, onDirtyChange])
+
   const addCommitment = () => {
     if (!newCommitment.trim()) return
     setFormData((prev) => ({
@@ -916,6 +1081,88 @@ function FormTab({
 
   return (
     <div style={{ padding: '20px 16px', maxWidth: 820 }}>
+      {/* ── Uploaded Documents while editing context ── */}
+      {showUploadedDocs && _files.length > 0 && (
+        <div
+          style={{
+            marginBottom: 20,
+            padding: '16px 18px',
+            background: 'rgba(255,255,255,0.7)',
+            borderRadius: 14,
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+          }}
+        >
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', marginBottom: 2 }}>
+              Uploaded Documents
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b' }}>
+              Reference documents provided for this SOW context.
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {_files.map((file) => (
+              <button
+                key={file.id}
+                type="button"
+                onClick={() => setPreviewFile(file)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '12px 14px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#cbd5e1'
+                  ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
+                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
+                    '0 4px 12px rgba(0,0,0,0.06)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'
+                  ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
+                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
+                    '0 1px 3px rgba(0,0,0,0.04)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, flexShrink: 0 }}>
+                  <FileIconElement ext={getFileExt(file.name)} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      color: '#0d212c',
+                      fontSize: 12.5,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                    title={file.name}
+                  >
+                    {file.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>
+                    {file.size} · {file.type.toUpperCase()}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+
+      {/* ── Version History ── */}
+
       {/* ── Commitments card ── */}
       <SectionCard
         title={
@@ -956,73 +1203,77 @@ function FormTab({
               <span style={{ flex: 1, fontSize: 14, color: '#0d212c', lineHeight: 1.5 }}>
                 {c.text}
               </span>
-              <button
-                onClick={() => removeCommitment(c.id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#cbd5e1',
-                  fontSize: 18,
-                  lineHeight: 1,
-                  padding: '0 2px',
-                  flexShrink: 0,
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.color = '#ef4444'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'
-                }}
-              >
-                ×
-              </button>
+              {isEditable && (
+                <button
+                  onClick={() => removeCommitment(c.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#cbd5e1',
+                    fontSize: 18,
+                    lineHeight: 1,
+                    padding: '0 2px',
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.color = '#ef4444'
+                  }}
+                  onMouseLeave={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'
+                  }}
+                >
+                  ×
+                </button>
+              )}
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            value={newCommitment}
-            onChange={(e) => setNewCommitment(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') addCommitment()
-            }}
-            placeholder="Add a commitment and press Enter…"
-            style={{
-              flex: 1,
-              padding: '9px 12px',
-              fontSize: 14,
-              background: '#fff',
-              border: '1.5px solid #e2e8f0',
-              borderRadius: 8,
-              color: '#0d212c',
-              outline: 'none',
-              fontFamily: 'inherit',
-              transition: 'border-color 0.15s',
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#00C4C4'
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#e2e8f0'
-            }}
-          />
-          <button
-            onClick={addCommitment}
-            style={{
-              padding: '9px 16px',
-              background: '#f1f5f9',
-              border: '1px solid #e2e8f0',
-              borderRadius: 8,
-              fontSize: 13,
-              color: '#64748b',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
-          >
-            + Add
-          </button>
-        </div>
+        {isEditable && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={newCommitment}
+              onChange={(e) => setNewCommitment(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') addCommitment()
+              }}
+              placeholder="Add a commitment and press Enter…"
+              style={{
+                flex: 1,
+                padding: '9px 12px',
+                fontSize: 14,
+                background: '#fff',
+                border: '1.5px solid #e2e8f0',
+                borderRadius: 8,
+                color: '#0d212c',
+                outline: 'none',
+                fontFamily: 'inherit',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#00C4C4'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e2e8f0'
+              }}
+            />
+            <button
+              onClick={addCommitment}
+              style={{
+                padding: '9px 16px',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                borderRadius: 8,
+                fontSize: 13,
+                color: '#64748b',
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              + Add
+            </button>
+          </div>
+        )}
       </SectionCard>
 
       {/* ── Fields card ── */}
@@ -1055,6 +1306,7 @@ function FormTab({
           <input
             value={formData.clientName}
             onChange={(e) => setFormData((prev) => ({ ...prev, clientName: e.target.value }))}
+            readOnly={!isEditable}
             style={{
               width: '100%',
               padding: '10px 12px',
@@ -1081,30 +1333,35 @@ function FormTab({
           value={formData.description}
           onChange={(v) => setFormData((p) => ({ ...p, description: v }))}
           citation="Meridian_RFP.pdf (Page 3)"
+          isEditable={isEditable}
         />
         <RichTextField
           label="Business Outcome"
           value={formData.businessOutcome}
           onChange={(v) => setFormData((p) => ({ ...p, businessOutcome: v }))}
           citation="Meridian_RFP.pdf (Page 4)"
+          isEditable={isEditable}
         />
         <RichTextField
           label="Importance & Value of Solution"
           value={formData.importanceValue}
           onChange={(v) => setFormData((p) => ({ ...p, importanceValue: v }))}
           citation="Meridian_RFP.pdf (Page 5)"
+          isEditable={isEditable}
         />
         <RichTextField
           label="In Scope"
           value={formData.inScope}
           onChange={(v) => setFormData((p) => ({ ...p, inScope: v }))}
           citation="Vendor_MSA_Template.docx (Page 12)"
+          isEditable={isEditable}
         />
         <RichTextField
           label="Out of Scope"
           value={formData.outOfScope}
           onChange={(v) => setFormData((p) => ({ ...p, outOfScope: v }))}
           citation="Vendor_MSA_Template.docx (Page 14)"
+          isEditable={isEditable}
         />
 
         {/* Tags */}
@@ -1129,13 +1386,13 @@ function FormTab({
               return (
                 <button
                   key={tag}
-                  onClick={() => toggleTag(tag)}
+                  onClick={() => isEditable && toggleTag(tag)}
                   style={{
                     padding: '5px 14px',
                     borderRadius: 20,
                     fontSize: 13,
                     fontWeight: 500,
-                    cursor: 'pointer',
+                    cursor: isEditable ? 'pointer' : 'default',
                     transition: 'all 0.15s',
                     background: selected ? 'rgba(0,196,196,0.1)' : '#f8fafc',
                     border: selected ? '1.5px solid #00C4C4' : '1.5px solid #e2e8f0',
@@ -1175,6 +1432,7 @@ function FormTab({
           <textarea
             value={formData.otherContext}
             onChange={(e) => setFormData((p) => ({ ...p, otherContext: e.target.value }))}
+            readOnly={!isEditable}
             rows={3}
             placeholder="Add any additional context, constraints, or notes…"
             style={{
@@ -1253,7 +1511,7 @@ function AddSectionModal({
           background: '#fff',
           borderRadius: 16,
           padding: '20px 16px',
-          width: 480,
+          width: 550,
           maxWidth: '90vw',
           boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
         }}
@@ -1322,7 +1580,7 @@ function AddSectionModal({
               transition: 'border-color 0.15s',
             }}
             onFocus={(e) => {
-              e.target.style.borderColor = '#00C4C4'
+              e.target.style.borderColor = '#cbd5e1'
             }}
             onBlur={(e) => {
               e.target.style.borderColor = '#e2e8f0'
@@ -1363,7 +1621,7 @@ function AddSectionModal({
               transition: 'border-color 0.15s',
             }}
             onFocus={(e) => {
-              e.target.style.borderColor = '#00C4C4'
+              e.target.style.borderColor = '#cbd5e1'
             }}
             onBlur={(e) => {
               e.target.style.borderColor = '#e2e8f0'
@@ -1415,7 +1673,7 @@ function AddSectionModal({
               <span style={{ color: '#00a0a0', fontWeight: 600 }}>Click to browse</span> or drag & drop documents here
             </div>
             <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-              Supports PDF, DOCX, XLSX (Max 10MB)
+              Supports PDF, DOCX, XLSX (Max 1 document) • <span style={{ color: '#0ea5e9', fontWeight: 600 }}>15 Tokens/upload</span>
             </div>
           </div>
           {uploadedFiles.length > 0 && (
@@ -1528,6 +1786,8 @@ const SECTION_MEMBERS: SectionMember[] = [
   { id: 'm3', name: 'Priya Sharma', initials: 'PS', color: '#f59e0b' },
   { id: 'm4', name: 'Karan Bose', initials: 'KB', color: '#ef4444' },
   { id: 'm5', name: 'Narendra Patel', initials: 'NP', color: '#16a34a' },
+  { id: 'm6', name: 'Vikram Singh', initials: 'VS', color: '#3b82f6' },
+  { id: 'm7', name: 'Sneha Rao', initials: 'SR', color: '#ec4899' },
 ]
 
 function memberById(id: string) {
@@ -2722,7 +2982,7 @@ function AddItemModal({
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
                   {selectedMember.name}
                 </span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>PMO Member</span>
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>Contributor</span>
               </div>
             ) : (
               <span style={{ fontSize: 13, color: '#94a3b8' }}>Select a section member…</span>
@@ -2791,7 +3051,7 @@ function AddItemModal({
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
                         {m.name}
                       </div>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>PMO Member</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>Contributor</div>
                     </div>
                     {isSel && <Check size={14} color="#00C4C4" />}
                   </button>
@@ -2849,7 +3109,7 @@ function AddItemModal({
 }
 
 /* ── Three-dot section menu ── */
-function SectionDotMenu({ onRename, onDelete }: { onRename: () => void; onDelete: () => void }) {
+function SectionDotMenu({ onRename, onDelete, onSetDeadline, currentDeadline, idx, total }: { onRename: () => void; onDelete: () => void; onSetDeadline: (date: string) => void; currentDeadline?: string; idx?: number; total?: number }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -2891,8 +3151,9 @@ function SectionDotMenu({ onRename, onDelete }: { onRename: () => void; onDelete
         <div
           style={{
             position: 'absolute',
-            left: 0,
-            top: 'calc(100% + 4px)',
+            right: 0,
+            top: (idx !== undefined && total !== undefined && idx >= total - 3) ? 'auto' : 'calc(100% + 4px)',
+            bottom: (idx !== undefined && total !== undefined && idx >= total - 3) ? 'calc(100% + 4px)' : 'auto',
             background: '#fff',
             border: '1px solid #e2e8f0',
             borderRadius: 10,
@@ -2902,6 +3163,24 @@ function SectionDotMenu({ onRename, onDelete }: { onRename: () => void; onDelete
             overflow: 'hidden',
           }}
         >
+          <div style={{ padding: '8px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Section Deadline</span>
+            <input
+              type="date"
+              min={new Date().toISOString().split('T')[0]}
+              value={currentDeadline || ''}
+              onChange={(e) => onSetDeadline(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '100%',
+                padding: '4px 8px',
+                fontSize: 12,
+                borderRadius: 6,
+                border: '1px solid #cbd5e1',
+                outline: 'none',
+              }}
+            />
+          </div>
           {[
             {
               label: 'Rename',
@@ -2939,9 +3218,7 @@ function SectionDotMenu({ onRename, onDelete }: { onRename: () => void; onDelete
                 textAlign: 'left',
               }}
               onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.background = danger
-                  ? '#fef2f2'
-                  : '#f8fafc'
+                ;(e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
               }}
               onMouseLeave={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
@@ -2974,25 +3251,35 @@ function StructureTab({
   currentMemberId = 'm5',
   onScoreChange,
   disableAnswer = false,
+  hasPendingChanges = false,
+  onResolveChanges,
 }: {
   initialSections?: SOWSection[]
-  viewerRole?: 'pmo' | 'contributor'
+  viewerRole?: 'pmo' | 'contributor' | 'reviewer'
   currentMemberId?: string
   onScoreChange?: (score: number) => void
   disableAnswer?: boolean
+  hasPendingChanges?: boolean
+  onResolveChanges?: (accept: boolean) => void
 }) {
   const isContributor = viewerRole === 'contributor'
+  const isReviewer = viewerRole === 'reviewer'
   const [sections, setSections] = useState<SOWSection[]>(initialSections)
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
+  const [editingSectionTitle, setEditingSectionTitle] = useState('')
+  const [sectionDeadlines, setSectionDeadlines] = useState<Record<string, string>>({})
   const [activeId, setActiveId] = useState<string>(initialSections[0].id)
   const [showAddSectionModal, setShowAddSectionModal] = useState(false)
   const [addItemFor, setAddItemFor] = useState<string | null>(null) // section id
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [hoveredSection, setHoveredSection] = useState<string | null>(null)
   const [assignDropdownOpen, setAssignDropdownOpen] = useState(false)
+  const [assignLimitError, setAssignLimitError] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean
     title: string
     message: string
+    hideReason?: boolean
     onConfirm: (reason: string, text: string) => void
   } | null>(null)
   const [clientQueueModalOpen, setClientQueueModalOpen] = useState(false)
@@ -3007,7 +3294,10 @@ function StructureTab({
 
   // Close assign dropdown on outside click
   useEffect(() => {
-    if (!assignDropdownOpen) return
+    if (!assignDropdownOpen) {
+      setAssignLimitError(false)
+      return
+    }
     function handle(e: MouseEvent) {
       if (assignDropdownRef.current && !assignDropdownRef.current.contains(e.target as Node))
         setAssignDropdownOpen(false)
@@ -3078,6 +3368,8 @@ function StructureTab({
   }
 
   const toggleSelect = (itemId: string) => {
+    const item = sections.flatMap(s => s.items).find(i => i.id === itemId)
+    if (item?.inClientQueue) return
     setSelected((prev) => {
       const next = new Set(prev)
       next.has(itemId) ? next.delete(itemId) : next.add(itemId)
@@ -3087,16 +3379,24 @@ function StructureTab({
 
   const clearSelection = () => setSelected(new Set())
 
-  const bulkAssign = (memberId: string) => {
+  const bulkAssign = (memberId: string, forceAssign?: boolean) => {
     setSections((prev) =>
       prev.map((s) => ({
         ...s,
         items: s.items.map((it) => {
           if (!selected.has(it.id) || it.inClientQueue) return it
           const currentAssignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
-          const newAssignees = currentAssignees.includes(memberId)
-            ? currentAssignees.filter((m: string) => m !== memberId)
-            : [...currentAssignees, memberId]
+          let newAssignees = currentAssignees
+          if (forceAssign !== undefined) {
+             if (forceAssign && !currentAssignees.includes(memberId)) {
+               if (currentAssignees.length < 5) newAssignees = [...currentAssignees, memberId]
+             }
+             if (!forceAssign && currentAssignees.includes(memberId)) newAssignees = currentAssignees.filter((m: string) => m !== memberId)
+          } else {
+             newAssignees = currentAssignees.includes(memberId)
+              ? currentAssignees.filter((m: string) => m !== memberId)
+              : (currentAssignees.length < 5 ? [...currentAssignees, memberId] : currentAssignees)
+          }
           return { ...it, assignedTo: newAssignees }
         }),
       }))
@@ -3115,6 +3415,11 @@ function StructureTab({
         }),
       }))
     )
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.delete(itemId)
+      return next
+    })
   }
 
   const bulkDelete = () => {
@@ -3125,11 +3430,12 @@ function StructureTab({
   }
 
   // All item ids across all sections (for "select all" within multi-select bar)
-  const allItemIds = sections.flatMap((s) => s.items.map((i) => i.id))
+  const allItemIds = sections.flatMap((s) => s.items.filter(i => !i.inClientQueue).map((i) => i.id))
   const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
   // Contributors only ever see their own assigned items, in sections that have at least one.
   // Unanswered items surface first within each section so open work is easy to find.
+  // Reviewers see all sections and all items with answers populated.
   const visibleSections = isContributor
     ? sections
         .map((s) => ({
@@ -3139,6 +3445,19 @@ function StructureTab({
             .sort((a, b) => Number(a.answered) - Number(b.answered)),
         }))
         .filter((s) => s.items.length > 0)
+    : isReviewer
+    ? sections.map((s) => ({
+        ...s,
+        items: s.items.map((it) => ({
+          ...it,
+          answered: true,
+          response:
+            it.response ||
+            (it.type === 'question'
+              ? 'Confirmed with delivery team; details captured and will be reflected in the final SOW.'
+              : 'Confirmed — validated with the client stakeholder and captured for the record.'),
+        })),
+      }))
     : sections
 
   const answerItem = (itemId: string, response: string, isAiGenerated: boolean, isEdited: boolean) => {
@@ -3149,7 +3468,7 @@ function StructureTab({
         items: s.items.map((it) => {
           if (it.id === itemId) {
             itemName = it.text
-            return { ...it, answered: true, response }
+            return { ...it, answered: true, response, isAiGenerated, isEdited }
           }
           return it
         }),
@@ -3398,22 +3717,59 @@ function StructureTab({
                     >
                       {idx + 1}
                     </span>
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: isActive ? 600 : 500,
-                        lineHeight: 1.3,
-                        flex: 1,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {sec.title}
-                    </span>
+                    {editingSectionId === sec.id ? (
+                      <input
+                        autoFocus
+                        value={editingSectionTitle}
+                        onChange={(e) => setEditingSectionTitle(e.target.value)}
+                        onBlur={() => {
+                          if (editingSectionTitle.trim()) {
+                            setSections((prev) =>
+                              prev.map((s) => (s.id === sec.id ? { ...s, title: editingSectionTitle.trim() } : s))
+                            )
+                          }
+                          setEditingSectionId(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.currentTarget.blur()
+                          } else if (e.key === 'Escape') {
+                            setEditingSectionId(null)
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          fontSize: 13,
+                          fontWeight: isActive ? 600 : 500,
+                          lineHeight: 1.3,
+                          flex: 1,
+                          border: '1px solid #00C4C4',
+                          borderRadius: 4,
+                          padding: '1px 4px',
+                          outline: 'none',
+                          background: '#fff',
+                          color: '#0d212c',
+                          marginLeft: -4
+                        }}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: isActive ? 600 : 500,
+                          lineHeight: 1.3,
+                          flex: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {sec.title}
+                      </span>
+                    )}
                   </button>
                   {/* Three-dot menu — visible on hover/active */}
-                  {!isContributor && (isHovered || isActive) && (
+                  {!isContributor && !isReviewer && (isHovered || isActive) && (
                     <div
                       style={{
                         position: 'absolute',
@@ -3424,18 +3780,20 @@ function StructureTab({
                       }}
                     >
                       <SectionDotMenu
+                        idx={idx}
+                        total={sections.length}
+                        currentDeadline={sectionDeadlines[sec.id]}
+                        onSetDeadline={(date) => setSectionDeadlines(prev => ({ ...prev, [sec.id]: date }))}
                         onRename={() => {
-                          const t = window.prompt('Rename section:', sec.title)
-                          if (t?.trim())
-                            setSections((prev) =>
-                              prev.map((s) => (s.id === sec.id ? { ...s, title: t.trim() } : s))
-                            )
+                          setEditingSectionTitle(sec.title)
+                          setEditingSectionId(sec.id)
                         }}
                         onDelete={() => {
                           setDeleteConfirm({
                             isOpen: true,
                             title: 'Delete Section',
-                            message: 'Are you sure you want to delete this section?',
+                            message: 'Are you sure you want to delete this section? This cannot be undone.',
+                            hideReason: true,
                             onConfirm: (reason, text) => deleteSection(sec.id)
                           })
                         }}
@@ -3448,7 +3806,7 @@ function StructureTab({
           </div>
 
           {/* Add section — centered at bottom */}
-          {!isContributor && (
+          {!isContributor && !isReviewer && (
             <div style={{ padding: '10px 10px 14px', borderTop: '1px solid rgba(0,196,196,0.1)' }}>
               <button
                 onClick={() => setShowAddSectionModal(true)}
@@ -3494,9 +3852,280 @@ function StructureTab({
 
         {/* ── Right pane ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          {/* Top Actions */}
-          {!isContributor && (
-            <div style={{ padding: '8px 28px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', justifyContent: 'flex-end', background: '#fff' }}>
+          {/* Top Actions & Bulk-action bar combined */}
+          {!isContributor && !isReviewer && (
+            <div style={{ padding: '8px 28px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#374151',
+                    userSelect: 'none',
+                  }}
+                  onClick={() => (allSelected ? clearSelection() : setSelected(new Set(allItemIds)))}
+                >
+                  <div
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 4,
+                      border: allSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                      background: allSelected ? '#00C4C4' : '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease',
+                    }}
+                  >
+                    {allSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
+                  </div>
+                  {selected.size > 0 && <span style={{ color: '#00a0a0' }}>{selected.size} selected</span>}
+                </label>
+                <div style={{ height: 16, width: 1, background: '#e2e8f0' }} />
+                
+                {/* Assign to Dropdown */}
+                <div ref={assignDropdownRef} style={{ position: 'relative' }} title={!hasSelection ? "Select at least one question or assumption" : undefined}>
+                  <button
+                    disabled={!hasSelection}
+                    onClick={() => setAssignDropdownOpen((v) => !v)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 12px',
+                      borderRadius: 8,
+                      border: `1.5px solid ${assignDropdownOpen ? '#00C4C4' : (hasSelection ? 'rgba(0,196,196,0.3)' : '#e2e8f0')}`,
+                      background: assignDropdownOpen ? 'rgba(0,196,196,0.1)' : (hasSelection ? 'rgba(0,196,196,0.05)' : '#f8fafc'),
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: hasSelection ? '#00a0a0' : '#94a3b8',
+                      cursor: hasSelection ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                      <path d="M16 3.13a4 4 0 010 7.75" />
+                    </svg>
+                    Assign to
+                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" viewBox="0 0 24 24" style={{ transform: assignDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                  {assignDropdownOpen && hasSelection && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 6px)',
+                        left: 0,
+                        background: '#fff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 12,
+                        boxShadow: '0 8px 28px rgba(0,0,0,0.12)',
+                        zIndex: 100,
+                        minWidth: 260,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          padding: '8px 12px 6px',
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: '#94a3b8',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                        }}
+                      >
+                        Select member
+                      </div>
+                      {assignLimitError && (
+                        <div style={{ padding: '6px 12px', fontSize: 11, color: '#ef4444', background: '#fef2f2', borderBottom: '1px solid #fee2e2' }}>
+                          Maximum 5 contributors can be assigned to an item.
+                        </div>
+                      )}
+                      {SECTION_MEMBERS.map((m) => {
+                        const allItemIdsArray = Array.from(selected)
+                        const validSelectedIds = allItemIdsArray.filter(id => {
+                          const it = sections.flatMap(s => s.items).find(x => x.id === id)
+                          return it && !it.inClientQueue
+                        })
+                        const isAssigned = validSelectedIds.length > 0 && validSelectedIds.every(id => {
+                          const it = sections.flatMap(s => s.items).find(x => x.id === id)
+                          if (!it) return false
+                          const assignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
+                          return assignees.includes(m.id)
+                        })
+                        return (
+                          <button
+                            key={m.id}
+                            onClick={() => {
+                              if (!isAssigned) {
+                                const hasMax = validSelectedIds.some(id => {
+                                  const it = sections.flatMap(s => s.items).find(x => x.id === id)
+                                  if (!it) return false
+                                  const assignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
+                                  return assignees.length >= 5
+                                })
+                                if (hasMax) {
+                                  setAssignLimitError(true)
+                                  return
+                                }
+                              }
+                              setAssignLimitError(false)
+                              bulkAssign(m.id, !isAssigned)
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              width: '100%',
+                              padding: '9px 14px',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: 13,
+                              fontWeight: 500,
+                              color: '#374151',
+                              textAlign: 'left',
+                            }}
+                            onMouseEnter={(e) => {
+                              ;(e.currentTarget as HTMLButtonElement).style.background =
+                                'rgba(0,196,196,0.06)'
+                            }}
+                            onMouseLeave={(e) => {
+                              ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
+                            }}
+                          >
+                            <div style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: 4,
+                              border: isAssigned ? 'none' : '1px solid #cbd5e1',
+                              background: isAssigned ? '#00C4C4' : 'transparent',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}>
+                              {isAssigned && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              )}
+                            </div>
+                            <div
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                background: m.color,
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 11,
+                                fontWeight: 700,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {m.initials}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
+                                {m.name}
+                              </div>
+                              <div style={{ fontSize: 11, color: '#94a3b8' }}>Contributor</div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                      <div style={{ padding: '8px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+                        <button
+                          onClick={() => { clearSelection(); setAssignDropdownOpen(false) }}
+                          style={{ padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: '#64748b' }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => { clearSelection(); setAssignDropdownOpen(false) }}
+                          style={{ padding: '6px 10px', borderRadius: 6, background: '#00C4C4', border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: '#fff' }}
+                        >
+                          Invite Participants
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div style={{ height: 16, width: 1, background: '#e2e8f0' }} />
+                
+                <div title={!hasSelection ? "Select at least one question or assumption" : undefined}>
+                  <button
+                    disabled={!hasSelection}
+                    onClick={() => setDeleteConfirm({
+                      isOpen: true,
+                      title: 'Bulk Delete',
+                      message: `Are you sure you want to delete ${selected.size} selected items?`,
+                      onConfirm: (reason, text) => bulkDelete()
+                    })}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: hasSelection ? '#ef4444' : '#94a3b8',
+                      background: hasSelection ? '#fef2f2' : '#f8fafc',
+                      border: 'none',
+                      borderRadius: 7,
+                      padding: '4px 10px',
+                      cursor: hasSelection ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+                
+                {hasSelection && (
+                  <>
+                    <div style={{ height: 16, width: 1, background: '#e2e8f0' }} />
+                    <button
+                      onClick={clearSelection}
+                      style={{
+                        fontSize: 12,
+                        color: '#94a3b8',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ✕ Clear
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Client Queue button on right */}
               <button
                 onClick={() => setClientQueueModalOpen(true)}
                 style={{
@@ -3506,281 +4135,26 @@ function StructureTab({
                   background: 'none',
                   border: 'none',
                   color: '#0d212c',
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
                   padding: '6px 10px',
                   borderRadius: 6,
                 }}
                 title="Client Queue"
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
-                }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                  <path d="M16 3.13a4 4 0 010 7.75" />
-                </svg>
-                {queuedCount} in Client Queue
-              </button>
-            </div>
-          )}
-          {/* Bulk-action bar (appears when items are selected) */}
-          {!isContributor && hasSelection && (
-            <div
-              style={{
-                padding: '10px 28px',
-                background: 'rgba(0,196,196,0.08)',
-                borderBottom: '1px solid rgba(0,196,196,0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                flexShrink: 0,
-              }}
-            >
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: '#00a0a0',
-                  userSelect: 'none',
-                }}
-                onClick={() => (allSelected ? clearSelection() : setSelected(new Set(allItemIds)))}
-              >
-                <div
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: 4,
-                    border: allSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
-                    background: allSelected ? '#00C4C4' : '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.12s ease',
-                  }}
-                >
-                  {allSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
-                </div>
-                {selected.size} selected
-              </label>
-              <div style={{ height: 16, width: 1, background: 'rgba(0,196,196,0.25)' }} />
-              {/* Assign to — dropdown */}
-              <div ref={assignDropdownRef} style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setAssignDropdownOpen((v) => !v)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '5px 12px',
-                    borderRadius: 8,
-                    border: `1.5px solid ${assignDropdownOpen ? '#00C4C4' : 'rgba(0,196,196,0.3)'}`,
-                    background: assignDropdownOpen ? 'rgba(0,196,196,0.1)' : 'rgba(0,196,196,0.05)',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#00a0a0',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                    <path d="M16 3.13a4 4 0 010 7.75" />
+                <div style={{ position: 'relative' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2 }}>
+                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
                   </svg>
-                  Assign to
-                  <svg
-                    width="11"
-                    height="11"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    viewBox="0 0 24 24"
-                    style={{
-                      transform: assignDropdownOpen ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.15s',
-                    }}
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-                {assignDropdownOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 6px)',
-                      left: 0,
-                      background: '#fff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 12,
-                      boxShadow: '0 8px 28px rgba(0,0,0,0.12)',
-                      zIndex: 100,
-                      minWidth: 200,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: '8px 12px 6px',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: '#94a3b8',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                      }}
-                    >
-                      Select member
+                  {queuedCount > 0 && (
+                    <div style={{ position: 'absolute', top: -8, left: -10, background: '#ef4444', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 12, padding: '1px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {queuedCount}
                     </div>
-                    {SECTION_MEMBERS.map((m) => {
-                      const allItemIdsArray = Array.from(selected)
-                      const isAssigned = allItemIdsArray.length > 0 && allItemIdsArray.every(id => {
-                        const it = sections.flatMap(s => s.items).find(x => x.id === id)
-                        if (!it) return false
-                        const assignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
-                        return assignees.includes(m.id)
-                      })
-                      return (
-                      <button
-                        key={m.id}
-                        onClick={() => {
-                          bulkAssign(m.id)
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          width: '100%',
-                          padding: '9px 14px',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          fontWeight: 500,
-                          color: '#374151',
-                          textAlign: 'left',
-                        }}
-                        onMouseEnter={(e) => {
-                          ;(e.currentTarget as HTMLButtonElement).style.background =
-                            'rgba(0,196,196,0.06)'
-                        }}
-                        onMouseLeave={(e) => {
-                          ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
-                        }}
-                      >
-                        <div style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: 4,
-                          border: isAssigned ? 'none' : '1px solid #cbd5e1',
-                          background: isAssigned ? '#00C4C4' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          {isAssigned && (
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: '50%',
-                            background: m.color,
-                            color: '#fff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {m.initials}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-                            {m.name}
-                          </div>
-                          <div style={{ fontSize: 11, color: '#94a3b8' }}>PMO Member</div>
-                        </div>
-                      </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-              <div style={{ height: 16, width: 1, background: 'rgba(0,196,196,0.25)' }} />
-              <button
-                onClick={() => setDeleteConfirm({
-                  isOpen: true,
-                  title: 'Bulk Delete',
-                  message: `Are you sure you want to delete ${selected.size} selected items?`,
-                  onConfirm: (reason, text) => bulkDelete()
-                })}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: '#ef4444',
-                  background: '#fef2f2',
-                  border: 'none',
-                  borderRadius: 7,
-                  padding: '4px 10px',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Delete
-              </button>
-              <button
-                onClick={clearSelection}
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: 12,
-                  color: '#94a3b8',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                ✕ Clear
+                  )}
+                </div>
+                {queuedCount} in Client Queue
               </button>
             </div>
           )}
@@ -3827,15 +4201,8 @@ function StructureTab({
                         </div>
                     </span>
                     {/* Assigned members */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      {sec.assignedMembers.map((mid, mi) => (
-                        <div key={mid} style={{ marginLeft: mi > 0 ? -6 : 0 }}>
-                          <MemberAvatar memberId={mid} size={26} />
-                        </div>
-                      ))}
-                    </div>
                     {/* Add item CTA */}
-                    {!isContributor && (
+                    {!isContributor && !isReviewer && (
                       <button
                         onClick={() => setAddItemFor(sec.id)}
                         style={{
@@ -3889,12 +4256,14 @@ function StructureTab({
                         <ItemRow
                           key={item.id}
                           item={item}
+                          pendingStatus={hasPendingChanges ? (ai === 0 ? 'modified' : ai === 1 ? 'removed' : undefined) : undefined}
                           label={`Assumption ${ai + 1}`}
                           isSelected={selected.has(item.id)}
                           hasAnySelected={hasSelection}
                           onToggle={() => toggleSelect(item.id)}
                           isContributor={isContributor}
-                          disableAnswer={disableAnswer}
+                          isReviewer={isReviewer}
+                          disableAnswer={disableAnswer || isReviewer}
                           onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
                           onToggleQueue={() => toggleClientQueue(item.id)}
                           onDelete={() => setDeleteConfirm({
@@ -3909,12 +4278,14 @@ function StructureTab({
                         <ItemRow
                           key={item.id}
                           item={item}
+                          pendingStatus={hasPendingChanges ? (qi === 0 ? 'modified' : qi === 1 ? 'removed' : undefined) : undefined}
                           label={`Question ${qi + 1}`}
                           isSelected={selected.has(item.id)}
                           hasAnySelected={hasSelection}
                           onToggle={() => toggleSelect(item.id)}
                           isContributor={isContributor}
-                          disableAnswer={disableAnswer}
+                          isReviewer={isReviewer}
+                          disableAnswer={disableAnswer || isReviewer}
                           onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
                           onToggleQueue={() => toggleClientQueue(item.id)}
                           onDelete={() => setDeleteConfirm({
@@ -3927,31 +4298,25 @@ function StructureTab({
                       ))}
                     </div>
                   )}
-                  {!isContributor && (
+                  {!isContributor && !isReviewer && (
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start', marginTop: 12 }}>
                       <button
                         title="Helpful"
                         onClick={() => setFeedbackModalOpen(sec.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 20, cursor: 'pointer', padding: '6px 12px', color: '#64748b', fontSize: 12, fontWeight: 600 }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = '#10b981'; e.currentTarget.style.borderColor = '#10b981'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: '#64748b' }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                         </svg>
-                        Helpful
                       </button>
                       <button
                         title="Not Helpful"
                         onClick={() => setFeedbackModalOpen(sec.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 20, cursor: 'pointer', padding: '6px 12px', color: '#64748b', fontSize: 12, fontWeight: 600 }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = '#ef4444'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: '#64748b' }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
                         </svg>
-                        Not Helpful
                       </button>
                     </div>
                   )}
@@ -3975,6 +4340,7 @@ function StructureTab({
         <DeleteConfirmModal
           title={deleteConfirm.title}
           message={deleteConfirm.message}
+          hideReason={deleteConfirm.hideReason}
           onConfirm={(reason, text) => {
              deleteConfirm.onConfirm(reason, text)
              setDeleteConfirm(null)
@@ -3982,9 +4348,16 @@ function StructureTab({
           onClose={() => setDeleteConfirm(null)}
         />
       )}
+
       {clientQueueModalOpen && (
         <ClientQueueModal
-          items={sections.flatMap(s => s.items).filter(i => i.inClientQueue)}
+          sections={sections}
+          onRemoveFromQueue={(id) => {
+             setSections(prev => prev.map(sec => ({
+               ...sec,
+               items: sec.items.map(it => it.id === id ? { ...it, inClientQueue: false } : it)
+             })))
+          }}
           onClose={() => setClientQueueModalOpen(false)}
         />
       )}
@@ -4022,10 +4395,13 @@ function ItemRow({
   hasAnySelected,
   onToggle,
   isContributor = false,
+  isReviewer = false,
   disableAnswer = false,
   onAnswer,
   onDelete,
   onToggleQueue,
+  hideAssigneesAndQueue = false,
+  pendingStatus,
 }: {
   item: SectionItem
   label: string
@@ -4033,37 +4409,50 @@ function ItemRow({
   hasAnySelected: boolean
   onToggle: () => void
   isContributor?: boolean
+  isReviewer?: boolean
   disableAnswer?: boolean
   onAnswer?: (text: string, isAiGenerated: boolean, isEdited: boolean) => void
   onDelete?: () => void
   onToggleQueue?: () => void
+  hideAssigneesAndQueue?: boolean
+  pendingStatus?: 'modified' | 'removed'
 }) {
   const [hovered, setHovered] = useState(false)
   const [draft, setDraft] = useState(item.response ?? '')
   const [editing, setEditing] = useState(false)
-  const [isAiGenerated, setIsAiGenerated] = useState(false)
+  const [isAiGenerated, setIsAiGenerated] = useState(item.isAiGenerated ?? false)
   const [isEditedAi, setIsEditedAi] = useState(false)
   const [hasAttachedDoc, setHasAttachedDoc] = useState(false)
+  const [isResolved, setIsResolved] = useState(false)
+  const [isPinned, setIsPinned] = useState(false)
   const isAssumption = item.type === 'assumption'
   const showCheckbox = hovered || isSelected || hasAnySelected
+  const showOverlay = (hovered || isPinned) && Boolean(pendingStatus) && !isResolved
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => {
+        if (pendingStatus && !isResolved) {
+          setIsPinned(true)
+        }
+      }}
       style={{
         display: 'flex',
         alignItems: 'flex-start',
         gap: 9,
         padding: '10px 13px',
         borderRadius: 9,
-        border: `1px solid ${isSelected ? '#00C4C4' : '#e2e8f0'}`,
-        background: isSelected ? 'rgba(0,196,196,0.06)' : '#ffffff',
+        border: pendingStatus && !isResolved ? (pendingStatus === 'modified' ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(239,68,68,0.25)') : '1px solid #e2e8f0',
+        background: pendingStatus && !isResolved ? (pendingStatus === 'modified' ? 'rgba(59,130,246,0.03)' : 'rgba(239,68,68,0.03)') : '#ffffff',
         transition: 'border-color 0.12s, background 0.12s',
+        position: 'relative',
+        cursor: pendingStatus && !isResolved ? 'pointer' : 'default',
       }}
     >
       {/* Checkbox */}
-      {!isContributor && (
+      {!isContributor && !isReviewer && !hideAssigneesAndQueue && (
         <div
           style={{
             width: 16,
@@ -4112,9 +4501,177 @@ function ItemRow({
         {label}
       </span>
 
+
+
+      {pendingStatus && !isResolved && (
+        <div
+          style={{ position: 'relative', display: 'inline-flex' }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsPinned(true)
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: pendingStatus === 'modified' ? '#3b82f6' : '#ef4444',
+              background: pendingStatus === 'modified' ? 'rgba(59,130,246,0.1)' : 'rgba(239,68,68,0.1)',
+              padding: '2px 7px',
+              borderRadius: 5,
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+              marginTop: 1,
+              cursor: 'pointer',
+            }}
+          >
+            {pendingStatus === 'modified' ? 'Modified' : 'Removed'}
+          </span>
+
+          {/* Floating overlay card anchored right below the chip */}
+          {showOverlay && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 5px)',
+                left: 0,
+                zIndex: 60,
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: 10,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+                padding: '10px 12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                width: 190,
+                pointerEvents: 'all',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 6,
+                    flexShrink: 0,
+                    background: pendingStatus === 'modified' ? 'rgba(59,130,246,0.1)' : 'rgba(239,68,68,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {pendingStatus === 'modified' ? (
+                    <svg width="11" height="11" fill="none" stroke="#3b82f6" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  ) : (
+                    <svg width="11" height="11" fill="none" stroke="#ef4444" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#0d212c' }}>
+                  {pendingStatus === 'modified' ? 'Form Modified' : 'Form Removed'}
+                </div>
+              </div>
+              <div style={{ fontSize: 10, color: '#64748b', lineHeight: 1.35 }}>
+                {pendingStatus === 'modified'
+                  ? 'Updated via form resubmission.'
+                  : 'Removed via form resubmission.'}
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsResolved(true)
+                    setIsPinned(false)
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '5px 0',
+                    borderRadius: 6,
+                    border: 'none',
+                    background: '#16a34a',
+                    color: '#ffffff',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Accept
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsResolved(true)
+                    setIsPinned(false)
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '5px 0',
+                    borderRadius: 6,
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    color: '#64748b',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Reject
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Text + optional response thread */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.55 }}>{item.text}</span>
+        <div style={{ display: 'inline', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, marginRight: 8 }}>{item.text}</span>
+          {item.isAiGenerated && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                color: '#7c3aed',
+                background: 'rgba(139,92,246,0.1)',
+                border: '1px solid rgba(139,92,246,0.25)',
+                padding: '2px 7px',
+                borderRadius: 5,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3.5,
+                verticalAlign: 'middle',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
+              </svg>
+              Answered with AI
+            </span>
+          )}
+        </div>
         {item.response && !editing && (
           <div
             style={{
@@ -4168,6 +4725,7 @@ function ItemRow({
                 type="button"
                 onClick={() => {
                   setDraft(item.response ?? '')
+                  setIsAiGenerated(item.isAiGenerated ?? false)
                   setEditing(true)
                 }}
                 style={{
@@ -4249,6 +4807,7 @@ function ItemRow({
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
                   {hasAttachedDoc ? 'Doc Attached' : 'Upload Doc'}
+                  {!hasAttachedDoc && <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(15 Tokens)</span>}
                 </div>
               </label>
               <button
@@ -4288,7 +4847,7 @@ function ItemRow({
                 >
                   <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
                 </svg>
-                Answer with AI
+                Answer with AI <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(10 Tokens)</span>
               </button>
               <button
                 type="button"
@@ -4333,7 +4892,8 @@ function ItemRow({
 
       {/* Assigned to & Delete */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 2 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        {!hideAssigneesAndQueue && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           {Array.isArray(item.assignedTo) && item.assignedTo.length > 0 ? (
             item.assignedTo.map((a, i) => {
               const mem = memberById(a)
@@ -4354,10 +4914,21 @@ function ItemRow({
               </span>
             </>
           ) : (
-            <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
+            <span style={{
+              fontSize: 11,
+              color: item.inClientQueue ? '#10b981' : '#94a3b8',
+              fontStyle: item.inClientQueue ? 'normal' : 'italic',
+              fontWeight: item.inClientQueue ? 600 : 400,
+              background: item.inClientQueue ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+              padding: item.inClientQueue ? '2px 6px' : 0,
+              borderRadius: 4
+            }}>
+              {item.inClientQueue ? 'Client Queue' : 'Unassigned'}
+            </span>
           )}
         </div>
-        {!isContributor && (
+        )}
+        {!isContributor && !isReviewer && !hideAssigneesAndQueue && (
           <button
             onClick={() => onToggleQueue?.()}
             style={{
@@ -4380,13 +4951,23 @@ function ItemRow({
               if (!item.inClientQueue) (e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
+            <div style={{ position: 'relative', display: 'flex' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+              </svg>
+              {item.inClientQueue && (
+                <div style={{ position: 'absolute', bottom: -5, right: -5, background: '#fff', borderRadius: '50%', width: 12, height: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="#22c55e">
+                    <circle cx="12" cy="12" r="12" />
+                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="#fff" />
+                  </svg>
+                </div>
+              )}
+            </div>
           </button>
         )}
-        {!isContributor && (
+        {!isContributor && !isReviewer && (
           <button
             onClick={() => {
               onDelete?.()
@@ -4439,8 +5020,17 @@ const SOW_DRAFT_SECTIONS = [
 
 type DraftComment = { id: string; sectionId: string; text: string; assignee: string }
 
-function SOWDraftTab() {
+function SOWDraftTab({
+  isContributor = false,
+  isReviewer = false,
+  onSendForReview,
+}: {
+  isContributor?: boolean
+  isReviewer?: boolean
+  onSendForReview?: () => void
+}) {
   // ── State ───────────────────────────────────────────────────────────────────
+  const { showToast } = useToast()
   const [activeSectionIdx, setActiveSectionIdx] = useState(0)
   const [hasUnsaved, setHasUnsaved] = useState(false)
   const [activeFormats, setActiveFormats] = useState<Record<string, boolean>>({})
@@ -4455,7 +5045,6 @@ function SOWDraftTab() {
   const [addReviewerIdx, setAddReviewerIdx] = useState<number | null>(null)
   const [reviewerSearch, setReviewerSearch] = useState('')
   const [approvalComment, setApprovalComment] = useState('')
-  const [toastMsg, setToastMsg] = useState('')
 
   // ── Inline document comments ────────────────────────────────────────────────
   type CommentReply = { id: string; author: string; text: string; timestamp: string }
@@ -4496,7 +5085,7 @@ function SOWDraftTab() {
   } | null>(null)
   const [newCommentText, setNewCommentText] = useState('')
   const [newCommentAssignee, setNewCommentAssignee] = useState('')
-  const [showCommentsPanel, setShowCommentsPanel] = useState(false)
+  const [showCommentsPanel, setShowCommentsPanel] = useState(true)
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
   const [comments, setComments] = useState<DocComment[]>([
     {
@@ -4532,6 +5121,7 @@ function SOWDraftTab() {
 
   const addComment = () => {
     if (!commentPopup || !newCommentText.trim()) return
+    setShowCommentsPanel(true)
     setComments((prev) => [
       ...prev,
       {
@@ -4539,8 +5129,8 @@ function SOWDraftTab() {
         sectionTitle: commentPopup.sectionTitle,
         anchorText: commentPopup.anchorText,
         text: newCommentText.trim(),
-        assignee: newCommentAssignee || 'Unassigned',
-        author: 'Ashika Jain',
+        assignee: isContributor || isReviewer ? 'Ashika Jain (PMO)' : (newCommentAssignee || 'Unassigned'),
+        author: isReviewer ? 'Ishita (Reviewer)' : isContributor ? 'Narendra (Contributor)' : 'Ashika Jain',
         timestamp: 'Just now',
         resolved: false,
         replies: [],
@@ -5082,11 +5672,6 @@ function SOWDraftTab() {
   const memberIdByName = (name: string) =>
     SECTION_MEMBERS.find((m) => m.name === name)?.id ?? SECTION_MEMBERS[0].id
 
-  const showToast = (msg: string) => {
-    setToastMsg(msg)
-    setTimeout(() => setToastMsg(''), 3000)
-  }
-
   // ── Score color ─────────────────────────────────────────────────────────────
   const scoreColor = (s: number) => (s >= 90 ? '#16a34a' : s >= 60 ? '#d97706' : '#ef4444')
   const scoreBg = (s: number) =>
@@ -5096,26 +5681,6 @@ function SOWDraftTab() {
 
   return (
     <>
-      {/* ── Toast ─────────────────────────────────────────────────────────── */}
-      {toastMsg && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: 9999,
-            background: '#0d212c',
-            color: '#fff',
-            padding: '10px 18px',
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 500,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-          }}
-        >
-          {toastMsg}
-        </div>
-      )}
 
       <div style={{ display: 'flex', height: '100%', minHeight: 0, overflow: 'hidden' }}>
         {/* ── Left TOC sidebar ──────────────────────────────────────────────── */}
@@ -5396,7 +5961,7 @@ function SOWDraftTab() {
                         </div>
 
                         {/* Reviewer icon */}
-                        {hasReviewer ? (
+                        {!isContributor && !isReviewer && (hasReviewer ? (
                           <div
                             style={{ position: 'relative' }}
                             onMouseEnter={() => setHoveredReviewerIdx(idx)}
@@ -5481,12 +6046,12 @@ function SOWDraftTab() {
                               <line x1="23" y1="11" x2="17" y2="11" />
                             </svg>
                           </div>
-                        )}
+                        ))}
                       </>
                     )}
 
                     {/* ⋯ menu */}
-                    {(hoveredTocIdx === idx || openMenuIdx === idx) && (
+                    {!isContributor && !isReviewer && (hoveredTocIdx === idx || openMenuIdx === idx) && (
                       <div style={{ position: 'relative' }}>
                         <button
                           onClick={(e) => {
@@ -5519,7 +6084,8 @@ function SOWDraftTab() {
                             <div
                               style={{
                                 position: 'absolute',
-                                top: 'calc(100% + 4px)',
+                                top: idx >= tocItems.length - 3 ? 'auto' : 'calc(100% + 4px)',
+                                bottom: idx >= tocItems.length - 3 ? 'calc(100% + 4px)' : 'auto',
                                 right: 0,
                                 background: '#fff',
                                 border: '1px solid rgba(0,196,196,0.2)',
@@ -5686,6 +6252,94 @@ function SOWDraftTab() {
           }}
         >
           {/* Toolbar */}
+          {isContributor || isReviewer ? (
+            <div
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 20px',
+                borderBottom: '1px solid rgba(0,196,196,0.12)',
+                background: 'rgba(255,255,255,0.9)',
+                backdropFilter: 'blur(6px)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+                  SOW Draft {isReviewer ? 'Review' : ''}
+                </span>
+                <span style={{ fontSize: 12, color: '#64748b' }}>
+                  • You can add comments to the draft for PMO review
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCommentsPanel((prev) => !prev)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(0,196,196,0.3)',
+                    background: showCommentsPanel ? 'rgba(0,196,196,0.15)' : '#fff',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#007a7a',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <MessageSquare size={13} />
+                  Comments ({comments.length})
+                </button>
+                <button
+                  onClick={() => {
+                    onSendForReview?.()
+                    showToast(isReviewer ? 'Review comments sent to PMO successfully!' : 'Comments sent to PMO for review successfully!', 'success')
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    border: '1.5px solid rgba(0,196,196,0.5)',
+                    background: 'rgba(0,196,196,0.12)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#007a7a',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                  }}
+                  onMouseLeave={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)'
+                  }}
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M22 2L11 13" />
+                    <path d="M22 2L15 22 11 13 2 9l20-7z" />
+                  </svg>
+                  Send for Review
+                </button>
+              </div>
+            </div>
+          ) : (
           <div
             style={{
               flexShrink: 0,
@@ -6156,6 +6810,27 @@ function SOWDraftTab() {
               }
             />
             <div style={{ flex: 1 }} />
+            <button
+              type="button"
+              onClick={() => setShowCommentsPanel((v) => !v)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                borderRadius: 6,
+                border: '1px solid rgba(0,196,196,0.3)',
+                background: showCommentsPanel ? 'rgba(0,196,196,0.15)' : '#fff',
+                color: '#007a7a',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginRight: 8,
+              }}
+            >
+              <MessageSquare size={13} />
+              Comments ({comments.length})
+            </button>
             {/* Save */}
             <button
               onClick={() => {
@@ -6196,6 +6871,7 @@ function SOWDraftTab() {
               Save
             </button>
           </div>
+          )}
 
           {/* Scroll area */}
           <div
@@ -6257,11 +6933,13 @@ function SOWDraftTab() {
             >
               <div
                 ref={editorRef}
-                contentEditable
+                contentEditable={!isContributor && !isReviewer}
                 suppressContentEditableWarning
                 onInput={() => {
-                  updateFormats()
-                  setHasUnsaved(true)
+                  if (!isContributor && !isReviewer) {
+                    updateFormats()
+                    setHasUnsaved(true)
+                  }
                 }}
                 onKeyUp={updateFormats}
                 onMouseUp={updateFormats}
@@ -6377,28 +7055,30 @@ function SOWDraftTab() {
                       marginBottom: 8,
                     }}
                   />
-                  <select
-                    value={newCommentAssignee}
-                    onChange={(e) => setNewCommentAssignee(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '7px 8px',
-                      fontSize: 12.5,
-                      borderRadius: 6,
-                      border: '1px solid rgba(0,196,196,0.3)',
-                      outline: 'none',
-                      color: '#374151',
-                      marginBottom: 10,
-                      background: '#fff',
-                    }}
-                  >
-                    <option value="">Assign to…</option>
-                    {allMembers.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
+                  {!isContributor && !isReviewer && (
+                    <select
+                      value={newCommentAssignee}
+                      onChange={(e) => setNewCommentAssignee(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '7px 8px',
+                        fontSize: 12.5,
+                        borderRadius: 6,
+                        border: '1px solid rgba(0,196,196,0.3)',
+                        outline: 'none',
+                        color: '#374151',
+                        marginBottom: 10,
+                        background: '#fff',
+                      }}
+                    >
+                      <option value="">Assign to…</option>
+                      {allMembers.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                     <button
                       type="button"
@@ -7522,114 +8202,90 @@ export function SOWDetailScreen({
   currentMemberId = 'm5',
 }: SOWDetailScreenProps) {
   const isContributor = viewerRole === 'contributor'
+  const isReviewer = viewerRole === 'reviewer'
+  const { showToast } = useToast()
+
+  const defaultMockFiles: UploadedFile[] = [
+    { id: '1', name: 'Scope_Requirements_RFP.pdf', size: '2.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
+    { id: '2', name: 'Vendor_MSA_Template.docx', size: '1.2 MB', type: 'application/msword', status: 'complete', progress: 100 },
+    { id: '3', name: 'Technical_Specifications.xlsx', size: '845 KB', type: 'application/vnd.ms-excel', status: 'complete', progress: 100 }
+  ]
+  const effectiveFiles = uploadedFiles && uploadedFiles.length > 0 ? uploadedFiles : (sowVariant === 'v2' || sowVariant === 'meridian') ? defaultMockFiles : uploadedFiles
+
   type DraftGenState = 'idle' | 'generating' | 'shimmer' | 'ready'
-  const [activeTab, setActiveTab] = useState<SOWTab>(sowVariant === 'v2' ? 'structure' : 'overview')
-  const [isStructureUnlocked, setIsStructureUnlocked] = useState(
-    sowVariant === 'v2' || isContributor
+  const [activeTab, setActiveTab] = useState<SOWTab>(
+    sowVariant === 'v2' || sowVariant === 'meridian' || isContributor || isReviewer ? 'structure' : 'overview'
   )
-  const [isDraftUnlocked, setIsDraftUnlocked] = useState(false)
+  const [isStructureUnlocked, setIsStructureUnlocked] = useState(
+    sowVariant === 'v2' || sowVariant === 'meridian' || isContributor || isReviewer
+  )
+  const [isDraftUnlocked, setIsDraftUnlocked] = useState(isReviewer)
   const [isFormReady, setIsFormReady] = useState(false)
   const [isFormEditable, setIsFormEditable] = useState(false)
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
   const [draftGenState, setDraftGenState] = useState<DraftGenState>('idle')
-  const [inviteToast, setInviteToast] = useState(false)
   const [showReviewModal, setShowReviewModal] = useState(false)
-  const [reviewSentToast, setReviewSentToast] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [completionScore, setCompletionScore] = useState(0)
-  const inviteToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const reviewToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isSentForReview, setIsSentForReview] = useState(false)
 
   const showInviteToast = () => {
-    setInviteToast(true)
-    if (inviteToastTimer.current) clearTimeout(inviteToastTimer.current)
-    inviteToastTimer.current = setTimeout(() => setInviteToast(false), 4000)
+    showToast('Participants invited successfully!', 'success')
   }
 
   const handleGenerateDraft = () => {
     setIsDraftUnlocked(true)
     setActiveTab('sow-draft')
     setDraftGenState('generating')
+    showToast('Generating SOW draft...', 'info')
     setTimeout(() => {
       setDraftGenState('shimmer')
       setTimeout(() => {
         setDraftGenState('ready')
+        showToast('SOW draft generated successfully!', 'success')
       }, 2000)
     }, 3000)
   }
 
   const handleSendForReview = () => {
     setShowReviewModal(false)
-    setReviewSentToast(true)
-    if (reviewToastTimer.current) clearTimeout(reviewToastTimer.current)
-    reviewToastTimer.current = setTimeout(() => setReviewSentToast(false), 4000)
+    showToast('SOW sent for review successfully!', 'success')
   }
 
   const tabs = buildTabs(isStructureUnlocked, isDraftUnlocked)
 
+  const [isFormDirty, setIsFormDirty] = useState(false)
+  const [showOverrideConfirm, setShowOverrideConfirm] = useState(false)
+  const [formVersions, setFormVersions] = useState<{ id: string; timestamp: string }[]>([
+    { id: 'v1', timestamp: new Date().toISOString() }
+  ])
+  const [hasPendingStructureChanges, setHasPendingStructureChanges] = useState(false)
+
   const handleFormSubmit = () => {
+    if (isStructureUnlocked) {
+      setShowOverrideConfirm(true)
+    } else {
+      executeFormSubmit()
+    }
+  }
+
+  const executeFormSubmit = () => {
+    if (isStructureUnlocked) {
+      setFormVersions(prev => [...prev, { id: `v${prev.length + 1}`, timestamp: new Date().toISOString() }])
+      setHasPendingStructureChanges(true)
+    }
+    setIsGenerating(false)
     setIsStructureUnlocked(true)
     setActiveTab('structure')
     setIsFormEditable(false)
+    setIsFormDirty(false)
+    setShowOverrideConfirm(false)
+    showToast(isStructureUnlocked ? 'Context re-submitted successfully!' : 'Context submitted successfully!', 'success')
   }
 
   return (
     <>
       {/* ── Sticky header: breadcrumb + title + tabs ── */}
-      {/* Invite success toast */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 16,
-          left: '50%',
-          transform: `translateX(-50%) translateY(${inviteToast ? 0 : -80}px)`,
-          opacity: inviteToast ? 1 : 0,
-          transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
-          zIndex: 300,
-          pointerEvents: inviteToast ? 'auto' : 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '12px 20px',
-          borderRadius: 12,
-          background: '#16a34a',
-          color: '#fff',
-          fontSize: 13,
-          fontWeight: 600,
-          boxShadow: '0 8px 32px rgba(22,163,74,0.35)',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        <svg
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          viewBox="0 0 24 24"
-        >
-          <path d="M22 2L11 13" />
-          <path d="M22 2L15 22 11 13 2 9l20-7z" />
-        </svg>
-        Participants invited successfully!
-        <button
-          onClick={() => setInviteToast(false)}
-          style={{
-            marginLeft: 8,
-            background: 'rgba(255,255,255,0.2)',
-            border: 'none',
-            borderRadius: 6,
-            color: '#fff',
-            cursor: 'pointer',
-            padding: '2px 7px',
-            fontSize: 12,
-            fontWeight: 700,
-          }}
-        >
-          ✕
-        </button>
-      </div>
 
       {/* Header area */}
       <div style={{ flexShrink: 0, padding: '8px 0 0' }}>
@@ -7702,6 +8358,26 @@ export function SOWDetailScreen({
             {sowStatus}
           </span>
           <div style={{ flex: 1 }} />
+          {/* Tokens consumed indicator */}
+          <div
+            style={{
+              fontSize: 12.5,
+              fontWeight: 500,
+              color: '#64748b',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              padding: '4px 10px',
+              borderRadius: 8,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ fontWeight: 600, color: '#0d212c' }}>200/3000</span>
+            <span>Tokens</span>
+          </div>
         </div>
       </div>
       {/* end header area */}
@@ -7782,7 +8458,152 @@ export function SOWDetailScreen({
             })}
             {/* CTA pinned to the right of the tab strip */}
             <div style={{ marginLeft: 'auto', paddingRight: 10 }}>
-              {isContributor ? null : showGenerateDraft ? (
+              {isReviewer ? null : isContributor ? (
+                activeTab === 'structure' ? (
+                  draftGenState === 'generating' || draftGenState === 'shimmer' ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        border: '1.5px solid rgba(0,196,196,0.2)',
+                        background: 'rgba(0,196,196,0.05)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: '#94a3b8',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="9"
+                          stroke="#00C4C4"
+                          strokeWidth="2"
+                          strokeDasharray="40 20"
+                        >
+                          <animateTransform
+                            attributeName="transform"
+                            type="rotate"
+                            from="0 12 12"
+                            to="360 12 12"
+                            dur="1s"
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </svg>
+                      Generating…
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {/* Send for Review (Secondary) */}
+                      <button
+                        onClick={() => {
+                          setIsSentForReview(true)
+                          setIsDraftUnlocked(true)
+                          showToast('SOW sent for review successfully!', 'success')
+                        }}
+                        disabled={completionScore === 0}
+                        title={completionScore === 0 ? "At least one question must be answered before sending for review" : "Send for review"}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '6px 14px',
+                          borderRadius: 8,
+                          border: completionScore === 0 ? '1.5px solid #e2e8f0' : '1.5px solid rgba(0,196,196,0.5)',
+                          background: completionScore === 0 ? '#f8fafc' : 'rgba(0,196,196,0.12)',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: completionScore === 0 ? '#94a3b8' : '#007a7a',
+                          cursor: completionScore === 0 ? 'not-allowed' : 'pointer',
+                          opacity: completionScore === 0 ? 0.6 : 1,
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (completionScore > 0) {
+                            ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (completionScore > 0) {
+                            ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)'
+                          }
+                        }}
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M22 2L11 13" />
+                          <path d="M22 2L15 22 11 13 2 9l20-7z" />
+                        </svg>
+                        Send for Review
+                      </button>
+
+                      {/* Generate Draft (Primary) */}
+                      <button
+                        onClick={handleGenerateDraft}
+                        disabled={completionScore < 80}
+                        title={completionScore < 80 ? "Completion must be at least 80% to generate draft" : "Generate Draft"}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '6px 14px',
+                          borderRadius: 8,
+                          border: 'none',
+                          background: completionScore < 80 ? '#cbd5e1' : '#00C4C4',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: completionScore < 80 ? '#64748b' : '#ffffff',
+                          cursor: completionScore < 80 ? 'not-allowed' : 'pointer',
+                          whiteSpace: 'nowrap',
+                          boxShadow: completionScore < 80 ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (completionScore >= 80) {
+                            ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (completionScore >= 80) {
+                            ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
+                          }
+                        }}
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                          <line x1="16" y1="13" x2="8" y2="13" />
+                          <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        Generate Draft
+                      </button>
+                    </div>
+                  )
+                ) : null
+              ) : showGenerateDraft ? (
                 draftGenState === 'ready' ? (
                   activeTab !== 'sow-draft' ? null : (
                     <button
@@ -7865,30 +8686,31 @@ export function SOWDetailScreen({
                   <button
                     onClick={handleGenerateDraft}
                     disabled={completionScore < 80}
-                    title={completionScore < 80 ? "80% completion required to generate draft" : ""}
+                    title={completionScore >= 80 ? "Generate Draft" : "Complete at least 80% to generate draft"}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
                       padding: '6px 14px',
                       borderRadius: 8,
-                      border: completionScore < 80 ? '1.5px solid #e2e8f0' : '1.5px solid rgba(0,196,196,0.5)',
-                      background: completionScore < 80 ? '#f8fafc' : 'rgba(0,196,196,0.12)',
+                      border: 'none',
+                      background: completionScore >= 80 ? '#00C4C4' : '#cbd5e1',
                       fontSize: 12,
-                      fontWeight: 600,
-                      color: completionScore < 80 ? '#94a3b8' : '#007a7a',
-                      cursor: completionScore < 80 ? 'not-allowed' : 'pointer',
-                      opacity: completionScore < 80 ? 0.6 : 1,
+                      fontWeight: 700,
+                      color: completionScore >= 80 ? '#ffffff' : '#94a3b8',
+                      cursor: completionScore >= 80 ? 'pointer' : 'not-allowed',
+                      boxShadow: completionScore >= 80 ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
                       whiteSpace: 'nowrap',
+                      transition: 'all 0.15s ease',
                     }}
                     onMouseEnter={(e) => {
                       if (completionScore >= 80) {
-                        ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                        ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (completionScore >= 80) {
-                        ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)'
+                        ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
                       }
                     }}
                   >
@@ -7911,111 +8733,87 @@ export function SOWDetailScreen({
                   </button>
                 )
               ) : activeTab === 'form' && isFormReady ? (
-                isStructureUnlocked && !isFormEditable ? (
-                  <button
-                    onClick={() => setIsFormEditable(true)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      background: 'transparent',
-                      border: 'none',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: '#00a0a0',
-                      cursor: 'pointer',
-                      padding: '6px 14px',
-                    }}
-                  >
-                    Edit
-                  </button>
-                ) : (
-                  <button
-                  onClick={handleFormSubmit}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 8,
-                    border: '1.5px solid rgba(0,196,196,0.35)',
-                    background: 'rgba(0,196,196,0.07)',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#00a0a0',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
-                  }}
-                >
-                  Submit Form
-                  <svg
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-                )
-              ) : activeTab === 'structure' && !hasInvitedParticipants ? (
-                <button
-                  onClick={() => {
-                    showInviteToast()
-                    setHasInvitedParticipants(true)
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 8,
-                    border: '1.5px solid rgba(0,196,196,0.5)',
-                    background: 'rgba(0,196,196,0.12)',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#007a7a',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background =
-                      'rgba(0,196,196,0.22)'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background =
-                      'rgba(0,196,196,0.12)'
-                  }}
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="8.5" cy="7" r="4" />
-                    <line x1="20" y1="8" x2="20" y2="14" />
-                    <line x1="17" y1="11" x2="23" y2="11" />
-                  </svg>
-                  Invite Participants
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {formVersions.length > 1 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <select
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          border: '1px solid #e2e8f0',
+                          fontSize: 13,
+                          background: '#fff',
+                          color: '#0d212c',
+                          outline: 'none',
+                        }}
+                      >
+                        {[...formVersions].reverse().map(v => (
+                          <option key={v.id} value={v.id}>
+                            Version {v.id.substring(1)} ({new Date(v.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {isStructureUnlocked && !isFormEditable ? (
+                    <button
+                      onClick={() => setIsFormEditable(true)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: 'transparent',
+                        border: 'none',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: '#00a0a0',
+                        cursor: 'pointer',
+                        padding: '6px 14px',
+                      }}
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <button
+                      disabled={isStructureUnlocked && !isFormDirty}
+                      onClick={handleFormSubmit}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        border: (!isStructureUnlocked || isFormDirty) ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid #cbd5e1',
+                        background: (!isStructureUnlocked || isFormDirty) ? 'rgba(0,196,196,0.07)' : '#f1f5f9',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: (!isStructureUnlocked || isFormDirty) ? '#00a0a0' : '#94a3b8',
+                        cursor: (!isStructureUnlocked || isFormDirty) ? 'pointer' : 'not-allowed',
+                        whiteSpace: 'nowrap',
+                      }}
+                      onMouseEnter={(e) => {
+                        if ((!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                      }}
+                      onMouseLeave={(e) => {
+                        if ((!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
+                      }}
+                    >
+                      {isStructureUnlocked ? 'Resubmit' : 'Submit Form'}
+                      <svg
+                        width="13"
+                        height="13"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M5 12h14" />
+                        <path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               ) : null}
             </div>
           </div>
@@ -8032,6 +8830,11 @@ export function SOWDetailScreen({
             position: 'relative',
           }}
         >
+          {isGenerating && (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 100, background: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
+              <FormGeneratingAnimation />
+            </div>
+          )}
           {/* Generating overlay */}
           {draftGenState === 'generating' && (
             <div
@@ -8047,13 +8850,17 @@ export function SOWDetailScreen({
               <GeneratingAnimation />
             </div>
           )}
-          {activeTab === 'overview' && <OverviewTab files={uploadedFiles} />}
+          {activeTab === 'overview' && <OverviewTab files={effectiveFiles} />}
           {activeTab === 'form' && (
             <FormTab
-              files={uploadedFiles}
+              files={effectiveFiles}
+              showUploadedDocs={isFormEditable && isStructureUnlocked}
               onReady={() => setIsFormReady(true)}
               onSubmit={handleFormSubmit}
               skipLoading={isContributor || isStructureUnlocked}
+              onDirtyChange={(dirty) => setIsFormDirty(dirty)}
+              formVersions={formVersions}
+              isEditable={isStructureUnlocked ? isFormEditable : !isContributor}
             />
           )}
           {activeTab === 'structure' &&
@@ -8069,12 +8876,17 @@ export function SOWDetailScreen({
                 viewerRole={viewerRole}
                 currentMemberId={currentMemberId}
                 onScoreChange={setCompletionScore}
-                disableAnswer={sowVariant === 'v1' && !isContributor}
+                disableAnswer={
+                  (sowVariant === 'v1' && !isContributor) ||
+                  (isContributor && isSentForReview)
+                }
+                hasPendingChanges={hasPendingStructureChanges}
+                onResolveChanges={(accept) => setHasPendingStructureChanges(false)}
               />
             ) : (
               <LockedTabState
                 title="Structure Not Yet Available"
-                description="Submit the Form tab to unlock Structure, where you can review sections, assumptions, and questions."
+                description="Submit the Context tab to unlock Structure, where you can review sections, assumptions, and questions."
               />
             ))}
           {activeTab === 'sow-draft' &&
@@ -8082,7 +8894,13 @@ export function SOWDetailScreen({
               draftGenState === 'shimmer' ? (
                 <ShimmerDraft />
               ) : (
-                <SOWDraftTab />
+                <SOWDraftTab
+                  isContributor={isContributor}
+                  isReviewer={isReviewer}
+                  onSendForReview={() => {
+                    showToast('Review comments sent to PMO successfully!', 'success')
+                  }}
+                />
               )
             ) : (
               <LockedTabState
@@ -8106,63 +8924,21 @@ export function SOWDetailScreen({
         </div>
         {/* end tab content */}
       </div>
+      {showOverrideConfirm && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 12 }}>Override Previous Details?</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 32, lineHeight: 1.5 }}>
+              Are you sure you want to override the previous details? This could make changes based on the updated data and document uploaded.
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setShowOverrideConfirm(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#f1f5f9', border: 'none', color: '#475569', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={executeFormSubmit} style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#00C4C4', border: 'none', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* end glass box */}
-
-      {/* Review sent toast */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 16,
-          left: '50%',
-          transform: `translateX(-50%) translateY(${reviewSentToast ? 0 : -80}px)`,
-          opacity: reviewSentToast ? 1 : 0,
-          transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
-          zIndex: 400,
-          pointerEvents: reviewSentToast ? 'auto' : 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '12px 20px',
-          borderRadius: 12,
-          background: '#16a34a',
-          color: '#fff',
-          fontSize: 13,
-          fontWeight: 600,
-          boxShadow: '0 8px 32px rgba(22,163,74,0.35)',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        <svg
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          viewBox="0 0 24 24"
-        >
-          <path d="M22 2L11 13" />
-          <path d="M22 2L15 22 11 13 2 9l20-7z" />
-        </svg>
-        SOW sent for review successfully!
-        <button
-          onClick={() => setReviewSentToast(false)}
-          style={{
-            marginLeft: 8,
-            background: 'rgba(255,255,255,0.2)',
-            border: 'none',
-            borderRadius: 6,
-            color: '#fff',
-            cursor: 'pointer',
-            padding: '2px 7px',
-            fontSize: 12,
-            fontWeight: 700,
-          }}
-        >
-          ✕
-        </button>
-      </div>
 
       {/* Send for Review modal */}
       {showReviewModal && (
@@ -8180,11 +8956,13 @@ function DeleteConfirmModal({
   message,
   onConfirm,
   onClose,
+  hideReason,
 }: {
   title: string
   message: string
   onConfirm: (reason: string, text: string) => void
   onClose: () => void
+  hideReason?: boolean
 }) {
   const [reason, setReason] = useState('')
   const [text, setText] = useState('')
@@ -8210,7 +8988,7 @@ function DeleteConfirmModal({
           background: '#ffffff',
           borderRadius: 24,
           padding: '32px 24px',
-          width: 460,
+          width: 550,
           maxWidth: '90vw',
           position: 'relative',
           textAlign: 'center',
@@ -8260,62 +9038,66 @@ function DeleteConfirmModal({
 
 
 
-        <div style={{ textAlign: 'left', marginBottom: 6, fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
-          Reason
-        </div>
-        <textarea
-          placeholder="Type a reason..."
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value)
-            setReason('') // clear chip selection if manually typing
-          }}
-          rows={3}
-          style={{
-            width: '100%',
-            padding: '10px 14px',
-            borderRadius: 10,
-            border: '1.5px solid #cbd5e1',
-            fontSize: 14,
-            marginBottom: 16,
-            outline: 'none',
-            color: '#0d212c',
-            resize: 'none',
-          }}
-          onFocus={(e) => e.target.style.borderColor = '#94a3b8'}
-          onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-        />
-
-        {/* Reason Selection */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-start', marginBottom: 24 }}>
-          {predefinedReasons.map(r => (
-            <button
-              key={r}
-              onClick={() => {
-                setReason(r)
-                setText(r)
+        {!hideReason && (
+          <>
+            <div style={{ textAlign: 'left', marginBottom: 6, fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+              Reason
+            </div>
+            <textarea
+              placeholder="Type a reason..."
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value)
+                setReason('') // clear chip selection if manually typing
               }}
+              rows={3}
               style={{
-                padding: '6px 12px',
-                borderRadius: 20,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                background: reason === r ? '#f1f5f9' : '#ffffff',
-                color: '#475569',
-                border: reason === r ? '1.5px solid #cbd5e1' : '1.5px solid #e2e8f0',
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: 10,
+                border: '1.5px solid #cbd5e1',
+                fontSize: 14,
+                marginBottom: 16,
+                outline: 'none',
+                color: '#0d212c',
+                resize: 'none',
               }}
-              onMouseEnter={(e) => {
-                if (reason !== r) { e.currentTarget.style.background = '#f8fafc' }
-              }}
-              onMouseLeave={(e) => {
-                if (reason !== r) { e.currentTarget.style.background = '#ffffff' }
-              }}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
+              onFocus={(e) => e.target.style.borderColor = '#e2e8f0'}
+              onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+            />
+
+            {/* Reason Selection */}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-start', marginBottom: 24 }}>
+              {predefinedReasons.map(r => (
+                <button
+                  key={r}
+                  onClick={() => {
+                    setReason(r)
+                    setText(r)
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 20,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: reason === r ? '#f1f5f9' : '#ffffff',
+                    color: '#475569',
+                    border: reason === r ? '1.5px solid #cbd5e1' : '1.5px solid #e2e8f0',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (reason !== r) { e.currentTarget.style.background = '#f8fafc' }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (reason !== r) { e.currentTarget.style.background = '#ffffff' }
+                  }}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div style={{ display: 'flex', gap: 12 }}>
           <button
@@ -8336,17 +9118,17 @@ function DeleteConfirmModal({
           </button>
           <button
             onClick={() => onConfirm(reason, text)}
-            disabled={!text.trim()}
+            disabled={!hideReason && !text.trim()}
             style={{
               flex: 1,
               padding: '12px',
               borderRadius: 12,
-              background: text.trim() ? '#ef4444' : '#fca5a5',
+              background: (hideReason || text.trim()) ? '#E60000' : '#fca5a5',
               border: 'none',
               color: '#ffffff',
               fontSize: 14,
               fontWeight: 700,
-              cursor: text.trim() ? 'pointer' : 'not-allowed',
+              cursor: (hideReason || text.trim()) ? 'pointer' : 'not-allowed',
             }}
           >
             Delete
@@ -8358,12 +9140,15 @@ function DeleteConfirmModal({
 }
 
 function ClientQueueModal({
-  items,
+  sections,
+  onRemoveFromQueue,
   onClose
 }: {
-  items: SectionItem[]
+  sections: SOWSection[]
+  onRemoveFromQueue: (id: string) => void
   onClose: () => void
 }) {
+  const { showToast } = useToast()
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 600, maxWidth: '90vw', position: 'relative' }}>
@@ -8373,29 +9158,59 @@ function ClientQueueModal({
         <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue</div>
         <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>Questions and Assumptions to be sent to the client.</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 400, overflowY: 'auto', marginBottom: 20 }}>
-          {items.length === 0 ? (
+          {sections.every(s => !s.items.some(i => i.inClientQueue)) ? (
             <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '20px 0' }}>No items in queue.</div>
-          ) : items.map((it) => (
-            <div key={it.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px', borderRadius: 12, border: '1px solid rgba(0,196,196,0.15)', background: '#fff', fontSize: 14, color: '#0d212c', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-               <div style={{ flexShrink: 0, marginTop: 2, color: '#00C4C4' }}>
-                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                   <line x1="22" y1="2" x2="11" y2="13"></line>
-                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                 </svg>
-               </div>
-               <div style={{ flex: 1, lineHeight: 1.5 }}>
-                 <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
-                   {it.type === 'question' ? 'Question' : 'Assumption'}
+          ) : sections.map((s) => {
+             const queueItems = s.items.filter(i => i.inClientQueue)
+             if (queueItems.length === 0) return null
+             return (
+               <div key={s.id} style={{ marginBottom: 12 }}>
+                 <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                    <span style={{ 
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      width: 20, height: 20, borderRadius: '50%', background: '#e0f2f1', color: '#00796b',
+                      fontSize: 12, marginRight: 8 
+                    }}>{sections.findIndex(x => x.id === s.id) + 1}</span>
+                    {s.title}
                  </div>
-                 {it.text}
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                   {queueItems.map(it => (
+                     <ItemRow
+                       key={it.id}
+                       item={it}
+                       label={it.type === 'question' ? 'Question' : 'Assumption'}
+                       isSelected={false}
+                       hasAnySelected={false}
+                       onToggle={() => {}}
+                       disableAnswer={true}
+                       hideAssigneesAndQueue={true}
+                       onDelete={() => onRemoveFromQueue(it.id)}
+                     />
+                   ))}
+                 </div>
                </div>
-            </div>
-          ))}
+             )
+          })}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '12px 24px',
+              borderRadius: 12,
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              color: '#0d212c',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
           <button
             onClick={() => {
-              alert('Invite sent!')
+              showToast('Items sent to client queue successfully!', 'success')
               onClose()
             }}
             style={{

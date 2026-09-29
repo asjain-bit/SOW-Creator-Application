@@ -48,9 +48,9 @@ describe('DashboardScreenV2', () => {
   it('calls onSignOut when logout clicked', () => {
     const onSignOut = vi.fn()
     render(<DashboardScreenV2 onSignOut={onSignOut} userInitials="AJ" userName="Ashika Jain" />)
-    // Sign Out is inside the user-avatar dropdown — open it first
+    // Logout is inside the user-avatar dropdown — open it first
     fireEvent.click(screen.getByText('AJ'))
-    fireEvent.click(screen.getByText('Sign Out'))
+    fireEvent.click(screen.getByText('Logout'))
     expect(onSignOut).toHaveBeenCalledOnce()
   })
 })

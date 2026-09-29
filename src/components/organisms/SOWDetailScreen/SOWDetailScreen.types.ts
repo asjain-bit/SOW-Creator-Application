@@ -17,6 +17,8 @@ export interface SectionItem {
   answered: boolean
   response?: string // answer text shown as thread below the item
   inClientQueue?: boolean // flag for client queue
+  isAiGenerated?: boolean
+  isEdited?: boolean
 }
 
 export interface SOWSection {
@@ -58,6 +60,6 @@ export interface SOWDetailScreenProps {
   className?: string
   showGenerateDraft?: boolean
   sowVariant?: 'v1' | 'v2' | 'meridian'
-  viewerRole?: 'pmo' | 'contributor'
+  viewerRole?: 'pmo' | 'contributor' | 'reviewer'
   currentMemberId?: string
 }

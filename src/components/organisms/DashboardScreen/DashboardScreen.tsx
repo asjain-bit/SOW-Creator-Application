@@ -251,9 +251,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {/* Logout Icon: Aligned at bottom edge of main white card (Turns red on hover) */}
           <button
             type="button"
-            aria-label="Sign Out"
+            aria-label="Logout"
             onClick={onSignOut}
-            title="Sign Out"
+            title="Logout"
             className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 shadow-2xs flex items-center justify-center cursor-pointer transition"
           >
             <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -14,6 +14,7 @@ import { ThemeToggle } from '@/components/atoms/ThemeToggle'
 import { AppDialog } from '@/components/molecules/AppDialog'
 import { FormField } from '@/components/molecules/FormField'
 import { Toast } from '@/components/molecules/Toast'
+import { useToast } from '@/contexts/ToastContext'
 import { SettingsPanelProps } from './SettingsPanel.types'
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -22,17 +23,19 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onSave,
   className = '',
 }) => {
+  const { showToast } = useToast()
   const [name, setName] = useState(initialName)
   const [email, setEmail] = useState(initialEmail)
   const [notifications, setNotifications] = useState('all')
-  const [showToast, setShowToast] = useState(false)
+  const [showToastAlert, setShowToastAlert] = useState(false)
   const [showDialog, setShowDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
-    setShowToast(true)
+    setShowToastAlert(true)
+    showToast('Your account preferences have been successfully updated.', 'success')
     onSave?.({ name, email })
     setIsSaving(false)
   }
@@ -51,12 +54,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <ThemeToggle />
       </div>
 
-      {showToast ? (
+      {showToastAlert ? (
         <Toast
           title="Settings Saved"
           message="Your account preferences have been successfully updated."
           variant="success"
-          onDismiss={() => setShowToast(false)}
+          onDismiss={() => setShowToastAlert(false)}
         />
       ) : null}
 
@@ -114,7 +117,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 setEmail('ashika@example.com')
                 setNotifications('all')
                 setShowDialog(false)
-                setShowToast(true)
+                setShowToastAlert(true)
+                showToast('Your account preferences have been reset.', 'info')
               }}
             >
               Confirm Reset

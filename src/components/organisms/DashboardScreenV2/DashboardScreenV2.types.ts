@@ -4,7 +4,14 @@
 import type React from 'react'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
 
-export type SOWStatus = 'Completed' | 'In Progress' | 'Pending' | 'Not Started'
+export type SOWStatus =
+  | 'Completed'
+  | 'In Progress'
+  | 'Pending'
+  | 'Not Started'
+  | 'On Track'
+  | 'At Risk'
+  | 'Deactivated'
 
 export interface SOWItem {
   id: string
@@ -14,6 +21,12 @@ export interface SOWItem {
   createdDate: string
   lastUpdated: string
   status: SOWStatus
+  readiness?: number
+  totalQuestions?: number
+  openQuestions?: number
+  overdueQuestions?: number
+  reviewComments?: number
+  approval?: string
 }
 
 export interface KPIItem {
@@ -28,7 +41,7 @@ export interface KPIItem {
 }
 
 export type ActiveNav =
-  'dashboard' | 'my-sows' | 'audit-log' | 'templates' | 'analytics' | 'notifications'
+  'dashboard' | 'my-sows' | 'audit-log' | 'templates' | 'analytics' | 'notifications' | 'agents'
 
 export interface DashboardScreenV2Props {
   userName?: string
