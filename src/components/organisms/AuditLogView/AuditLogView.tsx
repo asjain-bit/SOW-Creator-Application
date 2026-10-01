@@ -101,9 +101,10 @@ export function addGlobalAuditLog(action: string, description: string, actor: st
 
 export interface AuditLogViewProps {
   onBackToDashboard?: () => void
+  notificationButton?: React.ReactNode
 }
 
-export function AuditLogView({ onBackToDashboard: _onBack }: AuditLogViewProps) {
+export function AuditLogView({ onBackToDashboard: _onBack, notificationButton }: AuditLogViewProps) {
   const renderIcon = (icon: AuditEvent['icon']) => {
     const iconProps = { size: 16, color: '#00a0a0', strokeWidth: 2 }
     switch (icon) {
@@ -124,7 +125,23 @@ export function AuditLogView({ onBackToDashboard: _onBack }: AuditLogViewProps) 
   }
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto" style={{ padding: '12px 8px' }}>
+    <div className="flex flex-col h-full overflow-y-auto" style={{ padding: 0 }}>
+      {/* ── Page Header ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+          marginBottom: 16,
+        }}
+      >
+        <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>
+          Audit Log
+        </h1>
+        {notificationButton}
+      </div>
+
       {/* ── Main Timeline List View (Directly rendered without white section wrapper) ── */}
       <div style={{ position: 'relative' }}>
         {MOCK_AUDIT_LOGS.map((item, idx) => {

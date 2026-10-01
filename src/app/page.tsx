@@ -85,6 +85,7 @@ export default function Home() {
     )
   }
 
+  const isParag = userEmail.toLowerCase().includes('parag')
   const isRiza = userEmail.toLowerCase().includes('riza')
   const isNarendra =
     userEmail.toLowerCase().includes('npatel') ||
@@ -95,10 +96,12 @@ export default function Home() {
     userEmail.toLowerCase().includes('ishitawork')
   const isClientOrContributor = isNarendra || isRiza
 
-  const displayName = isRiza ? 'Riza' : isNarendra ? 'Narendra' : isIshita ? 'Ishita' : 'Ashika Jain'
-  const userRole = isRiza ? 'Client' : isNarendra ? 'Contributor' : isIshita ? 'Reviewer' : 'PMO'
-  const userInitials = isRiza ? 'R' : isNarendra ? 'N' : isIshita ? 'IS' : 'AJ'
-  const userImage = isRiza
+  const displayName = isParag ? 'Parag' : isRiza ? 'Riza' : isNarendra ? 'Narendra' : isIshita ? 'Ishita' : 'Ashika Jain'
+  const userRole = isParag ? 'Admin' : isRiza ? 'Client' : isNarendra ? 'Contributor' : isIshita ? 'Reviewer' : 'PMO'
+  const userInitials = isParag ? 'P' : isRiza ? 'R' : isNarendra ? 'N' : isIshita ? 'IS' : 'AJ'
+  const userImage = isParag
+    ? '/profile-user.png'
+    : isRiza
     ? '/profile-female.png'
     : isNarendra ? '/profile-male.png' : isIshita ? '/profile-female.png' : '/profile-user.png'
 
@@ -111,7 +114,7 @@ export default function Home() {
       userRole={userRole}
       userInitials={userInitials}
       userImage={userImage}
-      initialSOWs={isClientOrContributor || isIshita ? CONTRIBUTOR_SOWS : undefined}
+      initialSOWs={isParag ? [] : isClientOrContributor || isIshita ? CONTRIBUTOR_SOWS : undefined}
       onSignOut={() => setIsLoggedIn(false)}
       activeNav={isSOWDetail ? 'my-sows' : 'dashboard'}
       contentOverride={

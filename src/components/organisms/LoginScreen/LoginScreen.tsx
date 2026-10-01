@@ -19,6 +19,8 @@ const REGISTERED_EMAILS = [
   'ashika.jain@company.com',
   'npatel@gmail.com',
   'ishitawork@gmail.com',
+  'riza@gmail.com',
+  'Paragwork@gmail.com',
   'user@company.com',
   'admin@company.com',
   'demo@sowcreator.com',
@@ -335,6 +337,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     >
                       <span>Client</span>
                       <span style={{ fontWeight: 600 }}>riza@gmail.com</span>
+                    </div>
+                    <div 
+                      onClick={() => { setEmail('Paragwork@gmail.com'); setEmailError(''); }}
+                      style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', color: '#0d212c' }}
+                    >
+                      <span>Admin</span>
+                      <span style={{ fontWeight: 600 }}>Paragwork@gmail.com</span>
                     </div>
                   </div>
                 </div>

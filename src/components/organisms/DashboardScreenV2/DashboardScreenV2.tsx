@@ -18,7 +18,7 @@ import {
   ActiveNav,
 } from './DashboardScreenV2.types'
 import { CreateSOWModal } from '@/components/molecules/CreateSOWModal'
-import { FileText, CheckCircle2, Layers, Clock, AlertTriangle, Calendar } from 'lucide-react'
+import { FileText, CheckCircle2, Layers, Clock, AlertTriangle, Calendar, Bell, ArrowLeft } from 'lucide-react'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
 import { AuditLogView } from '../AuditLogView'
 import { useToast } from '@/contexts/ToastContext'
@@ -377,26 +377,15 @@ function FilterDropdown({
 
 /* ─── Sort icon ───────────────────────────────────────────────────────────── */
 
-function SortIcon({ col, sortCol, sortDir }: { col: SortCol; sortCol: SortCol; sortDir: SortDir }) {
-  if (sortCol !== col) {
-    return (
-      <svg className="w-3 h-3 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
-        />
-      </svg>
-    )
-  }
-  return sortDir === 'asc' ? (
-    <svg className="w-3 h-3 text-[#00C4C4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
-    </svg>
-  ) : (
-    <svg className="w-3 h-3 text-[#00C4C4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+function SortIcon() {
+  return (
+    <svg className="w-3 h-3" style={{ color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"
+      />
     </svg>
   )
 }
@@ -404,28 +393,47 @@ function SortIcon({ col, sortCol, sortDir }: { col: SortCol; sortCol: SortCol; s
 /* ─── All SOWs View ──────────────────────────────────────────────────────── */
 
 type AllSOWsSortCol =
-  'name' | 'client' | 'createdBy' | 'createdDate' | 'lastUpdated' | 'status' | null
+  | 'name'
+  | 'status'
+  | 'readiness'
+  | 'openQuestions'
+  | 'reviewComments'
+  | 'approval'
+  | 'lastUpdated'
+  | null
 
 function AllSOWsView({
   sows,
   onOpenSOWV2,
   onOpenSOWContributor,
   isContributor = false,
+  isPMO = true,
+  onDeactivateSOW,
+  onReactivateSOW,
+  notificationButton,
 }: {
   sows: SOWItem[]
   onOpenSOWV2?: () => void
   onOpenSOWContributor?: () => void
   isContributor?: boolean
+  isPMO?: boolean
+  onDeactivateSOW?: (sow: SOWItem) => void
+  onReactivateSOW?: (sow: SOWItem) => void
+  notificationButton?: React.ReactNode
 }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
-  const [creatorFilter, setCreatorFilter] = useState<string | null>(null)
-  const [dateFilter, setDateFilter] = useState<string | null>(null)
   const [sortCol, setSortCol] = useState<AllSOWsSortCol>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const pageSize = 12
 
-  const creators = Array.from(new Set(sows.map((s) => s.createdBy))).sort()
-  const dateOptions = ['Last 7 days', 'Last 30 days', 'Last 3 months', 'Last 6 months']
+  useEffect(() => {
+    const handleCloseMenu = () => setActionMenuOpenId(null)
+    window.addEventListener('click', handleCloseMenu)
+    return () => window.removeEventListener('click', handleCloseMenu)
+  }, [])
 
   const handleSort = (col: AllSOWsSortCol) => {
     if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -442,35 +450,42 @@ function AllSOWsView({
         if (!r.name.toLowerCase().includes(q) && !r.client.toLowerCase().includes(q)) return false
       }
       if (statusFilter && r.status !== statusFilter) return false
-      if (creatorFilter && r.createdBy !== creatorFilter) return false
       return true
     })
     .sort((a, b) => {
       if (!sortCol) return 0
-      const av = a[sortCol].toLowerCase()
-      const bv = b[sortCol].toLowerCase()
-      return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+      const av = a[sortCol] ?? ''
+      const bv = b[sortCol] ?? ''
+      if (typeof av === 'number' && typeof bv === 'number') {
+        return sortDir === 'asc' ? av - bv : bv - av
+      }
+      return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const paginatedRows = filtered.slice((page - 1) * pageSize, page * pageSize)
+
   const cols: { label: string; col: AllSOWsSortCol; width: string }[] = [
-    { label: 'SOW Name', col: 'name', width: '28%' },
-    { label: 'Client', col: 'client', width: '14%' },
-    { label: 'Created By', col: 'createdBy', width: '14%' },
-    { label: 'Created Date', col: 'createdDate', width: '14%' },
-    { label: 'Last Updated', col: 'lastUpdated', width: '14%' },
-    { label: 'Status', col: 'status', width: '12%' },
-    { label: '', col: null, width: '4%' },
+    { label: 'SOW Name', col: null, width: '22%' },
+    { label: 'Status', col: null, width: '12%' },
+    { label: 'Readiness', col: 'readiness', width: '10%' },
+    { label: 'Questions', col: 'openQuestions', width: '14%' },
+    { label: 'Review', col: 'reviewComments', width: '11%' },
+    { label: 'Approval', col: null, width: '12%' },
+    { label: 'Updated On', col: null, width: '12%' },
+    { label: 'Action', col: null, width: '7%' },
   ]
 
   return (
     <div
       style={{
-        padding: '24px 28px',
+        padding: 0,
         display: 'flex',
         flexDirection: 'column',
-        gap: 16,
+        gap: 0,
         height: '100%',
         boxSizing: 'border-box',
+        overflowY: 'auto',
       }}
     >
       {/* Header */}
@@ -480,24 +495,15 @@ function AllSOWsView({
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
+          marginBottom: 16,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', margin: 0 }}>All SOWs</h2>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              color: '#64748b',
-              background: 'rgba(0,196,196,0.1)',
-              borderRadius: 8,
-              padding: '3px 10px',
-            }}
-          >
-            {filtered.length} of {sows.length}
-          </span>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>
+            All SOWs
+          </h1>
         </div>
-        {/* Filter bar */}
+        {/* Filter bar + Notification Bell */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {/* Search */}
           <div
@@ -507,8 +513,8 @@ function AllSOWsView({
               gap: 6,
               background: 'rgba(255,255,255,0.7)',
               border: '1px solid rgba(255,255,255,0.9)',
-              borderRadius: 9,
-              padding: '0 11px',
+              borderRadius: 8,
+              padding: '0 10px',
               height: 34,
             }}
           >
@@ -530,19 +536,25 @@ function AllSOWsView({
               type="text"
               placeholder="Search SOW or client..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
               style={{
                 border: 'none',
                 outline: 'none',
                 background: 'transparent',
                 fontSize: 12,
                 color: '#0d212c',
-                width: 180,
+                width: 170,
               }}
             />
             {search && (
               <button
-                onClick={() => setSearch('')}
+                onClick={() => {
+                  setSearch('')
+                  setPage(1)
+                }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -569,26 +581,16 @@ function AllSOWsView({
             label="Status"
             options={STATUS_OPTIONS}
             active={statusFilter}
-            onSelect={setStatusFilter}
+            onSelect={(val) => {
+              setStatusFilter(val)
+              setPage(1)
+            }}
           />
-          <FilterDropdown
-            label="Created By"
-            options={creators}
-            active={creatorFilter}
-            onSelect={setCreatorFilter}
-          />
-          <FilterDropdown
-            label="Created Date"
-            options={dateOptions}
-            active={dateFilter}
-            onSelect={setDateFilter}
-          />
-          {(statusFilter || creatorFilter || dateFilter) && (
+          {statusFilter && (
             <button
               onClick={() => {
                 setStatusFilter(null)
-                setCreatorFilter(null)
-                setDateFilter(null)
+                setPage(1)
               }}
               style={{
                 display: 'flex',
@@ -601,7 +603,7 @@ function AllSOWsView({
                 color: '#ef4444',
                 background: '#fef2f2',
                 border: 'none',
-                borderRadius: 9,
+                borderRadius: 8,
                 cursor: 'pointer',
               }}
             >
@@ -618,14 +620,13 @@ function AllSOWsView({
               Clear
             </button>
           )}
+          {notificationButton}
         </div>
       </div>
 
       {/* Table */}
       <div
         style={{
-          flex: 1,
-          minHeight: 0,
           background: 'rgba(255,255,255,0.6)',
           border: '1px solid rgba(255,255,255,0.85)',
           borderRadius: 14,
@@ -633,10 +634,11 @@ function AllSOWsView({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
+          height: 'auto',
+          marginBottom: 20,
         }}
       >
-        <div style={{ overflowY: 'auto', flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
               <tr
                 style={{
@@ -646,11 +648,11 @@ function AllSOWsView({
               >
                 {cols.map(({ label, col, width }) => (
                   <th
-                    key={label || '__actions'}
+                    key={label}
                     onClick={col ? () => handleSort(col) : undefined}
                     style={{
                       width,
-                      padding: '11px 14px',
+                      padding: '10px 14px',
                       textAlign: 'left',
                       fontSize: 10,
                       fontWeight: 600,
@@ -662,18 +664,10 @@ function AllSOWsView({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {label && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        {label}
-                        {col && (
-                          <SortIcon
-                            col={col as SortCol}
-                            sortCol={sortCol as SortCol}
-                            sortDir={sortDir}
-                          />
-                        )}
-                      </span>
-                    )}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {label}
+                      {col && <SortIcon />}
+                    </span>
                   </th>
                 ))}
               </tr>
@@ -682,7 +676,7 @@ function AllSOWsView({
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     style={{
                       padding: '48px 14px',
                       textAlign: 'center',
@@ -694,7 +688,7 @@ function AllSOWsView({
                   </td>
                 </tr>
               ) : (
-                filtered.map((row, idx) => (
+                paginatedRows.map((row, idx) => (
                   <tr
                     key={row.id}
                     onClick={() => {
@@ -713,121 +707,257 @@ function AllSOWsView({
                       }
                     }}
                     style={{
+                      height: 62,
                       borderBottom:
-                        idx < filtered.length - 1 ? '1px solid #f1f5f9' : undefined,
-                      cursor: isContributor
-                        ? (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform') ? 'pointer' : 'default')
-                        : 'pointer',
+                        idx < paginatedRows.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined,
+                      cursor: 'pointer',
                       transition: 'background 0.12s',
                     }}
                     onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLTableRowElement).style.background =
-                        '#f8fafc'
+                      ;(e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'
                     }}
                     onMouseLeave={(e) => {
                       ;(e.currentTarget as HTMLTableRowElement).style.background = ''
                     }}
                   >
+                    {/* SOW Name & Client */}
                     <td
                       style={{
-                        padding: '11px 14px',
-                        fontSize: 13,
-                        fontWeight: 500,
-                        color: '#0d212c',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
+                        padding: '10px 14px',
+                        maxWidth: 0,
                       }}
                     >
-                      {row.name}
-                    </td>
-                    <td
-                      style={{
-                        padding: '11px 14px',
-                        fontSize: 12,
-                        color: '#64748b',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {row.client}
-                    </td>
-                    <td
-                      style={{
-                        padding: '11px 14px',
-                        fontSize: 12,
-                        color: '#64748b',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {row.createdBy}
-                    </td>
-                    <td
-                      style={{
-                        padding: '11px 14px',
-                        fontSize: 12,
-                        color: '#94a3b8',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {row.createdDate}
-                    </td>
-                    <td
-                      style={{
-                        padding: '11px 14px',
-                        fontSize: 12,
-                        color: '#94a3b8',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {row.lastUpdated}
-                    </td>
-                    <td style={{ padding: '11px 14px' }}>
-                      <StatusBadge status={row.status} />
-                    </td>
-                    <td style={{ padding: '11px 14px' }}>
-                      <button
+                      <span
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 3,
-                          fontSize: 11,
+                          display: 'block',
+                          fontSize: 13,
                           fontWeight: 600,
-                          color: '#00C4C4',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          opacity: 0,
-                          transition: 'opacity 0.12s',
-                        }}
-                        onMouseEnter={(e) => {
-                          ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
-                        }}
-                        onMouseLeave={(e) => {
-                          ;(e.currentTarget as HTMLButtonElement).style.opacity = '0'
+                          color: '#0d212c',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        Open{' '}
-                        <svg
-                          width="10"
-                          height="10"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        {row.name}
+                      </span>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 11.5,
+                          color: '#64748b',
+                          marginTop: 2,
+                        }}
+                      >
+                        {row.client}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <StatusBadge status={row.status} />
+                    </td>
+
+                    {/* Readiness */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 500, color: '#0d212c' }}>
+                        {row.readiness != null ? `${row.readiness}%` : '75%'}
+                      </span>
+                    </td>
+
+                    {/* Questions */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                        {row.totalQuestions ?? 4} Total • {row.openQuestions ?? 0} Open
+                      </span>
+                    </td>
+
+                    {/* Review */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                        {row.reviewComments ?? 0} comments
+                      </span>
+                    </td>
+
+                    {/* Approval */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                        {row.approval === 'Reviewer' ? 'Awaiting Reviewer' : (row.approval ?? 'Awaiting Reviewer')}
+                      </span>
+                    </td>
+
+                    {/* Updated On */}
+                    <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: 12, color: '#64748b', fontWeight: 400 }}>
+                        {row.lastUpdated}
+                      </span>
+                    </td>
+
+                    {/* Action */}
+                    <td
+                      style={{ padding: '10px 14px', position: 'relative' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActionMenuOpenId((prev) => (prev === row.id ? null : row.id))
+                        }}
+                        title="Actions"
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 6,
+                          background: actionMenuOpenId === row.id ? '#f1f5f9' : 'transparent',
+                          border: '1px solid ' + (actionMenuOpenId === row.id ? '#cbd5e1' : 'transparent'),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          color: '#64748b',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (actionMenuOpenId !== row.id) e.currentTarget.style.background = '#f8fafc'
+                        }}
+                        onMouseLeave={(e) => {
+                          if (actionMenuOpenId !== row.id) e.currentTarget.style.background = 'transparent'
+                        }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="5" r="2.2" />
+                          <circle cx="12" cy="12" r="2.2" />
+                          <circle cx="12" cy="19" r="2.2" />
                         </svg>
                       </button>
+
+                      {actionMenuOpenId === row.id && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            right: 12,
+                            top: 42,
+                            zIndex: 60,
+                            background: '#ffffff',
+                            borderRadius: 10,
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+                            padding: '4px',
+                            minWidth: 155,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                          }}
+                        >
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setActionMenuOpenId(null)
+                              if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
+                                onOpenSOWContributor?.()
+                              } else {
+                                onOpenSOWV2?.()
+                              }
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '7px 10px',
+                              borderRadius: 6,
+                              border: 'none',
+                              background: 'transparent',
+                              fontSize: 12.5,
+                              fontWeight: 500,
+                              color: '#0d212c',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              width: '100%',
+                              transition: 'background 0.12s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            View Details
+                          </button>
+
+                          {row.status === 'Deactivated' ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setActionMenuOpenId(null)
+                                onReactivateSOW?.(row)
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '7px 10px',
+                                borderRadius: 6,
+                                border: 'none',
+                                background: 'transparent',
+                                fontSize: 12.5,
+                                fontWeight: 500,
+                                color: '#16a34a',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: '100%',
+                                transition: 'background 0.12s',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#f0fdf4')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="23 4 23 10 17 10" />
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                              </svg>
+                              Reactivate SOW
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setActionMenuOpenId(null)
+                                onDeactivateSOW?.(row)
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '7px 10px',
+                                borderRadius: 6,
+                                border: 'none',
+                                background: 'transparent',
+                                fontSize: 12.5,
+                                fontWeight: 500,
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: '100%',
+                                transition: 'background 0.12s',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                              </svg>
+                              Deactivate SOW
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
-        </div>
-        {/* Footer count */}
+        {/* Footer pagination */}
         <div
           style={{
             padding: '10px 14px',
@@ -838,34 +968,120 @@ function AllSOWsView({
             justifyContent: 'space-between',
           }}
         >
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>
-            Showing {filtered.length} of {sows.length} SOWs
+          <span style={{ fontSize: 12, color: '#64748b' }}>
+            Showing {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length} SOWs
           </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: '1px solid #e2e8f0',
+                background: page === 1 ? '#f8fafc' : '#ffffff',
+                color: page === 1 ? '#cbd5e1' : '#475569',
+                cursor: page === 1 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              ‹
+            </button>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#475569', padding: '0 4px' }}>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: '1px solid #e2e8f0',
+                background: page >= totalPages ? '#f8fafc' : '#ffffff',
+                color: page >= totalPages ? '#cbd5e1' : '#475569',
+                cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              ›
+            </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function NotificationsView() {
-  const [notifications, setNotifications] = useState([
-    { id: '1', title: 'Meridian SOW generated', description: 'Drafting agent has successfully generated Meridian SOW.', time: '10 mins ago', unread: true },
-    { id: '2', title: 'Vendor MSA updated', description: 'Rohan Mehta has uploaded a new version of Vendor MSA.', time: '2 hours ago', unread: true },
-    { id: '3', title: 'Assignment added', description: 'You have been assigned to 2 questions in Meridian RFP.', time: '1 day ago', unread: false },
-  ])
-
-  const markRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n))
-  }
-
+function NotificationsView({
+  notifications,
+  markRead,
+  notificationButton,
+  onBack,
+}: {
+  notifications: { id: string; title: string; description: string; time: string; unread: boolean }[]
+  markRead: (id: string) => void
+  notificationButton?: React.ReactNode
+  onBack?: () => void
+}) {
   return (
-    <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16, height: '100%', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', margin: 0 }}>Notifications</h2>
+    <div style={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.7)',
+                border: '1px solid rgba(255,255,255,0.9)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#0d212c',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                transition: 'all 0.15s',
+              }}
+              aria-label="Back"
+            >
+              <ArrowLeft size={18} strokeWidth={2} />
+            </button>
+          )}
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>Notifications</h1>
+        </div>
+        {notificationButton}
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.9)', borderRadius: 16, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {notifications.map(n => (
-          <div key={n.id} onClick={() => n.unread && markRead(n.id)} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, padding: '14px 18px', background: n.unread ? 'rgba(0,196,196,0.06)' : 'transparent', borderRadius: 12, border: '1px solid ' + (n.unread ? 'rgba(0,196,196,0.2)' : 'transparent'), cursor: n.unread ? 'pointer' : 'default' }}>
+      <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.85)', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,196,196,0.06)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {notifications.map((n) => (
+          <div
+            key={n.id}
+            onClick={() => n.unread && markRead(n.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 16,
+              padding: '14px 18px',
+              background: n.unread ? 'rgba(0,196,196,0.06)' : 'rgba(255,255,255,0.8)',
+              borderRadius: 12,
+              border: '1px solid ' + (n.unread ? 'rgba(0,196,196,0.2)' : 'rgba(255,255,255,0.9)'),
+              cursor: n.unread ? 'pointer' : 'default',
+            }}
+          >
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', marginBottom: 4 }}>{n.title}</div>
               <div style={{ fontSize: 13, color: '#64748b' }}>{n.description}</div>
@@ -878,57 +1094,102 @@ function NotificationsView() {
   )
 }
 
-function AgentsView() {
+function AgentsView({ notificationButton }: { notificationButton?: React.ReactNode }) {
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const pageSize = 12
+
   const AGENTS_LIST = [
-    { id: '1', name: 'Intake Agent', description: 'Analyzes files to pre-fill commitments and scope', status: 'Active' },
-    { id: '2', name: 'Drafting Agent', description: 'Generates structured draft from form', status: 'Active' },
-    { id: '3', name: 'Compliance Agent', description: 'Checks vendor documents against compliance rules', status: 'Inactive' },
+    { id: '1', name: 'Intake & Context Agent', description: 'Captures and structures intake information and project context for SOW generation', status: 'Active' },
+    { id: '2', name: 'SoW Domain Specialist', description: 'Applies domain expertise to validate and enrich SOW scope and requirements', status: 'Active' },
+    { id: '3', name: 'Questionnaire & Section Design Agent', description: 'Designs questionnaires and structures SOW sections based on project type', status: 'Active' },
+    { id: '4', name: 'Knowledge & Research Agent', description: 'Researches industry benchmarks and knowledge base to support SOW content', status: 'Active' },
+    { id: '5', name: 'PMO HITL Gate', description: 'Human-in-the-loop checkpoint for PMO review and approval before proceeding', status: 'Active' },
+    { id: '6', name: 'SoW Drafting Agent', description: 'Generates the full SOW draft using structured inputs and domain knowledge', status: 'Active' },
+    { id: '7', name: 'SoW Supervisor Agent', description: 'Oversees SOW drafting quality and coordinates between specialized agents', status: 'Active' },
+    { id: '8', name: 'Reviewer Supervisor', description: 'Manages the review workflow and aggregates feedback from review agents', status: 'Active' },
+    { id: '9', name: 'Change Impact Agent', description: 'Assesses the impact of changes and updates to SOW scope or requirements', status: 'Active' },
+    { id: '10', name: 'SoW Supervisor Agent', description: 'Final supervision pass to ensure SOW completeness and consistency', status: 'Active' },
+    { id: '11', name: 'Quality Gate Agent', description: 'Validates SOW against quality standards and compliance requirements', status: 'Active' },
+    { id: '12', name: 'PMO HITL Gate', description: 'Final human-in-the-loop checkpoint for PMO sign-off before client delivery', status: 'Active' },
   ]
   
   const filtered = AGENTS_LIST.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || a.description.toLowerCase().includes(search.toLowerCase()))
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const paginatedRows = filtered.slice((page - 1) * pageSize, page * pageSize)
 
   return (
-    <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16, height: '100%', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+    <div style={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', margin: 0 }}>Active Agents</h2>
-          <span style={{ fontSize: 12, fontWeight: 500, color: '#64748b', background: 'rgba(0,196,196,0.1)', borderRadius: 8, padding: '3px 10px' }}>
-            {filtered.length} of {AGENTS_LIST.length}
-          </span>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>Active Agents</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.9)', borderRadius: 9, padding: '0 11px', height: 34 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.9)', borderRadius: 8, padding: '0 10px', height: 34 }}>
             <svg width="13" height="13" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input type="text" placeholder="Search agents..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12, color: '#0d212c', width: 180 }} />
+            <input
+              type="text"
+              placeholder="Search agents..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
+              style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12, color: '#0d212c', width: 170 }}
+            />
             {search && (
-              <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}>
+              <button
+                onClick={() => {
+                  setSearch('')
+                  setPage(1)
+                }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}
+              >
                 <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             )}
           </div>
+          {notificationButton}
         </div>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.9)', borderRadius: 16 }}>
+      <div style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.85)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,196,196,0.06)', height: 'auto', marginBottom: 20, display: 'flex', flexDirection: 'column' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-              <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Agent Name</th>
-              <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Description</th>
-              <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status</th>
+            <tr style={{ borderBottom: '1px solid rgba(0,196,196,0.1)', background: '#ffffff' }}>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '28%' }}>Agent Name</th>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '58%' }}>Description</th>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '14%' }}>Status</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map(a => (
-              <tr key={a.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.03)', transition: 'background 0.15s' }}>
-                <td style={{ padding: '16px 20px', fontSize: 14, fontWeight: 600, color: '#0d212c' }}>{a.name}</td>
-                <td style={{ padding: '16px 20px', fontSize: 13, color: '#64748b' }}>{a.description}</td>
-                <td style={{ padding: '16px 20px' }}>
-                  <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: a.status === 'Active' ? 'rgba(22,163,74,0.1)' : 'rgba(148,163,184,0.1)', color: a.status === 'Active' ? '#16a34a' : '#64748b' }}>
+            {paginatedRows.map((a, idx) => (
+              <tr
+                key={a.id}
+                style={{ borderBottom: idx < paginatedRows.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined, transition: 'background 0.12s', height: 52 }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+              >
+                <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 500, color: '#0d212c' }}>{a.name}</td>
+                <td style={{ padding: '10px 14px', fontSize: 12.5, color: '#64748b' }}>{a.description}</td>
+                <td style={{ padding: '10px 14px' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '3px 9px',
+                      borderRadius: 20,
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      background: 'rgba(22,163,74,0.1)',
+                      color: '#16a34a',
+                      border: '1px solid rgba(22,163,74,0.2)',
+                    }}
+                  >
                     {a.status}
                   </span>
                 </td>
@@ -936,6 +1197,66 @@ function AgentsView() {
             ))}
           </tbody>
         </table>
+        {/* Footer pagination */}
+        <div
+          style={{
+            padding: '10px 14px',
+            borderTop: '1px solid rgba(0,196,196,0.08)',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span style={{ fontSize: 12, color: '#64748b' }}>
+            Showing {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length} Agents
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: '1px solid #e2e8f0',
+                background: page === 1 ? '#f8fafc' : '#ffffff',
+                color: page === 1 ? '#cbd5e1' : '#475569',
+                cursor: page === 1 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              ‹
+            </button>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#475569', padding: '0 4px' }}>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: '1px solid #e2e8f0',
+                background: page >= totalPages ? '#f8fafc' : '#ffffff',
+                color: page >= totalPages ? '#cbd5e1' : '#475569',
+                cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              ›
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -980,9 +1301,71 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const [sowList, setSowList] = useState<SOWItem[]>(initialSOWs)
   const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null)
   const [deactivateModalSOW, setDeactivateModalSOW] = useState<SOWItem | null>(null)
+  const [reactivateModalSOW, setReactivateModalSOW] = useState<SOWItem | null>(null)
   const [displayedRows, setDisplayedRows] = useState<SOWItem[]>(initialSOWs)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [notifications, setNotifications] = useState([
+    { id: '1', title: 'Meridian SOW generated', description: 'Drafting agent has successfully generated Meridian SOW.', time: '10 mins ago', unread: true },
+    { id: '2', title: 'Vendor MSA updated', description: 'Rohan Mehta has uploaded a new version of Vendor MSA.', time: '2 hours ago', unread: true },
+    { id: '3', title: 'Assignment added', description: 'You have been assigned to 2 questions in Meridian RFP.', time: '1 day ago', unread: false },
+  ])
+  const unreadCount = notifications.filter(n => n.unread).length
+  const markNotificationRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n))
+  }
+
+  const renderNotificationButton = () => (
+    <button
+      onClick={() => setHomeView('notifications')}
+      style={{
+        position: 'relative',
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        background: 'rgba(255,255,255,0.7)',
+        border: '1px solid rgba(255,255,255,0.9)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        boxShadow: homeView === 'notifications' ? '0 0 0 2px rgba(0,196,196,0.3)' : '0 2px 8px rgba(0,0,0,0.06)',
+        transition: 'all 0.15s',
+        color: homeView === 'notifications' ? '#00C4C4' : '#0d212c',
+        flexShrink: 0,
+      }}
+      aria-label="Notifications"
+    >
+      <Bell size={18} strokeWidth={2} />
+      {unreadCount > 0 && (
+        <span
+          style={{
+            position: 'absolute',
+            top: -2,
+            right: -2,
+            minWidth: 16,
+            height: 16,
+            padding: '0 4px',
+            background: '#e60000',
+            borderRadius: '9999px',
+            color: '#ffffff',
+            fontSize: 10,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: 1,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          }}
+        >
+          {unreadCount}
+        </span>
+      )}
+    </button>
+  )
+
   const rppRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
@@ -1194,21 +1577,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       },
                     ]
                   : []),
-                {
-                  id: 'notifications' as ActiveNav,
-                  label: 'Notifications',
-                  badge: 2,
-                  icon: (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.8"
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  ),
-                },
               ] as { id: ActiveNav; label: string; icon: React.ReactNode; badge?: number }[]
-            ).map(({ id, label, icon, badge }) => {
+            ).map(({ id, label, icon }) => {
               const isActive = contentOverride
                 ? activeNav === id
                 : id === 'dashboard'
@@ -1217,9 +1587,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     ? homeView === 'all-sows'
                     : id === 'agents'
                       ? homeView === 'agents'
-                      : id === 'notifications'
-                        ? homeView === 'notifications'
-                        : activeNav === id
+                      : activeNav === id
               return (
                 <button
                   key={id}
@@ -1231,8 +1599,6 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       setHomeView('all-sows')
                     } else if (id === 'agents') {
                       setHomeView('agents')
-                    } else if (id === 'notifications') {
-                      setHomeView('notifications')
                     }
                   }}
                   className="flex flex-col items-center justify-center w-full py-2.5 px-1 rounded-xl cursor-pointer transition-all gap-1.5 relative border-0"
@@ -1273,14 +1639,6 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     >
                       {icon}
                     </svg>
-                    {badge != null && (
-                      <span
-                        className="absolute -top-1 -right-1.5 w-4 h-4 bg-[#00C4C4] rounded-full text-white flex items-center justify-center shadow-xs"
-                        style={{ fontSize: 9, fontWeight: 600 }}
-                      >
-                        {badge}
-                      </span>
-                    )}
                   </span>
                   <span
                     style={{
@@ -1433,19 +1791,36 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">{contentOverride}</div>
           ) : homeView === 'all-sows' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <AllSOWsView sows={initialSOWs} onOpenSOWV2={onOpenSOWV2} onOpenSOWContributor={onOpenSOWContributor} isContributor={isContributor || isClient} />
+              <AllSOWsView
+                sows={sowList}
+                onOpenSOWV2={onOpenSOWV2}
+                onOpenSOWContributor={onOpenSOWContributor}
+                isContributor={isContributor || isClient}
+                isPMO={isPMO}
+                onDeactivateSOW={(sow) => setDeactivateModalSOW(sow)}
+                onReactivateSOW={(sow) => setReactivateModalSOW(sow)}
+                notificationButton={renderNotificationButton()}
+              />
             </div>
           ) : homeView === 'agents' && isPMO ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <AgentsView />
+              <AgentsView notificationButton={renderNotificationButton()} />
             </div>
           ) : homeView === 'notifications' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <NotificationsView />
+              <NotificationsView
+                notifications={notifications}
+                markRead={markNotificationRead}
+                notificationButton={renderNotificationButton()}
+                onBack={() => setHomeView('home')}
+              />
             </div>
           ) : homeView === 'audit-log' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <AuditLogView onBackToDashboard={() => setHomeView('home')} />
+              <AuditLogView
+                onBackToDashboard={() => setHomeView('home')}
+                notificationButton={renderNotificationButton()}
+              />
             </div>
           ) : (
             /* Scrollable inner content with consistent 12px padding all around */
@@ -1463,26 +1838,29 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 >
                   Hi {userName} 👋
                 </h1>
-                {!isContributor && !isClient && !isReviewer && (
-                  <button
-                    onClick={() => {
-                      setShowCreateModal(true)
-                      onCreateSOW?.()
-                    }}
-                    className="flex items-center gap-2 bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-colors cursor-pointer border-0"
-                    style={{ boxShadow: '0 4px 20px rgba(0,196,196,0.35)' }}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.5"
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Create New SOW
-                  </button>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {renderNotificationButton()}
+                  {!isContributor && !isClient && !isReviewer && (
+                    <button
+                      onClick={() => {
+                        setShowCreateModal(true)
+                        onCreateSOW?.()
+                      }}
+                      className="flex items-center gap-2 bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-colors cursor-pointer border-0"
+                      style={{ boxShadow: '0 4px 20px rgba(0,196,196,0.35)' }}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2.5"
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      Create New SOW
+                    </button>
+                  )}
+                </div>
               </div>
 
                   {/* ─── KPI CARDS ──────────────────────────────────────────────── */}
@@ -2379,23 +2757,23 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         >
                           {(isPMO
                             ? [
-                                ['SOW Name', 'name' as SortCol, '22%'],
-                                ['Status', 'status' as SortCol, '12%'],
+                                ['SOW Name', null, '22%'],
+                                ['Status', null, '12%'],
                                 ['Readiness', 'readiness' as SortCol, '10%'],
                                 ['Questions', 'openQuestions' as SortCol, '14%'],
                                 ['Review', 'reviewComments' as SortCol, '11%'],
-                                ['Approval', 'approval' as SortCol, '12%'],
-                                ['Updated On', 'lastUpdated' as SortCol, '12%'],
+                                ['Approval', null, '12%'],
+                                ['Updated On', null, '12%'],
                                 ['Action', null, '7%'],
                               ]
                             : [
-                                ['SOW Name', 'name' as SortCol, '24%'],
-                                ['Status', 'status' as SortCol, '13%'],
+                                ['SOW Name', null, '24%'],
+                                ['Status', null, '13%'],
                                 ['Readiness', 'readiness' as SortCol, '11%'],
                                 ['Questions', 'openQuestions' as SortCol, '15%'],
                                 ['Review', 'reviewComments' as SortCol, '12%'],
-                                ['Approval', 'approval' as SortCol, '13%'],
-                                ['Updated On', 'lastUpdated' as SortCol, '12%'],
+                                ['Approval', null, '13%'],
+                                ['Updated On', null, '12%'],
                               ]
                           ).map(([label, col, width]) => (
                             <th
@@ -2419,11 +2797,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                               >
                                 {label}
                                 {col && (
-                                  <SortIcon
-                                    col={col as SortCol}
-                                    sortCol={sortCol}
-                                    sortDir={sortDir}
-                                  />
+                                  <SortIcon />
                                 )}
                               </span>
                             </th>
@@ -2659,10 +3033,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                           onClick={(e) => {
                                             e.stopPropagation()
                                             setActionMenuOpenId(null)
-                                            setSowList((prev) =>
-                                              prev.map((s) => (s.id === row.id ? { ...s, status: 'On Track' } : s))
-                                            )
-                                            showToast(`SOW "${row.name}" reactivated successfully.`, 'success')
+                                            setReactivateModalSOW(row)
                                           }}
                                           style={{
                                             display: 'flex',
@@ -2782,132 +3153,6 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       </button>
                     </div>
                   </div>
-
-                  {/* Deactivate SOW Confirmation Modal (matching delete popup UI) */}
-                  {deactivateModalSOW && (
-                    <div
-                      style={{
-                        position: 'fixed',
-                        inset: 0,
-                        zIndex: 99999,
-                        background: 'rgba(0,0,0,0.4)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backdropFilter: 'blur(3px)',
-                      }}
-                      onClick={(e) => {
-                        if (e.target === e.currentTarget) setDeactivateModalSOW(null)
-                      }}
-                    >
-                      <div
-                        style={{
-                          background: '#ffffff',
-                          borderRadius: 24,
-                          padding: '32px 28px',
-                          width: 440,
-                          maxWidth: '90vw',
-                          textAlign: 'center',
-                          position: 'relative',
-                          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-                        }}
-                      >
-                        <button
-                          onClick={() => setDeactivateModalSOW(null)}
-                          style={{
-                            position: 'absolute',
-                            top: 18,
-                            right: 18,
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#94a3b8',
-                            padding: 4,
-                            display: 'flex',
-                          }}
-                        >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                          </svg>
-                        </button>
-
-                        {/* Icon Circle */}
-                        <div
-                          style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 16,
-                            background: '#fef2f2',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 20px',
-                          }}
-                        >
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                          </svg>
-                        </div>
-
-                        <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
-                          Deactivate SOW?
-                        </div>
-                        <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
-                          This will deactivate the SOW temporarily. Are you sure you want to proceed?
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 12 }}>
-                          <button
-                            onClick={() => setDeactivateModalSOW(null)}
-                            style={{
-                              flex: 1,
-                              padding: '12px',
-                              borderRadius: 12,
-                              background: '#ffffff',
-                              border: '1.5px solid #e2e8f0',
-                              color: '#0d212c',
-                              fontSize: 14,
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              transition: 'background 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => {
-                              const target = deactivateModalSOW
-                              setSowList((prev) =>
-                                prev.map((s) => (s.id === target.id ? { ...s, status: 'Deactivated' } : s))
-                              )
-                              setDeactivateModalSOW(null)
-                              showToast(`SOW "${target.name}" deactivated temporarily.`, 'error')
-                            }}
-                            style={{
-                              flex: 1,
-                              padding: '12px',
-                              borderRadius: 12,
-                              background: '#E60000',
-                              border: 'none',
-                              color: '#ffffff',
-                              fontSize: 14,
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              boxShadow: '0 4px 14px rgba(230,0,0,0.25)',
-                              transition: 'background 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = '#cc0000')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = '#E60000')}
-                          >
-                            Deactivate SOW
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
               {/* Row: Due This Week + Workflow Pie Chart */}
@@ -3360,6 +3605,258 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             onProceedToSOW?.(uploadedFiles)
           }}
         />
+      )}
+
+      {/* Deactivate SOW Confirmation Modal */}
+      {deactivateModalSOW && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeactivateModalSOW(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setDeactivateModalSOW(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Icon Circle */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: '#fef2f2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Deactivate SOW?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              This will deactivate the SOW temporarily. Are you sure you want to proceed?
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setDeactivateModalSOW(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const target = deactivateModalSOW
+                  setSowList((prev) =>
+                    prev.map((s) => (s.id === target.id ? { ...s, status: 'Deactivated' } : s))
+                  )
+                  setDeactivateModalSOW(null)
+                  showToast('SOW Deactivated', 'error')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#E60000',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(230,0,0,0.25)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#cc0000')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#E60000')}
+              >
+                Deactivate SOW
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reactivate SOW Confirmation Modal */}
+      {reactivateModalSOW && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setReactivateModalSOW(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setReactivateModalSOW(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Icon Circle */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C4C4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Reactivate SOW?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              This will reactivate the SOW and make it active again. Are you sure you want to proceed?
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setReactivateModalSOW(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const target = reactivateModalSOW
+                  setSowList((prev) =>
+                    prev.map((s) => (s.id === target.id ? { ...s, status: 'On Track' } : s))
+                  )
+                  setReactivateModalSOW(null)
+                  showToast('SOW Reactivated', 'success')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#00C4C4',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+              >
+                Reactivate SOW
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showLogoutConfirm && (

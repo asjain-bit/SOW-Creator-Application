@@ -72,7 +72,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               ? '#5eead4'
               : isWarning
                 ? '#fde68a'
-                : '#fca5a5'
+                : '#fdcece'
 
           const textColor = isSuccess
             ? '#15803d'
@@ -80,7 +80,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               ? '#0f766e'
               : isWarning
                 ? '#b45309'
-                : '#b91c1c'
+                : '#c0392b'
 
           const shadow = isSuccess
             ? '0 6px 20px -2px rgba(34, 197, 94, 0.18), 0 2px 6px -1px rgba(0, 0, 0, 0.04)'
@@ -118,8 +118,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   </svg>
                 </span>
               ) : isError ? (
-                <span style={{ color: '#dc2626', display: 'flex', alignItems: 'center' }}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <span style={{ color: '#e05252', display: 'flex', alignItems: 'center' }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="15" y1="9" x2="9" y2="15" />
                     <line x1="9" y1="9" x2="15" y2="15" />
