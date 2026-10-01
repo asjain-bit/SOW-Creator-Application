@@ -27,6 +27,8 @@ export interface SOWItem {
   overdueQuestions?: number
   reviewComments?: number
   approval?: string
+  workflowStage?: string
+  dueDate?: string
 }
 
 export interface KPIItem {
@@ -41,7 +43,15 @@ export interface KPIItem {
 }
 
 export type ActiveNav =
-  'dashboard' | 'my-sows' | 'audit-log' | 'templates' | 'analytics' | 'notifications' | 'agents'
+  | 'dashboard'
+  | 'my-sows'
+  | 'audit-log'
+  | 'templates'
+  | 'analytics'
+  | 'notifications'
+  | 'agents'
+  | 'user-directory'
+  | 'section-templates'
 
 export interface DashboardScreenV2Props {
   userName?: string

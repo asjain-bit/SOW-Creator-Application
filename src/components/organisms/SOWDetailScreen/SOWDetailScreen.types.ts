@@ -60,6 +60,6 @@ export interface SOWDetailScreenProps {
   className?: string
   showGenerateDraft?: boolean
   sowVariant?: 'v1' | 'v2' | 'meridian'
-  viewerRole?: 'pmo' | 'contributor' | 'reviewer'
+  viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin'
   currentMemberId?: string
 }

@@ -28,8 +28,8 @@ function buildTabs(structureUnlocked: boolean, draftUnlocked = false) {
   return [
     { id: 'overview' as SOWTab, label: 'Overview', locked: false },
     { id: 'form' as SOWTab, label: 'Context', locked: false },
-    { id: 'structure' as SOWTab, label: 'Structure', locked: !structureUnlocked },
-    { id: 'sow-draft' as SOWTab, label: 'SOW Draft', locked: !draftUnlocked },
+    { id: 'structure' as SOWTab, label: 'Planning', locked: !structureUnlocked },
+    { id: 'sow-draft' as SOWTab, label: 'Draft', locked: !draftUnlocked },
     { id: 'audit-log' as SOWTab, label: 'Audit Log', locked: false },
   ]
 }
@@ -345,231 +345,9 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
   return (
     <div style={{ padding: '20px 16px' }}>
-      {/* ── KPI Cards Bar ── */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {/* 1. SOW Sources */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.6)',
-            border: '1px solid rgba(255,255,255,0.85)',
-            borderRadius: 16,
-            padding: '16px 18px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#94a3b8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}
-            >
-              Total Documents
-            </span>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                background: 'rgba(0,196,196,0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <FileText size={16} color="#00a0a0" />
-            </div>
-          </div>
-          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>
-            {files.length}
-          </div>
-          <div
-            style={{
-              height: 1,
-              background: 'rgba(0,196,196,0.12)',
-              width: '100%',
-              margin: '4px 0 2px 0',
-            }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
-              {files.length > 0 ? `${files.length} Reference Documents Attached` : 'No documents attached'}
-            </span>
-          </div>
-        </div>
-
-        {/* 2. Commitments */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.6)',
-            border: '1px solid rgba(255,255,255,0.85)',
-            borderRadius: 16,
-            padding: '16px 18px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#94a3b8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}
-            >
-              Extracted Commitments
-            </span>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                background: '#e0f2fe',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <CheckCircle2 size={16} color="#0284c7" />
-            </div>
-          </div>
-          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>6</div>
-          <div
-            style={{
-              height: 1,
-              background: 'rgba(0,196,196,0.12)',
-              width: '100%',
-              margin: '4px 0 2px 0',
-            }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
-              4 Open · 2 Completed
-            </span>
-          </div>
-        </div>
-
-        {/* 3. Sections of SOW */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.6)',
-            border: '1px solid rgba(255,255,255,0.85)',
-            borderRadius: 16,
-            padding: '16px 18px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#94a3b8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}
-            >
-              SOW Sections
-            </span>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                background: '#f3e8ff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Layers size={16} color="#7c3aed" />
-            </div>
-          </div>
-          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>6</div>
-          <div
-            style={{
-              height: 1,
-              background: 'rgba(0,196,196,0.12)',
-              width: '100%',
-              margin: '4px 0 2px 0',
-            }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
-              4 Finalized · 2 In Progress
-            </span>
-          </div>
-        </div>
-
-        {/* 4. Review Status */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.6)',
-            border: '1px solid rgba(255,255,255,0.85)',
-            borderRadius: 16,
-            padding: '16px 18px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#94a3b8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}
-            >
-              Review Status
-            </span>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                background: '#fef3c7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Clock size={16} color="#d97706" />
-            </div>
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 600, color: '#d97706', lineHeight: 1.38 }}>
-            Pending
-          </div>
-          <div
-            style={{
-              height: 1,
-              background: 'rgba(0,196,196,0.12)',
-              width: '100%',
-              margin: '4px 0 2px 0',
-            }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>
-              2 Stakeholders Awaiting
-            </span>
-          </div>
-        </div>
+      {/* ── SOW Workflow Stepper (Above Uploaded Documents) ── */}
+      <div style={{ marginBottom: 24 }}>
+        <SOWWorkflowStepper />
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -645,11 +423,6 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
         </div>
       )}
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
-
-      {/* ── Workflow Stepper (below docs) ── */}
-      <div style={{ marginTop: 24 }}>
-        <SOWWorkflowStepper />
-      </div>
     </div>
   )
 }
@@ -3255,7 +3028,7 @@ function StructureTab({
   onResolveChanges,
 }: {
   initialSections?: SOWSection[]
-  viewerRole?: 'pmo' | 'contributor' | 'reviewer'
+  viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin'
   currentMemberId?: string
   onScoreChange?: (score: number) => void
   disableAnswer?: boolean
@@ -6873,18 +6646,20 @@ function SOWDraftTab({
           </div>
           )}
 
-          {/* Scroll area */}
-          <div
-            ref={scrollAreaRef}
-            id="sow-editor-scroll-area"
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              background: '#f1f5f9',
-              padding: '28px 20px 64px',
-              position: 'relative',
-            }}
-          >
+          {/* Scroll area & Comments Panel Container (Below Header / Toolbar) */}
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+            {/* Scroll area */}
+            <div
+              ref={scrollAreaRef}
+              id="sow-editor-scroll-area"
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                background: '#f1f5f9',
+                padding: '28px 20px 64px',
+                position: 'relative',
+              }}
+            >
             {/* Document card */}
             <div
               ref={docCardRef}
@@ -7122,10 +6897,9 @@ function SOWDraftTab({
               )}
             </div>
           </div>
-        </div>
 
-        {/* ── Right panel: all document comments ─────────────────────────── */}
-        {showCommentsPanel && (
+          {/* ── Right panel: all document comments (Below Header / Toolbar) ── */}
+          {showCommentsPanel && (
           <div
             style={{
               width: 320,
@@ -7336,6 +7110,8 @@ function SOWDraftTab({
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
 
       {/* ── Approve popup ──────────────────────────────────────────────────────── */}

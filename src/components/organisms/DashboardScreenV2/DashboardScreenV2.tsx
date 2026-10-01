@@ -18,7 +18,34 @@ import {
   ActiveNav,
 } from './DashboardScreenV2.types'
 import { CreateSOWModal } from '@/components/molecules/CreateSOWModal'
-import { FileText, CheckCircle2, Layers, Clock, AlertTriangle, Calendar, Bell, ArrowLeft } from 'lucide-react'
+import {
+  FileText,
+  CheckCircle2,
+  Layers,
+  Clock,
+  AlertTriangle,
+  Calendar,
+  Bell,
+  ArrowLeft,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Plus,
+  Users,
+  LayoutTemplate,
+  Bot,
+  LayoutDashboard,
+  Search,
+  ChevronDown,
+  Check,
+  X,
+  Shield,
+  HelpCircle,
+  Square,
+  CheckSquare,
+  Building2,
+  ArrowRight,
+} from 'lucide-react'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
 import { AuditLogView } from '../AuditLogView'
 import { useToast } from '@/contexts/ToastContext'
@@ -131,7 +158,7 @@ const DEFAULT_SOWS: SOWItem[] = [
     createdBy: 'Priya Sharma',
     createdDate: 'Jul 10, 2026',
     lastUpdated: 'Jul 29, 2026',
-    status: 'In Progress',
+    status: 'On Track',
     readiness: 50,
     openQuestions: 3,
     overdueQuestions: 1,
@@ -145,7 +172,7 @@ const DEFAULT_SOWS: SOWItem[] = [
     createdBy: 'Ashika Jain',
     createdDate: 'Jul 02, 2026',
     lastUpdated: 'Jul 21, 2026',
-    status: 'Pending',
+    status: 'At Risk',
     readiness: 40,
     openQuestions: 4,
     overdueQuestions: 0,
@@ -187,7 +214,7 @@ const DEFAULT_SOWS: SOWItem[] = [
     createdBy: 'Ashika Jain',
     createdDate: 'Jun 10, 2026',
     lastUpdated: 'Jul 05, 2026',
-    status: 'Pending',
+    status: 'On Track',
   },
   {
     id: 'sow-12',
@@ -196,7 +223,7 @@ const DEFAULT_SOWS: SOWItem[] = [
     createdBy: 'Rohan Mehta',
     createdDate: 'Jun 03, 2026',
     lastUpdated: 'Jun 28, 2026',
-    status: 'Not Started',
+    status: 'On Track',
   },
   {
     id: 'sow-13',
@@ -214,7 +241,7 @@ const DEFAULT_SOWS: SOWItem[] = [
     createdBy: 'Ashika Jain',
     createdDate: 'May 20, 2026',
     lastUpdated: 'Jun 14, 2026',
-    status: 'In Progress',
+    status: 'On Track',
   },
   {
     id: 'sow-15',
@@ -223,7 +250,7 @@ const DEFAULT_SOWS: SOWItem[] = [
     createdBy: 'Rohan Mehta',
     createdDate: 'May 12, 2026',
     lastUpdated: 'Jun 08, 2026',
-    status: 'Pending',
+    status: 'At Risk',
   },
 ]
 
@@ -258,7 +285,7 @@ const KPIS: KPIItem[] = [
   },
 ]
 
-const STATUS_OPTIONS: SOWStatus[] = ['On Track', 'At Risk', 'In Progress', 'Completed', 'Pending', 'Not Started', 'Deactivated']
+const STATUS_OPTIONS: SOWStatus[] = ['On Track', 'At Risk', 'Completed', 'Deactivated']
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25]
 
 type SortCol = 'name' | 'client' | 'lastUpdated' | 'status' | 'readiness' | 'openQuestions' | 'reviewComments' | 'approval' | null
@@ -408,6 +435,7 @@ function AllSOWsView({
   onOpenSOWContributor,
   isContributor = false,
   isPMO = true,
+  isAdmin = false,
   onDeactivateSOW,
   onReactivateSOW,
   notificationButton,
@@ -417,6 +445,7 @@ function AllSOWsView({
   onOpenSOWContributor?: () => void
   isContributor?: boolean
   isPMO?: boolean
+  isAdmin?: boolean
   onDeactivateSOW?: (sow: SOWItem) => void
   onReactivateSOW?: (sow: SOWItem) => void
   notificationButton?: React.ReactNode
@@ -465,16 +494,25 @@ function AllSOWsView({
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paginatedRows = filtered.slice((page - 1) * pageSize, page * pageSize)
 
-  const cols: { label: string; col: AllSOWsSortCol; width: string }[] = [
-    { label: 'SOW Name', col: null, width: '22%' },
-    { label: 'Status', col: null, width: '12%' },
-    { label: 'Readiness', col: 'readiness', width: '10%' },
-    { label: 'Questions', col: 'openQuestions', width: '14%' },
-    { label: 'Review', col: 'reviewComments', width: '11%' },
-    { label: 'Approval', col: null, width: '12%' },
-    { label: 'Updated On', col: null, width: '12%' },
-    { label: 'Action', col: null, width: '7%' },
-  ]
+  const cols: { label: string; col: AllSOWsSortCol; width: string }[] = isAdmin
+    ? [
+        { label: 'SOW Name', col: null, width: '28%' },
+        { label: 'Status', col: null, width: '14%' },
+        { label: 'Readiness', col: 'readiness', width: '12%' },
+        { label: 'PMO Name', col: null, width: '16%' },
+        { label: 'Due Date', col: null, width: '15%' },
+        { label: 'Updated On', col: null, width: '15%' },
+      ]
+    : [
+        { label: 'SOW Name', col: null, width: '22%' },
+        { label: 'Status', col: null, width: '12%' },
+        { label: 'Readiness', col: 'readiness', width: '10%' },
+        { label: 'Questions', col: 'openQuestions', width: '14%' },
+        { label: 'Review', col: 'reviewComments', width: '11%' },
+        { label: 'Approval', col: null, width: '12%' },
+        { label: 'Updated On', col: null, width: '12%' },
+        { label: 'Action', col: null, width: '7%' },
+      ]
 
   return (
     <div
@@ -655,7 +693,7 @@ function AllSOWsView({
                       padding: '10px 14px',
                       textAlign: 'left',
                       fontSize: 10,
-                      fontWeight: 600,
+                      fontWeight: 500,
                       color: '#475569',
                       textTransform: 'uppercase',
                       letterSpacing: '0.07em',
@@ -764,26 +802,37 @@ function AllSOWsView({
                       </span>
                     </td>
 
-                    {/* Questions */}
+                    {/* Non-Admin: Questions & Review */}
+                    {!isAdmin && (
+                      <>
+                        <td style={{ padding: '10px 14px' }}>
+                          <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                            {row.totalQuestions ?? 4} Total • {row.openQuestions ?? 0} Open
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 14px' }}>
+                          <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                            {row.reviewComments ?? 0} comments
+                          </span>
+                        </td>
+                      </>
+                    )}
+
+                    {/* Approval or PMO Name */}
                     <td style={{ padding: '10px 14px' }}>
-                      <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
-                        {row.totalQuestions ?? 4} Total • {row.openQuestions ?? 0} Open
+                      <span style={{ fontSize: 12.5, color: isAdmin ? '#0d212c' : '#475569', fontWeight: 500 }}>
+                        {isAdmin ? (row.createdBy || 'Ashika Jain') : (row.approval === 'Reviewer' ? 'Awaiting Reviewer' : (row.approval ?? 'Awaiting Reviewer'))}
                       </span>
                     </td>
 
-                    {/* Review */}
-                    <td style={{ padding: '10px 14px' }}>
-                      <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
-                        {row.reviewComments ?? 0} comments
-                      </span>
-                    </td>
-
-                    {/* Approval */}
-                    <td style={{ padding: '10px 14px' }}>
-                      <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
-                        {row.approval === 'Reviewer' ? 'Awaiting Reviewer' : (row.approval ?? 'Awaiting Reviewer')}
-                      </span>
-                    </td>
+                    {/* Admin: Due Date */}
+                    {isAdmin && (
+                      <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 12.5, color: '#dc2626', fontWeight: 500 }}>
+                          {idx === 0 ? 'Oct 15, 2026' : idx === 1 ? 'Oct 22, 2026' : idx === 2 ? 'Nov 05, 2026' : 'Nov 18, 2026'}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Updated On */}
                     <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
@@ -792,104 +841,72 @@ function AllSOWsView({
                       </span>
                     </td>
 
-                    {/* Action */}
-                    <td
-                      style={{ padding: '10px 14px', position: 'relative' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setActionMenuOpenId((prev) => (prev === row.id ? null : row.id))
-                        }}
-                        title="Actions"
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 6,
-                          background: actionMenuOpenId === row.id ? '#f1f5f9' : 'transparent',
-                          border: '1px solid ' + (actionMenuOpenId === row.id ? '#cbd5e1' : 'transparent'),
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          color: '#64748b',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (actionMenuOpenId !== row.id) e.currentTarget.style.background = '#f8fafc'
-                        }}
-                        onMouseLeave={(e) => {
-                          if (actionMenuOpenId !== row.id) e.currentTarget.style.background = 'transparent'
-                        }}
+                    {/* Action (only for non-admin) */}
+                    {!isAdmin && (
+                      <td
+                        style={{ padding: '10px 14px', position: 'relative' }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="12" cy="5" r="2.2" />
-                          <circle cx="12" cy="12" r="2.2" />
-                          <circle cx="12" cy="19" r="2.2" />
-                        </svg>
-                      </button>
-
-                      {actionMenuOpenId === row.id && (
-                        <div
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActionMenuOpenId((prev) => (prev === row.id ? null : row.id))
+                          }}
+                          title="Actions"
                           style={{
-                            position: 'absolute',
-                            right: 12,
-                            top: 42,
-                            zIndex: 60,
-                            background: '#ffffff',
-                            borderRadius: 10,
-                            border: '1px solid #e2e8f0',
-                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
-                            padding: '4px',
-                            minWidth: 155,
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            background: actionMenuOpenId === row.id ? '#f1f5f9' : 'transparent',
+                            border: '1px solid ' + (actionMenuOpenId === row.id ? '#cbd5e1' : 'transparent'),
                             display: 'flex',
-                            flexDirection: 'column',
-                            gap: 2,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: '#64748b',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (actionMenuOpenId !== row.id) e.currentTarget.style.background = '#f8fafc'
+                          }}
+                          onMouseLeave={(e) => {
+                            if (actionMenuOpenId !== row.id) e.currentTarget.style.background = 'transparent'
                           }}
                         >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setActionMenuOpenId(null)
-                              if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
-                                onOpenSOWContributor?.()
-                              } else {
-                                onOpenSOWV2?.()
-                              }
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              padding: '7px 10px',
-                              borderRadius: 6,
-                              border: 'none',
-                              background: 'transparent',
-                              fontSize: 12.5,
-                              fontWeight: 500,
-                              color: '#0d212c',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              width: '100%',
-                              transition: 'background 0.12s',
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                            View Details
-                          </button>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2.2" />
+                            <circle cx="12" cy="12" r="2.2" />
+                            <circle cx="12" cy="19" r="2.2" />
+                          </svg>
+                        </button>
 
-                          {row.status === 'Deactivated' ? (
+                        {actionMenuOpenId === row.id && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              right: 12,
+                              top: 42,
+                              zIndex: 60,
+                              background: '#ffffff',
+                              borderRadius: 10,
+                              border: '1px solid #e2e8f0',
+                              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+                              padding: '4px',
+                              minWidth: 155,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 2,
+                            }}
+                          >
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setActionMenuOpenId(null)
-                                onReactivateSOW?.(row)
+                                if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
+                                  onOpenSOWContributor?.()
+                                } else {
+                                  onOpenSOWV2?.()
+                                }
                               }}
                               style={{
                                 display: 'flex',
@@ -901,57 +918,91 @@ function AllSOWsView({
                                 background: 'transparent',
                                 fontSize: 12.5,
                                 fontWeight: 500,
-                                color: '#16a34a',
+                                color: '#0d212c',
                                 cursor: 'pointer',
                                 textAlign: 'left',
                                 width: '100%',
                                 transition: 'background 0.12s',
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = '#f0fdf4')}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
                               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="23 4 23 10 17 10" />
-                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
                               </svg>
-                              Reactivate SOW
+                              View Details
                             </button>
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setActionMenuOpenId(null)
-                                onDeactivateSOW?.(row)
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                padding: '7px 10px',
-                                borderRadius: 6,
-                                border: 'none',
-                                background: 'transparent',
-                                fontSize: 12.5,
-                                fontWeight: 500,
-                                color: '#dc2626',
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                width: '100%',
-                                transition: 'background 0.12s',
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                              </svg>
-                              Deactivate SOW
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
+
+                            {row.status === 'Deactivated' ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setActionMenuOpenId(null)
+                                  onReactivateSOW?.(row)
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  padding: '7px 10px',
+                                  borderRadius: 6,
+                                  border: 'none',
+                                  background: 'transparent',
+                                  fontSize: 12.5,
+                                  fontWeight: 500,
+                                  color: '#16a34a',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  width: '100%',
+                                  transition: 'background 0.12s',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f0fdf4')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="23 4 23 10 17 10" />
+                                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                                </svg>
+                                Reactivate SOW
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setActionMenuOpenId(null)
+                                  onDeactivateSOW?.(row)
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  padding: '7px 10px',
+                                  borderRadius: 6,
+                                  border: 'none',
+                                  background: 'transparent',
+                                  fontSize: 12.5,
+                                  fontWeight: 500,
+                                  color: '#dc2626',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  width: '100%',
+                                  transition: 'background 0.12s',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                </svg>
+                                Deactivate SOW
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -1094,12 +1145,20 @@ function NotificationsView({
   )
 }
 
+interface AgentItem {
+  id: string
+  name: string
+  description: string
+  status: 'Active' | 'Deactivated'
+}
+
 function AgentsView({ notificationButton }: { notificationButton?: React.ReactNode }) {
+  const { showToast } = useToast()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const pageSize = 12
 
-  const AGENTS_LIST = [
+  const [agentsList, setAgentsList] = useState<AgentItem[]>([
     { id: '1', name: 'Intake & Context Agent', description: 'Captures and structures intake information and project context for SOW generation', status: 'Active' },
     { id: '2', name: 'SoW Domain Specialist', description: 'Applies domain expertise to validate and enrich SOW scope and requirements', status: 'Active' },
     { id: '3', name: 'Questionnaire & Section Design Agent', description: 'Designs questionnaires and structures SOW sections based on project type', status: 'Active' },
@@ -1112,17 +1171,39 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
     { id: '10', name: 'SoW Supervisor Agent', description: 'Final supervision pass to ensure SOW completeness and consistency', status: 'Active' },
     { id: '11', name: 'Quality Gate Agent', description: 'Validates SOW against quality standards and compliance requirements', status: 'Active' },
     { id: '12', name: 'PMO HITL Gate', description: 'Final human-in-the-loop checkpoint for PMO sign-off before client delivery', status: 'Active' },
-  ]
-  
-  const filtered = AGENTS_LIST.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || a.description.toLowerCase().includes(search.toLowerCase()))
+  ])
+
+  const [actionMenuAgentId, setActionMenuAgentId] = useState<string | null>(null)
+  const [editModalAgent, setEditModalAgent] = useState<AgentItem | null>(null)
+  const [editAgentName, setEditAgentName] = useState('')
+  const [editAgentDesc, setEditAgentDesc] = useState('')
+
+  const [deactivateModalAgent, setDeactivateModalAgent] = useState<AgentItem | null>(null)
+  const [reactivateModalAgent, setReactivateModalAgent] = useState<AgentItem | null>(null)
+
+  const filtered = agentsList.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || a.description.toLowerCase().includes(search.toLowerCase()))
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paginatedRows = filtered.slice((page - 1) * pageSize, page * pageSize)
 
+  const handleUpdateAgent = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editModalAgent || !editAgentName.trim()) return
+    setAgentsList((prev) =>
+      prev.map((a) =>
+        a.id === editModalAgent.id
+          ? { ...a, name: editAgentName.trim(), description: editAgentDesc.trim() }
+          : a
+      )
+    )
+    setEditModalAgent(null)
+    showToast('Agent Updated', 'success')
+  }
+
   return (
-    <div style={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', overflowY: 'auto' }}>
+    <div style={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', overflowY: 'auto' }} onClick={() => setActionMenuAgentId(null)}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>Active Agents</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>Agents</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.9)', borderRadius: 8, padding: '0 10px', height: 34 }}>
@@ -1156,13 +1237,13 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
           {notificationButton}
         </div>
       </div>
-      <div style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.85)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,196,196,0.06)', height: 'auto', marginBottom: 20, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.85)', borderRadius: 14, overflow: 'visible', boxShadow: '0 2px 12px rgba(0,196,196,0.06)', height: 'auto', marginBottom: 20, display: 'flex', flexDirection: 'column' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(0,196,196,0.1)', background: '#ffffff' }}>
-              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '28%' }}>Agent Name</th>
-              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '58%' }}>Description</th>
-              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '14%' }}>Status</th>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '30%' }}>Agent Name</th>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '56%' }}>Description</th>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '14%' }}>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -1180,14 +1261,13 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 5,
                       padding: '3px 9px',
                       borderRadius: 20,
                       fontSize: 11.5,
                       fontWeight: 600,
-                      background: 'rgba(22,163,74,0.1)',
-                      color: '#16a34a',
-                      border: '1px solid rgba(22,163,74,0.2)',
+                      background: a.status === 'Active' ? 'rgba(22,163,74,0.1)' : 'rgba(100,116,139,0.1)',
+                      color: a.status === 'Active' ? '#16a34a' : '#64748b',
+                      border: '1px solid ' + (a.status === 'Active' ? 'rgba(22,163,74,0.2)' : 'rgba(100,116,139,0.2)'),
                     }}
                   >
                     {a.status}
@@ -1206,6 +1286,9 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            background: '#ffffff',
+            borderBottomLeftRadius: 14,
+            borderBottomRightRadius: 14,
           }}
         >
           <span style={{ fontSize: 12, color: '#64748b' }}>
@@ -1258,6 +1341,3909 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
           </div>
         </div>
       </div>
+
+      {/* Edit Agent Modal */}
+      {editModalAgent && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditModalAgent(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 500,
+              maxWidth: '92vw',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setEditModalAgent(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
+              Edit Agent
+            </div>
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+              Update agent title and role description within the automated drafting pipeline.
+            </div>
+
+            <form onSubmit={handleUpdateAgent} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Agent Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editAgentName}
+                  onChange={(e) => setEditAgentName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1.5px solid #e2e8f0',
+                    outline: 'none',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Description / Role Purpose *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={editAgentDesc}
+                  onChange={(e) => setEditAgentDesc(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1.5px solid #e2e8f0',
+                    outline: 'none',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    boxSizing: 'border-box',
+                    resize: 'none',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setEditModalAgent(null)}
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #e2e8f0',
+                    color: '#0d212c',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#00C4C4',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Deactivate Agent Confirmation Modal */}
+      {deactivateModalAgent && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeactivateModalAgent(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setDeactivateModalAgent(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: '#fef2f2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Deactivate Agent?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Are you sure you want to deactivate <strong style={{ color: '#0d212c' }}>{deactivateModalAgent.name}</strong>? It will temporarily be excluded from automated workflows.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setDeactivateModalAgent(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const targetId = deactivateModalAgent.id
+                  setAgentsList((prev) =>
+                    prev.map((a) => (a.id === targetId ? { ...a, status: 'Deactivated' } : a))
+                  )
+                  setDeactivateModalAgent(null)
+                  showToast('Agent Deactivated', 'error')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#E60000',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(230,0,0,0.25)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#cc0000')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#E60000')}
+              >
+                Deactivate Agent
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reactivate Agent Confirmation Modal */}
+      {reactivateModalAgent && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setReactivateModalAgent(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setReactivateModalAgent(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C4C4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Reactivate Agent?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Are you sure you want to reactivate <strong style={{ color: '#0d212c' }}>{reactivateModalAgent.name}</strong>? It will resume participating in automated workflows.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setReactivateModalAgent(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const targetId = reactivateModalAgent.id
+                  setAgentsList((prev) =>
+                    prev.map((a) => (a.id === targetId ? { ...a, status: 'Active' } : a))
+                  )
+                  setReactivateModalAgent(null)
+                  showToast('Agent Reactivated', 'success')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#00C4C4',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+              >
+                Reactivate Agent
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Types for Admin Views ───────────────────────────────────────────────── */
+
+export interface SectionTemplateItem {
+  id: string
+  name: string
+  requirement: 'Required' | 'Recommended' | 'Conditional'
+  description: string
+  status: 'Active' | 'Deactivated'
+}
+
+export type UserRole = 'PMO' | 'Contributor' | 'Reviewer' | 'Client'
+
+export interface PlatformUserItem {
+  id: string
+  name: string
+  email: string
+  roles: UserRole[]
+  assignedSOWs: number
+  status: 'Active' | 'Inactive'
+  lastActive: string
+}
+
+/* ─── 1. SOW Section Templates Dedicated Page ────────────────────────────── */
+
+export function SectionTemplatesView({
+  notificationButton,
+}: {
+  notificationButton?: React.ReactNode
+}) {
+  const { showToast } = useToast()
+
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
+  const [sectionSearch, setSectionSearch] = useState('')
+  const [sectionFilter, setSectionFilter] = useState<'All' | 'Required' | 'Recommended' | 'Conditional'>('All')
+  const [sectionTemplates, setSectionTemplates] = useState<SectionTemplateItem[]>([
+    {
+      id: 'sec-1',
+      name: 'Executive Summary & Background',
+      requirement: 'Required',
+      description: 'High-level business context, engagement purpose, strategic alignment, and project objectives.',
+      status: 'Active',
+    },
+    {
+      id: 'sec-2',
+      name: 'Scope of Work & Requirements',
+      requirement: 'Required',
+      description: 'Granular technical & functional requirements, boundary conditions, inclusions and out-of-scope items.',
+      status: 'Active',
+    },
+    {
+      id: 'sec-3',
+      name: 'Deliverables & Milestones',
+      requirement: 'Required',
+      description: 'Formal deliverable specifications, expected acceptance criteria, milestone timelines, and review stages.',
+      status: 'Active',
+    },
+    {
+      id: 'sec-4',
+      name: 'Governance, RACI & Staffing',
+      requirement: 'Required',
+      description: 'Stakeholder matrices, assigned key roles, escalation hierarchies, and weekly cadence governance.',
+      status: 'Active',
+    },
+    {
+      id: 'sec-5',
+      name: 'Commercials, Pricing & Payment Terms',
+      requirement: 'Required',
+      description: 'Fee structures (T&M or Fixed), billing milestone schedules, out-of-pocket policies, and payment terms.',
+      status: 'Active',
+    },
+    {
+      id: 'sec-6',
+      name: 'Security, Compliance & Data Privacy',
+      requirement: 'Recommended',
+      description: 'DOH, ADHICS, HIPAA compliance mandates, data residency requirements, and security clearance checks.',
+      status: 'Active',
+    },
+    {
+      id: 'sec-7',
+      name: 'Service Level Agreements (SLAs)',
+      requirement: 'Recommended',
+      description: 'System uptime guarantees, incident response time thresholds, SLA penalties, and credit calculations.',
+      status: 'Active',
+    },
+    {
+      id: 'sec-8',
+      name: 'Change Control & Variation Procedure',
+      requirement: 'Conditional',
+      description: 'Formal process for scope amendments, impact evaluation, change request approvals, and budget adjustments.',
+      status: 'Active',
+    },
+  ])
+
+  // Modals & Menu State
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [isAddSectionOpen, setIsAddSectionOpen] = useState(false)
+  const [newSecName, setNewSecName] = useState('')
+  const [newSecReq, setNewSecReq] = useState<'Required' | 'Recommended' | 'Conditional'>('Required')
+  const [newSecDesc, setNewSecDesc] = useState('')
+
+  const [templateFilterDropdownOpen, setTemplateFilterDropdownOpen] = useState(false)
+  const [editingSection, setEditingSection] = useState<SectionTemplateItem | null>(null)
+  const [editSecName, setEditSecName] = useState('')
+  const [editSecReq, setEditSecReq] = useState<'Required' | 'Recommended' | 'Conditional'>('Required')
+  const [editSecDesc, setEditSecDesc] = useState('')
+
+  const [deactivateSectionModal, setDeactivateSectionModal] = useState<SectionTemplateItem | null>(null)
+  const [reactivateSectionModal, setReactivateSectionModal] = useState<SectionTemplateItem | null>(null)
+
+  useEffect(() => {
+    if (!menuOpenId && !templateFilterDropdownOpen) return
+    const handleClose = () => {
+      setMenuOpenId(null)
+      setTemplateFilterDropdownOpen(false)
+    }
+    document.addEventListener('click', handleClose)
+    return () => document.removeEventListener('click', handleClose)
+  }, [menuOpenId, templateFilterDropdownOpen])
+
+  const filteredSections = sectionTemplates.filter((s) => {
+    const matchesSearch =
+      s.name.toLowerCase().includes(sectionSearch.toLowerCase()) ||
+      s.description.toLowerCase().includes(sectionSearch.toLowerCase())
+    const matchesFilter =
+      sectionFilter === 'All' ? true : s.requirement === sectionFilter
+    return matchesSearch && matchesFilter
+  })
+
+  const [page, setPage] = useState(1)
+  const pageSize = 8
+  const totalPages = Math.ceil(filteredSections.length / pageSize) || 1
+  const paginatedSections = filteredSections.slice((page - 1) * pageSize, page * pageSize)
+
+  const handleCreateSection = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newSecName.trim()) return
+    const newSec: SectionTemplateItem = {
+      id: 'sec-' + Date.now(),
+      name: newSecName.trim(),
+      requirement: newSecReq,
+      description: newSecDesc.trim() || 'Standard SOW template section.',
+      status: 'Active',
+    }
+    setSectionTemplates((prev) => [newSec, ...prev])
+    setNewSecName('')
+    setNewSecDesc('')
+    setNewSecReq('Required')
+    setIsAddSectionOpen(false)
+    showToast('Section Created', 'success')
+  }
+
+  const handleUpdateSection = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingSection || !editSecName.trim()) return
+    setSectionTemplates((prev) =>
+      prev.map((s) =>
+        s.id === editingSection.id
+          ? {
+              ...s,
+              name: editSecName.trim(),
+              requirement: editSecReq,
+              description: editSecDesc.trim(),
+            }
+          : s
+      )
+    )
+    setEditingSection(null)
+    showToast('Section Updated', 'success')
+  }
+
+  const renderRequirementBadge = (req: 'Required' | 'Recommended' | 'Conditional') => {
+    const bg =
+      req === 'Required'
+        ? 'rgba(0,196,196,0.1)'
+        : req === 'Recommended'
+        ? 'rgba(59,130,246,0.1)'
+        : 'rgba(245,158,11,0.1)'
+    const color =
+      req === 'Required' ? '#008a8a' : req === 'Recommended' ? '#2563eb' : '#d97706'
+    const border =
+      req === 'Required'
+        ? 'rgba(0,196,196,0.25)'
+        : req === 'Recommended'
+        ? 'rgba(59,130,246,0.25)'
+        : 'rgba(245,158,11,0.25)'
+
+    return (
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          padding: '3px 9px',
+          borderRadius: 20,
+          fontSize: 11.5,
+          fontWeight: 600,
+          background: bg,
+          color: color,
+          border: '1px solid ' + border,
+        }}
+      >
+        {req}
+      </span>
+    )
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: 0,
+        overflowY: 'auto',
+        position: 'relative',
+      }}
+    >
+      {/* ─── Header Row (No subheading) ─────────────────────────────────── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+          flexShrink: 0,
+          gap: 12,
+        }}
+      >
+        <h1
+          style={{
+            fontSize: 24,
+            fontWeight: 600,
+            color: '#0d212c',
+            margin: 0,
+            lineHeight: 1.15,
+          }}
+        >
+          Templates
+        </h1>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Requirement Filter Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setTemplateFilterDropdownOpen((v) => !v)
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 14px',
+                borderRadius: 10,
+                background: sectionFilter !== 'All' ? 'rgba(0,196,196,0.1)' : '#ffffff',
+                color: sectionFilter !== 'All' ? '#008a8a' : '#0d212c',
+                border: '1px solid ' + (sectionFilter !== 'All' ? 'rgba(0,196,196,0.3)' : '#e2e8f0'),
+                fontSize: 12.5,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.12s',
+              }}
+            >
+              <span>{sectionFilter !== 'All' ? 'Requirement: ' + sectionFilter : 'Filter'}</span>
+              <ChevronDown size={12} strokeWidth={2} />
+            </button>
+
+            {templateFilterDropdownOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: 6,
+                  background: '#ffffff',
+                  borderRadius: 12,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+                  border: '1px solid #e2e8f0',
+                  padding: 8,
+                  zIndex: 99,
+                  minWidth: 160,
+                }}
+              >
+                {(['All', 'Required', 'Recommended', 'Conditional'] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      setSectionFilter(opt)
+                      setPage(1)
+                      setTemplateFilterDropdownOpen(false)
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '7px 10px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: sectionFilter === opt ? 'rgba(0,196,196,0.08)' : 'transparent',
+                      color: sectionFilter === opt ? '#008a8a' : '#0d212c',
+                      fontSize: 12.5,
+                      fontWeight: sectionFilter === opt ? 600 : 400,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span>{opt === 'All' ? 'All Requirements' : opt}</span>
+                    {sectionFilter === opt && <Check size={13} color="#008a8a" strokeWidth={2.5} />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Search Box */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              padding: '6px 12px',
+              gap: 8,
+              width: 200,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search sections..."
+              value={sectionSearch}
+              onChange={(e) => setSectionSearch(e.target.value)}
+              style={{
+                border: 'none',
+                outline: 'none',
+                fontSize: 13,
+                color: '#0d212c',
+                width: '100%',
+                background: 'transparent',
+              }}
+            />
+          </div>
+
+          {/* View Mode Toggle: Table / Cards */}
+          <div
+            style={{
+              display: 'flex',
+              background: '#ffffff',
+              borderRadius: 10,
+              padding: 2,
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <button
+              onClick={() => setViewMode('table')}
+              title="Table View"
+              style={{
+                padding: '6px 9px',
+                borderRadius: 7,
+                border: 'none',
+                cursor: 'pointer',
+                background: viewMode === 'table' ? '#f1f5f9' : 'transparent',
+                color: viewMode === 'table' ? '#0d212c' : '#94a3b8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.12s',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode('cards')}
+              title="Card View"
+              style={{
+                padding: '6px 9px',
+                borderRadius: 7,
+                border: 'none',
+                cursor: 'pointer',
+                background: viewMode === 'cards' ? '#f1f5f9' : 'transparent',
+                color: viewMode === 'cards' ? '#0d212c' : '#94a3b8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.12s',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Add Section Button */}
+          <button
+            onClick={() => {
+              setNewSecName('')
+              setNewSecDesc('')
+              setNewSecReq('Required')
+              setIsAddSectionOpen(true)
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '7px 14px',
+              borderRadius: 10,
+              background: '#00C4C4',
+              color: '#ffffff',
+              fontSize: 13,
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,196,196,0.25)',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Section
+          </button>
+
+          {notificationButton}
+        </div>
+      </div>
+
+      {/* ─── Main Content: Table View or Card View ───────────────────────── */}
+      {viewMode === 'table' ? (
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.7)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            borderRadius: 14,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+            overflow: 'visible',
+            display: 'flex',
+            flexDirection: 'column',
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ overflowX: 'auto', overflowY: 'visible', borderRadius: 14 }}>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'separate',
+                borderSpacing: 0,
+                textAlign: 'left',
+                fontSize: 13,
+              }}
+            >
+              <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                  <th style={{ padding: '12px 16px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '24%' }}>
+                    Section Name
+                  </th>
+                  <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '14%' }}>
+                    Requirement
+                  </th>
+                  <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '42%' }}>
+                    Description & Guidance
+                  </th>
+                  <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '10%' }}>
+                    Status
+                  </th>
+                  <th style={{ padding: '12px 16px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '10%', textAlign: 'center' }}>
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedSections.map((sec, idx) => {
+                  const isMenuOpen = menuOpenId === sec.id
+                  return (
+                    <tr
+                      key={sec.id}
+                      style={{
+                        borderBottom: idx < paginatedSections.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined,
+                        transition: 'background 0.12s',
+                        height: 54,
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                    >
+                      <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 500, color: '#0d212c' }}>
+                        {sec.name}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        {renderRequirementBadge(sec.requirement)}
+                      </td>
+                      <td style={{ padding: '12px 14px', fontSize: 12.5, color: '#64748b', lineHeight: 1.45 }}>
+                        {sec.description}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '3px 9px',
+                            borderRadius: 20,
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            background: sec.status === 'Active' ? 'rgba(22,163,74,0.1)' : 'rgba(100,116,139,0.1)',
+                            color: sec.status === 'Active' ? '#16a34a' : '#64748b',
+                            border: '1px solid ' + (sec.status === 'Active' ? 'rgba(22,163,74,0.2)' : 'rgba(100,116,139,0.2)'),
+                          }}
+                        >
+                          {sec.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setMenuOpenId(isMenuOpen ? null : sec.id)
+                            }}
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 6,
+                              border: 'none',
+                              background: 'transparent',
+                              color: '#64748b',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              padding: 0,
+                              transition: 'color 0.15s',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#0d212c')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
+                            aria-label="Actions"
+                          >
+                            <MoreVertical size={16} />
+                          </button>
+
+                          {/* 3-Dot Floating Menu Overlay */}
+                          {isMenuOpen && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                position: 'absolute',
+                                right: 0,
+                                top: 'calc(100% + 4px)',
+                                background: '#ffffff',
+                                borderRadius: 10,
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                border: '1px solid #e2e8f0',
+                                padding: 4,
+                                minWidth: 150,
+                                zIndex: 100,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 2,
+                              }}
+                            >
+                              <button
+                                onClick={() => {
+                                  setEditingSection(sec)
+                                  setEditSecName(sec.name)
+                                  setEditSecReq(sec.requirement)
+                                  setEditSecDesc(sec.description)
+                                  setMenuOpenId(null)
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  border: 'none',
+                                  background: 'transparent',
+                                  borderRadius: 6,
+                                  fontSize: 12.5,
+                                  fontWeight: 500,
+                                  color: '#0d212c',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  transition: 'background 0.1s',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                              >
+                                <Pencil size={13} strokeWidth={2} />
+                                Edit
+                              </button>
+
+                              {sec.status === 'Active' ? (
+                                <button
+                                  onClick={() => {
+                                    setDeactivateSectionModal(sec)
+                                    setMenuOpenId(null)
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    width: '100%',
+                                    padding: '8px 10px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    borderRadius: 6,
+                                    fontSize: 12.5,
+                                    fontWeight: 500,
+                                    color: '#dc2626',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'background 0.1s',
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                >
+                                  <Trash2 size={13} strokeWidth={2} />
+                                  Deactivate
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setReactivateSectionModal(sec)
+                                    setMenuOpenId(null)
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    width: '100%',
+                                    padding: '8px 10px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    borderRadius: 6,
+                                    fontSize: 12.5,
+                                    fontWeight: 500,
+                                    color: '#008a8a',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'background 0.1s',
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,196,196,0.08)')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                >
+                                  <CheckCircle2 size={13} strokeWidth={2} />
+                                  Reactivate
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Bar (Consistent with PMO Profile View) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 18px',
+              borderTop: '1px solid #e2e8f0',
+              background: '#ffffff',
+              borderBottomLeftRadius: 14,
+              borderBottomRightRadius: 14,
+            }}
+          >
+            <span style={{ fontSize: 12, color: '#64748b' }}>
+              Showing {filteredSections.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredSections.length)} of {filteredSections.length} Templates
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 6,
+                  border: '1px solid #e2e8f0',
+                  background: page === 1 ? '#f8fafc' : '#ffffff',
+                  color: page === 1 ? '#cbd5e1' : '#475569',
+                  cursor: page === 1 ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                ‹
+              </button>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#475569', padding: '0 4px' }}>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 6,
+                  border: '1px solid #e2e8f0',
+                  background: page >= totalPages ? '#f8fafc' : '#ffffff',
+                  color: page >= totalPages ? '#cbd5e1' : '#475569',
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Card View */
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: 16,
+            marginBottom: 20,
+          }}
+        >
+          {paginatedSections.map((sec) => {
+            const isMenuOpen = menuOpenId === sec.id
+            return (
+              <div
+                key={sec.id}
+                style={{
+                  background: 'rgba(255,255,255,0.75)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,255,255,0.9)',
+                  borderRadius: 14,
+                  padding: '16px 18px',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  position: 'relative',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  {renderRequirementBadge(sec.requirement)}
+
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMenuOpenId(isMenuOpen ? null : sec.id)
+                      }}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 6,
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#64748b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+
+                    {isMenuOpen && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: 'calc(100% + 4px)',
+                          background: '#ffffff',
+                          borderRadius: 10,
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                          border: '1px solid #e2e8f0',
+                          padding: 4,
+                          minWidth: 140,
+                          zIndex: 100,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 2,
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            setEditingSection(sec)
+                            setEditSecName(sec.name)
+                            setEditSecReq(sec.requirement)
+                            setEditSecDesc(sec.description)
+                            setMenuOpenId(null)
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            width: '100%',
+                            padding: '7px 10px',
+                            border: 'none',
+                            background: 'transparent',
+                            borderRadius: 6,
+                            fontSize: 12.5,
+                            fontWeight: 500,
+                            color: '#0d212c',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                          }}
+                        >
+                          <Pencil size={13} strokeWidth={2} />
+                          Edit
+                        </button>
+                        {sec.status === 'Active' ? (
+                          <button
+                            onClick={() => {
+                              setDeactivateSectionModal(sec)
+                              setMenuOpenId(null)
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              width: '100%',
+                              padding: '7px 10px',
+                              border: 'none',
+                              background: 'transparent',
+                              borderRadius: 6,
+                              fontSize: 12.5,
+                              fontWeight: 500,
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <Trash2 size={13} strokeWidth={2} />
+                            Deactivate
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setReactivateSectionModal(sec)
+                              setMenuOpenId(null)
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              width: '100%',
+                              padding: '7px 10px',
+                              border: 'none',
+                              background: 'transparent',
+                              borderRadius: 6,
+                              fontSize: 12.5,
+                              fontWeight: 500,
+                              color: '#008a8a',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <CheckCircle2 size={13} strokeWidth={2} />
+                            Reactivate
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', margin: '0 0 6px', lineHeight: 1.3 }}>
+                    {sec.name}
+                  </h3>
+                  <p style={{ fontSize: 12.5, color: '#64748b', margin: 0, lineHeight: 1.45, minHeight: 52 }}>
+                    {sec.description}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: sec.status === 'Active' ? '#16a34a' : '#64748b',
+                    }}
+                  >
+                    ● {sec.status}
+                  </span>
+
+                  <button
+                    onClick={() => {
+                      setEditingSection(sec)
+                      setEditSecName(sec.name)
+                      setEditSecReq(sec.requirement)
+                      setEditSecDesc(sec.description)
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: '#0d212c',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ─── MODAL: Add Section ────────────────────────────────────────────── */}
+      {isAddSectionOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddSectionOpen(false)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 520,
+              maxWidth: '92vw',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setIsAddSectionOpen(false)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
+              Add SOW Section Template
+            </div>
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+              Define a standardized section requirement for all future SOW generation runs.
+            </div>
+
+            <form onSubmit={handleCreateSection} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Section Name <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Data Governance & Residency"
+                  value={newSecName}
+                  onChange={(e) => setNewSecName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Requirement Level <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <select
+                  value={newSecReq}
+                  onChange={(e) => setNewSecReq(e.target.value as 'Required' | 'Recommended' | 'Conditional')}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    background: '#ffffff',
+                    cursor: 'pointer',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                >
+                  <option value="Required">Required</option>
+                  <option value="Recommended">Recommended</option>
+                  <option value="Conditional">Conditional</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Description & Guidance
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Outline expected sub-clauses, criteria, or agent drafting rules..."
+                  value={newSecDesc}
+                  onChange={(e) => setNewSecDesc(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddSectionOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #e2e8f0',
+                    color: '#0d212c',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#00C4C4',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  }}
+                >
+                  Create Section
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: Edit Section ───────────────────────────────────────────── */}
+      {editingSection && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingSection(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 520,
+              maxWidth: '92vw',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setEditingSection(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 20 }}>
+              Edit SOW Section Template
+            </div>
+
+            <form onSubmit={handleUpdateSection} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Section Name <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editSecName}
+                  onChange={(e) => setEditSecName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Requirement Level <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <select
+                  value={editSecReq}
+                  onChange={(e) => setEditSecReq(e.target.value as 'Required' | 'Recommended' | 'Conditional')}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    background: '#ffffff',
+                    cursor: 'pointer',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                >
+                  <option value="Required">Required</option>
+                  <option value="Recommended">Recommended</option>
+                  <option value="Conditional">Conditional</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Description & Guidance
+                </label>
+                <textarea
+                  rows={3}
+                  value={editSecDesc}
+                  onChange={(e) => setEditSecDesc(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingSection(null)}
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #e2e8f0',
+                    color: '#0d212c',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#00C4C4',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: Deactivate Section ─────────────────────────────────────── */}
+      {deactivateSectionModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeactivateSectionModal(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setDeactivateSectionModal(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: '#fef2f2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Deactivate Section?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Are you sure you want to deactivate <strong style={{ color: '#0d212c' }}>{deactivateSectionModal.name}</strong>? It will not be automatically included in future SOW drafts.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setDeactivateSectionModal(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const targetId = deactivateSectionModal.id
+                  setSectionTemplates((prev) =>
+                    prev.map((s) => (s.id === targetId ? { ...s, status: 'Deactivated' } : s))
+                  )
+                  setDeactivateSectionModal(null)
+                  showToast('Section Deactivated', 'error')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#E60000',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(230,0,0,0.25)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#cc0000')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#E60000')}
+              >
+                Deactivate Section
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: Reactivate Section ─────────────────────────────────────── */}
+      {reactivateSectionModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setReactivateSectionModal(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setReactivateSectionModal(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C4C4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Reactivate Section?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Are you sure you want to reactivate <strong style={{ color: '#0d212c' }}>{reactivateSectionModal.name}</strong>? It will resume being included in future SOW templates.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setReactivateSectionModal(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const targetId = reactivateSectionModal.id
+                  setSectionTemplates((prev) =>
+                    prev.map((s) => (s.id === targetId ? { ...s, status: 'Active' } : s))
+                  )
+                  setReactivateSectionModal(null)
+                  showToast('Section Reactivated', 'success')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#00C4C4',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+              >
+                Reactivate Section
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── 2. Platform User Directory Dedicated Page ──────────────────────────── */
+
+export function UserDirectoryView({
+  notificationButton,
+}: {
+  notificationButton?: React.ReactNode
+}) {
+  const { showToast } = useToast()
+  const [userSearch, setUserSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
+  const [page, setPage] = useState(1)
+  const pageSize = 12
+
+  const [userList, setUserList] = useState<PlatformUserItem[]>([
+    { id: 'u-1', name: 'Ashika Jain', email: 'ashika.jain@company.com', roles: ['PMO', 'Reviewer'], assignedSOWs: 16, status: 'Active', lastActive: 'Just now' },
+    { id: 'u-2', name: 'Narendra Patel', email: 'npatel@gmail.com', roles: ['Contributor'], assignedSOWs: 4, status: 'Active', lastActive: '25 mins ago' },
+    { id: 'u-3', name: 'Dr. Fatima Al Nuaimi', email: 'dr.fatima@m42.ae', roles: ['Reviewer', 'Contributor'], assignedSOWs: 6, status: 'Active', lastActive: '1 hour ago' },
+    { id: 'u-4', name: 'Cleveland Clinic Abu Dhabi', email: 'procurement@ccad.ae', roles: ['Client'], assignedSOWs: 3, status: 'Active', lastActive: '3 hours ago' },
+    { id: 'u-5', name: 'Tariq Mansoor', email: 'tmansoor@m42.ae', roles: ['PMO'], assignedSOWs: 8, status: 'Active', lastActive: 'Yesterday' },
+    { id: 'u-6', name: 'Sarah Jenkins', email: 'sjenkins@m42.ae', roles: ['Contributor', 'Reviewer'], assignedSOWs: 5, status: 'Active', lastActive: '2 days ago' },
+    { id: 'u-7', name: 'Danat Al Emarat Health', email: 'vendor.contracts@danat.ae', roles: ['Client'], assignedSOWs: 2, status: 'Inactive', lastActive: '5 days ago' },
+    { id: 'u-8', name: 'Marcus Vance', email: 'mvance@m42.ae', roles: ['Reviewer'], assignedSOWs: 4, status: 'Active', lastActive: '3 days ago' },
+    { id: 'u-9', name: 'Ishita Sharma', email: 'ishitawork@gmail.com', roles: ['Reviewer', 'Contributor'], assignedSOWs: 7, status: 'Active', lastActive: '2 hours ago' },
+    { id: 'u-10', name: 'Riza Khan', email: 'riza@gmail.com', roles: ['Client'], assignedSOWs: 2, status: 'Active', lastActive: 'Yesterday' },
+    { id: 'u-11', name: 'David Chen', email: 'david.chen@globex.com', roles: ['Contributor'], assignedSOWs: 3, status: 'Active', lastActive: '3 days ago' },
+    { id: 'u-12', name: 'Sarah Al-Mansoor', email: 'sarah.m@m42.ae', roles: ['Reviewer', 'PMO'], assignedSOWs: 5, status: 'Active', lastActive: 'Yesterday' },
+    { id: 'u-13', name: 'Amina Al Zaabi', email: 'azaabi@m42.ae', roles: ['PMO'], assignedSOWs: 9, status: 'Active', lastActive: '4 hours ago' },
+    { id: 'u-14', name: 'Vikram Malhotra', email: 'vmalhotra@techcorp.com', roles: ['Contributor', 'Reviewer'], assignedSOWs: 6, status: 'Active', lastActive: '1 day ago' },
+    { id: 'u-15', name: 'Healthpoint Hospital Procurement', email: 'procurement@healthpoint.ae', roles: ['Client'], assignedSOWs: 2, status: 'Active', lastActive: 'Yesterday' },
+    { id: 'u-16', name: 'Dr. Zaid Qureshi', email: 'zqureshi@m42.ae', roles: ['Reviewer'], assignedSOWs: 8, status: 'Active', lastActive: '6 hours ago' },
+    { id: 'u-17', name: 'Rashid Al Dhaheri', email: 'rdhaheri@m42.ae', roles: ['PMO'], assignedSOWs: 11, status: 'Active', lastActive: '2 days ago' },
+    { id: 'u-18', name: 'Elena Rostova', email: 'erostova@biomed.com', roles: ['Contributor'], assignedSOWs: 4, status: 'Active', lastActive: '3 days ago' },
+    { id: 'u-19', name: 'Mubadala Health Contracts', email: 'contracts@mubadalahealth.ae', roles: ['Client'], assignedSOWs: 5, status: 'Active', lastActive: '12 hours ago' },
+    { id: 'u-20', name: 'Priya Sharma', email: 'psharma@m42.ae', roles: ['Contributor', 'PMO'], assignedSOWs: 7, status: 'Active', lastActive: 'Just now' },
+    { id: 'u-21', name: 'Arthur Pendelton', email: 'apendelton@m42.ae', roles: ['Reviewer'], assignedSOWs: 3, status: 'Inactive', lastActive: '1 week ago' },
+    { id: 'u-22', name: 'National Reference Laboratory', email: 'admin@nrl.ae', roles: ['Client'], assignedSOWs: 1, status: 'Active', lastActive: '4 days ago' },
+    { id: 'u-23', name: 'Kareem Mansour', email: 'kmansour@techcloud.ae', roles: ['Contributor'], assignedSOWs: 5, status: 'Active', lastActive: 'Yesterday' },
+    { id: 'u-24', name: 'Sophia Sterling', email: 'ssterling@m42.ae', roles: ['Reviewer', 'Contributor'], assignedSOWs: 6, status: 'Active', lastActive: '2 hours ago' },
+  ])
+
+  // Modals state
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false)
+  const [newUserName, setNewUserName] = useState('')
+  const [newUserEmail, setNewUserEmail] = useState('')
+  const [newUserRoles, setNewUserRoles] = useState<UserRole[]>(['Contributor'])
+  const [newRoleDropdownOpen, setNewRoleDropdownOpen] = useState(false)
+  const [newUserEmailError, setNewUserEmailError] = useState('')
+
+  const [editingUser, setEditingUser] = useState<PlatformUserItem | null>(null)
+  const [editUserName, setEditUserName] = useState('')
+  const [editUserEmail, setEditUserEmail] = useState('')
+  const [editUserRoles, setEditUserRoles] = useState<UserRole[]>([])
+  const [editRoleDropdownOpen, setEditRoleDropdownOpen] = useState(false)
+  const [editUserEmailError, setEditUserEmailError] = useState('')
+
+  const [userMenuOpenId, setUserMenuOpenId] = useState<string | null>(null)
+  const [userToDelete, setUserToDelete] = useState<PlatformUserItem | null>(null)
+
+  useEffect(() => {
+    if (!filterDropdownOpen && !userMenuOpenId && !newRoleDropdownOpen && !editRoleDropdownOpen) return
+    const handleClose = () => {
+      setFilterDropdownOpen(false)
+      setUserMenuOpenId(null)
+      setNewRoleDropdownOpen(false)
+      setEditRoleDropdownOpen(false)
+    }
+    document.addEventListener('click', handleClose)
+    return () => document.removeEventListener('click', handleClose)
+  }, [filterDropdownOpen, userMenuOpenId, newRoleDropdownOpen, editRoleDropdownOpen])
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newUserName.trim()) return
+    if (!emailRegex.test(newUserEmail.trim())) {
+      setNewUserEmailError('Please enter a valid email address.')
+      return
+    }
+    if (newUserRoles.length === 0) {
+      showToast('Please select at least one role', 'error')
+      return
+    }
+
+    const newUser: PlatformUserItem = {
+      id: 'u-' + Date.now(),
+      name: newUserName.trim(),
+      email: newUserEmail.trim(),
+      roles: newUserRoles,
+      assignedSOWs: 0,
+      status: 'Active',
+      lastActive: 'Just now',
+    }
+    setUserList((prev) => [newUser, ...prev])
+    setIsAddUserOpen(false)
+    setNewUserName('')
+    setNewUserEmail('')
+    setNewUserRoles(['Contributor'])
+    setNewUserEmailError('')
+    showToast('User Created', 'success')
+  }
+
+  const handleUpdateUser = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingUser || !editUserName.trim()) return
+    if (!emailRegex.test(editUserEmail.trim())) {
+      setEditUserEmailError('Please enter a valid email address.')
+      return
+    }
+    if (editUserRoles.length === 0) {
+      showToast('Please select at least one role', 'error')
+      return
+    }
+
+    setUserList((prev) =>
+      prev.map((u) =>
+        u.id === editingUser.id
+          ? {
+              ...u,
+              name: editUserName.trim(),
+              email: editUserEmail.trim(),
+              roles: editUserRoles,
+            }
+          : u
+      )
+    )
+    setEditingUser(null)
+    showToast('User Details Updated', 'success')
+  }
+
+  const handleDeleteUser = (id: string, name: string) => {
+    setUserList((prev) => prev.filter((u) => u.id !== id))
+    showToast('User Deleted', 'error')
+  }
+
+  const toggleNewRole = (r: UserRole) => {
+    if (newUserRoles.includes(r)) {
+      if (newUserRoles.length > 1) {
+        setNewUserRoles(newUserRoles.filter((role) => role !== r))
+      }
+    } else {
+      setNewUserRoles([...newUserRoles, r])
+    }
+  }
+
+  const toggleEditRole = (r: UserRole) => {
+    if (editUserRoles.includes(r)) {
+      if (editUserRoles.length > 1) {
+        setEditUserRoles(editUserRoles.filter((role) => role !== r))
+      }
+    } else {
+      setEditUserRoles([...editUserRoles, r])
+    }
+  }
+
+  const filteredUsers = userList.filter((u) => {
+    const matchesSearch =
+      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(userSearch.toLowerCase())
+    const matchesRole = !roleFilter || u.roles.includes(roleFilter as UserRole)
+    const matchesStatus = !statusFilter || u.status === statusFilter
+    return matchesSearch && matchesRole && matchesStatus
+  })
+
+  const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1
+  const paginatedUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize)
+
+  const renderRoleChips = (roles: UserRole[]) => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+      {roles.map((role) => {
+        const bg =
+          role === 'PMO'
+            ? 'rgba(0,196,196,0.1)'
+            : role === 'Contributor'
+            ? 'rgba(59,130,246,0.1)'
+            : role === 'Reviewer'
+            ? 'rgba(139,92,246,0.1)'
+            : 'rgba(245,158,11,0.1)'
+        const color =
+          role === 'PMO'
+            ? '#008a8a'
+            : role === 'Contributor'
+            ? '#2563eb'
+            : role === 'Reviewer'
+            ? '#7c3aed'
+            : '#d97706'
+        const border =
+          role === 'PMO'
+            ? 'rgba(0,196,196,0.25)'
+            : role === 'Contributor'
+            ? 'rgba(59,130,246,0.25)'
+            : role === 'Reviewer'
+            ? 'rgba(139,92,246,0.25)'
+            : 'rgba(245,158,11,0.25)'
+
+        return (
+          <span
+            key={role}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '2px 8px',
+              borderRadius: 12,
+              fontSize: 11,
+              fontWeight: 500,
+              background: bg,
+              color: color,
+              border: '1px solid ' + border,
+            }}
+          >
+            {role}
+          </span>
+        )
+      })}
+    </div>
+  )
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: 0,
+        overflowY: 'auto',
+      }}
+    >
+      {/* ─── Header Row ─────────────────────────────────────────────────── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+          flexShrink: 0,
+          gap: 12,
+        }}
+      >
+        <h1
+          style={{
+            fontSize: 24,
+            fontWeight: 600,
+            color: '#0d212c',
+            margin: 0,
+            lineHeight: 1.15,
+          }}
+        >
+          Users
+        </h1>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Search Box */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              padding: '6px 12px',
+              gap: 8,
+              width: 240,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            }}
+          >
+            <Search size={14} color="#94a3b8" strokeWidth={2.2} />
+            <input
+              type="text"
+              placeholder="Search users by name or email..."
+              value={userSearch}
+              onChange={(e) => {
+                setUserSearch(e.target.value)
+                setPage(1)
+              }}
+              style={{
+                border: 'none',
+                outline: 'none',
+                fontSize: 13,
+                color: '#0d212c',
+                width: '100%',
+                background: 'transparent',
+              }}
+            />
+          </div>
+
+          {/* Filter Dropdown Button */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setFilterDropdownOpen((v) => !v)
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 14px',
+                borderRadius: 10,
+                background: (roleFilter || statusFilter) ? 'rgba(0,196,196,0.1)' : '#ffffff',
+                color: (roleFilter || statusFilter) ? '#008a8a' : '#0d212c',
+                border: '1px solid ' + ((roleFilter || statusFilter) ? 'rgba(0,196,196,0.3)' : '#e2e8f0'),
+                fontSize: 12.5,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.12s',
+              }}
+            >
+              <span>{roleFilter ? 'Role: ' + roleFilter : statusFilter ? 'Status: ' + statusFilter : 'Filter'}</span>
+              <ChevronDown size={12} strokeWidth={2} />
+            </button>
+
+            {filterDropdownOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 6px)',
+                  background: '#ffffff',
+                  borderRadius: 12,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+                  border: '1px solid #e2e8f0',
+                  padding: 12,
+                  width: 200,
+                  zIndex: 100,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>
+                    Filter by Role
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {['All', 'PMO', 'Contributor', 'Reviewer', 'Client'].map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => {
+                          setRoleFilter(r === 'All' ? null : r)
+                          setPage(1)
+                          setFilterDropdownOpen(false)
+                        }}
+                        style={{
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          border: 'none',
+                          background: (r === 'All' && !roleFilter) || roleFilter === r ? 'rgba(0,196,196,0.1)' : 'transparent',
+                          color: (r === 'All' && !roleFilter) || roleFilter === r ? '#008a8a' : '#0d212c',
+                          fontSize: 12.5,
+                          fontWeight: (r === 'All' && !roleFilter) || roleFilter === r ? 600 : 500,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>
+                    Status
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {['All', 'Active', 'Inactive'].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setStatusFilter(s === 'All' ? null : s)
+                          setPage(1)
+                          setFilterDropdownOpen(false)
+                        }}
+                        style={{
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          border: 'none',
+                          background: (s === 'All' && !statusFilter) || statusFilter === s ? 'rgba(0,196,196,0.1)' : 'transparent',
+                          color: (s === 'All' && !statusFilter) || statusFilter === s ? '#008a8a' : '#0d212c',
+                          fontSize: 12.5,
+                          fontWeight: (s === 'All' && !statusFilter) || statusFilter === s ? 600 : 500,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(roleFilter || statusFilter) && (
+                  <button
+                    onClick={() => {
+                      setRoleFilter(null)
+                      setStatusFilter(null)
+                      setPage(1)
+                      setFilterDropdownOpen(false)
+                    }}
+                    style={{
+                      padding: '6px',
+                      borderRadius: 6,
+                      border: '1px solid #fee2e2',
+                      background: '#fef2f2',
+                      color: '#dc2626',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      marginTop: 4,
+                    }}
+                  >
+                    Reset Filters
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Add New User CTA */}
+          <button
+            onClick={() => {
+              setNewUserName('')
+              setNewUserEmail('')
+              setNewUserRoles(['Contributor'])
+              setNewUserEmailError('')
+              setNewRoleDropdownOpen(false)
+              setIsAddUserOpen(true)
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '7px 14px',
+              borderRadius: 10,
+              background: '#00C4C4',
+              color: '#ffffff',
+              fontSize: 13,
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,196,196,0.25)',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+          >
+            <Plus size={15} strokeWidth={2.4} />
+            Add New User
+          </button>
+
+          {notificationButton}
+        </div>
+      </div>
+
+      {/* ─── Table Card Container ───────────────────────────────────────── */}
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.7)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.9)',
+          borderRadius: 14,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'separate',
+              borderSpacing: 0,
+              textAlign: 'left',
+              fontSize: 13,
+            }}
+          >
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                <th style={{ padding: '12px 16px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '28%' }}>
+                  Platform User
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '24%' }}>
+                  Role
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '14%' }}>
+                  Assigned SOWs
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '12%' }}>
+                  Status
+                </th>
+                <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '12%' }}>
+                  Last Active
+                </th>
+                <th style={{ padding: '12px 16px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '10%', textAlign: 'center' }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedUsers.map((u, idx) => {
+                const initials = u.name
+                  .split(' ')
+                  .map((p) => p[0])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()
+
+                return (
+                  <tr
+                    key={u.id}
+                    style={{
+                      borderBottom: idx < paginatedUsers.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined,
+                      transition: 'background 0.12s',
+                      height: 54,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                  >
+                    <td style={{ padding: '10px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            background:
+                              u.roles.includes('PMO')
+                                ? 'linear-gradient(135deg, #00C4C4 0%, #008a8a 100%)'
+                                : u.roles.includes('Contributor')
+                                ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+                                : u.roles.includes('Reviewer')
+                                ? 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)'
+                                : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                            color: '#ffffff',
+                            fontWeight: 700,
+                            fontSize: 11.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {initials}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: '#0d212c' }}>{u.name}</div>
+                          <div style={{ fontSize: 11.5, color: '#64748b' }}>{u.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      {renderRoleChips(u.roles)}
+                    </td>
+                    <td style={{ padding: '10px 14px', fontSize: 13, color: '#0d212c', fontWeight: 500 }}>
+                      {u.assignedSOWs} SOWs
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '3px 9px',
+                          borderRadius: 20,
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          background: u.status === 'Active' ? 'rgba(22,163,74,0.1)' : 'rgba(100,116,139,0.1)',
+                          color: u.status === 'Active' ? '#16a34a' : '#64748b',
+                          border: '1px solid ' + (u.status === 'Active' ? 'rgba(22,163,74,0.2)' : 'rgba(100,116,139,0.2)'),
+                        }}
+                      >
+                        {u.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 14px', fontSize: 12.5, color: '#64748b' }}>
+                      {u.lastActive}
+                    </td>
+                    <td style={{ padding: '10px 16px', textAlign: 'center', position: 'relative' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setUserMenuOpenId((prev) => (prev === u.id ? null : u.id))
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px 6px',
+                            color: '#64748b',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 6,
+                          }}
+                          title="Actions"
+                        >
+                          <MoreVertical size={16} color="#64748b" />
+                        </button>
+
+                        {userMenuOpenId === u.id && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              position: 'absolute',
+                              right: 0,
+                              top: 'calc(100% + 4px)',
+                              background: '#ffffff',
+                              borderRadius: 10,
+                              boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+                              border: '1px solid #e2e8f0',
+                              padding: 6,
+                              minWidth: 130,
+                              zIndex: 100,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 2,
+                            }}
+                          >
+                            <button
+                              onClick={() => {
+                                setUserMenuOpenId(null)
+                                setEditingUser(u)
+                                setEditUserName(u.name)
+                                setEditUserEmail(u.email)
+                                setEditUserRoles([...u.roles])
+                                setEditUserEmailError('')
+                                setEditRoleDropdownOpen(false)
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '8px 10px',
+                                border: 'none',
+                                background: 'transparent',
+                                color: '#0d212c',
+                                fontSize: 12.5,
+                                fontWeight: 500,
+                                borderRadius: 6,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: '100%',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <Pencil size={13} color="#008a8a" />
+                              Edit User
+                            </button>
+                            <button
+                              onClick={() => {
+                                setUserMenuOpenId(null)
+                                setUserToDelete(u)
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '8px 10px',
+                                border: 'none',
+                                background: 'transparent',
+                                color: '#dc2626',
+                                fontSize: 12.5,
+                                fontWeight: 500,
+                                borderRadius: 6,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: '100%',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <Trash2 size={13} color="#dc2626" />
+                              Delete User
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Bar (Consistent with PMO Profile View) */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 18px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#ffffff',
+          }}
+        >
+          <span style={{ fontSize: 12, color: '#64748b' }}>
+            Showing {filteredUsers.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredUsers.length)} of {filteredUsers.length} Users
+          </span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: '1px solid #e2e8f0',
+                background: page === 1 ? '#f8fafc' : '#ffffff',
+                color: page === 1 ? '#cbd5e1' : '#475569',
+                cursor: page === 1 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              ‹
+            </button>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#475569', padding: '0 4px' }}>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 6,
+                border: '1px solid #e2e8f0',
+                background: page >= totalPages ? '#f8fafc' : '#ffffff',
+                color: page >= totalPages ? '#cbd5e1' : '#475569',
+                cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              ›
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── MODAL: Add New User ────────────────────────────────────────── */}
+      {isAddUserOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddUserOpen(false)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 500,
+              maxWidth: '92vw',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setIsAddUserOpen(false)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
+              Add New User
+            </div>
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+              Create a user profile and assign role permissions across SOW workspaces.
+            </div>
+
+            <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Full Name <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Sarah Jenkins"
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Email Address <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. sjenkins@m42.ae"
+                  value={newUserEmail}
+                  onChange={(e) => {
+                    setNewUserEmail(e.target.value)
+                    setNewUserEmailError('')
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid ' + (newUserEmailError ? '#dc2626' : '#e2e8f0'),
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = newUserEmailError ? '#dc2626' : '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = newUserEmailError ? '#dc2626' : '#e2e8f0')}
+                />
+                {newUserEmailError && (
+                  <div style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>
+                    {newUserEmailError}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Assigned Roles (Multi-Role Allowed) <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setNewRoleDropdownOpen((prev) => !prev)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1.5px solid #e2e8f0',
+                      background: '#ffffff',
+                      fontSize: 13,
+                      color: newUserRoles.length > 0 ? '#0d212c' : '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  >
+                    <span>{newUserRoles.length > 0 ? newUserRoles.join(', ') : 'Select roles...'}</span>
+                    <ChevronDown size={14} color="#64748b" />
+                  </button>
+
+                  {newRoleDropdownOpen && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 4px)',
+                        left: 0,
+                        right: 0,
+                        background: '#ffffff',
+                        borderRadius: 10,
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
+                        padding: '6px',
+                        zIndex: 200,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                      }}
+                    >
+                      {(['PMO', 'Contributor', 'Reviewer', 'Client'] as UserRole[]).map((r) => {
+                        const isSelected = newUserRoles.includes(r)
+                        return (
+                          <div
+                            key={r}
+                            onClick={() => toggleNewRole(r)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              padding: '8px 10px',
+                              borderRadius: 6,
+                              cursor: 'pointer',
+                              background: isSelected ? 'rgba(0,196,196,0.06)' : 'transparent',
+                              transition: 'background 0.1s',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSelected) e.currentTarget.style.background = '#f8fafc'
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSelected) e.currentTarget.style.background = 'transparent'
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: 4,
+                                border: '1.5px solid ' + (isSelected ? '#00C4C4' : '#cbd5e1'),
+                                background: isSelected ? '#00C4C4' : '#ffffff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {isSelected && <Check size={12} color="#ffffff" strokeWidth={3} />}
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 500, color: '#0d212c' }}>
+                              {r}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddUserOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #e2e8f0',
+                    color: '#0d212c',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#00C4C4',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  }}
+                >
+                  Add User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: Edit User ──────────────────────────────────────────── */}
+      {editingUser && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingUser(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 500,
+              maxWidth: '92vw',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setEditingUser(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 20 }}>
+              Edit User Details
+            </div>
+
+            <form onSubmit={handleUpdateUser} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Full Name <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editUserName}
+                  onChange={(e) => setEditUserName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid #e2e8f0',
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Email Address <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={editUserEmail}
+                  onChange={(e) => {
+                    setEditUserEmail(e.target.value)
+                    setEditUserEmailError('')
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1.5px solid ' + (editUserEmailError ? '#dc2626' : '#e2e8f0'),
+                    fontSize: 13,
+                    color: '#0d212c',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = editUserEmailError ? '#dc2626' : '#e2e8f0')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = editUserEmailError ? '#dc2626' : '#e2e8f0')}
+                />
+                {editUserEmailError && (
+                  <div style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>
+                    {editUserEmailError}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                  Assigned Roles (Multi-Role Allowed) <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditRoleDropdownOpen((prev) => !prev)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1.5px solid #e2e8f0',
+                      background: '#ffffff',
+                      fontSize: 13,
+                      color: editUserRoles.length > 0 ? '#0d212c' : '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  >
+                    <span>{editUserRoles.length > 0 ? editUserRoles.join(', ') : 'Select roles...'}</span>
+                    <ChevronDown size={14} color="#64748b" />
+                  </button>
+
+                  {editRoleDropdownOpen && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 4px)',
+                        left: 0,
+                        right: 0,
+                        background: '#ffffff',
+                        borderRadius: 10,
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
+                        padding: '6px',
+                        zIndex: 200,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                      }}
+                    >
+                      {(['PMO', 'Contributor', 'Reviewer', 'Client'] as UserRole[]).map((r) => {
+                        const isSelected = editUserRoles.includes(r)
+                        return (
+                          <div
+                            key={r}
+                            onClick={() => toggleEditRole(r)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              padding: '8px 10px',
+                              borderRadius: 6,
+                              cursor: 'pointer',
+                              background: isSelected ? 'rgba(0,196,196,0.06)' : 'transparent',
+                              transition: 'background 0.1s',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSelected) e.currentTarget.style.background = '#f8fafc'
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSelected) e.currentTarget.style.background = 'transparent'
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: 4,
+                                border: '1.5px solid ' + (isSelected ? '#00C4C4' : '#cbd5e1'),
+                                background: isSelected ? '#00C4C4' : '#ffffff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {isSelected && <Check size={12} color="#ffffff" strokeWidth={3} />}
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 500, color: '#0d212c' }}>
+                              {r}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #e2e8f0',
+                    color: '#0d212c',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    borderRadius: 10,
+                    background: '#00C4C4',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: Delete User Confirmation (PMO Consistent Negative Popup) ─── */}
+      {userToDelete && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setUserToDelete(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setUserToDelete(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Red Icon Circle */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: '#fef2f2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <Trash2 size={26} color="#ef4444" strokeWidth={2.2} />
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Delete User?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Are you sure you want to delete <strong style={{ color: '#0d212c' }}>{userToDelete.name}</strong>? This action cannot be undone and will revoke all workspace access.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleDeleteUser(userToDelete.id, userToDelete.name)
+                  setUserToDelete(null)
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#E60000',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(230,0,0,0.25)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#cc0000')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#E60000')}
+              >
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── 3. Admin Home View (Overview & Visual SOW Workspace) ──────────────── */
+
+function AdminHomeView({
+  notificationButton,
+  onNavigate,
+}: {
+  notificationButton?: React.ReactNode
+  onNavigate?: (view: 'all-sows' | 'user-directory' | 'section-templates' | 'agents') => void
+}) {
+  const [adminSearch, setAdminSearch] = useState('')
+
+  const recentSOWs = [
+    {
+      name: 'Customer Transformation Program',
+      status: 'On Track',
+      statusBg: '#dcfce7',
+      statusColor: '#15803d',
+      readiness: '85%',
+      pmoName: 'Ashika Jain',
+      dueDate: 'Oct 15, 2026',
+      updatedOn: '2 hours ago',
+    },
+    {
+      name: 'Procurement Platform Modernization',
+      status: 'At Risk',
+      statusBg: '#fee2e2',
+      statusColor: '#dc2626',
+      readiness: '72%',
+      pmoName: 'Ashika Jain',
+      dueDate: 'Oct 22, 2026',
+      updatedOn: 'Yesterday',
+    },
+    {
+      name: 'Digital Workplace Enablement',
+      status: 'On Track',
+      statusBg: '#dcfce7',
+      statusColor: '#15803d',
+      readiness: '90%',
+      pmoName: 'Parag Sharma',
+      dueDate: 'Nov 05, 2026',
+      updatedOn: '3 days ago',
+    },
+    {
+      name: 'Cloud Modernization Initiative',
+      status: 'Deactivated',
+      statusBg: '#f1f5f9',
+      statusColor: '#64748b',
+      readiness: '35%',
+      pmoName: 'Ashika Jain',
+      dueDate: 'Nov 18, 2026',
+      updatedOn: '5 days ago',
+    },
+  ]
+
+  const filteredRecentSOWs = recentSOWs.filter(
+    (s) =>
+      s.name.toLowerCase().includes(adminSearch.toLowerCase()) ||
+      s.pmoName.toLowerCase().includes(adminSearch.toLowerCase())
+  )
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: 0,
+        overflowY: 'auto',
+        paddingBottom: 24,
+      }}
+    >
+      {/* ─── Top Greeting & Search Header (No Subtitle) ─────────────────── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+          flexShrink: 0,
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              color: '#0d212c',
+              margin: 0,
+              lineHeight: 1.2,
+            }}
+          >
+            Home
+          </h1>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 12,
+              padding: '8px 14px',
+              width: 320,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            }}
+          >
+            <Search size={15} color="#94a3b8" />
+            <input
+              type="text"
+              value={adminSearch}
+              onChange={(e) => setAdminSearch(e.target.value)}
+              placeholder="Search SOWs, users, templates or agents..."
+              style={{
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                fontSize: 12.5,
+                color: '#0d212c',
+                width: '100%',
+              }}
+            />
+          </div>
+          {notificationButton}
+        </div>
+      </div>
+
+      {/* ─── 4 Top KPI Cards (Exact PMO Card Layout & Structure) ────────── */}
+      <div className="grid grid-cols-4 gap-3.5 mb-5" style={{ flexShrink: 0 }}>
+        {/* KPI 1: Total Templates */}
+        <div
+          onClick={() => onNavigate?.('section-templates')}
+          style={{
+            background: 'rgba(255,255,255,0.8)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+            cursor: 'pointer',
+            transition: 'transform 0.15s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              TOTAL TEMPLATES
+            </span>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LayoutTemplate size={16} color="#ef4444" strokeWidth={1.8} />
+            </div>
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>8</div>
+          <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>4 Required • 3 Recommended • 1 Conditional</span>
+          </div>
+        </div>
+
+        {/* KPI 2: Active Agents */}
+        <div
+          onClick={() => onNavigate?.('agents')}
+          style={{
+            background: 'rgba(255,255,255,0.8)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+            cursor: 'pointer',
+            transition: 'transform 0.15s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              ACTIVE AGENTS
+            </span>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bot size={16} color="#16a34a" strokeWidth={1.8} />
+            </div>
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>12</div>
+          <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#16a34a' }}>All agents active</span>
+          </div>
+        </div>
+
+        {/* KPI 3: Active Users */}
+        <div
+          onClick={() => onNavigate?.('user-directory')}
+          style={{
+            background: 'rgba(255,255,255,0.8)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+            cursor: 'pointer',
+            transition: 'transform 0.15s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              ACTIVE USERS
+            </span>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={16} color="#0284c7" strokeWidth={1.8} />
+            </div>
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>24</div>
+          <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#0284c7' }}>Across all roles</span>
+          </div>
+        </div>
+
+        {/* KPI 4: Active SOWs */}
+        <div
+          onClick={() => onNavigate?.('all-sows')}
+          style={{
+            background: 'rgba(255,255,255,0.8)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+            cursor: 'pointer',
+            transition: 'transform 0.15s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              ACTIVE SOWS
+            </span>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FileText size={16} color="#ef4444" strokeWidth={1.8} />
+            </div>
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>16</div>
+          <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>5 In Progress • 4 On Track • 3 Pending</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Middle Section: 2 Cards (80% Background Opacity) ─────────── */}
+      <div className="grid grid-cols-2 gap-4 mb-5" style={{ flexShrink: 0 }}>
+        {/* Card 1: Template Overview */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.8)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            borderRadius: 16,
+            padding: '24px 28px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 295,
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', margin: 0 }}>
+              Template Overview
+            </h2>
+            <button
+              onClick={() => onNavigate?.('section-templates')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                background: 'none',
+                border: 'none',
+                color: '#00C4C4',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              View all templates →
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 28, flex: 1 }}>
+            {/* SVG Donut Ring (Increased Size) */}
+            <div style={{ position: 'relative', width: 190, height: 190, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="190" height="190" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                {/* Circumference = 2 * PI * 38 ≈ 238.76 */}
+                {/* Required: 4/8 = 50% -> 119.38 */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#4ECCA3" strokeWidth="14" strokeDasharray="117.38 238.76" strokeDashoffset="0" />
+                {/* Recommended: 3/8 = 37.5% -> 89.53 */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#38BDF8" strokeWidth="14" strokeDasharray="87.53 238.76" strokeDashoffset="-119.38" />
+                {/* Conditional: 1/8 = 12.5% -> 29.85 */}
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#FACC15" strokeWidth="14" strokeDasharray="27.85 238.76" strokeDashoffset="-208.91" />
+                {/* Other: 0/8 = 0% */}
+              </svg>
+              {/* Center Counter */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                }}
+              >
+                <div style={{ fontSize: 28, fontWeight: 700, color: '#0d212c', lineHeight: 1 }}>
+                  8
+                </div>
+                <div style={{ fontSize: 11.5, fontWeight: 500, color: '#64748b', marginTop: 3 }}>
+                  Total Templates
+                </div>
+              </div>
+            </div>
+
+            {/* Legend Column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, paddingLeft: 12 }}>
+              {[
+                { label: 'Required', count: 4, color: '#4ECCA3' },
+                { label: 'Recommended', count: 3, color: '#38BDF8' },
+                { label: 'Conditional', count: 1, color: '#FACC15' },
+                { label: 'Other', count: 0, color: '#C084FC' },
+              ].map((item) => (
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13.5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+                    <span style={{ fontWeight: 500, color: '#475569' }}>{item.label}</span>
+                  </div>
+                  <span style={{ fontWeight: 700, color: '#0d212c' }}>{item.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Agents Overview (80% Background Opacity) */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.8)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            borderRadius: 16,
+            padding: '24px 28px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 295,
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', margin: 0 }}>
+              Agents Overview
+            </h2>
+            <button
+              onClick={() => onNavigate?.('agents')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                background: 'none',
+                border: 'none',
+                color: '#00C4C4',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              View all agents →
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', height: 215, alignItems: 'flex-end', paddingTop: 0 }}>
+            {/* Y Axis Labels */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: 175,
+                paddingBottom: 22,
+                marginRight: 12,
+                fontSize: 11,
+                color: '#94a3b8',
+                textAlign: 'right',
+                width: 18,
+              }}
+            >
+              <span>10</span>
+              <span>8</span>
+              <span>6</span>
+              <span>4</span>
+              <span>2</span>
+              <span>0</span>
+            </div>
+
+            {/* Bars Container */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 18,
+                flex: 1,
+                height: 175,
+                borderLeft: '1px solid #f1f5f9',
+                borderBottom: '1px solid #f1f5f9',
+                padding: '0 14px',
+                position: 'relative',
+              }}
+            >
+              {[
+                { role: 'Contributor', val: 9, max: 10, color: '#38BDF8' },
+                { role: 'Reviewer', val: 7, max: 10, color: '#A78BFA' },
+                { role: 'PMO', val: 4, max: 10, color: '#34D399' },
+                { role: 'Client', val: 4, max: 10, color: '#FBBF24' },
+              ].map((bar) => {
+                const heightPct = (bar.val / bar.max) * 100
+                return (
+                  <div
+                    key={bar.role}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      height: '100%',
+                    }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
+                      {bar.val}
+                    </span>
+                    <div
+                      style={{
+                        width: '70%',
+                        maxWidth: 46,
+                        height: `${heightPct}%`,
+                        background: bar.color,
+                        borderRadius: '6px 6px 0 0',
+                        transition: 'height 0.3s ease',
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 11.5,
+                        fontWeight: 500,
+                        color: '#64748b',
+                        marginTop: 6,
+                        position: 'absolute',
+                        bottom: -22,
+                      }}
+                    >
+                      {bar.role}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Bottom Section: Recent SOWs (80% Background Opacity) ────────── */}
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.8)',
+          border: '1px solid rgba(255,255,255,0.9)',
+          borderRadius: 16,
+          padding: '22px 24px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', margin: 0 }}>
+            Recent SOWs
+          </h2>
+          <button
+            onClick={() => onNavigate?.('all-sows')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              background: 'none',
+              border: 'none',
+              color: '#00C4C4',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            View all →
+          </button>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '26%' }}>
+                  SOW NAME
+                </th>
+                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '14%' }}>
+                  STATUS
+                </th>
+                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '12%' }}>
+                  READINESS
+                </th>
+                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
+                  PMO NAME
+                </th>
+                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
+                  DUE DATE
+                </th>
+                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
+                  UPDATED ON
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRecentSOWs.map((row, idx) => (
+                <tr
+                  key={idx}
+                  style={{
+                    borderBottom: idx < filteredRecentSOWs.length - 1 ? '1px solid #f8fafc' : 'none',
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 500, color: '#0d212c' }}>
+                    {row.name}
+                  </td>
+                  <td style={{ padding: '14px 14px' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '3px 12px',
+                        borderRadius: 99,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        background: row.statusBg,
+                        color: row.statusColor,
+                      }}
+                    >
+                      {row.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 400, color: '#0d212c' }}>
+                    {row.readiness}
+                  </td>
+                  <td style={{ padding: '14px 14px', fontSize: 13, color: '#0d212c', fontWeight: 400 }}>
+                    {row.pmoName}
+                  </td>
+                  <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 400, color: '#dc2626' }}>
+                    {row.dueDate}
+                  </td>
+                  <td style={{ padding: '14px 14px', fontSize: 12, color: '#64748b', fontWeight: 400 }}>
+                    {row.updatedOn}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1282,13 +5268,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   onOpenSOWV2,
   onOpenSOWContributor,
 }) => {
+  const isAdmin = userRole === 'Admin'
   const isContributor = userRole === 'Contributor'
   const isClient = userRole === 'Client'
   const isReviewer = userRole === 'Reviewer'
-  const isPMO = !isContributor && !isClient && !isReviewer
+  const isPMO = !isContributor && !isClient && !isReviewer && !isAdmin
   const { showToast } = useToast()
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log' | 'agents' | 'notifications'>('home')
+  const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log' | 'agents' | 'notifications' | 'user-directory' | 'section-templates'>('home')
   const [activeTab, setActiveTab] = useState<ActiveTab>('my')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
@@ -1305,6 +5292,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const [displayedRows, setDisplayedRows] = useState<SOWItem[]>(initialSOWs)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [dueTimeframe, setDueTimeframe] = useState('Next Week')
+  const [dueDropdownOpen, setDueDropdownOpen] = useState(false)
   const [notifications, setNotifications] = useState([
     { id: '1', title: 'Meridian SOW generated', description: 'Drafting agent has successfully generated Meridian SOW.', time: '10 mins ago', unread: true },
     { id: '2', title: 'Vendor MSA updated', description: 'Rohan Mehta has uploaded a new version of Vendor MSA.', time: '2 hours ago', unread: true },
@@ -1370,13 +5359,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!actionMenuOpenId) return
+    if (!actionMenuOpenId && !dueDropdownOpen) return
     function handle(e: MouseEvent) {
       setActionMenuOpenId(null)
+      setDueDropdownOpen(false)
     }
     document.addEventListener('click', handle)
     return () => document.removeEventListener('click', handle)
-  }, [actionMenuOpenId])
+  }, [actionMenuOpenId, dueDropdownOpen])
 
   useEffect(() => {
     if (!openRpp) return
@@ -1540,40 +5530,38 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 {
                   id: 'dashboard' as ActiveNav,
                   label: 'Home',
-                  icon: (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.8"
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                    />
-                  ),
+                  icon: <LayoutDashboard size={20} />,
                 },
                 {
                   id: 'my-sows' as ActiveNav,
                   label: 'All SOWs',
-                  icon: (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.8"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  ),
+                  icon: <FileText size={20} />,
                 },
-                ...(isPMO
+                ...(isAdmin
+                  ? [
+                      {
+                        id: 'user-directory' as ActiveNav,
+                        label: 'Users',
+                        icon: <Users size={20} />,
+                      },
+                      {
+                        id: 'section-templates' as ActiveNav,
+                        label: 'Templates',
+                        icon: <LayoutTemplate size={20} />,
+                      },
+                      {
+                        id: 'agents' as ActiveNav,
+                        label: 'Agents',
+                        icon: <Bot size={20} />,
+                      },
+                    ]
+                  : []),
+                ...((isPMO && !isAdmin)
                   ? [
                       {
                         id: 'agents' as ActiveNav,
                         label: 'Agents',
-                        icon: (
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.8"
-                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                          />
-                        ),
+                        icon: <Bot size={20} />,
                       },
                     ]
                   : []),
@@ -1585,9 +5573,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   ? homeView === 'home'
                   : id === 'my-sows'
                     ? homeView === 'all-sows'
-                    : id === 'agents'
-                      ? homeView === 'agents'
-                      : activeNav === id
+                    : id === 'user-directory'
+                      ? homeView === 'user-directory'
+                      : id === 'section-templates'
+                        ? homeView === 'section-templates'
+                        : id === 'agents'
+                          ? homeView === 'agents'
+                          : activeNav === id
               return (
                 <button
                   key={id}
@@ -1597,6 +5589,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       onNavHome?.()
                     } else if (id === 'my-sows') {
                       setHomeView('all-sows')
+                    } else if (id === 'user-directory') {
+                      setHomeView('user-directory')
+                    } else if (id === 'section-templates') {
+                      setHomeView('section-templates')
                     } else if (id === 'agents') {
                       setHomeView('agents')
                     }
@@ -1629,16 +5625,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     }
                   }}
                 >
-                  <span className="relative">
-                    <svg
-                      width="20"
-                      height="20"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      {icon}
-                    </svg>
+                  <span className="relative flex items-center justify-center">
+                    {icon}
                   </span>
                   <span
                     style={{
@@ -1797,12 +5785,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 onOpenSOWContributor={onOpenSOWContributor}
                 isContributor={isContributor || isClient}
                 isPMO={isPMO}
+                isAdmin={isAdmin}
                 onDeactivateSOW={(sow) => setDeactivateModalSOW(sow)}
                 onReactivateSOW={(sow) => setReactivateModalSOW(sow)}
                 notificationButton={renderNotificationButton()}
               />
             </div>
-          ) : homeView === 'agents' && isPMO ? (
+          ) : homeView === 'agents' && (isPMO || isAdmin) ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <AgentsView notificationButton={renderNotificationButton()} />
             </div>
@@ -1820,6 +5809,21 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
               <AuditLogView
                 onBackToDashboard={() => setHomeView('home')}
                 notificationButton={renderNotificationButton()}
+              />
+            </div>
+          ) : homeView === 'user-directory' && isAdmin ? (
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+              <UserDirectoryView notificationButton={renderNotificationButton()} />
+            </div>
+          ) : homeView === 'section-templates' && isAdmin ? (
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+              <SectionTemplatesView notificationButton={renderNotificationButton()} />
+            </div>
+          ) : isAdmin ? (
+            <div className="flex-1 overflow-y-auto p-0">
+              <AdminHomeView
+                notificationButton={renderNotificationButton()}
+                onNavigate={(v) => setHomeView(v)}
               />
             </div>
           ) : (
@@ -2535,7 +6539,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="grid grid-cols-4 gap-3 mb-6">
                 {/* 1 — Active SOWs */}
                 <div
                   style={{
@@ -2617,6 +6621,32 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Needs monitoring</span>
+                  </div>
+                </div>
+
+                {/* 4 — Total Clients */}
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.8)',
+                    border: '1px solid rgba(255,255,255,0.9)',
+                    borderRadius: 16,
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Clients</span>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0,196,196,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Building2 size={16} color="#008a8a" strokeWidth={1.8} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>12</div>
+                  <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Across active projects</span>
                   </div>
                 </div>
               </div>
@@ -2757,23 +6787,21 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         >
                           {(isPMO
                             ? [
-                                ['SOW Name', null, '22%'],
-                                ['Status', null, '12%'],
-                                ['Readiness', 'readiness' as SortCol, '10%'],
-                                ['Questions', 'openQuestions' as SortCol, '14%'],
-                                ['Review', 'reviewComments' as SortCol, '11%'],
-                                ['Approval', null, '12%'],
-                                ['Updated On', null, '12%'],
-                                ['Action', null, '7%'],
+                                ['SOW Name', null, '24%'],
+                                ['Status', null, '14%'],
+                                ['Readiness', 'readiness' as SortCol, '12%'],
+                                ['Due Date', null, '14%'],
+                                ['SOW Workflow', null, '14%'],
+                                ['Updated On', null, '14%'],
+                                ['Action', null, '8%'],
                               ]
                             : [
-                                ['SOW Name', null, '24%'],
-                                ['Status', null, '13%'],
-                                ['Readiness', 'readiness' as SortCol, '11%'],
-                                ['Questions', 'openQuestions' as SortCol, '15%'],
-                                ['Review', 'reviewComments' as SortCol, '12%'],
-                                ['Approval', null, '13%'],
-                                ['Updated On', null, '12%'],
+                                ['SOW Name', null, '28%'],
+                                ['Status', null, '15%'],
+                                ['Readiness', 'readiness' as SortCol, '13%'],
+                                ['Due Date', null, '14%'],
+                                ['SOW Workflow', null, '15%'],
+                                ['Updated On', null, '15%'],
                               ]
                           ).map(([label, col, width]) => (
                             <th
@@ -2784,7 +6812,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 padding: '10px 14px',
                                 textAlign: 'left',
                                 fontSize: 10,
-                                fontWeight: 600,
+                                fontWeight: 500,
                                 color: '#475569',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.07em',
@@ -2905,24 +6933,17 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 </span>
                               </td>
 
-                              {/* Questions (total count and open questions in text only, remove overdue) */}
-                              <td style={{ padding: '10px 14px' }}>
-                                <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
-                                  {row.totalQuestions ?? 4} Total • {row.openQuestions ?? 2} Open
+                              {/* Due Date */}
+                              <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: 12.5, color: idx === 0 ? '#dc2626' : '#475569', fontWeight: idx === 0 ? 600 : 400 }}>
+                                  {idx === 0 ? 'Today' : idx === 1 ? 'Oct 18, 2026' : idx === 2 ? 'Oct 22, 2026' : 'Nov 05, 2026'}
                                 </span>
                               </td>
 
-                              {/* Review (number of comments, no icon) */}
+                              {/* SOW Workflow (text only) */}
                               <td style={{ padding: '10px 14px' }}>
-                                <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
-                                  {row.reviewComments ?? 0} comments
-                                </span>
-                              </td>
-
-                              {/* Approval (text only, no chip, awaiting reviewer) */}
-                              <td style={{ padding: '10px 14px' }}>
-                                <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
-                                  {row.approval === 'Reviewer' ? 'Awaiting Reviewer' : (row.approval ?? 'Awaiting Reviewer')}
+                                <span style={{ fontSize: 12.5, color: '#0d212c', fontWeight: 500 }}>
+                                  {row.workflowStage ?? (idx === 0 ? 'Review' : idx === 1 ? 'Questions' : idx === 2 ? 'Planning' : 'Draft')}
                                 </span>
                               </td>
 
@@ -3172,9 +7193,82 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       <span style={{ fontSize: 16, fontWeight: 600, color: '#0d212c' }}>
                         Due This Week
                       </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-normal bg-[#fee2e2] text-[#dc2626] border border-red-200/60">
-                        3 urgent
-                      </span>
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDueDropdownOpen((prev) => !prev)
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '5px 12px',
+                          background: '#ffffff',
+                          border: '1px solid rgba(0,0,0,0.1)',
+                          borderRadius: 8,
+                          fontSize: 12,
+                          color: '#475569',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                        }}
+                      >
+                        <span>{dueTimeframe}</span>
+                        <ChevronDown size={12} strokeWidth={2} />
+                      </button>
+
+                      {dueDropdownOpen && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: 'calc(100% + 4px)',
+                            background: '#ffffff',
+                            borderRadius: 8,
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
+                            border: '1px solid #e2e8f0',
+                            padding: 4,
+                            minWidth: 120,
+                            zIndex: 100,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                          }}
+                        >
+                          {['Today', 'Tomorrow', 'Next Week', 'Next Month'].map((tf) => (
+                            <button
+                              key={tf}
+                              onClick={() => {
+                                setDueTimeframe(tf)
+                                setDueDropdownOpen(false)
+                              }}
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                border: 'none',
+                                background: dueTimeframe === tf ? 'rgba(0,196,196,0.1)' : 'transparent',
+                                color: dueTimeframe === tf ? '#008a8a' : '#0d212c',
+                                fontSize: 12,
+                                fontWeight: dueTimeframe === tf ? 600 : 500,
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (dueTimeframe !== tf) e.currentTarget.style.background = '#f8fafc'
+                              }}
+                              onMouseLeave={(e) => {
+                                if (dueTimeframe !== tf) e.currentTarget.style.background = 'transparent'
+                              }}
+                            >
+                              {tf}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div
@@ -3200,11 +7294,11 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         >
                           <th
                             style={{
-                              width: '76%',
+                              width: '50%',
                               padding: '10px 14px',
                               textAlign: 'left',
                               fontSize: 10,
-                              fontWeight: 600,
+                              fontWeight: 500,
                               color: '#475569',
                               textTransform: 'uppercase',
                               letterSpacing: '0.07em',
@@ -3214,17 +7308,31 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           </th>
                           <th
                             style={{
-                              width: '24%',
+                              width: '25%',
                               padding: '10px 14px',
                               textAlign: 'left',
                               fontSize: 10,
-                              fontWeight: 600,
+                              fontWeight: 500,
                               color: '#475569',
                               textTransform: 'uppercase',
                               letterSpacing: '0.07em',
                             }}
                           >
-                            Due Day
+                            Questions
+                          </th>
+                          <th
+                            style={{
+                              width: '25%',
+                              padding: '10px 14px',
+                              textAlign: 'left',
+                              fontSize: 10,
+                              fontWeight: 500,
+                              color: '#475569',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.07em',
+                            }}
+                          >
+                            Review
                           </th>
                         </tr>
                       </thead>
@@ -3232,26 +7340,30 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         {[
                           {
                             name: 'Meridian Healthcare',
-                            action: 'SOW Draft review',
-                            due: 'Today',
+                            client: 'Meridian Health Systems',
+                            questions: { total: 4, open: 2 },
+                            reviewComments: 3,
                             urgency: 'high' as const,
                           },
                           {
-                            name: 'Acme Corp',
-                            action: 'Approve Form submission',
-                            due: 'Tomorrow',
+                            name: 'Acme Corp Cloud Ops',
+                            client: 'Acme Corp',
+                            questions: { total: 2, open: 0 },
+                            reviewComments: 1,
                             urgency: 'high' as const,
                           },
                           {
-                            name: 'CyberShield',
-                            action: 'Security compliance review',
-                            due: 'Tomorrow',
+                            name: 'CyberShield Security Protocol',
+                            client: 'CyberShield Inc',
+                            questions: { total: 6, open: 3 },
+                            reviewComments: 5,
                             urgency: 'high' as const,
                           },
                           {
-                            name: 'TechSphere',
-                            action: 'Answer 4 open questions',
-                            due: 'Wed',
+                            name: 'TechSphere Enterprise AI',
+                            client: 'TechSphere Global',
+                            questions: { total: 1, open: 1 },
+                            reviewComments: 2,
                             urgency: 'medium' as const,
                           },
                         ].map((item, idx, arr) => {
@@ -3261,12 +7373,6 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                               : item.urgency === 'medium'
                                 ? '#d97706'
                                 : '#64748b'
-                          const chipStyles =
-                            item.urgency === 'high'
-                              ? 'bg-[#fee2e2] text-[#dc2626] border border-red-200/60'
-                              : item.urgency === 'medium'
-                                ? 'bg-[#fef3c7] text-[#d97706] border border-amber-200/60'
-                                : 'bg-[#f1f5f9] text-[#64748b] border border-slate-200/60'
                           return (
                             <tr
                               key={idx}
@@ -3321,16 +7427,19 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                         whiteSpace: 'nowrap',
                                       }}
                                     >
-                                      {item.action}
+                                      {item.client}
                                     </div>
                                   </div>
                                 </div>
                               </td>
                               <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-normal shrink-0 ${chipStyles}`}
-                                >
-                                  {item.due}
+                                <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                                  {item.questions.total} Total • {item.questions.open} Open
+                                </span>
+                              </td>
+                              <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                                  {item.reviewComments} comments
                                 </span>
                               </td>
                             </tr>

@@ -100,7 +100,7 @@ export default function Home() {
   const userRole = isParag ? 'Admin' : isRiza ? 'Client' : isNarendra ? 'Contributor' : isIshita ? 'Reviewer' : 'PMO'
   const userInitials = isParag ? 'P' : isRiza ? 'R' : isNarendra ? 'N' : isIshita ? 'IS' : 'AJ'
   const userImage = isParag
-    ? '/profile-user.png'
+    ? '/profile-male.png'
     : isRiza
     ? '/profile-female.png'
     : isNarendra ? '/profile-male.png' : isIshita ? '/profile-female.png' : '/profile-user.png'
@@ -114,19 +114,23 @@ export default function Home() {
       userRole={userRole}
       userInitials={userInitials}
       userImage={userImage}
-      initialSOWs={isParag ? [] : isClientOrContributor || isIshita ? CONTRIBUTOR_SOWS : undefined}
+      initialSOWs={isClientOrContributor || isIshita ? CONTRIBUTOR_SOWS : undefined}
       onSignOut={() => setIsLoggedIn(false)}
       activeNav={isSOWDetail ? 'my-sows' : 'dashboard'}
       contentOverride={
         view === 'sow-detail' ? (
-          <SOWDetailScreen uploadedFiles={sowFiles} onBack={() => setView('dashboard')} />
+          <SOWDetailScreen
+            uploadedFiles={sowFiles}
+            viewerRole={isParag ? 'admin' : 'pmo'}
+            onBack={() => setView('dashboard')}
+          />
         ) : view === 'sow-detail-v2' ? (
           <SOWDetailScreen
             sowName="Globex Corp — Digital Transformation"
             sowStatus="In Progress"
-            showGenerateDraft
+            showGenerateDraft={!isParag}
             sowVariant="v2"
-            viewerRole="pmo"
+            viewerRole={isParag ? 'admin' : 'pmo'}
             uploadedFiles={[
               { id: '1', name: 'Digital_Transformation_RFP.pdf', size: '2.8 MB', type: 'application/pdf', status: 'complete', progress: 100 },
               { id: '2', name: 'Enterprise_Architecture_Specs.docx', size: '1.4 MB', type: 'application/msword', status: 'complete', progress: 100 },
@@ -139,9 +143,9 @@ export default function Home() {
             sowName="Meridian Healthcare — Procurement Platform Modernization"
             sowStatus="In Progress"
             sowVariant="meridian"
-            viewerRole={isIshita ? 'reviewer' : isNarendra ? 'contributor' : 'pmo'}
+            viewerRole={isParag ? 'admin' : isIshita ? 'reviewer' : isNarendra ? 'contributor' : 'pmo'}
             currentMemberId={isIshita ? 'm4' : isNarendra ? 'm5' : 'm1'}
-            showGenerateDraft={!isIshita && !isNarendra}
+            showGenerateDraft={!isParag && !isIshita && !isNarendra}
             uploadedFiles={[
               { id: '1', name: 'Meridian_RFP.pdf', size: '2.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
               { id: '2', name: 'Vendor_MSA_Template.docx', size: '1.2 MB', type: 'application/msword', status: 'complete', progress: 100 },
