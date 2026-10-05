@@ -5331,10 +5331,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   onOpenSOWContributor,
   onOpenSOWDeactivated,
 }) => {
-  const isAdmin = userRole === 'Admin'
-  const isContributor = userRole === 'Contributor'
-  const isClient = userRole === 'Client'
-  const isReviewer = userRole === 'Reviewer'
+  const [previewRole, setPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer' | null>(null)
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
+  const effectiveRole = previewRole || userRole
+  const isAdmin = effectiveRole === 'Admin'
+  const isContributor = effectiveRole === 'Contributor'
+  const isClient = effectiveRole === 'Client'
+  const isReviewer = effectiveRole === 'Reviewer'
   const isPMO = !isContributor && !isClient && !isReviewer && !isAdmin
   const { showToast } = useToast()
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -5895,17 +5898,125 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             <div className="flex-1 overflow-y-auto p-0">
               {/* Greeting + Create SOW CTA */}
               <div className="flex items-center justify-between mb-5">
-                <h1
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 600,
-                    color: '#0d212c',
-                    margin: 0,
-                    lineHeight: 1.15,
-                  }}
-                >
-                  Hi {userName} 👋
-                </h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+                  <h1
+                    style={{
+                      fontSize: 24,
+                      fontWeight: 600,
+                      color: '#0d212c',
+                      margin: 0,
+                      lineHeight: 1.15,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <span>Hi {userName} 👋</span>
+                    <button
+                      type="button"
+                      onClick={() => setRoleDropdownOpen((prev) => !prev)}
+                      title="Switch role preview"
+                      style={{
+                        background: 'rgba(0,196,196,0.08)',
+                        border: '1px solid rgba(0,196,196,0.25)',
+                        borderRadius: 8,
+                        padding: '4px 8px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: '#008b8b',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(0,196,196,0.15)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(0,196,196,0.08)'
+                      }}
+                    >
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#0d212c' }}>
+                        {effectiveRole}
+                      </span>
+                      <ChevronDown
+                        size={14}
+                        color="#008b8b"
+                        style={{
+                          transform: roleDropdownOpen ? 'rotate(180deg)' : 'none',
+                          transition: 'transform 0.15s',
+                        }}
+                      />
+                    </button>
+                  </h1>
+
+                  {roleDropdownOpen && (
+                    <>
+                      <div
+                        style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                        onClick={() => setRoleDropdownOpen(false)}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          left: 0,
+                          zIndex: 1000,
+                          width: 220,
+                          background: '#ffffff',
+                          borderRadius: 12,
+                          border: '1px solid #e2e8f0',
+                          boxShadow: '0 12px 32px rgba(13,33,44,0.14)',
+                          padding: '8px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4,
+                        }}
+                      >
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', padding: '4px 8px' }}>
+                          Preview role as
+                        </div>
+                        {(['PMO', 'Contributor', 'Reviewer'] as const).map((r) => {
+                          const isSelected = effectiveRole === r
+                          return (
+                            <button
+                              key={r}
+                              type="button"
+                              onClick={() => {
+                                setPreviewRole(r)
+                                setRoleDropdownOpen(false)
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '8px 10px',
+                                borderRadius: 8,
+                                border: 'none',
+                                background: isSelected ? 'rgba(0,196,196,0.1)' : 'transparent',
+                                color: isSelected ? '#007a7a' : '#0d212c',
+                                fontSize: 13,
+                                fontWeight: isSelected ? 700 : 500,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isSelected) e.currentTarget.style.background = '#f8fafc'
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isSelected) e.currentTarget.style.background = 'transparent'
+                              }}
+                            >
+                              <span>Preview as {r}</span>
+                              {isSelected && <Check size={14} color="#00C4C4" strokeWidth={2.5} />}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {renderNotificationButton()}
                   {!isContributor && !isClient && !isReviewer && (

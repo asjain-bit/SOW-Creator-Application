@@ -355,7 +355,7 @@ function SOWWorkflowStepper() {
                     flex: 1,
                     marginTop: 15,
                     height: idx < 2 ? 3 : 0,
-                    background: idx < 2 ? '#00C4C4' : 'transparent',
+                    background: idx < 2 ? '#10b981' : 'transparent',
                     borderTop: idx >= 2 ? '2px dotted #cbd5e1' : 'none',
                     borderRadius: idx < 2 ? 2 : 0,
                   }}
@@ -745,66 +745,17 @@ export function DocumentCitationPreviewModal({
   citation: ContextCitationTarget
   onClose: () => void
 }) {
-  const [currentPage, setCurrentPage] = useState<number>(citation.page || 1)
-  const [zoomLevel, setZoomLevel] = useState<number>(100)
-  const [searchQuery, setSearchQuery] = useState<string>('')
-
   useEffect(() => {
-    const originalBodyOverflow = document.body.style.overflow
-    const originalHtmlOverflow = document.documentElement.style.overflow
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-
-    const scrollContainers = document.querySelectorAll<HTMLElement>('.overflow-y-auto, [style*="overflow"]')
-    const prevStyles: { el: HTMLElement; overflow: string }[] = []
-    scrollContainers.forEach((el) => {
-      prevStyles.push({ el, overflow: el.style.overflow })
-      el.style.overflow = 'hidden'
-    })
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    if (citation.page === 2) {
+      const timer = setTimeout(() => {
+        const page2El = document.getElementById('citation-doc-page-2')
+        if (page2El) {
+          page2El.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 150)
+      return () => clearTimeout(timer)
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.body.style.overflow = originalBodyOverflow
-      document.documentElement.style.overflow = originalHtmlOverflow
-      prevStyles.forEach(({ el, overflow }) => {
-        el.style.overflow = overflow
-      })
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [onClose])
-
-  const highlightText = (text: string, highlightSnippet: string) => {
-    if (!highlightSnippet) return text
-    const idx = text.toLowerCase().indexOf(highlightSnippet.toLowerCase().slice(0, 40))
-    if (idx === -1) {
-      // Return normal with marked keywords if matched
-      return text
-    }
-    const before = text.substring(0, idx)
-    const match = text.substring(idx, idx + highlightSnippet.length)
-    const after = text.substring(idx + highlightSnippet.length)
-    return (
-      <>
-        {before}
-        <mark
-          style={{
-            background: '#fef08a',
-            color: '#854d0e',
-            padding: '2px 4px',
-            borderRadius: 4,
-            boxShadow: '0 0 0 2px rgba(250, 204, 21, 0.5)',
-            fontWeight: 600,
-          }}
-        >
-          {match}
-        </mark>
-        {after}
-      </>
-    )
-  }
+  }, [citation.page])
 
   if (typeof document === 'undefined') return null
 
@@ -839,10 +790,10 @@ export function DocumentCitationPreviewModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header — Clean Light Theme */}
+        {/* Modal Header — Clean with Cross Icon only */}
         <div
           style={{
-            padding: '14px 20px',
+            padding: '16px 22px',
             background: '#ffffff',
             color: '#0d212c',
             display: 'flex',
@@ -851,194 +802,46 @@ export function DocumentCitationPreviewModal({
             borderBottom: '1px solid #e2e8f0',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: 'rgba(0,196,196,0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#008b8b',
-              }}
-            >
-              <FileText size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, color: '#0d212c' }}>
-                Attachment A: Clinical Safety Case & Hazard Log
-                <span
-                  style={{
-                    fontSize: 11,
-                    background: 'rgba(0,196,196,0.12)',
-                    color: '#008080',
-                    border: '1px solid rgba(0,196,196,0.25)',
-                    padding: '2px 8px',
-                    borderRadius: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  Verified Source
-                </span>
-              </div>
-              <div style={{ fontSize: 11.5, color: '#64748b' }}>
-                Hippocratic AI – Response to M42 Vendor Due-Diligence Questionnaire • Cited Section: {citation.section || 'General'}
-              </div>
-            </div>
-          </div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Page Switcher */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: '#f1f5f9',
-                borderRadius: 8,
-                padding: '3px 6px',
-                gap: 4,
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <button
-                onClick={() => setCurrentPage(1)}
-                style={{
-                  background: currentPage === 1 ? '#00C4C4' : 'transparent',
-                  color: currentPage === 1 ? '#ffffff' : '#64748b',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '3px 10px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Page 1
-              </button>
-              <button
-                onClick={() => setCurrentPage(2)}
-                style={{
-                  background: currentPage === 2 ? '#00C4C4' : 'transparent',
-                  color: currentPage === 2 ? '#ffffff' : '#64748b',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '3px 10px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Page 2
-              </button>
+            <FileText size={18} color="#00a0a0" />
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>
+              {citation.sourceDoc || 'Attachment A: Clinical Safety Case & Hazard Log'}
             </div>
-
-            {/* Zoom Controls */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: '#f1f5f9',
-                borderRadius: 8,
-                padding: '3px 6px',
-                gap: 4,
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              <button
-                onClick={() => setZoomLevel((z) => Math.max(80, z - 10))}
-                style={{
-                  background: 'transparent',
-                  color: '#475569',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '3px 6px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                }}
-                title="Zoom Out"
-              >
-                −
-              </button>
-              <span style={{ fontSize: 11, color: '#0f172a', minWidth: 34, textAlign: 'center', fontWeight: 600 }}>
-                {zoomLevel}%
-              </span>
-              <button
-                onClick={() => setZoomLevel((z) => Math.min(130, z + 10))}
-                style={{
-                  background: 'transparent',
-                  color: '#475569',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '3px 6px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                }}
-                title="Zoom In"
-              >
-                +
-              </button>
-            </div>
-
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              style={{
-                background: '#f1f5f9',
-                border: '1px solid #e2e8f0',
-                color: '#64748b',
-                width: 30,
-                height: 30,
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLButtonElement
-                el.style.background = '#fee2e2'
-                el.style.color = '#ef4444'
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLButtonElement
-                el.style.background = '#f1f5f9'
-                el.style.color = '#64748b'
-              }}
-            >
-              <X size={16} />
-            </button>
           </div>
+
+          {/* Cross icon only */}
+          <button
+            onClick={onClose}
+            style={{
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              color: '#64748b',
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.background = '#fee2e2'
+              el.style.color = '#ef4444'
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.background = '#f1f5f9'
+              el.style.color = '#64748b'
+            }}
+            title="Close"
+          >
+            <X size={16} />
+          </button>
         </div>
 
-        {/* Citation Banner Callout */}
-        <div
-          style={{
-            padding: '10px 20px',
-            background: '#fefce8',
-            borderBottom: '1px solid #fef08a',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#854d0e' }}>
-            <span style={{ fontWeight: 700 }}>🔍 Active Citation:</span>
-            <span>Highlighted text on <strong>Page {citation.page}</strong> matches context extract for <em>&ldquo;{citation.title}&rdquo;</em></span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 11, background: '#fef08a', color: '#713f12', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
-              Yellow Highlighted Match
-            </span>
-          </div>
-        </div>
-
-        {/* Document Body View */}
+        {/* Document Body View — Continuous Scroll of All Pages */}
         <div
           style={{
             flex: 1,
@@ -1057,323 +860,298 @@ export function DocumentCitationPreviewModal({
               borderRadius: '8px',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
               padding: '40px 48px',
-              transform: `scale(${zoomLevel / 100})`,
-              transformOrigin: 'top center',
-              transition: 'transform 0.15s ease',
               fontFamily: 'Inter, system-ui, sans-serif',
               color: '#1e293b',
               lineHeight: 1.6,
             }}
           >
-            {currentPage === 1 ? (
-              /* ── PAGE 1 CONTENT ── */
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', borderBottom: '1px solid #e2e8f0', paddingBottom: 6, marginBottom: 20 }}>
-                  <span>Hippocratic AI | Attachment A</span>
-                  <span>Confidential – Prepared for M42 due diligence – Page 1</span>
-                </div>
-
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#00a0a0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Attachment A
-                </div>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: '4px 0 12px' }}>
-                  Clinical Safety Case &amp; Hazard Log
-                </h1>
-                <div style={{ fontSize: 13, color: '#475569', marginBottom: 20 }}>
-                  Hippocratic AI – response to M42 Vendor Architecture &amp; Due-Diligence Questionnaire (Round 1)
-                </div>
-
-                {/* Metadata Table */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: 12.5 }}>
-                  <tbody>
-                    <tr style={{ background: '#f8fafc', color: '#0f172a', borderBottom: '2px solid #e2e8f0' }}>
-                      <th style={{ padding: '8px 12px', textAlign: 'left', width: '30%', border: '1px solid #e2e8f0' }}>Item</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Detail</th>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Questionnaire reference</td>
-                      <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>1.2 (also supports 1.3, 1.7)</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Version / date</td>
-                      <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>v1.0 – 28 September 2026</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Classification</td>
-                      <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>Confidential – prepared for M42 due diligence</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Status</td>
-                      <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>Prepared for submission</td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                {/* Basis notice */}
-                <div style={{ background: '#f1f5f9', borderLeft: '4px solid #00C4C4', padding: '10px 14px', fontSize: 12, color: '#334155', marginBottom: 24 }}>
-                  <strong>Basis of this document:</strong> Statements about Hippocratic AI capabilities are drawn from its published materials (listed under Sources). Where specific values are not published, they reflect standard healthcare-SaaS industry practice and are recorded in the Assumptions Register of the accompanying tracker.
-                </div>
-
-                {/* Section 1 */}
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
-                  1. Purpose and scope
-                </h2>
-                <p style={{ fontSize: 13, color: '#334155', marginBottom: 12 }}>
-                  This document summarises how Hippocratic AI identifies, controls and monitors hazards that could lead to patient harm from its generative AI voice agents, and sets out a starting hazard log for the proposed M42 deployment. It is structured on ISO 14971 risk-management principles so M42 clinical safety officers can review it in a familiar form. Hippocratic AI&apos;s full internal risk register is available to M42 under mutual NDA and remains the controlling record.
-                </p>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: '#334155',
-                    marginBottom: 20,
-                    background: citation.section?.includes('1') ? '#fef9c3' : 'transparent',
-                    padding: citation.section?.includes('1') ? '6px 10px' : '0',
-                    borderRadius: 6,
-                  }}
-                >
-                  <strong style={{ color: '#0f172a' }}>Intended use (public position).</strong> Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.
-                </p>
-
-                {/* Section 2 */}
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
-                  2. Safety-assurance approach
-                </h2>
-                <p style={{ fontSize: 13, color: '#334155', marginBottom: 10 }}>
-                  Hippocratic AI publicly describes a five-phase safety process:
-                </p>
-                <ul
-                  style={{
-                    paddingLeft: 22,
-                    fontSize: 13,
-                    color: '#334155',
-                    marginBottom: 16,
-                    background: citation.section?.includes('2') ? '#fef9c3' : 'transparent',
-                    borderRadius: 6,
-                    paddingTop: citation.section?.includes('2') ? 8 : 0,
-                    paddingBottom: citation.section?.includes('2') ? 8 : 0,
-                  }}
-                >
-                  <li style={{ marginBottom: 6 }}>
-                    <strong>Phase 1 – Architecture.</strong> The Polaris constellation pairs a primary conversational agent with specialist support models (e.g., medication, labs, nutrition, protocol, escalation) that check outputs to raise accuracy and reduce hallucination.
-                  </li>
-                  <li style={{ marginBottom: 6 }}>
-                    <strong>Phase 2 – Output testing.</strong> U.S.-licensed clinicians evaluate the agent by posing as patients; the company reports 7.7K+ clinicians and 775K+ test calls.
-                  </li>
-                  <li style={{ marginBottom: 6 }}>
-                    <strong>Phase 3 – Human clinical supervision</strong> of live operation.
-                  </li>
-                  <li style={{ marginBottom: 6 }}>
-                    <strong>Phase 4 – Escalation to human nurses</strong> when clinical triggers are detected.
-                  </li>
-                  <li style={{ marginBottom: 6 }}>
-                    <strong>Phase 5 – Cross-validation</strong> that real-world performance matches simulated testing, using production volume.
-                  </li>
-                </ul>
-                <p style={{ fontSize: 12.5, color: '#475569', marginBottom: 20 }}>
-                  The RWE-LLM study (medRxiv, 2025) documents a four-stage framework (pre-implementation, tiered review, resolution, continuous monitoring) with nurse review and physician adjudication of flagged calls across severity categories.
-                </p>
-
-                {/* Section 3 */}
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
-                  3. Harm-severity scale (proposed for M42)
-                </h2>
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: '#0d212c', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 10px', textAlign: 'left', width: '22%' }}>Level</th>
-                      <th style={{ padding: '6px 10px', textAlign: 'left', width: '45%' }}>Definition</th>
-                      <th style={{ padding: '6px 10px', textAlign: 'left' }}>Example</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#ef4444' }}>S4 – Severe</td>
-                      <td style={{ padding: '6px 10px' }}>Could cause death or serious permanent injury</td>
-                      <td style={{ padding: '6px 10px', color: '#64748b' }}>Failure to escalate chest-pain symptoms during a post-discharge call</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#f59e0b' }}>S3 – Moderate</td>
-                      <td style={{ padding: '6px 10px' }}>Could cause temporary injury needing intervention</td>
-                      <td style={{ padding: '6px 10px', color: '#64748b' }}>Incorrect reinforcement of a medication timing instruction</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#3b82f6' }}>S2 – Minor</td>
-                      <td style={{ padding: '6px 10px' }}>Could cause minor, self-limiting harm or distress</td>
-                      <td style={{ padding: '6px 10px', color: '#64748b' }}>Confusing appointment preparation instructions</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#64748b' }}>S1 – Negligible</td>
-                      <td style={{ padding: '6px 10px' }}>No clinical impact; experience issue</td>
-                      <td style={{ padding: '6px 10px', color: '#64748b' }}>Awkward phrasing, repeated question</td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* ── PAGE 1 CONTENT ── */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', borderBottom: '1px solid #e2e8f0', paddingBottom: 6, marginBottom: 20 }}>
+                <span>Hippocratic AI | Attachment A</span>
+                <span>Confidential – Prepared for M42 due diligence – Page 1</span>
               </div>
-            ) : (
-              /* ── PAGE 2 CONTENT ── */
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', borderBottom: '1px solid #e2e8f0', paddingBottom: 6, marginBottom: 20 }}>
-                  <span>Hippocratic AI | Attachment A</span>
-                  <span>Confidential – Prepared for M42 due diligence – Page 2</span>
+
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#00a0a0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Attachment A
+              </div>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: '4px 0 12px' }}>
+                Clinical Safety Case &amp; Hazard Log
+              </h1>
+              <div style={{ fontSize: 13, color: '#475569', marginBottom: 20 }}>
+                Hippocratic AI – response to M42 Vendor Architecture &amp; Due-Diligence Questionnaire (Round 1)
+              </div>
+
+              {/* Metadata Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: 12.5 }}>
+                <tbody>
+                  <tr style={{ background: '#f8fafc', color: '#0f172a', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', width: '30%', border: '1px solid #e2e8f0' }}>Item</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Detail</th>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Questionnaire reference</td>
+                    <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>1.2 (also supports 1.3, 1.7)</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Version / date</td>
+                    <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>v1.0 – 28 September 2026</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Classification</td>
+                    <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>Confidential – prepared for M42 due diligence</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Status</td>
+                    <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>Prepared for submission</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Basis notice */}
+              <div style={{ background: '#f1f5f9', borderLeft: '4px solid #00C4C4', padding: '10px 14px', fontSize: 12, color: '#334155', marginBottom: 24 }}>
+                <strong>Basis of this document:</strong> Statements about Hippocratic AI capabilities are drawn from its published materials (listed under Sources). Where specific values are not published, they reflect standard healthcare-SaaS industry practice and are recorded in the Assumptions Register of the accompanying tracker.
+              </div>
+
+              {/* Section 1 */}
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
+                1. Purpose and scope
+              </h2>
+              <p style={{ fontSize: 13, color: '#334155', marginBottom: 12 }}>
+                This document summarises how Hippocratic AI identifies, controls and monitors hazards that could lead to patient harm from its generative AI voice agents, and sets out a starting hazard log for the proposed M42 deployment. It is structured on ISO 14971 risk-management principles so M42 clinical safety officers can review it in a familiar form. Hippocratic AI&apos;s full internal risk register is available to M42 under mutual NDA and remains the controlling record.
+              </p>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: '#334155',
+                  marginBottom: 20,
+                  background: citation.section?.includes('1') ? '#fef08a' : 'transparent',
+                  padding: citation.section?.includes('1') ? '6px 10px' : '0',
+                  borderRadius: 6,
+                  border: citation.section?.includes('1') ? '1px solid #facc15' : 'none',
+                }}
+              >
+                <strong style={{ color: '#0f172a' }}>Intended use (public position).</strong> Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.
+              </p>
+
+              {/* Section 2 */}
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
+                2. Safety-assurance approach
+              </h2>
+              <p style={{ fontSize: 13, color: '#334155', marginBottom: 10 }}>
+                Hippocratic AI publicly describes a five-phase safety process:
+              </p>
+              <ul
+                style={{
+                  paddingLeft: 22,
+                  fontSize: 13,
+                  color: '#334155',
+                  marginBottom: 16,
+                  background: citation.section?.includes('2') ? '#fef08a' : 'transparent',
+                  borderRadius: 6,
+                  paddingTop: citation.section?.includes('2') ? 8 : 0,
+                  paddingBottom: citation.section?.includes('2') ? 8 : 0,
+                  border: citation.section?.includes('2') ? '1px solid #facc15' : 'none',
+                }}
+              >
+                <li style={{ marginBottom: 6 }}>
+                  <strong>Phase 1 – Architecture.</strong> The Polaris constellation pairs a primary conversational agent with specialist support models (e.g., medication, labs, nutrition, protocol, escalation) that check outputs to raise accuracy and reduce hallucination.
+                </li>
+                <li style={{ marginBottom: 6 }}>
+                  <strong>Phase 2 – Output testing.</strong> U.S.-licensed clinicians evaluate the agent by posing as patients; the company reports 7.7K+ clinicians and 775K+ test calls.
+                </li>
+                <li style={{ marginBottom: 6 }}>
+                  <strong>Phase 3 – Human clinical supervision</strong> of live operation.
+                </li>
+                <li style={{ marginBottom: 6 }}>
+                  <strong>Phase 4 – Escalation to human nurses</strong> when clinical triggers are detected.
+                </li>
+                <li style={{ marginBottom: 6 }}>
+                  <strong>Phase 5 – Cross-validation</strong> that real-world performance matches simulated testing, using production volume.
+                </li>
+              </ul>
+              <p style={{ fontSize: 12.5, color: '#475569', marginBottom: 20 }}>
+                The RWE-LLM study (medRxiv, 2025) documents a four-stage framework (pre-implementation, tiered review, resolution, continuous monitoring) with nurse review and physician adjudication of flagged calls across severity categories.
+              </p>
+
+              {/* Section 3 */}
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
+                3. Harm-severity scale (proposed for M42)
+              </h2>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: '#0d212c', color: '#ffffff' }}>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', width: '22%' }}>Level</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', width: '45%' }}>Definition</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left' }}>Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '6px 10px', fontWeight: 600, color: '#ef4444' }}>S4 – Severe</td>
+                    <td style={{ padding: '6px 10px' }}>Could cause death or serious permanent injury</td>
+                    <td style={{ padding: '6px 10px', color: '#64748b' }}>Failure to escalate chest-pain symptoms during a post-discharge call</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                    <td style={{ padding: '6px 10px', fontWeight: 600, color: '#f59e0b' }}>S3 – Moderate</td>
+                    <td style={{ padding: '6px 10px' }}>Could cause temporary injury needing intervention</td>
+                    <td style={{ padding: '6px 10px', color: '#64748b' }}>Incorrect reinforcement of a medication timing instruction</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '6px 10px', fontWeight: 600, color: '#3b82f6' }}>S2 – Minor</td>
+                    <td style={{ padding: '6px 10px' }}>Could cause minor, self-limiting harm or distress</td>
+                    <td style={{ padding: '6px 10px', color: '#64748b' }}>Confusing appointment preparation instructions</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '6px 10px', fontWeight: 600, color: '#64748b' }}>S1 – Negligible</td>
+                    <td style={{ padding: '6px 10px' }}>No clinical impact; experience issue</td>
+                    <td style={{ padding: '6px 10px', color: '#64748b' }}>Awkward phrasing, repeated question</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* ── PAGE 2 SEPARATOR & CONTENT ── */}
+            <div
+              id="citation-doc-page-2"
+              style={{
+                margin: '36px 0 28px',
+                paddingTop: 24,
+                borderTop: '2px dashed #cbd5e1',
+                position: 'relative',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', borderBottom: '1px solid #e2e8f0', paddingBottom: 6, marginBottom: 20 }}>
+                <span>Hippocratic AI | Attachment A</span>
+                <span>Confidential – Prepared for M42 due diligence – Page 2</span>
+              </div>
+
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '10px 0 12px' }}>
+                4. Starting hazard log (M42 deployment)
+              </h2>
+              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
+                Residual risk is rated after controls on a Low / Medium / High scale; ratings are re-scored jointly with M42 clinical safety leads at the quarterly review.
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: 11.5 }}>
+                <thead>
+                  <tr style={{ background: '#0d212c', color: '#ffffff' }}>
+                    <th style={{ padding: '6px 8px', textAlign: 'left', width: '7%' }}>ID</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left', width: '20%' }}>Hazard</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left', width: '20%' }}>Cause</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left', width: '35%' }}>Controls</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'center', width: '8%' }}>Sev.</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'center', width: '10%' }}>Residual</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-01</td>
+                    <td style={{ padding: '6px 8px' }}>Missed escalation of red-flag symptom</td>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>Patient downplays symptoms; ASR error</td>
+                    <td style={{ padding: '6px 8px' }}>Clinical-escalation supervisor model; probing behaviour; conservative thresholds; escalation to M42 nurse queue; call sampling</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ef4444', fontWeight: 600 }}>S4</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-02</td>
+                    <td style={{ padding: '6px 8px' }}>Incorrect medication information</td>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>Hallucination; stale med list</td>
+                    <td style={{ padding: '6px 8px' }}>Medication supervisor model; EHR as source of truth; agent does not change doses; escalation for discrepancies</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-03</td>
+                    <td style={{ padding: '6px 8px' }}>PHI disclosed to wrong person</td>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>Failed identity verification</td>
+                    <td style={{ padding: '6px 8px' }}>Identity verification before any PHI; caregiver-consent rules; privacy supervisor</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#3b82f6', fontWeight: 600 }}>S2</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-04</td>
+                    <td style={{ padding: '6px 8px' }}>Misunderstanding in Arabic dialect</td>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>Dialect/code-switching; audio quality</td>
+                    <td style={{ padding: '6px 8px' }}>Emirati Arabic support (public); contextual ASR; clarification and read-back; local validation with M42 clinicians</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ea580c', fontWeight: 600 }}>Medium (Low after local val.)</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-05</td>
+                    <td style={{ padding: '6px 8px' }}>Scope creep into diagnosis</td>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>Patient asks for diagnosis/prescription</td>
+                    <td style={{ padding: '6px 8px' }}>Hard scope constraints; redirect to clinician; supervisor checks</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-06</td>
+                    <td style={{ padding: '6px 8px' }}>Safeguarding cue missed</td>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>Self-harm or abuse disclosure</td>
+                    <td style={{ padding: '6px 8px' }}>Escalation skills for suicidal ideation and child-protection alerts (Polaris 5.0); immediate human handoff protocol agreed with M42</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ef4444', fontWeight: 600 }}>S4</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-07</td>
+                    <td style={{ padding: '6px 8px' }}>Dependency outage mid-call</td>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>Telephony/ASR/model/EHR failure</td>
+                    <td style={{ padding: '6px 8px' }}>Fail-safe: no clinical guidance without supervisor checks; graceful call end with callback; queued write-backs (see Attachment Q)</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#3b82f6', fontWeight: 600 }}>S2</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-08</td>
+                    <td style={{ padding: '6px 8px' }}>Write-back of wrong data to EHR</td>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>Mapping error</td>
+                    <td style={{ padding: '6px 8px' }}>Integration contract tests; clinician review of documented outcomes; reconciliation reports</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Section 5 & 6 */}
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '16px 0 8px' }}>
+                5. Monitoring and review
+              </h2>
+              <ul style={{ paddingLeft: 20, fontSize: 12.5, color: '#334155', marginBottom: 16 }}>
+                <li>Hippocratic AI states that 0.5%–1% of all live calls are sampled for safety review.</li>
+                <li>Monthly joint safety review with M42 (escalation rates, flagged calls, near-misses), and a quarterly hazard-log refresh.</li>
+                <li>Any S3/S4 event triggers the incident process in Attachment P.</li>
+              </ul>
+
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '16px 0 8px' }}>
+                6. Regulatory positioning in the UAE
+              </h2>
+              <p
+                style={{
+                  fontSize: 12.5,
+                  color: '#334155',
+                  marginBottom: 16,
+                  background: citation.section?.includes('6') ? '#fef08a' : 'transparent',
+                  padding: citation.section?.includes('6') ? '6px 10px' : '0',
+                  borderRadius: 6,
+                  border: citation.section?.includes('6') ? '1px solid #facc15' : 'none',
+                }}
+              >
+                Because the agents are non-diagnostic, Hippocratic AI&apos;s position is that they are not Software as a Medical Device. This position will be documented in a regulatory classification memo against UAE MOHAP SaMD guidance and the DoH Abu Dhabi Policy on Use of AI in the Healthcare Sector, submitted to M42 before go-live.
+              </p>
+
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12, marginTop: 16 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 4 }}>
+                  Sources (verify against these authoritative references):
                 </div>
-
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '10px 0 12px' }}>
-                  4. Starting hazard log (M42 deployment)
-                </h2>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
-                  Residual risk is rated after controls on a Low / Medium / High scale; ratings are re-scored jointly with M42 clinical safety leads at the quarterly review.
-                </div>
-
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: 11.5 }}>
-                  <thead>
-                    <tr style={{ background: '#0d212c', color: '#ffffff' }}>
-                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '7%' }}>ID</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '20%' }}>Hazard</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '20%' }}>Cause</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '35%' }}>Controls</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '8%' }}>Sev.</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '10%' }}>Residual</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-01</td>
-                      <td style={{ padding: '6px 8px' }}>Missed escalation of red-flag symptom</td>
-                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Patient downplays symptoms; ASR error</td>
-                      <td style={{ padding: '6px 8px' }}>Clinical-escalation supervisor model; probing behaviour; conservative thresholds; escalation to M42 nurse queue; call sampling</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ef4444', fontWeight: 600 }}>S4</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-02</td>
-                      <td style={{ padding: '6px 8px' }}>Incorrect medication information</td>
-                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Hallucination; stale med list</td>
-                      <td style={{ padding: '6px 8px' }}>Medication supervisor model; EHR as source of truth; agent does not change doses; escalation for discrepancies</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-03</td>
-                      <td style={{ padding: '6px 8px' }}>PHI disclosed to wrong person</td>
-                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Failed identity verification</td>
-                      <td style={{ padding: '6px 8px' }}>Identity verification before any PHI; caregiver-consent rules; privacy supervisor</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#3b82f6', fontWeight: 600 }}>S2</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-04</td>
-                      <td style={{ padding: '6px 8px' }}>Misunderstanding in Arabic dialect</td>
-                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Dialect/code-switching; audio quality</td>
-                      <td style={{ padding: '6px 8px' }}>Emirati Arabic support (public); contextual ASR; clarification and read-back; local validation with M42 clinicians</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ea580c', fontWeight: 600 }}>Medium (Low after local val.)</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-05</td>
-                      <td style={{ padding: '6px 8px' }}>Scope creep into diagnosis</td>
-                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Patient asks for diagnosis/prescription</td>
-                      <td style={{ padding: '6px 8px' }}>Hard scope constraints; redirect to clinician; supervisor checks</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-06</td>
-                      <td style={{ padding: '6px 8px' }}>Safeguarding cue missed</td>
-                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Self-harm or abuse disclosure</td>
-                      <td style={{ padding: '6px 8px' }}>Escalation skills for suicidal ideation and child-protection alerts (Polaris 5.0); immediate human handoff protocol agreed with M42</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ef4444', fontWeight: 600 }}>S4</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-07</td>
-                      <td style={{ padding: '6px 8px' }}>Dependency outage mid-call</td>
-                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Telephony/ASR/model/EHR failure</td>
-                      <td style={{ padding: '6px 8px' }}>Fail-safe: no clinical guidance without supervisor checks; graceful call end with callback; queued write-backs (see Attachment Q)</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#3b82f6', fontWeight: 600 }}>S2</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-08</td>
-                      <td style={{ padding: '6px 8px' }}>Write-back of wrong data to EHR</td>
-                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Mapping error</td>
-                      <td style={{ padding: '6px 8px' }}>Integration contract tests; clinician review of documented outcomes; reconciliation reports</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                {/* Section 5 & 6 */}
-                <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '16px 0 8px' }}>
-                  5. Monitoring and review
-                </h2>
-                <ul style={{ paddingLeft: 20, fontSize: 12.5, color: '#334155', marginBottom: 16 }}>
-                  <li>Hippocratic AI states that 0.5%–1% of all live calls are sampled for safety review.</li>
-                  <li>Monthly joint safety review with M42 (escalation rates, flagged calls, near-misses), and a quarterly hazard-log refresh.</li>
-                  <li>Any S3/S4 event triggers the incident process in Attachment P.</li>
-                </ul>
-
-                <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '16px 0 8px' }}>
-                  6. Regulatory positioning in the UAE
-                </h2>
-                <p
-                  style={{
-                    fontSize: 12.5,
-                    color: '#334155',
-                    marginBottom: 16,
-                    background: citation.section?.includes('6') ? '#fef9c3' : 'transparent',
-                    padding: citation.section?.includes('6') ? '6px 10px' : '0',
-                    borderRadius: 6,
-                  }}
-                >
-                  Because the agents are non-diagnostic, Hippocratic AI&apos;s position is that they are not Software as a Medical Device. This position will be documented in a regulatory classification memo against UAE MOHAP SaMD guidance and the DoH Abu Dhabi Policy on Use of AI in the Healthcare Sector, submitted to M42 before go-live.
-                </p>
-
-                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12, marginTop: 16 }}>
-                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 4 }}>
-                    Sources (verify against these authoritative references):
-                  </div>
-                  <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
-                    • Hippocratic AI Safety page – https://hippocraticai.com/safety/<br />
-                    • Bhimani et al., &ldquo;Real-World Evaluation of Large Language Models in Healthcare (RWE-LLM)&rdquo;, medRxiv (2025)<br />
-                    • ISO 14971:2019 Medical devices – Application of risk management<br />
-                    • Department of Health – Abu Dhabi – https://www.doh.gov.ae/
-                  </div>
+                <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
+                  • Hippocratic AI Safety page – https://hippocraticai.com/safety/<br />
+                  • Bhimani et al., &ldquo;Real-World Evaluation of Large Language Models in Healthcare (RWE-LLM)&rdquo;, medRxiv (2025)<br />
+                  • ISO 14971:2019 Medical devices – Application of risk management<br />
+                  • Department of Health – Abu Dhabi – https://www.doh.gov.ae/
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div
-          style={{
-            padding: '12px 20px',
-            background: '#ffffff',
-            borderTop: '1px solid #e2e8f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ fontSize: 12, color: '#64748b' }}>
-            Page {currentPage} of 2 • Attachment_A_Clinical_Safety_Case_Hazard_Log.pdf
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '7px 20px',
-              borderRadius: 8,
-              border: '1px solid #e2e8f0',
-              background: '#f8fafc',
-              color: '#334155',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Close Preview
-          </button>
         </div>
       </div>
     </div>,
@@ -2787,49 +2565,18 @@ export function SOWParticipantsModal({
                   </div>
                 </div>
 
-                {/* Right side: Access Type Badge (Edit Access vs View Only) */}
+                {/* Right side: Simple text access indicator */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                  {hasEditAccess ? (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4.5,
-                        padding: '3px 10px',
-                        borderRadius: 6,
-                        background: '#ecfdf5',
-                        border: '1px solid #a7f3d0',
-                        color: '#047857',
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        whiteSpace: 'nowrap',
-                      }}
-                      title="This participant has edit access to assigned sections and questions"
-                    >
-                      <Edit2 size={11} strokeWidth={2.4} />
-                      Edit Access
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4.5,
-                        padding: '3px 10px',
-                        borderRadius: 6,
-                        background: '#f1f5f9',
-                        border: '1px solid #cbd5e1',
-                        color: '#475569',
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        whiteSpace: 'nowrap',
-                      }}
-                      title="This participant has view-only access"
-                    >
-                      <Eye size={12} strokeWidth={2.2} />
-                      View Access
-                    </span>
-                  )}
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: hasEditAccess ? '#047857' : '#64748b',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {hasEditAccess ? 'Edit Access' : 'View Access'}
+                  </span>
                 </div>
               </div>
             )
@@ -7071,18 +6818,6 @@ function StructureTab({
                         {sec.title}
                       </span>
                     )}
-                    {/* Remaining questions count at section level */}
-                    {totalQ > 0 && (
-                      <span style={{
-                        fontSize: 10,
-                        fontWeight: 600,
-                        color: doneQ === totalQ ? '#16a34a' : '#64748b',
-                        flexShrink: 0,
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {doneQ}/{totalQ} questions
-                      </span>
-                    )}
                     {/* Deadline breached chip */}
                     {isDeadlineBreached && (
                       <span style={{
@@ -7650,6 +7385,7 @@ function StructureTab({
                       })}
                       {questions.map((item, qi) => {
                         const canEditSec = !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
+                        const isDepTarget = (sec.id === 's3' || idx === 2) && qi === 0
                         return (
                           <ItemRow
                             key={item.id}
@@ -7668,6 +7404,27 @@ function StructureTab({
                             onToggleQueue={() => toggleClientQueue(item.id)}
                             onOpenCitation={setCitationModalTarget}
                             onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
+                            hasDependentPrompt={isDepTarget && dependentPromptVisible && !hasCreatedDependentQuestion}
+                            onDismissDependentPrompt={() => setDependentPromptVisible(false)}
+                            onCreateDependentQuestion={() => {
+                              const newDepQuestion: SectionItem = {
+                                id: `dep-q-${Date.now()}`,
+                                type: 'question',
+                                text: 'What is the sequence and delivery scope breakdown across each implementation phase?',
+                                assignedTo: isContributor ? 'm1' : 'm1',
+                                answered: false,
+                              }
+                              setSections((prev) =>
+                                prev.map((s) =>
+                                  s.id === sec.id
+                                    ? { ...s, items: [...s.items, newDepQuestion] }
+                                    : s
+                                )
+                              )
+                              setHasCreatedDependentQuestion(true)
+                              setDependentPromptVisible(false)
+                              showToast('Dependent question added to Section 3', 'success')
+                            }}
                             onDelete={() => setDeleteConfirm({
                               isOpen: true,
                               title: 'Delete Question',
@@ -7677,82 +7434,6 @@ function StructureTab({
                           />
                         )
                       })}
-                      {/* Dependent Question Callout in Section 3 (Matches Snapshot 1) */}
-                      {(sec.id === 's3' || idx === 2) && dependentPromptVisible && !hasCreatedDependentQuestion && (
-                        <div
-                          style={{
-                            marginTop: 12,
-                            padding: '14px 18px',
-                            borderRadius: 12,
-                            background: '#f0f9ff',
-                            border: '1.5px solid #bae6fd',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 8,
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', fontSize: 13, fontWeight: 700 }}>
-                            <span style={{ fontSize: 14 }}>✦</span>
-                            Dependent question identified
-                          </div>
-                          <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
-                            Your answer introduces &ldquo;delivered in phases&rdquo;. The SOW needs the phase sequence and scope to define the timeline accurately.
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
-                            <button
-                              type="button"
-                              onClick={() => setDependentPromptVisible(false)}
-                              style={{
-                                padding: '6px 16px',
-                                borderRadius: 8,
-                                border: '1px solid #cbd5e1',
-                                background: '#ffffff',
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: '#475569',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Dismiss
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newDepQuestion: SectionItem = {
-                                  id: `dep-q-${Date.now()}`,
-                                  type: 'question',
-                                  text: 'What is the sequence and delivery scope breakdown across each implementation phase?',
-                                  assignedTo: isContributor ? 'm1' : 'm1',
-                                  answered: false,
-                                }
-                                setSections((prev) =>
-                                  prev.map((s) =>
-                                    s.id === sec.id
-                                      ? { ...s, items: [...s.items, newDepQuestion] }
-                                      : s
-                                  )
-                                )
-                                setHasCreatedDependentQuestion(true)
-                                setDependentPromptVisible(false)
-                                showToast('Dependent question added to Section 3', 'success')
-                              }}
-                              style={{
-                                padding: '6px 18px',
-                                borderRadius: 8,
-                                border: 'none',
-                                background: '#0284c7',
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: '#ffffff',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
-                              }}
-                            >
-                              Create dependent question
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
                   {!isContributor && !isReviewer && (
@@ -7879,6 +7560,9 @@ function ItemRow({
   canEdit: canEditProp,
   showCheckboxAlways = false,
   onReassign,
+  hasDependentPrompt = false,
+  onDismissDependentPrompt,
+  onCreateDependentQuestion,
 }: {
   item: SectionItem
   label: string
@@ -7898,6 +7582,9 @@ function ItemRow({
   canEdit?: boolean
   showCheckboxAlways?: boolean
   onReassign?: (newMemberId: string) => void
+  hasDependentPrompt?: boolean
+  onDismissDependentPrompt?: () => void
+  onCreateDependentQuestion?: () => void
 }) {
   const canEdit = canEditProp !== undefined ? canEditProp : (!isContributor && !isReviewer)
   const [hovered, setHovered] = useState(false)
@@ -8244,6 +7931,33 @@ function ItemRow({
                 Edit
               </button>
             )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenTrace?.(item, label)
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#008b8b',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0 4px',
+                flexShrink: 0,
+                transition: 'opacity 0.15s ease',
+              }}
+              title="View statement-level traceability history"
+              onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.75')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
+            >
+              <ExternalLink size={10} />
+              View trace
+            </button>
           </div>
         )}
         {item.response && !editing && attachedDoc && (
@@ -8295,7 +8009,7 @@ function ItemRow({
                 }}
               >
                 <ExternalLink size={10} />
-                Citation (Page 1)
+                Page 1
               </button>
             </div>
           </div>
@@ -8381,7 +8095,7 @@ function ItemRow({
                     }}
                   >
                     <ExternalLink size={10} />
-                    Citation (Page 1)
+                    Page 1
                   </button>
                   <button
                     type="button"
@@ -8406,122 +8120,212 @@ function ItemRow({
                 </div>
               </div>
             )}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <label>
-                <input
-                  type="file"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      const file = e.target.files[0]
-                      const docName = file.name || 'Clinical Safety Case & Hazard Log Attachment A.pdf'
-                      setAttachedDoc({
-                        name: docName,
-                        page: 1,
-                        section: 'Clinical Safety Case & Hazard Log Attachment A',
-                      })
-                      setHasAttachedDoc(true)
-                      const extracted = `Document "${docName}" attached. The requirement is confirmed per Clinical Safety Case standards.`
-                      setDraft(draft ? draft + '\n' + extracted : extracted)
-                      setIsAiGenerated(true)
-                      setIsEditedAi(false)
-                    }
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <label>
+                  <input
+                    type="file"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        const file = e.target.files[0]
+                        const docName = file.name || 'Clinical Safety Case & Hazard Log Attachment A.pdf'
+                        setAttachedDoc({
+                          name: docName,
+                          page: 1,
+                          section: 'Clinical Safety Case & Hazard Log Attachment A',
+                        })
+                        setHasAttachedDoc(true)
+                        const extracted = `Document "${docName}" attached. The requirement is confirmed per Clinical Safety Case standards.`
+                        setDraft(draft ? draft + '\n' + extracted : extracted)
+                        setIsAiGenerated(true)
+                        setIsEditedAi(false)
+                      }
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '5px 10px',
+                      borderRadius: 6,
+                      border: '1px solid rgba(14,165,233,0.35)',
+                      background: 'rgba(14,165,233,0.07)',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      color: '#0ea5e9',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                    {attachedDoc ? 'Doc Attached' : 'Upload Doc'}
+                    {!attachedDoc && <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(15 Tokens)</span>}
+                  </div>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft(
+                      isAssumption
+                        ? 'Confirmed — validated with the client stakeholder and captured for the record.'
+                        : 'Yes, confirmed with the client team; details captured and will be reflected in the final SOW.'
+                    )
+                    setIsAiGenerated(true)
+                    setIsEditedAi(false)
                   }}
-                />
-                <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 5,
                     padding: '5px 10px',
                     borderRadius: 6,
-                    border: '1px solid rgba(14,165,233,0.35)',
-                    background: 'rgba(14,165,233,0.07)',
+                    border: '1px solid rgba(139,92,246,0.35)',
+                    background: 'rgba(139,92,246,0.07)',
                     fontSize: 11.5,
                     fontWeight: 600,
-                    color: '#0ea5e9',
+                    color: '#7c3aed',
                     cursor: 'pointer',
                   }}
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-                  {attachedDoc ? 'Doc Attached' : 'Upload Doc'}
-                  {!attachedDoc && <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(15 Tokens)</span>}
-                </div>
-              </label>
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
+                  </svg>
+                  Answer with AI <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(10 Tokens)</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!draft.trim()}
+                  onClick={() => {
+                    onAnswer?.(draft.trim(), isAiGenerated, isEditedAi)
+                    setEditing(false)
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '5px 12px',
+                    borderRadius: 6,
+                    border: 'none',
+                    background: draft.trim() ? '#16a34a' : 'rgba(148,163,184,0.25)',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: draft.trim() ? '#ffffff' : '#94a3b8',
+                    cursor: draft.trim() ? 'pointer' : 'not-allowed',
+                    boxShadow: draft.trim() ? '0 1px 4px rgba(22,163,74,0.35)' : 'none',
+                  }}
+                >
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  Save Answer
+                </button>
+              </div>
+
+              {/* View trace button on the same line as input field */}
               <button
                 type="button"
-                onClick={() => {
-                  setDraft(
-                    isAssumption
-                      ? 'Confirmed — validated with the client stakeholder and captured for the record.'
-                      : 'Yes, confirmed with the client team; details captured and will be reflected in the final SOW.'
-                  )
-                  setIsAiGenerated(true)
-                  setIsEditedAi(false)
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpenTrace?.(item, label)
                 }}
+                title="View statement-level traceability history"
                 style={{
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 5,
-                  padding: '5px 10px',
-                  borderRadius: 6,
-                  border: '1px solid rgba(139,92,246,0.35)',
-                  background: 'rgba(139,92,246,0.07)',
+                  gap: 3,
                   fontSize: 11.5,
                   fontWeight: 600,
-                  color: '#7c3aed',
+                  color: '#008b8b',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  marginLeft: 'auto',
+                  transition: 'opacity 0.15s ease',
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.75')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
+              >
+                <ExternalLink size={11} />
+                View trace
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Dependent Question Callout under Question/Assumption Answer */}
+        {hasDependentPrompt && (
+          <div
+            style={{
+              marginTop: 10,
+              padding: '12px 16px',
+              borderRadius: 10,
+              background: 'rgba(0,196,196,0.06)',
+              border: '1px solid rgba(0,196,196,0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#008080', fontSize: 13, fontWeight: 700 }}>
+              <Sparkles size={14} color="#00C4C4" />
+              Dependent question identified
+            </div>
+            <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5 }}>
+              Your answer introduces &ldquo;delivered in phases&rdquo;. The SOW needs the phase sequence and scope to define the timeline accurately.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+              <button
+                type="button"
+                onClick={onDismissDependentPrompt}
+                style={{
+                  padding: '5px 14px',
+                  borderRadius: 6,
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#475569',
                   cursor: 'pointer',
                 }}
               >
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
-                </svg>
-                Answer with AI <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(10 Tokens)</span>
+                Dismiss
               </button>
               <button
                 type="button"
-                disabled={!draft.trim()}
-                onClick={() => {
-                  onAnswer?.(draft.trim(), isAiGenerated, isEditedAi)
-                  setEditing(false)
-                }}
+                onClick={onCreateDependentQuestion}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  padding: '5px 12px',
+                  padding: '5px 16px',
                   borderRadius: 6,
                   border: 'none',
-                  background: draft.trim() ? '#16a34a' : 'rgba(148,163,184,0.25)',
-                  fontSize: 11.5,
+                  background: '#00C4C4',
+                  fontSize: 12,
                   fontWeight: 700,
-                  color: draft.trim() ? '#ffffff' : '#94a3b8',
-                  cursor: draft.trim() ? 'pointer' : 'not-allowed',
-                  boxShadow: draft.trim() ? '0 1px 4px rgba(22,163,74,0.35)' : 'none',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,196,196,0.25)',
                 }}
               >
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-                Save Answer
+                Create dependent question
               </button>
             </div>
           </div>
@@ -8537,41 +8341,6 @@ function ItemRow({
             onReassign={canEdit ? onReassign : undefined}
           />
         )}
-        {/* Statement-Level Traceability button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpenTrace?.(item, label)
-          }}
-          title="View statement-level traceability history"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '3px 8px',
-            borderRadius: 6,
-            background: 'rgba(0,196,196,0.08)',
-            border: '1px solid rgba(0,196,196,0.25)',
-            color: '#008080',
-            fontSize: 11,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.12s ease',
-            whiteSpace: 'nowrap',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(0,196,196,0.16)'
-            e.currentTarget.style.borderColor = 'rgba(0,196,196,0.45)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(0,196,196,0.08)'
-            e.currentTarget.style.borderColor = 'rgba(0,196,196,0.25)'
-          }}
-        >
-          <History size={11} />
-          View Trace
-        </button>
         {canEdit && !hideAssigneesAndQueue && (
           <button
             onClick={() => onToggleQueue?.()}
@@ -8674,8 +8443,11 @@ interface AIReviewFinding {
   description: string
   affected: string
   evidence: string
+  suggestedFix?: string
   resolved: boolean
   resolutionType?: string
+  assignedEmail?: string
+  dismissReason?: string
 }
 
 const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
@@ -8686,7 +8458,8 @@ const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
     title: 'Requirement R-014 is not addressed',
     description: 'Requirement R-014 is not addressed in the Deliverables section.',
     affected: 'Deliverables',
-    evidence: 'Review the highlighted evidence, choose a resolution, and the system records who resolved or dismissed it, when, and the before/after text.',
+    evidence: 'Polaris Constellation check identified that requirement R-014 (Clinical decision-support escalation workflow) has no corresponding output deliverable in Section 8.',
+    suggestedFix: 'Incorporate requirement R-014 into Deliverable D-03 specification.',
     resolved: false,
   },
   {
@@ -8697,6 +8470,7 @@ const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
     description: 'Implementation timeline differs: Section 3 says 8 weeks; Section 7 says 10 weeks.',
     affected: 'Scope · Timeline',
     evidence: 'Implementation timeline differs: Section 3 states "8 weeks" for rollout completion while Section 7 timeline schedule lists "10 weeks".',
+    suggestedFix: 'Standardize project timeline duration across all sections to 8 weeks as confirmed in RFP.',
     resolved: false,
   },
   {
@@ -8707,6 +8481,7 @@ const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
     description: 'Two key statements have no linked requirement, source, or approved change.',
     affected: 'Executive Summary',
     evidence: 'Two key statements have no linked requirement, source, or approved change in the intake repository or validated stakeholder responses.',
+    suggestedFix: 'Link Executive Summary milestones to RFP Section 4.2 data source.',
     resolved: false,
   },
   {
@@ -8717,6 +8492,7 @@ const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
     description: '"Improve system performance" is ambiguous and has no measurable acceptance criterion.',
     affected: 'Objectives',
     evidence: '"Improve system performance" is ambiguous and has no measurable acceptance criterion or quantitative service-level threshold defined.',
+    suggestedFix: 'Quantify performance target as: <250ms API response latency under 5,000 req/sec load.',
     resolved: false,
   },
   {
@@ -8727,6 +8503,7 @@ const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
     description: 'Deliverable 4 uses terminology that differs from the approved client input.',
     affected: 'Deliverables',
     evidence: 'Deliverable 4 uses terminology that differs from the approved client input document "Scope_Requirements_RFP.pdf".',
+    suggestedFix: 'Align terminology to match approved "Clinical Decision Support" standard.',
     resolved: false,
   },
 ]
@@ -8737,71 +8514,152 @@ function AIReviewModal({
   onAcknowledge,
   onSendToRework,
   hasRunBefore,
+  onResolveManually,
 }: {
   isOpen: boolean
   onClose: () => void
   onAcknowledge: () => void
   onSendToRework: () => void
   hasRunBefore: boolean
+  onResolveManually?: (affected: string) => void
 }) {
   const { showToast } = useToast()
-  const [stage, setStage] = useState<'thinking' | 'summary' | 'findings'>(hasRunBefore ? 'summary' : 'thinking')
-  const [thinkingStep, setThinkingStep] = useState(0)
+  const [stage, setStage] = useState<'thinking' | 'summary'>(hasRunBefore ? 'summary' : 'thinking')
   const [findings, setFindings] = useState<AIReviewFinding[]>(INITIAL_AI_FINDINGS)
-  const [criteriaFilter, setCriteriaFilter] = useState<'All' | 'Completeness' | 'Consistency' | 'Traceability' | 'Clarity'>('All')
-  const [severityFilter, setSeverityFilter] = useState<'All' | 'Critical' | 'Needs Review'>('All')
-  const [statusFilter, setStatusFilter] = useState<'All' | 'Open' | 'Resolved'>('All')
-  const [activeResolutionFinding, setActiveResolutionFinding] = useState<AIReviewFinding | null>(null)
-  const [chosenResolutionOption, setChosenResolutionOption] = useState<string | null>(null)
+  const [expandedCriteria, setExpandedCriteria] = useState<Record<string, boolean>>({
+    Completeness: false,
+    Consistency: false,
+    Traceability: false,
+    Clarity: false,
+  })
+
+  // Action inline states for Assign & Dismiss
+  const [activeAssignFindingId, setActiveAssignFindingId] = useState<string | null>(null)
+  const [assignEmail, setAssignEmail] = useState('')
+  const [assignEmailError, setAssignEmailError] = useState<string | null>(null)
+
+  const [activeDismissFindingId, setActiveDismissFindingId] = useState<string | null>(null)
+  const [dismissReason, setDismissReason] = useState('')
+  const [dismissReasonError, setDismissReasonError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
     if (stage === 'thinking') {
-      setThinkingStep(0)
-      const t1 = setTimeout(() => setThinkingStep(1), 600)
-      const t2 = setTimeout(() => setThinkingStep(2), 1200)
-      const t3 = setTimeout(() => setThinkingStep(3), 1800)
-      const t4 = setTimeout(() => {
+      const timer = setTimeout(() => {
         setStage('summary')
-      }, 2500)
-      return () => {
-        clearTimeout(t1)
-        clearTimeout(t2)
-        clearTimeout(t3)
-        clearTimeout(t4)
-      }
+      }, 2400)
+      return () => clearTimeout(timer)
     }
   }, [isOpen, stage])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   if (!isOpen) return null
 
-  const openFindings = findings.filter((f) => !f.resolved)
-  const filteredFindings = findings.filter((f) => {
-    if (criteriaFilter !== 'All' && f.criteria !== criteriaFilter) return false
-    if (severityFilter !== 'All' && f.severity !== severityFilter) return false
-    if (statusFilter === 'Open' && f.resolved) return false
-    if (statusFilter === 'Resolved' && !f.resolved) return false
-    return true
-  })
+  const toggleCriteria = (crit: string) => {
+    setExpandedCriteria((prev) => ({ ...prev, [crit]: !prev[crit] }))
+  }
 
-  const completenessFindings = openFindings.filter((f) => f.criteria === 'Completeness').length
-  const consistencyFindings = openFindings.filter((f) => f.criteria === 'Consistency').length
-  const traceabilityFindings = openFindings.filter((f) => f.criteria === 'Traceability').length
-  const clarityFindings = openFindings.filter((f) => f.criteria === 'Clarity').length
+  // 1. Resolve manually
+  const handleResolveManuallyClick = (finding: AIReviewFinding) => {
+    showToast(`Redirecting to "${finding.affected}" for manual edits.`, 'info')
+    onResolveManually?.(finding.affected)
+    onClose()
+  }
 
-  const handleResolveActiveFinding = () => {
-    if (!activeResolutionFinding || !chosenResolutionOption) return
+  // 2. Accept AI option
+  const handleAcceptAiOptionClick = (finding: AIReviewFinding) => {
     setFindings((prev) =>
       prev.map((f) =>
-        f.id === activeResolutionFinding.id
-          ? { ...f, resolved: true, resolutionType: chosenResolutionOption }
+        f.id === finding.id
+          ? { ...f, resolved: true, resolutionType: 'Accepted AI option' }
           : f
       )
     )
-    showToast(`Finding resolved: ${chosenResolutionOption}`, 'success')
-    setActiveResolutionFinding(null)
-    setChosenResolutionOption(null)
+    showToast(`AI recommendation accepted and draft updated for "${finding.title}".`, 'success')
+    onClose()
   }
+
+  // 3. Assign to contributor (with regex validation)
+  const handleConfirmAssign = (finding: AIReviewFinding) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!assignEmail.trim()) {
+      setAssignEmailError('Email address is required.')
+      return
+    }
+    if (!emailRegex.test(assignEmail.trim())) {
+      setAssignEmailError('Please enter a valid email address (e.g. name@m42.ae).')
+      return
+    }
+
+    setFindings((prev) =>
+      prev.map((f) =>
+        f.id === finding.id
+          ? { ...f, resolved: true, resolutionType: 'Assigned to contributor', assignedEmail: assignEmail.trim() }
+          : f
+      )
+    )
+    showToast(`Finding assigned to ${assignEmail.trim()} successfully!`, 'success')
+    setActiveAssignFindingId(null)
+    setAssignEmail('')
+    setAssignEmailError(null)
+    onClose()
+  }
+
+  // 4. Dismiss (mandatory reason)
+  const handleConfirmDismiss = (finding: AIReviewFinding) => {
+    if (!dismissReason.trim()) {
+      setDismissReasonError('Reason is mandatory to dismiss an AI finding.')
+      return
+    }
+
+    setFindings((prev) =>
+      prev.map((f) =>
+        f.id === finding.id
+          ? { ...f, resolved: true, resolutionType: 'Dismissed', dismissReason: dismissReason.trim() }
+          : f
+      )
+    )
+    showToast(`Finding dismissed: ${dismissReason.trim()}`, 'info')
+    setActiveDismissFindingId(null)
+    setDismissReason('')
+    setDismissReasonError(null)
+  }
+
+  const CRITERIA_PARAMS: {
+    key: 'Completeness' | 'Consistency' | 'Traceability' | 'Clarity'
+    name: string
+    description: string
+  }[] = [
+    {
+      key: 'Completeness',
+      name: 'Completeness',
+      description: 'Checks for mandatory section coverage, RFP requirements, and deliverable commitments.',
+    },
+    {
+      key: 'Consistency',
+      name: 'Consistency',
+      description: 'Verifies alignment between project timelines, commercial terms, and scope statements.',
+    },
+    {
+      key: 'Traceability',
+      name: 'Traceability',
+      description: 'Confirms that statements, assumptions, and commitments link back to RFP or source citations.',
+    },
+    {
+      key: 'Clarity',
+      name: 'Clarity',
+      description: 'Evaluates measurable acceptance criteria, unambiguous scope boundaries, and consistent terminology.',
+    },
+  ]
+
+  const totalOpenFindings = findings.filter((f) => !f.resolved).length
 
   return (
     <div
@@ -8809,760 +8667,740 @@ function AIReviewModal({
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        background: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(5px)',
+        background: 'rgba(13,33,44,0.5)',
+        backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20,
+        padding: 24,
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !activeResolutionFinding) onClose()
-      }}
+      onClick={onClose}
     >
       <div
         style={{
-          background: '#ffffff',
-          borderRadius: 20,
-          boxShadow: '0 25px 60px -15px rgba(0,0,0,0.3)',
-          border: '1px solid #e2e8f0',
-          width: 780,
-          maxWidth: '94vw',
+          width: '100%',
+          maxWidth: 960,
           maxHeight: '90vh',
+          background: '#ffffff',
+          borderRadius: 16,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.22)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          animation: 'fadeIn 0.2s ease-out',
+          border: '1px solid rgba(0,196,196,0.2)',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
+        {/* ── Top Header ── */}
         <div
           style={{
-            padding: '18px 24px',
-            borderBottom: '1px solid #f1f5f9',
+            padding: '16px 24px',
+            borderBottom: '1px solid #e2e8f0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             background: '#ffffff',
+            flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, rgba(0,196,196,0.15) 0%, rgba(2,132,199,0.15) 100%)',
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: 'linear-gradient(135deg, rgba(0,196,196,0.18) 0%, rgba(2,132,199,0.18) 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Sparkles size={18} color="#00a0a0" />
+              <Sparkles size={20} color="#00a0a0" />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center', gap: 8 }}>
-                AI Review & Summary
-                {stage === 'findings' && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>
-                    • Detailed Findings
-                  </span>
-                )}
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center', gap: 10 }}>
+                AI Review &amp; Summary
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    padding: '2px 10px',
+                    borderRadius: 9999,
+                    background: totalOpenFindings === 0 ? '#dcfce7' : '#fee2e2',
+                    color: totalOpenFindings === 0 ? '#15803d' : '#dc2626',
+                    border: totalOpenFindings === 0 ? '1px solid rgba(187,247,208,0.7)' : '1px solid rgba(254,202,202,0.7)',
+                  }}
+                >
+                  {totalOpenFindings === 0 ? 'All Parameters Ready' : `${totalOpenFindings} Findings Require Action`}
+                </span>
               </div>
               <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>
                 Automated document evaluation across 4 quality dimensions
               </div>
             </div>
           </div>
+
           <button
             type="button"
             onClick={onClose}
             style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#94a3b8',
-              padding: 4,
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              color: '#64748b',
+              width: 32,
+              height: 32,
+              borderRadius: 8,
               display: 'flex',
-              borderRadius: 6,
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.background = '#fee2e2'
+              el.style.color = '#ef4444'
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.background = '#f1f5f9'
+              el.style.color = '#64748b'
+            }}
+            title="Close AI Review"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
-          {stage === 'thinking' && (
-            <div style={{ textAlign: 'center', padding: '36px 12px' }}>
-              <div
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: '50%',
-                  background: 'rgba(0,196,196,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 20px',
-                  position: 'relative',
-                }}
-              >
-                <RefreshCw
-                  size={32}
-                  color="#00C4C4"
-                  style={{ animation: 'spin 1.5s linear infinite' }}
-                />
+        {/* ── Processing / Thinking Stage using FormGeneratingAnimation inside Popup ── */}
+        {stage === 'thinking' ? (
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#f8fafc',
+              padding: '40px 24px',
+              minHeight: 360,
+            }}
+          >
+            <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
+              <div style={{ marginBottom: 16 }}>
+                <FormGeneratingAnimation />
               </div>
               <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>
                 AI is reviewing the entire SOW draft…
               </div>
-              <div style={{ fontSize: 13, color: '#64748b', maxWidth: 440, margin: '0 auto 28px', lineHeight: 1.5 }}>
-                Scanning all 19 sections against RFP requirements, commercial constraints, and compliance benchmarks.
+              <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 24 }}>
+                Scanning all 20 sections against RFP requirements, commercial constraints, traceability citations, and quality dimensions.
               </div>
-
-              {/* Steps list */}
-              <div
-                style={{
-                  maxWidth: 420,
-                  margin: '0 auto',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 12,
-                  padding: '16px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                  textAlign: 'left',
-                }}
-              >
-                {[
-                  'Analyzing document completeness & structure',
-                  'Checking consistency between timeline & scope',
-                  'Verifying requirement traceability & citations',
-                  'Evaluating language clarity & acceptance criteria',
-                ].map((stepText, idx) => {
-                  const isDone = thinkingStep > idx
-                  const isCurrent = thinkingStep === idx
-                  return (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          background: isDone ? '#16a34a' : isCurrent ? 'rgba(0,196,196,0.15)' : '#e2e8f0',
-                          color: isDone ? '#ffffff' : isCurrent ? '#00a0a0' : '#94a3b8',
-                        }}
-                      >
-                        {isDone ? '✓' : isCurrent ? '⟳' : idx + 1}
-                      </div>
-                      <span
-                        style={{
-                          fontSize: 12.5,
-                          fontWeight: isCurrent ? 600 : 500,
-                          color: isDone ? '#16a34a' : isCurrent ? '#0d212c' : '#94a3b8',
-                        }}
-                      >
-                        {stepText}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-
-              <div style={{ marginTop: 24 }}>
-                <button
-                  type="button"
-                  onClick={() => setStage('summary')}
-                  style={{
-                    padding: '8px 18px',
-                    borderRadius: 8,
-                    background: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    color: '#64748b',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Skip to Results
-                </button>
-              </div>
-            </div>
-          )}
-
-          {stage === 'summary' && (
-            <div>
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c' }}>
-                  AI Review Summary
-                </div>
-                <div style={{ fontSize: 13, color: '#64748b', marginTop: 3 }}>
-                  Status + findings, not a percentage score.
-                </div>
-              </div>
-
-              {/* 4 Factor rows */}
-              <div
-                style={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                  background: '#ffffff',
-                  marginBottom: 24,
-                }}
-              >
-                {[
-                  {
-                    name: 'Completeness',
-                    status: completenessFindings > 0 ? 'Not Ready' : 'Ready',
-                    statusColor: completenessFindings > 0 ? '#ef4444' : '#16a34a',
-                    dotColor: completenessFindings > 0 ? '#ef4444' : '#16a34a',
-                    count: completenessFindings,
-                    criteria: 'Completeness' as const,
-                  },
-                  {
-                    name: 'Consistency',
-                    status: consistencyFindings > 0 ? 'Review' : 'Ready',
-                    statusColor: consistencyFindings > 0 ? '#ea580c' : '#16a34a',
-                    dotColor: consistencyFindings > 0 ? '#ea580c' : '#16a34a',
-                    count: consistencyFindings,
-                    criteria: 'Consistency' as const,
-                  },
-                  {
-                    name: 'Traceability',
-                    status: traceabilityFindings > 0 ? 'Review' : 'Ready',
-                    statusColor: traceabilityFindings > 0 ? '#ea580c' : '#16a34a',
-                    dotColor: traceabilityFindings > 0 ? '#ea580c' : '#16a34a',
-                    count: traceabilityFindings,
-                    criteria: 'Traceability' as const,
-                  },
-                  {
-                    name: 'Clarity',
-                    status: clarityFindings > 0 ? 'Review' : 'Ready',
-                    statusColor: clarityFindings > 0 ? '#ea580c' : '#16a34a',
-                    dotColor: clarityFindings > 0 ? '#ea580c' : '#16a34a',
-                    count: clarityFindings,
-                    criteria: 'Clarity' as const,
-                  },
-                ].map((factor, idx) => (
-                  <div
-                    key={factor.name}
-                    onClick={() => {
-                      setCriteriaFilter(factor.criteria)
-                      setStage('findings')
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '16px 20px',
-                      borderBottom: idx < 3 ? '1px solid #f1f5f9' : 'none',
-                      cursor: 'pointer',
-                      transition: 'background 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
-                  >
-                    <div style={{ fontSize: 14.5, fontWeight: 600, color: '#0d212c' }}>
-                      {factor.name}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: factor.statusColor,
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: factor.dotColor,
-                            display: 'inline-block',
-                          }}
-                        />
-                        {factor.status}
-                      </div>
-                      <div
-                        style={{
-                          width: 22,
-                          height: 22,
-                          borderRadius: 6,
-                          background: '#f1f5f9',
-                          color: '#64748b',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {factor.count}
-                      </div>
-                      <ChevronDown
-                        size={15}
-                        color="#94a3b8"
-                        style={{ transform: 'rotate(-90deg)' }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Status explanation */}
-              <div
-                style={{
-                  fontSize: 12,
-                  color: '#64748b',
-                  marginBottom: 24,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                }}
-              >
-                <span>3 states:</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', fontWeight: 600 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a' }} />
-                  Ready
-                </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#ea580c', fontWeight: 600 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ea580c' }} />
-                  Review
-                </span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#ef4444', fontWeight: 600 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444' }} />
-                  Not Ready
-                </span>
-              </div>
-
-              {/* Summary Bottom Actions (Send to Rework & Acknowledge) */}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSendToRework()
-                    onClose()
-                    showToast('SOW sent to rework with AI review findings.', 'info')
-                  }}
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: 10,
-                    background: '#ffffff',
-                    border: '1.5px solid #cbd5e1',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: '#334155',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Send to Rework
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onAcknowledge()
-                    setStage('findings')
-                  }}
-                  style={{
-                    padding: '10px 24px',
-                    borderRadius: 10,
-                    background: '#00C4C4',
-                    border: 'none',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
-                  }}
-                >
-                  Acknowledge
-                </button>
-              </div>
-            </div>
-          )}
-
-          {stage === 'findings' && (
-            <div>
-              {/* Top controls: count & filters */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: 18,
-                  gap: 12,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => setStage('summary')}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#00a0a0',
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      padding: 0,
-                    }}
-                  >
-                    ← Summary
-                  </button>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
-                    {openFindings.length} findings
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {/* Criteria filter */}
-                  <select
-                    value={criteriaFilter}
-                    onChange={(e) => setCriteriaFilter(e.target.value as any)}
-                    style={{
-                      padding: '6px 10px',
-                      fontSize: 12,
-                      borderRadius: 8,
-                      border: '1px solid #cbd5e1',
-                      background: '#ffffff',
-                      color: '#334155',
-                      cursor: 'pointer',
-                      outline: 'none',
-                    }}
-                  >
-                    <option value="All">All criteria</option>
-                    <option value="Completeness">Completeness</option>
-                    <option value="Consistency">Consistency</option>
-                    <option value="Traceability">Traceability</option>
-                    <option value="Clarity">Clarity</option>
-                  </select>
-
-                  {/* Severity filter */}
-                  <select
-                    value={severityFilter}
-                    onChange={(e) => setSeverityFilter(e.target.value as any)}
-                    style={{
-                      padding: '6px 10px',
-                      fontSize: 12,
-                      borderRadius: 8,
-                      border: '1px solid #cbd5e1',
-                      background: '#ffffff',
-                      color: '#334155',
-                      cursor: 'pointer',
-                      outline: 'none',
-                    }}
-                  >
-                    <option value="All">All severity</option>
-                    <option value="Critical">Critical</option>
-                    <option value="Needs Review">Needs Review</option>
-                  </select>
-
-                  {/* Status filter */}
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    style={{
-                      padding: '6px 10px',
-                      fontSize: 12,
-                      borderRadius: 8,
-                      border: '1px solid #cbd5e1',
-                      background: '#ffffff',
-                      color: '#334155',
-                      cursor: 'pointer',
-                      outline: 'none',
-                    }}
-                  >
-                    <option value="All">All status</option>
-                    <option value="Open">Open</option>
-                    <option value="Resolved">Resolved</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Findings list (Matches Snapshot 3) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {filteredFindings.map((finding) => (
-                  <div
-                    key={finding.id}
-                    style={{
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 12,
-                      padding: '16px 18px',
-                      background: finding.resolved ? '#f8fafc' : '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 16,
-                      opacity: finding.resolved ? 0.7 : 1,
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: finding.resolved
-                              ? '#16a34a'
-                              : finding.severity === 'Critical'
-                              ? '#ef4444'
-                              : '#ea580c',
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c' }}>
-                          {finding.resolved
-                            ? `Resolved · ${finding.criteria}`
-                            : `${finding.severity} · ${finding.criteria}`}
-                        </span>
-                        {finding.resolved && (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              color: '#16a34a',
-                              background: 'rgba(22,163,74,0.1)',
-                              padding: '1px 6px',
-                              borderRadius: 4,
-                            }}
-                          >
-                            ✓ {finding.resolutionType || 'Resolved'}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 8 }}>
-                        {finding.description}
-                      </div>
-                      <div>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: '#64748b',
-                            background: '#f1f5f9',
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                          }}
-                        >
-                          Affected: {finding.affected}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* ONLY Review button (no compare or trace button) */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveResolutionFinding(finding)
-                          setChosenResolutionOption(null)
-                        }}
-                        style={{
-                          padding: '8px 18px',
-                          borderRadius: 8,
-                          border: '1px solid #cbd5e1',
-                          background: '#ffffff',
-                          color: '#0284c7',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                          whiteSpace: 'nowrap',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#f0f9ff'
-                          e.currentTarget.style.borderColor = '#0284c7'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = '#ffffff'
-                          e.currentTarget.style.borderColor = '#cbd5e1'
-                        }}
-                      >
-                        Review
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Resolution Modal Overlay (Matches Snapshot 4) */}
-        {activeResolutionFinding && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 100000,
-              background: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(3px)',
-            }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setActiveResolutionFinding(null)
-            }}
-          >
-            <div
-              style={{
-                background: '#ffffff',
-                borderRadius: 20,
-                width: 580,
-                maxWidth: '92vw',
-                padding: '24px 26px',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-                position: 'relative',
-              }}
-            >
               <button
                 type="button"
-                onClick={() => setActiveResolutionFinding(null)}
+                onClick={() => setStage('summary')}
                 style={{
-                  position: 'absolute',
-                  top: 18,
-                  right: 18,
-                  background: 'none',
-                  border: 'none',
+                  padding: '7px 22px',
+                  borderRadius: 8,
+                  background: '#ffffff',
+                  border: '1.5px solid #cbd5e1',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: '#475569',
                   cursor: 'pointer',
-                  color: '#94a3b8',
+                  transition: 'all 0.15s ease',
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
               >
-                <X size={18} />
+                Skip to Summary
               </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Summary & Inline Findings View ── */
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              background: '#f8fafc',
+              padding: '24px',
+            }}
+          >
+            <div style={{ width: '100%' }}>
+              {/* ── 4 Criteria Parameters with Expand/Collapse & Inline Findings ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {CRITERIA_PARAMS.map((param) => {
+                const paramFindings = findings.filter((f) => f.criteria === param.key)
+                const openParamFindings = paramFindings.filter((f) => !f.resolved)
+                const isReady = openParamFindings.length === 0
+                const isExpanded = !!expandedCriteria[param.key]
 
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', marginBottom: 2 }}>
-                {activeResolutionFinding.title}
-              </div>
-              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 18 }}>
-                {activeResolutionFinding.severity} · {activeResolutionFinding.affected}
-              </div>
-
-              {/* AI evidence box */}
-              <div
-                style={{
-                  background: 'rgba(2, 132, 199, 0.04)',
-                  border: '1px solid #bae6fd',
-                  borderRadius: 12,
-                  padding: '14px 16px',
-                  marginBottom: 20,
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#0284c7', marginBottom: 4 }}>
-                  AI evidence
-                </div>
-                <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
-                  {activeResolutionFinding.evidence}
-                </div>
-              </div>
-
-              {/* Choose resolution */}
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', marginBottom: 12 }}>
-                Choose resolution
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
-                {[
-                  { id: 'Resolve manually', icon: '✏️', label: 'Resolve manually' },
-                  { id: 'Accept suggested option', icon: '✓', label: 'Accept suggested option' },
-                  { id: 'Assign to contributor', icon: '👤', label: 'Assign to contributor' },
-                  { id: 'Dismiss with reason', icon: '⊘', label: 'Dismiss with reason' },
-                ].map((opt) => {
-                  const isSelected = chosenResolutionOption === opt.id
-                  return (
+                return (
+                  <div
+                    key={param.key}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                      transition: 'all 0.18s ease',
+                    }}
+                  >
+                    {/* Parameter Header (Click to expand/collapse) */}
                     <div
-                      key={opt.id}
-                      onClick={() => setChosenResolutionOption(opt.id)}
+                      onClick={() => toggleCriteria(param.key)}
                       style={{
+                        padding: '18px 24px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        padding: '12px 16px',
-                        borderRadius: 10,
-                        border: isSelected ? '1.5px solid #00C4C4' : '1px solid #e2e8f0',
-                        background: isSelected ? 'rgba(0,196,196,0.06)' : '#f8fafc',
                         cursor: 'pointer',
-                        transition: 'all 0.15s ease',
+                        background: isExpanded ? '#fbfcfd' : '#ffffff',
+                        borderBottom: isExpanded ? '1px solid #f1f5f9' : 'none',
+                        transition: 'background 0.15s ease',
                       }}
                       onMouseEnter={(e) => {
-                        if (!isSelected) e.currentTarget.style.background = '#f1f5f9'
+                        if (!isExpanded) e.currentTarget.style.background = '#f8fafc'
                       }}
                       onMouseLeave={(e) => {
-                        if (!isSelected) e.currentTarget.style.background = '#f8fafc'
+                        if (!isExpanded) e.currentTarget.style.background = '#ffffff'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-                        <span>{opt.icon}</span>
-                        <span>{opt.label}</span>
-                      </div>
-                      <ChevronDown
-                        size={15}
-                        color="#94a3b8"
-                        style={{ transform: 'rotate(-90deg)' }}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
+                            {param.name}
+                          </span>
 
-              {/* Bottom buttons */}
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => setActiveResolutionFinding(null)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 8,
-                    background: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: '#64748b',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={!chosenResolutionOption}
-                  onClick={handleResolveActiveFinding}
-                  style={{
-                    padding: '8px 22px',
-                    borderRadius: 8,
-                    background: chosenResolutionOption ? '#00C4C4' : '#cbd5e1',
-                    border: 'none',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    cursor: chosenResolutionOption ? 'pointer' : 'not-allowed',
-                    boxShadow: chosenResolutionOption ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
-                  }}
-                >
-                  Resolve
-                </button>
-              </div>
+                          {/* "Ready" / "Not ready" Status Chip */}
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '2px 10px',
+                              borderRadius: 9999,
+                              fontSize: 12,
+                              fontWeight: 500,
+                              background: isReady ? '#dcfce7' : '#fee2e2',
+                              color: isReady ? '#15803d' : '#dc2626',
+                              border: isReady ? '1px solid rgba(187,247,208,0.7)' : '1px solid rgba(254,202,202,0.7)',
+                            }}
+                          >
+                            {isReady ? 'Ready' : 'Not ready'}
+                          </span>
+
+                          {/* Count Badge */}
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: '#64748b',
+                              background: '#f1f5f9',
+                              padding: '2px 8px',
+                              borderRadius: 10,
+                            }}
+                          >
+                            {openParamFindings.length === 0
+                              ? '0 open findings'
+                              : `${openParamFindings.length} open ${openParamFindings.length === 1 ? 'finding' : 'findings'}`}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 4 }}>
+                          {param.description}
+                        </div>
+                      </div>
+
+                      {/* Expand / Collapse Icon */}
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          background: isExpanded ? 'rgba(0,196,196,0.1)' : '#f1f5f9',
+                          color: isExpanded ? '#007a7a' : '#64748b',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s ease',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <ChevronDown
+                          size={16}
+                          style={{
+                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Inline Findings List (Displayed directly in the modal) */}
+                    {isExpanded && (
+                      <div style={{ padding: '18px 24px', background: '#fbfcfd' }}>
+                        {paramFindings.length === 0 ? (
+                          <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 500, padding: '8px 0' }}>
+                            ✓ No findings detected for this parameter. All statements verified.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {paramFindings.map((finding) => {
+                              const isAssigning = activeAssignFindingId === finding.id
+                              const isDismissing = activeDismissFindingId === finding.id
+
+                              return (
+                                <div
+                                  key={finding.id}
+                                  style={{
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: 12,
+                                    padding: '16px 20px',
+                                    background: finding.resolved ? '#f8fafc' : '#ffffff',
+                                    opacity: finding.resolved ? 0.75 : 1,
+                                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+                                  }}
+                                >
+                                  {/* Finding Top Row */}
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      marginBottom: 6,
+                                      gap: 10,
+                                      flexWrap: 'wrap',
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span
+                                        style={{
+                                          width: 8,
+                                          height: 8,
+                                          borderRadius: '50%',
+                                          background: finding.resolved
+                                            ? '#16a34a'
+                                            : finding.severity === 'Critical'
+                                            ? '#ef4444'
+                                            : '#ea580c',
+                                        }}
+                                      />
+                                      <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                                        {finding.title}
+                                      </span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                      <span
+                                        style={{
+                                          fontSize: 11,
+                                          fontWeight: 600,
+                                          color: finding.severity === 'Critical' ? '#dc2626' : '#d97706',
+                                          background: finding.severity === 'Critical' ? '#fee2e2' : '#fef3c7',
+                                          padding: '2px 8px',
+                                          borderRadius: 6,
+                                        }}
+                                      >
+                                        {finding.severity}
+                                      </span>
+                                      <span
+                                        style={{
+                                          fontSize: 11,
+                                          fontWeight: 600,
+                                          color: '#475569',
+                                          background: '#f1f5f9',
+                                          padding: '2px 8px',
+                                          borderRadius: 6,
+                                        }}
+                                      >
+                                        Affected: {finding.affected}
+                                      </span>
+                                      {finding.resolved && (
+                                        <span
+                                          style={{
+                                            fontSize: 11,
+                                            fontWeight: 700,
+                                            color: '#16a34a',
+                                            background: '#ecfdf5',
+                                            border: '1px solid #bbf7d0',
+                                            padding: '2px 8px',
+                                            borderRadius: 6,
+                                          }}
+                                        >
+                                          ✓ {finding.resolutionType}
+                                          {finding.assignedEmail ? ` (${finding.assignedEmail})` : ''}
+                                          {finding.dismissReason ? ` (${finding.dismissReason})` : ''}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Description & Evidence */}
+                                  <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 10 }}>
+                                    {finding.description}
+                                  </div>
+
+                                  <div
+                                    style={{
+                                      background: 'rgba(0,196,196,0.04)',
+                                      borderLeft: '3px solid #00C4C4',
+                                      padding: '8px 12px',
+                                      borderRadius: '0 8px 8px 0',
+                                      fontSize: 12,
+                                      color: '#334155',
+                                      lineHeight: 1.5,
+                                      marginBottom: 14,
+                                    }}
+                                  >
+                                    <strong>AI Evidence:</strong> {finding.evidence}
+                                    {finding.suggestedFix && (
+                                      <div style={{ marginTop: 4, color: '#007a7a' }}>
+                                        <strong>Suggested Action:</strong> {finding.suggestedFix}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* ── Review Options in Same Modal (No Emojis) ── */}
+                                  {!finding.resolved && (
+                                    <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12 }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                        {/* Option 1: Resolve manually */}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleResolveManuallyClick(finding)}
+                                          style={{
+                                            padding: '6px 13px',
+                                            borderRadius: 7,
+                                            border: '1px solid #cbd5e1',
+                                            background: '#ffffff',
+                                            color: '#334155',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease',
+                                          }}
+                                          onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                                          onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                                          title={`Redirect to ${finding.affected} to edit directly`}
+                                        >
+                                          Resolve manually
+                                        </button>
+
+                                        {/* Option 2: Accept AI option */}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAcceptAiOptionClick(finding)}
+                                          style={{
+                                            padding: '6px 14px',
+                                            borderRadius: 7,
+                                            border: 'none',
+                                            background: '#00C4C4',
+                                            color: '#ffffff',
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            boxShadow: '0 2px 6px rgba(0,196,196,0.3)',
+                                            transition: 'all 0.15s ease',
+                                          }}
+                                          onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                                          onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+                                          title="Accept AI suggested update and apply to draft"
+                                        >
+                                          Accept AI option
+                                        </button>
+
+                                        {/* Option 3: Assign to contributor */}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveAssignFindingId((prev) => (prev === finding.id ? null : finding.id))
+                                            setActiveDismissFindingId(null)
+                                            setAssignEmailError(null)
+                                          }}
+                                          style={{
+                                            padding: '6px 13px',
+                                            borderRadius: 7,
+                                            border: isAssigning ? '1.5px solid #00a0a0' : '1px solid #cbd5e1',
+                                            background: isAssigning ? 'rgba(0,196,196,0.08)' : '#ffffff',
+                                            color: isAssigning ? '#007a7a' : '#334155',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease',
+                                          }}
+                                        >
+                                          Assign to contributor
+                                        </button>
+
+                                        {/* Option 4: Dismiss */}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveDismissFindingId((prev) => (prev === finding.id ? null : finding.id))
+                                            setActiveAssignFindingId(null)
+                                            setDismissReasonError(null)
+                                          }}
+                                          style={{
+                                            padding: '6px 13px',
+                                            borderRadius: 7,
+                                            border: isDismissing ? '1.5px solid #94a3b8' : '1px solid #e2e8f0',
+                                            background: isDismissing ? '#f1f5f9' : 'transparent',
+                                            color: '#64748b',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease',
+                                          }}
+                                        >
+                                          Dismiss
+                                        </button>
+                                      </div>
+
+                                      {/* Inline Assign Form */}
+                                      {isAssigning && (
+                                        <div
+                                          style={{
+                                            marginTop: 10,
+                                            padding: '12px 14px',
+                                            background: '#f8fafc',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: 8,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 8,
+                                          }}
+                                        >
+                                          <div style={{ fontSize: 12, fontWeight: 600, color: '#0d212c' }}>
+                                            Assign this finding to a team member:
+                                          </div>
+                                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                            <input
+                                              type="email"
+                                              value={assignEmail}
+                                              onChange={(e) => {
+                                                setAssignEmail(e.target.value)
+                                                if (assignEmailError) setAssignEmailError(null)
+                                              }}
+                                              placeholder="Enter contributor email (e.g. name@m42.ae)"
+                                              style={{
+                                                flex: 1,
+                                                padding: '7px 12px',
+                                                borderRadius: 6,
+                                                border: assignEmailError ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
+                                                fontSize: 12.5,
+                                                color: '#0d212c',
+                                                outline: 'none',
+                                              }}
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => handleConfirmAssign(finding)}
+                                              style={{
+                                                padding: '7px 16px',
+                                                borderRadius: 6,
+                                                background: '#00C4C4',
+                                                border: 'none',
+                                                color: '#ffffff',
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                whiteSpace: 'nowrap',
+                                              }}
+                                            >
+                                              Assign
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setActiveAssignFindingId(null)
+                                                setAssignEmail('')
+                                                setAssignEmailError(null)
+                                              }}
+                                              style={{
+                                                padding: '7px 12px',
+                                                borderRadius: 6,
+                                                background: 'transparent',
+                                                border: '1px solid #cbd5e1',
+                                                color: '#64748b',
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                              }}
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
+                                          {assignEmailError && (
+                                            <div style={{ fontSize: 11.5, color: '#ef4444', fontWeight: 500 }}>
+                                              {assignEmailError}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Inline Dismiss Form (Mandatory Reason) */}
+                                      {isDismissing && (
+                                        <div
+                                          style={{
+                                            marginTop: 10,
+                                            padding: '12px 14px',
+                                            background: '#f8fafc',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: 8,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 8,
+                                          }}
+                                        >
+                                          <div style={{ fontSize: 12, fontWeight: 600, color: '#0d212c' }}>
+                                            Mandatory dismissal reason:
+                                          </div>
+                                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                            <input
+                                              type="text"
+                                              value={dismissReason}
+                                              onChange={(e) => {
+                                                setDismissReason(e.target.value)
+                                                if (dismissReasonError) setDismissReasonError(null)
+                                              }}
+                                              placeholder="Provide reason for dismissing this AI finding (required)..."
+                                              style={{
+                                                flex: 1,
+                                                padding: '7px 12px',
+                                                borderRadius: 6,
+                                                border: dismissReasonError ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
+                                                fontSize: 12.5,
+                                                color: '#0d212c',
+                                                outline: 'none',
+                                              }}
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => handleConfirmDismiss(finding)}
+                                              style={{
+                                                padding: '7px 16px',
+                                                borderRadius: 6,
+                                                background: '#475569',
+                                                border: 'none',
+                                                color: '#ffffff',
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                whiteSpace: 'nowrap',
+                                              }}
+                                            >
+                                              Confirm Dismiss
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setActiveDismissFindingId(null)
+                                                setDismissReason('')
+                                                setDismissReasonError(null)
+                                              }}
+                                              style={{
+                                                padding: '7px 12px',
+                                                borderRadius: 6,
+                                                background: 'transparent',
+                                                border: '1px solid #cbd5e1',
+                                                color: '#64748b',
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                              }}
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
+                                          {dismissReasonError && (
+                                            <div style={{ fontSize: 11.5, color: '#ef4444', fontWeight: 500 }}>
+                                              {dismissReasonError}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* ── Modal Footer (Summary Stage Only) ── */}
+      {stage === 'summary' && (
+        <div
+          style={{
+            padding: '14px 28px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 12,
+            flexShrink: 0,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              onSendToRework()
+              onClose()
+              showToast('SOW marked for rework based on AI review findings.', 'info')
+            }}
+            style={{
+              padding: '9px 20px',
+              borderRadius: 8,
+              background: '#ffffff',
+              border: '1.5px solid #cbd5e1',
+              fontSize: 13,
+              fontWeight: 700,
+              color: '#334155',
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+          >
+            Send to Rework
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onAcknowledge()
+              onClose()
+              showToast('AI Review findings acknowledged.', 'success')
+            }}
+            style={{
+              padding: '9px 24px',
+              borderRadius: 8,
+              background: '#00C4C4',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 700,
+              color: '#ffffff',
+              cursor: 'pointer',
+              boxShadow: '0 3px 10px rgba(0,196,196,0.3)',
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+          >
+            Acknowledge &amp; Close
+          </button>
+        </div>
+      )}
       </div>
     </div>
   )
@@ -9674,10 +9512,11 @@ function SOWDraftTab({
       const page = parseInt(citationEl.getAttribute('data-page') || '1', 10)
       const section = citationEl.getAttribute('data-section') || 'Section'
       setDraftCitationTarget({
-        fileName,
+        title: section,
+        sourceDoc: fileName,
         page,
         section,
-        snippet: `Validated RFP citation extracted for "${section}" from ${fileName} (Page ${page}).`
+        highlightSnippet: `Validated RFP citation extracted for "${section}" from ${fileName} (Page ${page}).`
       })
       return
     }
@@ -9733,9 +9572,6 @@ function SOWDraftTab({
       changesCount: 45,
     },
   ])
-
-  // Export menu
-  const [showExportMenu, setShowExportMenu] = useState(false)
 
   // PMO Approval state
   const [isPMOApproved, setIsPMOApproved] = useState(false)
@@ -10297,17 +10133,14 @@ function SOWDraftTab({
         ${body}
         <div style="margin-top:20px;padding-top:12px;border-top:1px dashed #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span style="font-size:12px;color:#64748b;display:inline-flex;align-items:center;gap:5px;">
+            <button type="button" class="sow-draft-citation-btn" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:5px;background:none;border:none;color:#0284c7;font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px;transition:all 0.15s ease;" title="Click to view citation in ${item.fileName}">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               Source: ${item.fileName}
-            </span>
-            <button type="button" class="sow-draft-citation-btn" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;background:rgba(2,132,199,0.08);border:1px solid rgba(2,132,199,0.3);color:#0284c7;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">
-              <span>📄</span> Citation (p. ${pageNum})
             </button>
           </div>
-          <button type="button" class="sow-draft-trace-btn" data-section="${item.title}" data-secidx="${idx}" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:5px;background:rgba(0,196,196,0.08);border:1px solid rgba(0,196,196,0.25);color:#007a7a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
-            View Trace (3 revisions)
+          <button type="button" class="sow-draft-trace-btn" data-section="${item.title}" data-secidx="${idx}" style="display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:#008b8b;font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 4px;transition:opacity 0.15s ease;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            View trace
           </button>
         </div>
       </div>`
@@ -11146,27 +10979,6 @@ function SOWDraftTab({
                   <Users size={13} color="#00a0a0" />
                   View Participants
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCommentsPanel((prev) => !prev)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 12px',
-                    borderRadius: 8,
-                    border: '1px solid rgba(0,196,196,0.3)',
-                    background: showCommentsPanel ? 'rgba(0,196,196,0.15)' : '#fff',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#007a7a',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <MessageSquare size={13} />
-                  Comments ({comments.length})
-                </button>
                 {/* AI Review & Summary for Reviewer */}
                 {isReviewer && (
                   <button
@@ -11195,151 +11007,6 @@ function SOWDraftTab({
                     {hasRunAICheck ? 'Rerun AI Check' : 'AI Review & Summary'}
                   </button>
                 )}
-
-                {/* Export SOW button */}
-                <div style={{ position: 'relative' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowExportMenu((prev) => !prev)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 12px',
-                      borderRadius: 8,
-                      border: '1px solid rgba(0,196,196,0.3)',
-                      background: '#fff',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#007a7a',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                    title="Export SOW"
-                  >
-                    <Download size={13} />
-                    Export SOW
-                    <ChevronDown size={12} />
-                  </button>
-                  {showExportMenu && (
-                    <>
-                      <div
-                        style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-                        onClick={() => setShowExportMenu(false)}
-                      />
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 'calc(100% + 4px)',
-                          right: 0,
-                          background: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: 8,
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                          padding: 4,
-                          zIndex: 100,
-                          minWidth: 170,
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowExportMenu(false)
-                            showToast('Exporting SOW as PDF...', 'info')
-                            setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
-                          }}
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            padding: '8px 12px',
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: 6,
-                            cursor: 'pointer',
-                            fontSize: 12.5,
-                            color: '#0d212c',
-                            textAlign: 'left',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                        >
-                          <span>📄</span> Export as PDF
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowExportMenu(false)
-                            showToast('Exporting SOW as Word document (.docx)...', 'info')
-                            setTimeout(() => showToast('SOW exported as DOCX successfully!', 'success'), 1200)
-                          }}
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            padding: '8px 12px',
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: 6,
-                            cursor: 'pointer',
-                            fontSize: 12.5,
-                            color: '#0d212c',
-                            textAlign: 'left',
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                        >
-                          <span>📝</span> Export as Word (.docx)
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Send for Approval Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowSendForApprovalPopup(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: '#00C4C4',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
-                  }}
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M22 2L11 13" />
-                    <path d="M22 2L15 22 11 13 2 9l20-7z" />
-                  </svg>
-                  Send for Approval
-                </button>
               </div>
             </div>
           ) : (
@@ -11835,27 +11502,6 @@ function SOWDraftTab({
               <Users size={13} color="#00a0a0" />
               View Participants
             </button>
-            <button
-              type="button"
-              onClick={() => setShowCommentsPanel((v) => !v)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 10px',
-                borderRadius: 6,
-                border: '1px solid rgba(0,196,196,0.3)',
-                background: showCommentsPanel ? 'rgba(0,196,196,0.15)' : '#fff',
-                color: '#007a7a',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                marginRight: 8,
-              }}
-            >
-              <MessageSquare size={13} />
-              Comments ({comments.length})
-            </button>
 
             {/* Version History Button */}
             <button
@@ -11909,149 +11555,9 @@ function SOWDraftTab({
               </button>
             )}
 
-            {/* Export SOW Button */}
-            <div style={{ position: 'relative', marginRight: 8 }}>
-              <button
-                type="button"
-                onClick={() => setShowExportMenu((prev) => !prev)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '4px 10px',
-                  borderRadius: 6,
-                  border: '1px solid rgba(0,196,196,0.3)',
-                  background: '#fff',
-                  color: '#007a7a',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-                title="Export SOW"
-              >
-                <Download size={13} color="#00a0a0" />
-                Export SOW
-                <ChevronDown size={11} />
-              </button>
-              {showExportMenu && (
-                <>
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-                    onClick={() => setShowExportMenu(false)}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 4px)',
-                      right: 0,
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 8,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                      padding: 4,
-                      zIndex: 100,
-                      minWidth: 170,
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowExportMenu(false)
-                        showToast('Exporting SOW as PDF...', 'info')
-                        setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
-                      }}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 12px',
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: 6,
-                        cursor: 'pointer',
-                        fontSize: 12.5,
-                        color: '#0d212c',
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <span>📄</span> Export as PDF
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowExportMenu(false)
-                        showToast('Exporting SOW as Word document (.docx)...', 'info')
-                        setTimeout(() => showToast('SOW exported as DOCX successfully!', 'success'), 1200)
-                      }}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 12px',
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: 6,
-                        cursor: 'pointer',
-                        fontSize: 12.5,
-                        color: '#0d212c',
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <span>📝</span> Export as Word (.docx)
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* PMO 2 Buttons: Send for Review & Approve / Withdraw Approval */}
+            {/* PMO Approve / Withdraw Approval */}
             {isPMO && (
               <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSendForReview?.()
-                    showToast('SOW sent to reviewers and contributors for review successfully!', 'success')
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '5px 12px',
-                    borderRadius: 6,
-                    border: '1.5px solid rgba(0,196,196,0.4)',
-                    background: 'rgba(0,196,196,0.08)',
-                    color: '#007a7a',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    marginRight: 8,
-                    whiteSpace: 'nowrap',
-                  }}
-                  title="Send to reviewers and contributors"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M22 2L11 13" />
-                    <path d="M22 2L15 22 11 13 2 9l20-7z" />
-                  </svg>
-                  Send for Review
-                </button>
-
                 {!isPMOApproved ? (
                   <button
                     type="button"
@@ -12106,46 +11612,6 @@ function SOWDraftTab({
                 )}
               </>
             )}
-
-            {/* Save */}
-            <button
-              onClick={() => {
-                setHasUnsaved(false)
-                showToast('Section saved successfully.')
-              }}
-              disabled={!hasUnsaved}
-              style={{
-                padding: '5px 14px',
-                background: hasUnsaved ? '#0d212c' : '#cbd5e1',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                cursor: hasUnsaved ? 'pointer' : 'not-allowed',
-                fontSize: 12.5,
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                flexShrink: 0,
-                transition: 'background 0.15s',
-              }}
-            >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
-              Save
-            </button>
           </div>
           )}
 
@@ -12393,7 +11859,7 @@ function SOWDraftTab({
           </div>
 
           {/* Scroll area & Comments Panel Container (Below Header / Toolbar) */}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden', position: 'relative' }}>
             {/* Scroll area */}
             <div
               ref={scrollAreaRef}
@@ -12409,8 +11875,8 @@ function SOWDraftTab({
             >
               <style>{`
                 .sow-draft-citation-btn:hover {
-                  background: #e0f2fe !important;
-                  border-color: #0284c7 !important;
+                  text-decoration: underline !important;
+                  color: #0369a1 !important;
                 }
                 .sow-draft-trace-btn:hover {
                   background: #f1f5f9 !important;
@@ -12811,7 +12277,7 @@ function SOWDraftTab({
           </div>
 
           {/* ── Right panel: all document comments (Below Header / Toolbar) ── */}
-          {showCommentsPanel && (
+          {showCommentsPanel ? (
           <div
             style={{
               width: 330,
@@ -13234,6 +12700,42 @@ function SOWDraftTab({
               )}
             </div>
           </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowCommentsPanel(true)}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 18,
+              zIndex: 30,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '6px 14px',
+              borderRadius: 8,
+              border: '1.5px solid rgba(0,196,196,0.35)',
+              background: '#ffffff',
+              color: '#007a7a',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f0fdfa'
+              e.currentTarget.style.color = '#00a0a0'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#ffffff'
+              e.currentTarget.style.color = '#007a7a'
+            }}
+            title="Open Comments"
+          >
+            View comments
+          </button>
         )}
           </div>
         </div>
@@ -13628,6 +13130,17 @@ function SOWDraftTab({
             showToast('SOW marked for rework based on AI review findings.', 'info')
           }}
           hasRunBefore={hasRunAICheck}
+          onResolveManually={(affected) => {
+            setShowAIReviewModal(false)
+            const targetSection = SOW_DRAFT_SECTIONS.findIndex(
+              (s) =>
+                affected.toLowerCase().includes(s.title.toLowerCase()) ||
+                s.title.toLowerCase().includes(affected.toLowerCase())
+            )
+            if (targetSection !== -1) {
+              setActiveSectionIdx(targetSection)
+            }
+          }}
         />
       )}
 
@@ -14715,6 +14228,7 @@ export function SOWDetailScreen({
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
   const [draftGenState, setDraftGenState] = useState<DraftGenState>('idle')
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const [showTopExportMenu, setShowTopExportMenu] = useState(false)
   const [completionScore, setCompletionScore] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSentForReview, setIsSentForReview] = useState(false)
@@ -14871,254 +14385,7 @@ export function SOWDetailScreen({
             <span>Tokens</span>
           </div>
 
-          {/* PMO Multi-Role Switcher (only shown when viewerRole === 'pmo') */}
-          {viewerRole === 'pmo' && (
-            <div style={{ position: 'relative' }}>
-              <button
-                type="button"
-                onClick={() => setRoleSwitcherOpen((prev) => !prev)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '5px 12px',
-                  borderRadius: 8,
-                  border: '1.5px solid rgba(0,196,196,0.4)',
-                  background:
-                    activeViewerRole === 'pmo'
-                      ? '#ffffff'
-                      : activeViewerRole === 'contributor'
-                      ? '#eff6ff'
-                      : '#faf5ff',
-                  color:
-                    activeViewerRole === 'pmo'
-                      ? '#0d212c'
-                      : activeViewerRole === 'contributor'
-                      ? '#1d4ed8'
-                      : '#7e22ce',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                  transition: 'all 0.15s ease',
-                }}
-                title="Switch role preview (PMO, Contributor, Reviewer)"
-              >
-                <div
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background:
-                      activeViewerRole === 'pmo'
-                        ? '#00C4C4'
-                        : activeViewerRole === 'contributor'
-                        ? '#3b82f6'
-                        : '#a855f7',
-                  }}
-                />
-                <span style={{ color: '#64748b', fontWeight: 500, fontSize: 11.5 }}>Preview as:</span>
-                <span style={{ fontWeight: 700 }}>
-                  {activeViewerRole === 'pmo'
-                    ? 'PMO (Ashika)'
-                    : activeViewerRole === 'contributor'
-                    ? 'Contributor (Ashika)'
-                    : 'Reviewer (Ashika)'}
-                </span>
-                <ChevronDown
-                  size={13}
-                  color="#64748b"
-                  style={{
-                    transform: roleSwitcherOpen ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 0.15s',
-                  }}
-                />
-              </button>
 
-              {roleSwitcherOpen && (
-                <>
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 999 }}
-                    onClick={() => setRoleSwitcherOpen(false)}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 6px)',
-                      right: 0,
-                      zIndex: 1000,
-                      width: 250,
-                      background: '#ffffff',
-                      borderRadius: 12,
-                      border: '1px solid #e2e8f0',
-                      boxShadow: '0 12px 32px rgba(13,33,44,0.14)',
-                      padding: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4,
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: '6px 8px 4px',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: '#94a3b8',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                      }}
-                    >
-                      Switch Profile View
-                    </div>
-
-                    {/* Option 1: PMO (Ashika) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveViewerRole('pmo')
-                        setRoleSwitcherOpen(false)
-                        showToast('Switched view to PMO (Ashika)', 'info')
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        border: 'none',
-                        background: activeViewerRole === 'pmo' ? 'rgba(0,196,196,0.1)' : 'transparent',
-                        color: activeViewerRole === 'pmo' ? '#007a7a' : '#334155',
-                        fontWeight: activeViewerRole === 'pmo' ? 700 : 500,
-                        fontSize: 12.5,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (activeViewerRole !== 'pmo') e.currentTarget.style.background = '#f8fafc'
-                      }}
-                      onMouseLeave={(e) => {
-                        if (activeViewerRole !== 'pmo') e.currentTarget.style.background = 'transparent'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: '#00C4C4',
-                            display: 'inline-block',
-                          }}
-                        />
-                        <span>PMO (Ashika)</span>
-                      </div>
-                      {activeViewerRole === 'pmo' && <Check size={14} color="#00C4C4" strokeWidth={2.5} />}
-                    </button>
-
-                    {/* Option 2: Contributor (Ashika) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveViewerRole('contributor')
-                        setRoleSwitcherOpen(false)
-                        showToast(
-                          'Switched view to Contributor (Ashika) — viewing assigned sections',
-                          'info'
-                        )
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        border: 'none',
-                        background:
-                          activeViewerRole === 'contributor' ? 'rgba(59,130,246,0.1)' : 'transparent',
-                        color: activeViewerRole === 'contributor' ? '#1d4ed8' : '#334155',
-                        fontWeight: activeViewerRole === 'contributor' ? 700 : 500,
-                        fontSize: 12.5,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (activeViewerRole !== 'contributor') e.currentTarget.style.background = '#f8fafc'
-                      }}
-                      onMouseLeave={(e) => {
-                        if (activeViewerRole !== 'contributor') e.currentTarget.style.background = 'transparent'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: '#3b82f6',
-                            display: 'inline-block',
-                          }}
-                        />
-                        <span>Contributor (Ashika)</span>
-                      </div>
-                      {activeViewerRole === 'contributor' && (
-                        <Check size={14} color="#3b82f6" strokeWidth={2.5} />
-                      )}
-                    </button>
-
-                    {/* Option 3: Reviewer (Ashika) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveViewerRole('reviewer')
-                        setRoleSwitcherOpen(false)
-                        showToast('Switched view to Reviewer (Ashika) — viewing review mode', 'info')
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        border: 'none',
-                        background:
-                          activeViewerRole === 'reviewer' ? 'rgba(168,85,247,0.1)' : 'transparent',
-                        color: activeViewerRole === 'reviewer' ? '#7e22ce' : '#334155',
-                        fontWeight: activeViewerRole === 'reviewer' ? 700 : 500,
-                        fontSize: 12.5,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (activeViewerRole !== 'reviewer') e.currentTarget.style.background = '#f8fafc'
-                      }}
-                      onMouseLeave={(e) => {
-                        if (activeViewerRole !== 'reviewer') e.currentTarget.style.background = 'transparent'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: '#a855f7',
-                            display: 'inline-block',
-                          }}
-                        />
-                        <span>Reviewer (Ashika)</span>
-                      </div>
-                      {activeViewerRole === 'reviewer' && (
-                        <Check size={14} color="#a855f7" strokeWidth={2.5} />
-                      )}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
       {/* end header area */}
@@ -15360,50 +14627,165 @@ export function SOWDetailScreen({
               ) : showGenerateDraft ? (
                 draftGenState === 'ready' ? (
                   activeTab !== 'sow-draft' ? null : (
-                    <button
-                      onClick={() => {
-                        if (isContributor || isReviewer || isClient) {
-                          setShowSendForApprovalConfirm(true)
-                        } else {
-                          setShowReviewModal(true)
-                        }
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '6px 14px',
-                        borderRadius: 8,
-                        border: '1.5px solid rgba(0,196,196,0.35)',
-                        background: 'rgba(0,196,196,0.07)',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: '#00a0a0',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                      onMouseEnter={(e) => {
-                        ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
-                      }}
-                      onMouseLeave={(e) => {
-                        ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
-                      }}
-                    >
-                      <svg
-                        width="13"
-                        height="13"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        viewBox="0 0 24 24"
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {/* Export SOW Button */}
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowTopExportMenu((prev) => !prev)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '6px 14px',
+                            borderRadius: 8,
+                            border: '1.5px solid rgba(0,196,196,0.35)',
+                            background: '#ffffff',
+                            color: '#007a7a',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            ;(e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
+                          }}
+                          onMouseLeave={(e) => {
+                            ;(e.currentTarget as HTMLButtonElement).style.background = '#ffffff'
+                          }}
+                          title="Export SOW"
+                        >
+                          <Download size={13} color="#00a0a0" />
+                          Export SOW
+                          <ChevronDown size={12} />
+                        </button>
+                        {showTopExportMenu && (
+                          <>
+                            <div
+                              style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                              onClick={() => setShowTopExportMenu(false)}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: 'calc(100% + 6px)',
+                                right: 0,
+                                background: '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 8,
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                zIndex: 100,
+                                minWidth: 200,
+                                overflow: 'hidden',
+                                padding: '4px 0',
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowTopExportMenu(false)
+                                  showToast('Exporting SOW as PDF...', 'info')
+                                  setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
+                                }}
+                                style={{
+                                  width: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  padding: '8px 14px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  fontSize: 12,
+                                  fontWeight: 500,
+                                  color: '#0f172a',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                              >
+                                <FileText size={14} color="#ef4444" />
+                                Export as PDF
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowTopExportMenu(false)
+                                  showToast('Exporting SOW as Word document (.docx)...', 'info')
+                                  setTimeout(() => showToast('SOW exported as DOCX successfully!', 'success'), 1200)
+                                }}
+                                style={{
+                                  width: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  padding: '8px 14px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  fontSize: 12,
+                                  fontWeight: 500,
+                                  color: '#0f172a',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                              >
+                                <FileText size={14} color="#2563eb" />
+                                Export as Word (.docx)
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Send for Review / Send for Approval */}
+                      <button
+                        onClick={() => {
+                          if (isContributor || isReviewer || isClient) {
+                            setShowSendForApprovalConfirm(true)
+                          } else {
+                            setShowReviewModal(true)
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '6px 14px',
+                          borderRadius: 8,
+                          border: '1.5px solid rgba(0,196,196,0.35)',
+                          background: 'rgba(0,196,196,0.07)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: '#00a0a0',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}
+                        onMouseEnter={(e) => {
+                          ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                        }}
+                        onMouseLeave={(e) => {
+                          ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
+                        }}
                       >
-                        <path d="M22 2L11 13" />
-                        <path d="M22 2L15 22 11 13 2 9l20-7z" />
-                      </svg>
-                      {isContributor || isReviewer || isClient ? 'Send for Approval' : 'Send for Review'}
-                    </button>
+                        <svg
+                          width="13"
+                          height="13"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M22 2L11 13" />
+                          <path d="M22 2L15 22 11 13 2 9l20-7z" />
+                        </svg>
+                        {isContributor || isReviewer || isClient ? 'Send for Approval' : 'Send for Review'}
+                      </button>
+                    </div>
                   )
                 ) : draftGenState === 'generating' || draftGenState === 'shimmer' ? (
                   <div
@@ -15442,7 +14824,7 @@ export function SOWDetailScreen({
                     </svg>
                     Generating…
                   </div>
-                ) : (
+                ) : activeTab === 'sow-draft' ? null : (
                   <button
                     onClick={handleGenerateDraft}
                     disabled={completionScore < 80}
@@ -15633,8 +15015,8 @@ export function SOWDetailScreen({
                       ? INITIAL_SECTIONS_V2
                       : INITIAL_SECTIONS
                 }
-                viewerRole={viewerRole}
-                currentMemberId={currentMemberId}
+                viewerRole={effectiveViewerRole}
+                currentMemberId={effectiveMemberId}
                 onScoreChange={setCompletionScore}
                 disableAnswer={
                   isDeactivated ||
@@ -15659,7 +15041,7 @@ export function SOWDetailScreen({
                 <SOWDraftTab
                   isContributor={isContributor}
                   isReviewer={isReviewer}
-                  viewerRole={viewerRole}
+                  viewerRole={effectiveViewerRole}
                   isReadOnly={isDeactivated}
                   sowDeadline={sowDeadline || '2026-10-31'}
                   onOpenParticipantsModal={() => setShowParticipantsModal(true)}
