@@ -33,28 +33,44 @@ export interface SOWSection {
   questions: string[]
 }
 
-export type SOWStatus = 'In Progress' | 'Completed' | 'Pending' | 'Not Started'
+export type SOWStatus = 'In Progress' | 'Completed' | 'Pending' | 'Not Started' | 'Deactivated' | 'At Risk' | 'On Track'
 
 export interface CommitmentItem {
   id: string
   text: string
+  citation?: string
+  citationDoc?: string
+  citationPage?: number
+  citationSection?: string
+  citationSnippet?: string
+  isManuallyEdited?: boolean
+  manuallyEdited?: boolean
 }
 
 export interface SOWFormData {
   commitments: CommitmentItem[]
   clientName: string
+  clientNameCitation?: string
   description: string
+  descriptionCitation?: string
   businessOutcome: string
+  businessOutcomeCitation?: string
   importanceValue: string
+  importanceValueCitation?: string
   inScope: string
+  inScopeCitation?: string
   outOfScope: string
+  outOfScopeCitation?: string
   tags: string[]
   otherContext: string
+  otherContextCitation?: string
+  manuallyEditedFields?: Record<string, boolean>
 }
 
 export interface SOWDetailScreenProps {
   sowName?: string
   sowStatus?: SOWStatus
+  isDeactivated?: boolean
   uploadedFiles?: UploadedFile[]
   onBack?: () => void
   className?: string
@@ -62,4 +78,6 @@ export interface SOWDetailScreenProps {
   sowVariant?: 'v1' | 'v2' | 'meridian'
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin'
   currentMemberId?: string
+  sowDeadline?: string
+  onReactivateSOW?: () => void
 }

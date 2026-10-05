@@ -70,4 +70,5 @@ export interface DashboardScreenV2Props {
   onNavAuditLog?: () => void
   onOpenSOWV2?: () => void
   onOpenSOWContributor?: () => void
+  onOpenSOWDeactivated?: () => void
 }

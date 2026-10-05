@@ -433,6 +433,7 @@ function AllSOWsView({
   sows,
   onOpenSOWV2,
   onOpenSOWContributor,
+  onOpenSOWDeactivated,
   isContributor = false,
   isPMO = true,
   isAdmin = false,
@@ -443,6 +444,7 @@ function AllSOWsView({
   sows: SOWItem[]
   onOpenSOWV2?: () => void
   onOpenSOWContributor?: () => void
+  onOpenSOWDeactivated?: () => void
   isContributor?: boolean
   isPMO?: boolean
   isAdmin?: boolean
@@ -730,6 +732,10 @@ function AllSOWsView({
                   <tr
                     key={row.id}
                     onClick={() => {
+                      if (row.status === 'Deactivated') {
+                        onOpenSOWDeactivated?.()
+                        return
+                      }
                       if (isContributor) {
                         if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
                           onOpenSOWContributor?.()
@@ -902,7 +908,9 @@ function AllSOWsView({
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setActionMenuOpenId(null)
-                                if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
+                                if (row.status === 'Deactivated') {
+                                  onOpenSOWDeactivated?.()
+                                } else if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
                                   onOpenSOWContributor?.()
                                 } else {
                                   onOpenSOWV2?.()
@@ -2903,7 +2911,7 @@ export function SectionTemplatesView({
             </button>
 
             <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 20 }}>
-              Edit SOW Section Template
+              Edit Template
             </div>
 
             <form onSubmit={handleUpdateSection} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -3350,13 +3358,14 @@ export function UserDirectoryView({
     return () => document.removeEventListener('click', handleClose)
   }, [filterDropdownOpen, userMenuOpenId, newRoleDropdownOpen, editRoleDropdownOpen])
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newUserName.trim()) return
     if (!emailRegex.test(newUserEmail.trim())) {
-      setNewUserEmailError('Please enter a valid email address.')
+      setNewUserEmailError('Please enter a valid email address (e.g. user@company.com).')
+      showToast('Please enter a valid email address', 'error')
       return
     }
     if (newUserRoles.length === 0) {
@@ -3386,7 +3395,8 @@ export function UserDirectoryView({
     e.preventDefault()
     if (!editingUser || !editUserName.trim()) return
     if (!emailRegex.test(editUserEmail.trim())) {
-      setEditUserEmailError('Please enter a valid email address.')
+      setEditUserEmailError('Please enter a valid email address (e.g. user@company.com).')
+      showToast('Please enter a valid email address', 'error')
       return
     }
     if (editUserRoles.length === 0) {
@@ -4086,7 +4096,7 @@ export function UserDirectoryView({
               Create a user profile and assign role permissions across SOW workspaces.
             </div>
 
-            <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form noValidate onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
                   Full Name <span style={{ color: '#dc2626' }}>*</span>
@@ -4102,13 +4112,23 @@ export function UserDirectoryView({
                     padding: '10px 12px',
                     borderRadius: 8,
                     border: '1.5px solid #e2e8f0',
+                    background: '#ffffff',
                     fontSize: 13,
                     color: '#0d212c',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    transition: 'all 0.15s ease',
                   }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                  onFocus={(e) => {
+                    e.currentTarget.style.background = '#f8fafc'
+                    e.currentTarget.style.borderColor = '#cbd5e1'
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(203, 213, 225, 0.4)'
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.background = '#ffffff'
+                    e.currentTarget.style.borderColor = '#e2e8f0'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
                 />
               </div>
 
@@ -4117,29 +4137,46 @@ export function UserDirectoryView({
                   Email Address <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   required
                   placeholder="e.g. sjenkins@m42.ae"
                   value={newUserEmail}
                   onChange={(e) => {
                     setNewUserEmail(e.target.value)
-                    setNewUserEmailError('')
+                    if (newUserEmailError) setNewUserEmailError('')
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.background = '#ffffff'
+                    e.currentTarget.style.boxShadow = 'none'
+                    const val = e.target.value.trim()
+                    if (val && !emailRegex.test(val)) {
+                      setNewUserEmailError('Please enter a valid email address (e.g. user@company.com).')
+                      e.currentTarget.style.borderColor = '#dc2626'
+                    } else {
+                      e.currentTarget.style.borderColor = '#e2e8f0'
+                    }
                   }}
                   style={{
                     width: '100%',
                     padding: '10px 12px',
                     borderRadius: 8,
                     border: '1.5px solid ' + (newUserEmailError ? '#dc2626' : '#e2e8f0'),
+                    background: '#ffffff',
                     fontSize: 13,
                     color: '#0d212c',
                     outline: 'none',
                     boxSizing: 'border-box',
+                    transition: 'all 0.15s ease',
                   }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = newUserEmailError ? '#dc2626' : '#e2e8f0')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = newUserEmailError ? '#dc2626' : '#e2e8f0')}
+                  onFocus={(e) => {
+                    e.currentTarget.style.background = '#f8fafc'
+                    e.currentTarget.style.borderColor = newUserEmailError ? '#dc2626' : '#cbd5e1'
+                    e.currentTarget.style.boxShadow = newUserEmailError ? '0 0 0 2px rgba(220, 38, 38, 0.2)' : '0 0 0 2px rgba(203, 213, 225, 0.4)'
+                  }}
                 />
                 {newUserEmailError && (
-                  <div style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: '#dc2626', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 500 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     {newUserEmailError}
                   </div>
                 )}
@@ -4169,9 +4206,18 @@ export function UserDirectoryView({
                       justifyContent: 'space-between',
                       cursor: 'pointer',
                       outline: 'none',
+                      transition: 'all 0.15s ease',
                     }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                    onFocus={(e) => {
+                      e.currentTarget.style.background = '#f8fafc'
+                      e.currentTarget.style.borderColor = '#cbd5e1'
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(203, 213, 225, 0.4)'
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.background = '#ffffff'
+                      e.currentTarget.style.borderColor = '#e2e8f0'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
                   >
                     <span>{newUserRoles.length > 0 ? newUserRoles.join(', ') : 'Select roles...'}</span>
                     <ChevronDown size={14} color="#64748b" />
@@ -4335,7 +4381,7 @@ export function UserDirectoryView({
               Edit User Details
             </div>
 
-            <form onSubmit={handleUpdateUser} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form noValidate onSubmit={handleUpdateUser} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
                   Full Name <span style={{ color: '#dc2626' }}>*</span>
@@ -4365,12 +4411,21 @@ export function UserDirectoryView({
                   Email Address <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={editUserEmail}
                   onChange={(e) => {
                     setEditUserEmail(e.target.value)
-                    setEditUserEmailError('')
+                    if (editUserEmailError) setEditUserEmailError('')
+                  }}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim()
+                    if (val && !emailRegex.test(val)) {
+                      setEditUserEmailError('Please enter a valid email address (e.g. user@company.com).')
+                      e.currentTarget.style.borderColor = '#dc2626'
+                    } else {
+                      e.currentTarget.style.borderColor = '#e2e8f0'
+                    }
                   }}
                   style={{
                     width: '100%',
@@ -4383,10 +4438,10 @@ export function UserDirectoryView({
                     boxSizing: 'border-box',
                   }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = editUserEmailError ? '#dc2626' : '#e2e8f0')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = editUserEmailError ? '#dc2626' : '#e2e8f0')}
                 />
                 {editUserEmailError && (
-                  <div style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: '#dc2626', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 500 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     {editUserEmailError}
                   </div>
                 )}
@@ -4753,35 +4808,6 @@ function AdminHomeView({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: 12,
-              padding: '8px 14px',
-              width: 320,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-            }}
-          >
-            <Search size={15} color="#94a3b8" />
-            <input
-              type="text"
-              value={adminSearch}
-              onChange={(e) => setAdminSearch(e.target.value)}
-              placeholder="Search SOWs, users, templates or agents..."
-              style={{
-                border: 'none',
-                outline: 'none',
-                background: 'transparent',
-                fontSize: 12.5,
-                color: '#0d212c',
-                width: '100%',
-              }}
-            />
-          </div>
           {notificationButton}
         </div>
       </div>
@@ -4921,23 +4947,11 @@ function AdminHomeView({
         </div>
       </div>
 
-      {/* ─── Middle Section: 2 Cards (80% Background Opacity) ─────────── */}
+      {/* ─── Middle Section: 2 Cards (Titles & CTAs outside cards) ─────────── */}
       <div className="grid grid-cols-2 gap-4 mb-5" style={{ flexShrink: 0 }}>
-        {/* Card 1: Template Overview */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.8)',
-            border: '1px solid rgba(255,255,255,0.9)',
-            borderRadius: 16,
-            padding: '24px 28px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 295,
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        {/* Column 1: Template Overview */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', margin: 0 }}>
               Template Overview
             </h2>
@@ -4959,80 +4973,80 @@ function AdminHomeView({
             </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 28, flex: 1 }}>
-            {/* SVG Donut Ring (Increased Size) */}
-            <div style={{ position: 'relative', width: 190, height: 190, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="190" height="190" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                {/* Circumference = 2 * PI * 38 ≈ 238.76 */}
-                {/* Required: 4/8 = 50% -> 119.38 */}
-                <circle cx="50" cy="50" r="38" fill="none" stroke="#4ECCA3" strokeWidth="14" strokeDasharray="117.38 238.76" strokeDashoffset="0" />
-                {/* Recommended: 3/8 = 37.5% -> 89.53 */}
-                <circle cx="50" cy="50" r="38" fill="none" stroke="#38BDF8" strokeWidth="14" strokeDasharray="87.53 238.76" strokeDashoffset="-119.38" />
-                {/* Conditional: 1/8 = 12.5% -> 29.85 */}
-                <circle cx="50" cy="50" r="38" fill="none" stroke="#FACC15" strokeWidth="14" strokeDasharray="27.85 238.76" strokeDashoffset="-208.91" />
-                {/* Other: 0/8 = 0% */}
-              </svg>
-              {/* Center Counter */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  pointerEvents: 'none',
-                }}
-              >
-                <div style={{ fontSize: 28, fontWeight: 700, color: '#0d212c', lineHeight: 1 }}>
-                  8
-                </div>
-                <div style={{ fontSize: 11.5, fontWeight: 500, color: '#64748b', marginTop: 3 }}>
-                  Total Templates
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.8)',
+              border: '1px solid rgba(255,255,255,0.9)',
+              borderRadius: 16,
+              padding: '24px 28px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+              display: 'flex',
+              alignItems: 'center',
+              minHeight: 265,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 28, flex: 1 }}>
+              {/* SVG Donut Ring */}
+              <div style={{ position: 'relative', width: 190, height: 190, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="190" height="190" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                  {/* Circumference = 2 * PI * 38 ≈ 238.76 */}
+                  {/* Required: 4/8 = 50% -> 119.38 */}
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#4ECCA3" strokeWidth="14" strokeDasharray="117.38 238.76" strokeDashoffset="0" />
+                  {/* Recommended: 3/8 = 37.5% -> 89.53 */}
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#38BDF8" strokeWidth="14" strokeDasharray="87.53 238.76" strokeDashoffset="-119.38" />
+                  {/* Conditional: 1/8 = 12.5% -> 29.85 */}
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#FACC15" strokeWidth="14" strokeDasharray="27.85 238.76" strokeDashoffset="-208.91" />
+                </svg>
+                {/* Center Counter */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#0d212c', lineHeight: 1 }}>
+                    8
+                  </div>
+                  <div style={{ fontSize: 11.5, fontWeight: 500, color: '#64748b', marginTop: 3 }}>
+                    Total Templates
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Legend Column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, paddingLeft: 12 }}>
-              {[
-                { label: 'Required', count: 4, color: '#4ECCA3' },
-                { label: 'Recommended', count: 3, color: '#38BDF8' },
-                { label: 'Conditional', count: 1, color: '#FACC15' },
-                { label: 'Other', count: 0, color: '#C084FC' },
-              ].map((item) => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13.5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
-                    <span style={{ fontWeight: 500, color: '#475569' }}>{item.label}</span>
+              {/* Legend Column */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, paddingLeft: 12 }}>
+                {[
+                  { label: 'Required', count: 4, color: '#4ECCA3' },
+                  { label: 'Recommended', count: 3, color: '#38BDF8' },
+                  { label: 'Conditional', count: 1, color: '#FACC15' },
+                  { label: 'Other', count: 0, color: '#C084FC' },
+                ].map((item) => (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13.5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+                      <span style={{ fontWeight: 500, color: '#475569' }}>{item.label}</span>
+                    </div>
+                    <span style={{ fontWeight: 700, color: '#0d212c' }}>{item.count}</span>
                   </div>
-                  <span style={{ fontWeight: 700, color: '#0d212c' }}>{item.count}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Card 2: Agents Overview (80% Background Opacity) */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.8)',
-            border: '1px solid rgba(255,255,255,0.9)',
-            borderRadius: 16,
-            padding: '24px 28px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 295,
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        {/* Column 2: Users Overview */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', margin: 0 }}>
-              Agents Overview
+              Users Overview
             </h2>
             <button
-              onClick={() => onNavigate?.('agents')}
+              onClick={() => onNavigate?.('user-directory')}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -5045,203 +5059,251 @@ function AdminHomeView({
                 cursor: 'pointer',
               }}
             >
-              View all agents →
+              View all users →
             </button>
           </div>
 
-          <div style={{ display: 'flex', height: 215, alignItems: 'flex-end', paddingTop: 0 }}>
-            {/* Y Axis Labels */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                height: 175,
-                paddingBottom: 22,
-                marginRight: 12,
-                fontSize: 11,
-                color: '#94a3b8',
-                textAlign: 'right',
-                width: 18,
-              }}
-            >
-              <span>10</span>
-              <span>8</span>
-              <span>6</span>
-              <span>4</span>
-              <span>2</span>
-              <span>0</span>
-            </div>
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.8)',
+              border: '1px solid rgba(255,255,255,0.9)',
+              borderRadius: 16,
+              padding: '24px 28px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 265,
+              justifyContent: 'center',
+            }}
+          >
+            <div style={{ display: 'flex', height: 200, alignItems: 'flex-end', paddingTop: 0 }}>
+              {/* Y Axis Labels */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  height: 160,
+                  paddingBottom: 22,
+                  marginRight: 12,
+                  fontSize: 11,
+                  color: '#94a3b8',
+                  textAlign: 'right',
+                  width: 18,
+                }}
+              >
+                <span>10</span>
+                <span>8</span>
+                <span>6</span>
+                <span>4</span>
+                <span>2</span>
+                <span>0</span>
+              </div>
 
-            {/* Bars Container */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 18,
-                flex: 1,
-                height: 175,
-                borderLeft: '1px solid #f1f5f9',
-                borderBottom: '1px solid #f1f5f9',
-                padding: '0 14px',
-                position: 'relative',
-              }}
-            >
-              {[
-                { role: 'Contributor', val: 9, max: 10, color: '#38BDF8' },
-                { role: 'Reviewer', val: 7, max: 10, color: '#A78BFA' },
-                { role: 'PMO', val: 4, max: 10, color: '#34D399' },
-                { role: 'Client', val: 4, max: 10, color: '#FBBF24' },
-              ].map((bar) => {
-                const heightPct = (bar.val / bar.max) * 100
-                return (
-                  <div
-                    key={bar.role}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                      height: '100%',
-                    }}
-                  >
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
-                      {bar.val}
-                    </span>
+              {/* Bars Container */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: 18,
+                  flex: 1,
+                  height: 160,
+                  borderLeft: '1px solid #f1f5f9',
+                  borderBottom: '1px solid #f1f5f9',
+                  padding: '0 14px',
+                  position: 'relative',
+                }}
+              >
+                {[
+                  { role: 'Contributor', val: 9, max: 10, color: '#38BDF8' },
+                  { role: 'Reviewer', val: 7, max: 10, color: '#A78BFA' },
+                  { role: 'PMO', val: 4, max: 10, color: '#34D399' },
+                  { role: 'Client', val: 4, max: 10, color: '#FBBF24' },
+                ].map((bar) => {
+                  const heightPct = (bar.val / bar.max) * 100
+                  return (
                     <div
+                      key={bar.role}
                       style={{
-                        width: '70%',
-                        maxWidth: 46,
-                        height: `${heightPct}%`,
-                        background: bar.color,
-                        borderRadius: '6px 6px 0 0',
-                        transition: 'height 0.3s ease',
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontSize: 11.5,
-                        fontWeight: 500,
-                        color: '#64748b',
-                        marginTop: 6,
-                        position: 'absolute',
-                        bottom: -22,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        height: '100%',
                       }}
                     >
-                      {bar.role}
-                    </span>
-                  </div>
-                )
-              })}
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
+                        {bar.val}
+                      </span>
+                      <div
+                        style={{
+                          width: '70%',
+                          maxWidth: 46,
+                          height: `${heightPct}%`,
+                          background: bar.color,
+                          borderRadius: '6px 6px 0 0',
+                          transition: 'height 0.3s ease',
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 11.5,
+                          fontWeight: 500,
+                          color: '#64748b',
+                          marginTop: 6,
+                          position: 'absolute',
+                          bottom: -22,
+                        }}
+                      >
+                        {bar.role}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ─── Bottom Section: Recent SOWs (80% Background Opacity) ────────── */}
-      <div
-        style={{
-          background: 'rgba(255,255,255,0.8)',
-          border: '1px solid rgba(255,255,255,0.9)',
-          borderRadius: 16,
-          padding: '22px 24px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      {/* ─── Bottom Section: Recent SOWs (Title on left, Search & View all on right with 12px gap) ── */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', margin: 0 }}>
             Recent SOWs
           </h2>
-          <button
-            onClick={() => onNavigate?.('all-sows')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              background: 'none',
-              border: 'none',
-              color: '#00C4C4',
-              fontSize: 12.5,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            View all →
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: 10,
+                padding: '6px 12px',
+                width: 280,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+              }}
+            >
+              <Search size={14} color="#94a3b8" />
+              <input
+                type="text"
+                value={adminSearch}
+                onChange={(e) => setAdminSearch(e.target.value)}
+                placeholder="Search recent SOWs..."
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  background: 'transparent',
+                  fontSize: 12.5,
+                  color: '#0d212c',
+                  width: '100%',
+                }}
+              />
+            </div>
+            <button
+              onClick={() => onNavigate?.('all-sows')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                background: 'none',
+                border: 'none',
+                color: '#00C4C4',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              View all →
+            </button>
+          </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '26%' }}>
-                  SOW NAME
-                </th>
-                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '14%' }}>
-                  STATUS
-                </th>
-                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '12%' }}>
-                  READINESS
-                </th>
-                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
-                  PMO NAME
-                </th>
-                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
-                  DUE DATE
-                </th>
-                <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
-                  UPDATED ON
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRecentSOWs.map((row, idx) => (
-                <tr
-                  key={idx}
-                  style={{
-                    borderBottom: idx < filteredRecentSOWs.length - 1 ? '1px solid #f8fafc' : 'none',
-                    transition: 'background 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 500, color: '#0d212c' }}>
-                    {row.name}
-                  </td>
-                  <td style={{ padding: '14px 14px' }}>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '3px 12px',
-                        borderRadius: 99,
-                        fontSize: 12,
-                        fontWeight: 500,
-                        background: row.statusBg,
-                        color: row.statusColor,
-                      }}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 400, color: '#0d212c' }}>
-                    {row.readiness}
-                  </td>
-                  <td style={{ padding: '14px 14px', fontSize: 13, color: '#0d212c', fontWeight: 400 }}>
-                    {row.pmoName}
-                  </td>
-                  <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 400, color: '#dc2626' }}>
-                    {row.dueDate}
-                  </td>
-                  <td style={{ padding: '14px 14px', fontSize: 12, color: '#64748b', fontWeight: 400 }}>
-                    {row.updatedOn}
-                  </td>
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.8)',
+            border: '1px solid rgba(255,255,255,0.9)',
+            borderRadius: 16,
+            padding: '20px 24px 18px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '26%' }}>
+                    SOW NAME
+                  </th>
+                  <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '14%' }}>
+                    STATUS
+                  </th>
+                  <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '12%' }}>
+                    READINESS
+                  </th>
+                  <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
+                    PMO NAME
+                  </th>
+                  <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
+                    DUE DATE
+                  </th>
+                  <th style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', width: '16%' }}>
+                    UPDATED ON
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredRecentSOWs.map((row, idx) => (
+                  <tr
+                    key={idx}
+                    style={{
+                      borderBottom: idx < filteredRecentSOWs.length - 1 ? '1px solid #f8fafc' : 'none',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 500, color: '#0d212c' }}>
+                      {row.name}
+                    </td>
+                    <td style={{ padding: '14px 14px' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '3px 12px',
+                          borderRadius: 99,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          background: row.statusBg,
+                          color: row.statusColor,
+                        }}
+                      >
+                        {row.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 400, color: '#0d212c' }}>
+                      {row.readiness}
+                    </td>
+                    <td style={{ padding: '14px 14px', fontSize: 13, color: '#0d212c', fontWeight: 400 }}>
+                      {row.pmoName}
+                    </td>
+                    <td style={{ padding: '14px 14px', fontSize: 13, fontWeight: 400, color: '#dc2626' }}>
+                      {row.dueDate}
+                    </td>
+                    <td style={{ padding: '14px 14px', fontSize: 12, color: '#64748b', fontWeight: 400 }}>
+                      {row.updatedOn}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -5267,6 +5329,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   onNavAuditLog,
   onOpenSOWV2,
   onOpenSOWContributor,
+  onOpenSOWDeactivated,
 }) => {
   const isAdmin = userRole === 'Admin'
   const isContributor = userRole === 'Contributor'
@@ -5783,6 +5846,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                 sows={sowList}
                 onOpenSOWV2={onOpenSOWV2}
                 onOpenSOWContributor={onOpenSOWContributor}
+                onOpenSOWDeactivated={onOpenSOWDeactivated}
                 isContributor={isContributor || isClient}
                 isPMO={isPMO}
                 isAdmin={isAdmin}
@@ -6856,6 +6920,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             <tr
                               key={row.id}
                               onClick={() => {
+                                if (row.status === 'Deactivated') {
+                                  onOpenSOWDeactivated?.()
+                                  return
+                                }
                                 if (isContributor || isClient || isReviewer) {
                                   if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
                                     onOpenSOWContributor?.()
@@ -7016,7 +7084,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                         onClick={(e) => {
                                           e.stopPropagation()
                                           setActionMenuOpenId(null)
-                                          if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
+                                          if (row.status === 'Deactivated') {
+                                            onOpenSOWDeactivated?.()
+                                          } else if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
                                             onOpenSOWContributor?.()
                                           } else {
                                             onOpenSOWV2?.()

@@ -7,7 +7,7 @@ import { SOWDetailScreen } from '@/components/organisms/SOWDetailScreen'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
 import type { SOWItem } from '@/components/organisms/DashboardScreenV2/DashboardScreenV2.types'
 
-type AppView = 'dashboard' | 'sow-detail' | 'sow-detail-v2' | 'sow-detail-meridian'
+type AppView = 'dashboard' | 'sow-detail' | 'sow-detail-v2' | 'sow-detail-meridian' | 'sow-detail-deactivated'
 
 const CONTRIBUTOR_SOWS: SOWItem[] = [
   {
@@ -106,7 +106,7 @@ export default function Home() {
     : isNarendra ? '/profile-male.png' : isIshita ? '/profile-female.png' : '/profile-user.png'
 
   const isSOWDetail =
-    view === 'sow-detail' || view === 'sow-detail-v2' || view === 'sow-detail-meridian'
+    view === 'sow-detail' || view === 'sow-detail-v2' || view === 'sow-detail-meridian' || view === 'sow-detail-deactivated'
 
   return (
     <DashboardScreenV2
@@ -153,6 +153,19 @@ export default function Home() {
             ]}
             onBack={() => setView('dashboard')}
           />
+        ) : view === 'sow-detail-deactivated' ? (
+          <SOWDetailScreen
+            sowName="TechSphere — Cloud Modernization Initiative"
+            sowStatus="Deactivated"
+            showGenerateDraft={false}
+            sowVariant="v1"
+            viewerRole={isParag ? 'admin' : isIshita ? 'reviewer' : isNarendra ? 'contributor' : 'pmo'}
+            uploadedFiles={[
+              { id: '1', name: 'TechSphere_Cloud_Spec.pdf', size: '3.1 MB', type: 'application/pdf', status: 'complete', progress: 100 },
+              { id: '2', name: 'Security_Compliance_Review.docx', size: '1.1 MB', type: 'application/msword', status: 'complete', progress: 100 }
+            ]}
+            onBack={() => setView('dashboard')}
+          />
         ) : undefined
       }
       onProceedToSOW={(files: UploadedFile[]) => {
@@ -164,6 +177,7 @@ export default function Home() {
       onNavAuditLog={() => setView('dashboard')}
       onOpenSOWV2={() => setView('sow-detail-v2')}
       onOpenSOWContributor={() => setView('sow-detail-meridian')}
+      onOpenSOWDeactivated={() => setView('sow-detail-deactivated')}
     />
   )
 }

@@ -8,7 +8,32 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Check, X, ChevronDown, CheckCircle2, FileText, Clock, Layers, MessageSquare } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import {
+  Check,
+  X,
+  ChevronDown,
+  CheckCircle2,
+  FileText,
+  Clock,
+  Layers,
+  MessageSquare,
+  Users,
+  ExternalLink,
+  RefreshCw,
+  UploadCloud,
+  Trash2,
+  Edit2,
+  Shield,
+  Info,
+  AlertTriangle,
+  Eye,
+  Plus,
+  ArrowRight,
+  Sparkles,
+  FileCheck,
+  CheckSquare,
+} from 'lucide-react'
 import { AuditLogView, addGlobalAuditLog } from '../AuditLogView'
 import type {
   SOWDetailScreenProps,
@@ -427,100 +452,2147 @@ function OverviewTab({ files }: { files: UploadedFile[] }) {
   )
 }
 
-/* ── Form Tab ────────────────────────────────────────────────────────────── */
+/* ── Form Tab & Context Provenance Tools ──────────────────────────────────── */
 
-const MOCK_FORM_DATA: SOWFormData = {
-  commitments: [
-    {
-      id: '1',
-      text: 'Deliver a fully functional cloud-based procurement platform within agreed timelines.',
-    },
-    { id: '2', text: 'Provide post-go-live hypercare support for 30 days.' },
-    { id: '3', text: 'Ensure 99.9% uptime SLA for production environment.' },
-    { id: '4', text: 'Conduct 3 executive steering committee reviews during the engagement.' },
-    { id: '5', text: 'Migrate all historical procurement data with zero data loss.' },
-    { id: '6', text: 'Deliver role-based training sessions for all 120 procurement staff.' },
-  ],
-  clientName: 'Meridian Healthcare Group',
-  description:
-    'End-to-end digital transformation of procurement operations, replacing legacy manual workflows with an AI-powered platform that automates sourcing, vendor evaluation, and contract lifecycle management.',
-  businessOutcome:
-    'Reduce procurement cycle time by 40%, achieve 15% cost savings through AI-driven vendor recommendations, and improve compliance adherence to 98%+ across all procurement activities.',
-  importanceValue:
-    'Procurement inefficiencies currently cost Meridian an estimated $4.2M annually in delayed vendor onboarding, manual errors, and missed early-payment discounts. This solution directly addresses the root causes.',
-  inScope:
-    'Vendor portal setup, AI sourcing engine integration, contract repository migration, role-based access control, real-time spend analytics dashboard, and user training for 120 procurement staff.',
-  outOfScope:
-    'ERP system modifications, HR module integration, financial consolidation reporting, and any work outside the 6 defined procurement sub-processes listed in Appendix A.',
-  tags: ['Procurement', 'Digital Transformation', 'AI/ML', 'Healthcare', 'Cloud Migration', 'SaaS'],
-  otherContext:
-    'Client has a hard deadline of Q2 2026 tied to their board-approved digital strategy. Existing legacy system (Ariba 2014) will be decommissioned concurrently. All data migration must be HIPAA compliant.',
+export interface ContextCitationTarget {
+  title: string
+  sourceDoc: string
+  page: number
+  section: string
+  highlightSnippet: string
 }
 
-function RichTextField({
-  label,
-  value,
-  onChange,
+export interface TraceRecord {
+  fieldKey: string
+  fieldLabel: string
+  sourceDoc: {
+    fileName: string
+    page: number
+    section: string
+    quote: string
+    addedBy: string
+    timestamp: string
+  }
+  contextItem: {
+    title: string
+    source: string
+    summary: string
+    addedBy: string
+    timestamp: string
+  }
+  questionAnswer: {
+    question: string
+    context: string
+    answer: string
+    addedBy: string
+    timestamp: string
+  }
+  draftStatement: {
+    title: string
+    meta: string
+    statement: string
+    createdBy: string
+    timestamp: string
+  }
+  isManuallyEdited?: boolean
+  manualEditBy?: string
+  manualEditTimestamp?: string
+}
+
+const TRACE_DATA_MAP: Record<string, TraceRecord> = {
+  clientName: {
+    fieldKey: 'clientName',
+    fieldLabel: 'Client Name',
+    sourceDoc: {
+      fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+      page: 1,
+      section: '1. Purpose and scope',
+      quote: 'Hippocratic AI – response to M42 Vendor Architecture & Due-Diligence Questionnaire (Round 1) for proposed M42 deployment.',
+      addedBy: 'Sarah Khan',
+      timestamp: '08 Oct 2026, 11:24',
+    },
+    contextItem: {
+      title: 'Client Organization & Scope',
+      source: 'From client requirements',
+      summary: 'M42 Health Platform confirming deployment scope across primary hospitals and clinical operations.',
+      addedBy: 'Mike Chen',
+      timestamp: '08 Oct 2026, 13:17',
+    },
+    questionAnswer: {
+      question: 'Q01. What is the official contracting entity name?',
+      context: 'From stakeholder kickoff',
+      answer: 'M42 Health Platform (in partnership with Hippocratic AI deployment teams).',
+      addedBy: 'Priya Nair',
+      timestamp: '08 Oct 2026, 15:03',
+    },
+    draftStatement: {
+      title: 'Draft Statement',
+      meta: 'Generated using client input and template',
+      statement: 'M42 Health Platform will serve as the primary healthcare network and contracting entity for this deployment.',
+      createdBy: 'AI Assistant',
+      timestamp: '08 Oct 2026, 15:12',
+    },
+  },
+  description: {
+    fieldKey: 'description',
+    fieldLabel: 'Description',
+    sourceDoc: {
+      fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+      page: 1,
+      section: '2. Safety-assurance approach',
+      quote: 'The Polaris constellation pairs a primary conversational agent with specialist support models (medication, labs, nutrition, protocol, escalation) that check outputs to raise accuracy and reduce hallucination.',
+      addedBy: 'Sarah Khan',
+      timestamp: '08 Oct 2026, 11:24',
+    },
+    contextItem: {
+      title: 'Deployment Scope and Architecture',
+      source: 'From client requirements',
+      summary: 'End-to-end digital transformation of clinical and procurement operations pairing conversational voice agents with specialist models.',
+      addedBy: 'Mike Chen',
+      timestamp: '08 Oct 2026, 13:17',
+    },
+    questionAnswer: {
+      question: 'Q12. What is the expected deployment scope and core architecture?',
+      context: 'From client Q&A session',
+      answer: 'Deployment of Polaris constellation generative AI agents with specialist safety supervisor models supporting non-diagnostic workflows.',
+      addedBy: 'Priya Nair',
+      timestamp: '08 Oct 2026, 15:03',
+    },
+    draftStatement: {
+      title: 'Draft Statement',
+      meta: 'Generated using client input and template',
+      statement: 'End-to-end digital transformation of clinical and procurement operations, pairing conversational AI agents with specialist safety supervisor models to automate patient-facing workflows and vendor lifecycle management.',
+      createdBy: 'AI Assistant',
+      timestamp: '08 Oct 2026, 15:12',
+    },
+  },
+  businessOutcome: {
+    fieldKey: 'businessOutcome',
+    fieldLabel: 'Business Outcome',
+    sourceDoc: {
+      fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+      page: 1,
+      section: '3. Harm-severity scale & 4. Starting hazard log',
+      quote: 'Harm-severity scale: S4 Severe (could cause death/permanent injury), S3 Moderate, S2 Minor, S1 Negligible. Residual risk rated Low across operational and procurement workflows.',
+      addedBy: 'Sarah Khan',
+      timestamp: '08 Oct 2026, 11:24',
+    },
+    contextItem: {
+      title: 'Target Operational & Safety Metrics',
+      source: 'From client requirements',
+      summary: 'Reduce cycle time by 40%, achieve 15% cost savings, and maintain zero S4/S3 unescalated clinical incidents.',
+      addedBy: 'Mike Chen',
+      timestamp: '08 Oct 2026, 13:17',
+    },
+    questionAnswer: {
+      question: 'Q08. What are the primary KPIs for success?',
+      context: 'From client Q&A session',
+      answer: '40% reduction in turnaround time, 15% efficiency savings, and 100% compliance with clinical safety triage benchmarks.',
+      addedBy: 'Priya Nair',
+      timestamp: '08 Oct 2026, 15:03',
+    },
+    draftStatement: {
+      title: 'Draft Statement',
+      meta: 'Generated using client input and template',
+      statement: 'Reduce procurement cycle time by 40%, achieve 15% cost savings through AI-driven vendor recommendations, and maintain zero S4 severe safety incidents across all healthcare operations.',
+      createdBy: 'AI Assistant',
+      timestamp: '08 Oct 2026, 15:12',
+    },
+  },
+  importanceValue: {
+    fieldKey: 'importanceValue',
+    fieldLabel: 'Importance & Value of Solution',
+    sourceDoc: {
+      fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+      page: 1,
+      section: '1. Purpose and scope',
+      quote: 'This document summarises how Hippocratic AI identifies, controls and monitors hazards... structured on ISO 14971 risk-management principles so M42 clinical safety officers can review in a familiar form.',
+      addedBy: 'Sarah Khan',
+      timestamp: '08 Oct 2026, 11:24',
+    },
+    contextItem: {
+      title: 'Value Proposition & Risk Mitigation',
+      source: 'From client requirements',
+      summary: 'Procurement and operational inefficiencies currently cost M42 an estimated $4.2M annually. Polaris addresses root causes with rigorous clinical safety.',
+      addedBy: 'Mike Chen',
+      timestamp: '08 Oct 2026, 13:17',
+    },
+    questionAnswer: {
+      question: 'Q04. Why is this initiative urgent for M42?',
+      context: 'From executive briefing',
+      answer: 'Mitigating $4.2M in annual operational drag and upgrading legacy communication systems before Q2 2026.',
+      addedBy: 'Priya Nair',
+      timestamp: '08 Oct 2026, 15:03',
+    },
+    draftStatement: {
+      title: 'Draft Statement',
+      meta: 'Generated using client input and template',
+      statement: 'Procurement and operational inefficiencies currently cost M42 an estimated $4.2M annually in delayed onboarding and manual overhead. Implementing Polaris constellation architecture directly resolves these bottlenecks.',
+      createdBy: 'AI Assistant',
+      timestamp: '08 Oct 2026, 15:12',
+    },
+  },
+  inScope: {
+    fieldKey: 'inScope',
+    fieldLabel: 'In Scope',
+    sourceDoc: {
+      fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+      page: 1,
+      section: '1. Purpose & 2. Safety-assurance approach',
+      quote: 'Intended use: Hippocratic AI agents perform non-diagnostic, patient-facing tasks. Multi-stage testing with 7.7K+ clinicians and 775K+ test calls with escalation to human nurses.',
+      addedBy: 'Sarah Khan',
+      timestamp: '08 Oct 2026, 11:24',
+    },
+    contextItem: {
+      title: 'Agreed In-Scope Deliverables',
+      source: 'From client requirements',
+      summary: 'Vendor portal setup, AI sourcing engine integration, contract repository migration, role-based access control, real-time spend analytics, and clinical safety monitoring.',
+      addedBy: 'Mike Chen',
+      timestamp: '08 Oct 2026, 13:17',
+    },
+    questionAnswer: {
+      question: 'Q15. Which modules are explicitly in scope for Phase 1?',
+      context: 'From technical architecture review',
+      answer: 'Portal setup, Polaris engine integration, role-based access control, spend analytics, and human clinical supervision escalation hooks.',
+      addedBy: 'Priya Nair',
+      timestamp: '08 Oct 2026, 15:03',
+    },
+    draftStatement: {
+      title: 'Draft Statement',
+      meta: 'Generated using client input and template',
+      statement: 'Vendor portal setup, AI sourcing engine integration, contract repository migration, role-based access control, real-time spend analytics dashboard, and clinical safety monitoring protocols.',
+      createdBy: 'AI Assistant',
+      timestamp: '08 Oct 2026, 15:12',
+    },
+  },
+  outOfScope: {
+    fieldKey: 'outOfScope',
+    fieldLabel: 'Out of Scope',
+    sourceDoc: {
+      fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+      page: 1,
+      section: '1. Purpose and scope (Intended use)',
+      quote: 'Intended use (public position). Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.',
+      addedBy: 'Sarah Khan',
+      timestamp: '08 Oct 2026, 11:24',
+    },
+    contextItem: {
+      title: 'Explicit Boundaries & Exclusions',
+      source: 'From client requirements',
+      summary: 'Direct diagnostic or prescribing tasks, hospice, psychiatric disorders, and children under two are strictly excluded.',
+      addedBy: 'Mike Chen',
+      timestamp: '08 Oct 2026, 13:17',
+    },
+    questionAnswer: {
+      question: 'Q16. What clinical tasks are prohibited for this AI system?',
+      context: 'From Clinical Safety Board review',
+      answer: 'No diagnostic or prescribing capabilities; exclusions for hospice, mental health, and pediatric patients under age 2.',
+      addedBy: 'Priya Nair',
+      timestamp: '08 Oct 2026, 15:03',
+    },
+    draftStatement: {
+      title: 'Draft Statement',
+      meta: 'Generated using client input and template',
+      statement: 'Direct diagnostic or prescribing services, hospice or mental-health disorder deployments, and any operations outside the agreed non-diagnostic patient-facing scope.',
+      createdBy: 'AI Assistant',
+      timestamp: '08 Oct 2026, 15:12',
+    },
+  },
+  otherContext: {
+    fieldKey: 'otherContext',
+    fieldLabel: 'Any Other Relevant Context',
+    sourceDoc: {
+      fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+      page: 2,
+      section: '6. Regulatory positioning in the UAE',
+      quote: 'Documented in a regulatory classification memo against UAE MOHAP SaMD guidance and the DoH Abu Dhabi Policy on Use of AI in the Healthcare Sector, submitted to M42 before go-live.',
+      addedBy: 'Sarah Khan',
+      timestamp: '08 Oct 2026, 11:24',
+    },
+    contextItem: {
+      title: 'UAE Regulatory & Compliance Directives',
+      source: 'From client requirements',
+      summary: 'Full compliance with UAE MOHAP SaMD guidelines, DoH Abu Dhabi AI policies, and ISO 14971 medical device risk management standards.',
+      addedBy: 'Mike Chen',
+      timestamp: '08 Oct 2026, 13:17',
+    },
+    questionAnswer: {
+      question: 'Q22. What local health authority regulations must be met before go-live?',
+      context: 'From legal & compliance alignment',
+      answer: 'UAE MOHAP SaMD guidance and DoH Abu Dhabi AI in Healthcare Sector policy approval.',
+      addedBy: 'Priya Nair',
+      timestamp: '08 Oct 2026, 15:03',
+    },
+    draftStatement: {
+      title: 'Draft Statement',
+      meta: 'Generated using client input and template',
+      statement: 'Deployment must comply with UAE MOHAP SaMD guidance and DoH Abu Dhabi AI policies. All data processing and integration contract tests must be HIPAA and local regulation compliant.',
+      createdBy: 'AI Assistant',
+      timestamp: '08 Oct 2026, 15:12',
+    },
+  },
+}
+
+/* ── Document Citation Preview Modal ──────────────────────────────────────── */
+
+export function DocumentCitationPreviewModal({
   citation,
-  isEditable = true,
+  onClose,
+}: {
+  citation: ContextCitationTarget
+  onClose: () => void
+}) {
+  const [currentPage, setCurrentPage] = useState<number>(citation.page || 1)
+  const [zoomLevel, setZoomLevel] = useState<number>(100)
+  const [searchQuery, setSearchQuery] = useState<string>('')
+
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow
+    const originalHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
+    const scrollContainers = document.querySelectorAll<HTMLElement>('.overflow-y-auto, [style*="overflow"]')
+    const prevStyles: { el: HTMLElement; overflow: string }[] = []
+    scrollContainers.forEach((el) => {
+      prevStyles.push({ el, overflow: el.style.overflow })
+      el.style.overflow = 'hidden'
+    })
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalBodyOverflow
+      document.documentElement.style.overflow = originalHtmlOverflow
+      prevStyles.forEach(({ el, overflow }) => {
+        el.style.overflow = overflow
+      })
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
+  const highlightText = (text: string, highlightSnippet: string) => {
+    if (!highlightSnippet) return text
+    const idx = text.toLowerCase().indexOf(highlightSnippet.toLowerCase().slice(0, 40))
+    if (idx === -1) {
+      // Return normal with marked keywords if matched
+      return text
+    }
+    const before = text.substring(0, idx)
+    const match = text.substring(idx, idx + highlightSnippet.length)
+    const after = text.substring(idx + highlightSnippet.length)
+    return (
+      <>
+        {before}
+        <mark
+          style={{
+            background: '#fef08a',
+            color: '#854d0e',
+            padding: '2px 4px',
+            borderRadius: 4,
+            boxShadow: '0 0 0 2px rgba(250, 204, 21, 0.5)',
+            fontWeight: 600,
+          }}
+        >
+          {match}
+        </mark>
+        {after}
+      </>
+    )
+  }
+
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        background: 'rgba(15, 23, 42, 0.7)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+      }}
+      onClick={onClose}
+      onWheel={(e) => e.stopPropagation()}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          width: '940px',
+          maxWidth: '96vw',
+          height: '88vh',
+          borderRadius: '16px',
+          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          border: '1px solid #e2e8f0',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header — Clean Light Theme */}
+        <div
+          style={{
+            padding: '14px 20px',
+            background: '#ffffff',
+            color: '#0d212c',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: 'rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#008b8b',
+              }}
+            >
+              <FileText size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, color: '#0d212c' }}>
+                Attachment A: Clinical Safety Case & Hazard Log
+                <span
+                  style={{
+                    fontSize: 11,
+                    background: 'rgba(0,196,196,0.12)',
+                    color: '#008080',
+                    border: '1px solid rgba(0,196,196,0.25)',
+                    padding: '2px 8px',
+                    borderRadius: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  Verified Source
+                </span>
+              </div>
+              <div style={{ fontSize: 11.5, color: '#64748b' }}>
+                Hippocratic AI – Response to M42 Vendor Due-Diligence Questionnaire • Cited Section: {citation.section || 'General'}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Page Switcher */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: '#f1f5f9',
+                borderRadius: 8,
+                padding: '3px 6px',
+                gap: 4,
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <button
+                onClick={() => setCurrentPage(1)}
+                style={{
+                  background: currentPage === 1 ? '#00C4C4' : 'transparent',
+                  color: currentPage === 1 ? '#ffffff' : '#64748b',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '3px 10px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                Page 1
+              </button>
+              <button
+                onClick={() => setCurrentPage(2)}
+                style={{
+                  background: currentPage === 2 ? '#00C4C4' : 'transparent',
+                  color: currentPage === 2 ? '#ffffff' : '#64748b',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '3px 10px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                Page 2
+              </button>
+            </div>
+
+            {/* Zoom Controls */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: '#f1f5f9',
+                borderRadius: 8,
+                padding: '3px 6px',
+                gap: 4,
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <button
+                onClick={() => setZoomLevel((z) => Math.max(80, z - 10))}
+                style={{
+                  background: 'transparent',
+                  color: '#475569',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '3px 6px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+                title="Zoom Out"
+              >
+                −
+              </button>
+              <span style={{ fontSize: 11, color: '#0f172a', minWidth: 34, textAlign: 'center', fontWeight: 600 }}>
+                {zoomLevel}%
+              </span>
+              <button
+                onClick={() => setZoomLevel((z) => Math.min(130, z + 10))}
+                style={{
+                  background: 'transparent',
+                  color: '#475569',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '3px 6px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+                title="Zoom In"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              style={{
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                width: 30,
+                height: 30,
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLButtonElement
+                el.style.background = '#fee2e2'
+                el.style.color = '#ef4444'
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLButtonElement
+                el.style.background = '#f1f5f9'
+                el.style.color = '#64748b'
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Citation Banner Callout */}
+        <div
+          style={{
+            padding: '10px 20px',
+            background: '#fefce8',
+            borderBottom: '1px solid #fef08a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#854d0e' }}>
+            <span style={{ fontWeight: 700 }}>🔍 Active Citation:</span>
+            <span>Highlighted text on <strong>Page {citation.page}</strong> matches context extract for <em>&ldquo;{citation.title}&rdquo;</em></span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 11, background: '#fef08a', color: '#713f12', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+              Yellow Highlighted Match
+            </span>
+          </div>
+        </div>
+
+        {/* Document Body View */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            background: '#f1f5f9',
+            padding: '24px 20px',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '820px',
+              background: '#ffffff',
+              borderRadius: '8px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              padding: '40px 48px',
+              transform: `scale(${zoomLevel / 100})`,
+              transformOrigin: 'top center',
+              transition: 'transform 0.15s ease',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              color: '#1e293b',
+              lineHeight: 1.6,
+            }}
+          >
+            {currentPage === 1 ? (
+              /* ── PAGE 1 CONTENT ── */
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', borderBottom: '1px solid #e2e8f0', paddingBottom: 6, marginBottom: 20 }}>
+                  <span>Hippocratic AI | Attachment A</span>
+                  <span>Confidential – Prepared for M42 due diligence – Page 1</span>
+                </div>
+
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#00a0a0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Attachment A
+                </div>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: '4px 0 12px' }}>
+                  Clinical Safety Case &amp; Hazard Log
+                </h1>
+                <div style={{ fontSize: 13, color: '#475569', marginBottom: 20 }}>
+                  Hippocratic AI – response to M42 Vendor Architecture &amp; Due-Diligence Questionnaire (Round 1)
+                </div>
+
+                {/* Metadata Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: 12.5 }}>
+                  <tbody>
+                    <tr style={{ background: '#f8fafc', color: '#0f172a', borderBottom: '2px solid #e2e8f0' }}>
+                      <th style={{ padding: '8px 12px', textAlign: 'left', width: '30%', border: '1px solid #e2e8f0' }}>Item</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'left', border: '1px solid #e2e8f0' }}>Detail</th>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Questionnaire reference</td>
+                      <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>1.2 (also supports 1.3, 1.7)</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Version / date</td>
+                      <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>v1.0 – 28 September 2026</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Classification</td>
+                      <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>Confidential – prepared for M42 due diligence</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '8px 12px', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>Status</td>
+                      <td style={{ padding: '8px 12px', border: '1px solid #e2e8f0' }}>Prepared for submission</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Basis notice */}
+                <div style={{ background: '#f1f5f9', borderLeft: '4px solid #00C4C4', padding: '10px 14px', fontSize: 12, color: '#334155', marginBottom: 24 }}>
+                  <strong>Basis of this document:</strong> Statements about Hippocratic AI capabilities are drawn from its published materials (listed under Sources). Where specific values are not published, they reflect standard healthcare-SaaS industry practice and are recorded in the Assumptions Register of the accompanying tracker.
+                </div>
+
+                {/* Section 1 */}
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
+                  1. Purpose and scope
+                </h2>
+                <p style={{ fontSize: 13, color: '#334155', marginBottom: 12 }}>
+                  This document summarises how Hippocratic AI identifies, controls and monitors hazards that could lead to patient harm from its generative AI voice agents, and sets out a starting hazard log for the proposed M42 deployment. It is structured on ISO 14971 risk-management principles so M42 clinical safety officers can review it in a familiar form. Hippocratic AI&apos;s full internal risk register is available to M42 under mutual NDA and remains the controlling record.
+                </p>
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: '#334155',
+                    marginBottom: 20,
+                    background: citation.section?.includes('1') ? '#fef9c3' : 'transparent',
+                    padding: citation.section?.includes('1') ? '6px 10px' : '0',
+                    borderRadius: 6,
+                  }}
+                >
+                  <strong style={{ color: '#0f172a' }}>Intended use (public position).</strong> Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.
+                </p>
+
+                {/* Section 2 */}
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
+                  2. Safety-assurance approach
+                </h2>
+                <p style={{ fontSize: 13, color: '#334155', marginBottom: 10 }}>
+                  Hippocratic AI publicly describes a five-phase safety process:
+                </p>
+                <ul
+                  style={{
+                    paddingLeft: 22,
+                    fontSize: 13,
+                    color: '#334155',
+                    marginBottom: 16,
+                    background: citation.section?.includes('2') ? '#fef9c3' : 'transparent',
+                    borderRadius: 6,
+                    paddingTop: citation.section?.includes('2') ? 8 : 0,
+                    paddingBottom: citation.section?.includes('2') ? 8 : 0,
+                  }}
+                >
+                  <li style={{ marginBottom: 6 }}>
+                    <strong>Phase 1 – Architecture.</strong> The Polaris constellation pairs a primary conversational agent with specialist support models (e.g., medication, labs, nutrition, protocol, escalation) that check outputs to raise accuracy and reduce hallucination.
+                  </li>
+                  <li style={{ marginBottom: 6 }}>
+                    <strong>Phase 2 – Output testing.</strong> U.S.-licensed clinicians evaluate the agent by posing as patients; the company reports 7.7K+ clinicians and 775K+ test calls.
+                  </li>
+                  <li style={{ marginBottom: 6 }}>
+                    <strong>Phase 3 – Human clinical supervision</strong> of live operation.
+                  </li>
+                  <li style={{ marginBottom: 6 }}>
+                    <strong>Phase 4 – Escalation to human nurses</strong> when clinical triggers are detected.
+                  </li>
+                  <li style={{ marginBottom: 6 }}>
+                    <strong>Phase 5 – Cross-validation</strong> that real-world performance matches simulated testing, using production volume.
+                  </li>
+                </ul>
+                <p style={{ fontSize: 12.5, color: '#475569', marginBottom: 20 }}>
+                  The RWE-LLM study (medRxiv, 2025) documents a four-stage framework (pre-implementation, tiered review, resolution, continuous monitoring) with nurse review and physician adjudication of flagged calls across severity categories.
+                </p>
+
+                {/* Section 3 */}
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '20px 0 8px' }}>
+                  3. Harm-severity scale (proposed for M42)
+                </h2>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: '#0d212c', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', width: '22%' }}>Level</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', width: '45%' }}>Definition</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left' }}>Example</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#ef4444' }}>S4 – Severe</td>
+                      <td style={{ padding: '6px 10px' }}>Could cause death or serious permanent injury</td>
+                      <td style={{ padding: '6px 10px', color: '#64748b' }}>Failure to escalate chest-pain symptoms during a post-discharge call</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#f59e0b' }}>S3 – Moderate</td>
+                      <td style={{ padding: '6px 10px' }}>Could cause temporary injury needing intervention</td>
+                      <td style={{ padding: '6px 10px', color: '#64748b' }}>Incorrect reinforcement of a medication timing instruction</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#3b82f6' }}>S2 – Minor</td>
+                      <td style={{ padding: '6px 10px' }}>Could cause minor, self-limiting harm or distress</td>
+                      <td style={{ padding: '6px 10px', color: '#64748b' }}>Confusing appointment preparation instructions</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#64748b' }}>S1 – Negligible</td>
+                      <td style={{ padding: '6px 10px' }}>No clinical impact; experience issue</td>
+                      <td style={{ padding: '6px 10px', color: '#64748b' }}>Awkward phrasing, repeated question</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              /* ── PAGE 2 CONTENT ── */
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', borderBottom: '1px solid #e2e8f0', paddingBottom: 6, marginBottom: 20 }}>
+                  <span>Hippocratic AI | Attachment A</span>
+                  <span>Confidential – Prepared for M42 due diligence – Page 2</span>
+                </div>
+
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '10px 0 12px' }}>
+                  4. Starting hazard log (M42 deployment)
+                </h2>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
+                  Residual risk is rated after controls on a Low / Medium / High scale; ratings are re-scored jointly with M42 clinical safety leads at the quarterly review.
+                </div>
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: 11.5 }}>
+                  <thead>
+                    <tr style={{ background: '#0d212c', color: '#ffffff' }}>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '7%' }}>ID</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '20%' }}>Hazard</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '20%' }}>Cause</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '35%' }}>Controls</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '8%' }}>Sev.</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '10%' }}>Residual</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-01</td>
+                      <td style={{ padding: '6px 8px' }}>Missed escalation of red-flag symptom</td>
+                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Patient downplays symptoms; ASR error</td>
+                      <td style={{ padding: '6px 8px' }}>Clinical-escalation supervisor model; probing behaviour; conservative thresholds; escalation to M42 nurse queue; call sampling</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ef4444', fontWeight: 600 }}>S4</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-02</td>
+                      <td style={{ padding: '6px 8px' }}>Incorrect medication information</td>
+                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Hallucination; stale med list</td>
+                      <td style={{ padding: '6px 8px' }}>Medication supervisor model; EHR as source of truth; agent does not change doses; escalation for discrepancies</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-03</td>
+                      <td style={{ padding: '6px 8px' }}>PHI disclosed to wrong person</td>
+                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Failed identity verification</td>
+                      <td style={{ padding: '6px 8px' }}>Identity verification before any PHI; caregiver-consent rules; privacy supervisor</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#3b82f6', fontWeight: 600 }}>S2</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-04</td>
+                      <td style={{ padding: '6px 8px' }}>Misunderstanding in Arabic dialect</td>
+                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Dialect/code-switching; audio quality</td>
+                      <td style={{ padding: '6px 8px' }}>Emirati Arabic support (public); contextual ASR; clarification and read-back; local validation with M42 clinicians</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ea580c', fontWeight: 600 }}>Medium (Low after local val.)</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-05</td>
+                      <td style={{ padding: '6px 8px' }}>Scope creep into diagnosis</td>
+                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Patient asks for diagnosis/prescription</td>
+                      <td style={{ padding: '6px 8px' }}>Hard scope constraints; redirect to clinician; supervisor checks</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-06</td>
+                      <td style={{ padding: '6px 8px' }}>Safeguarding cue missed</td>
+                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Self-harm or abuse disclosure</td>
+                      <td style={{ padding: '6px 8px' }}>Escalation skills for suicidal ideation and child-protection alerts (Polaris 5.0); immediate human handoff protocol agreed with M42</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#ef4444', fontWeight: 600 }}>S4</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-07</td>
+                      <td style={{ padding: '6px 8px' }}>Dependency outage mid-call</td>
+                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Telephony/ASR/model/EHR failure</td>
+                      <td style={{ padding: '6px 8px' }}>Fail-safe: no clinical guidance without supervisor checks; graceful call end with callback; queued write-backs (see Attachment Q)</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#3b82f6', fontWeight: 600 }}>S2</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>H-08</td>
+                      <td style={{ padding: '6px 8px' }}>Write-back of wrong data to EHR</td>
+                      <td style={{ padding: '6px 8px', color: '#64748b' }}>Mapping error</td>
+                      <td style={{ padding: '6px 8px' }}>Integration contract tests; clinician review of documented outcomes; reconciliation reports</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#f59e0b', fontWeight: 600 }}>S3</td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>Low</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Section 5 & 6 */}
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '16px 0 8px' }}>
+                  5. Monitoring and review
+                </h2>
+                <ul style={{ paddingLeft: 20, fontSize: 12.5, color: '#334155', marginBottom: 16 }}>
+                  <li>Hippocratic AI states that 0.5%–1% of all live calls are sampled for safety review.</li>
+                  <li>Monthly joint safety review with M42 (escalation rates, flagged calls, near-misses), and a quarterly hazard-log refresh.</li>
+                  <li>Any S3/S4 event triggers the incident process in Attachment P.</li>
+                </ul>
+
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '16px 0 8px' }}>
+                  6. Regulatory positioning in the UAE
+                </h2>
+                <p
+                  style={{
+                    fontSize: 12.5,
+                    color: '#334155',
+                    marginBottom: 16,
+                    background: citation.section?.includes('6') ? '#fef9c3' : 'transparent',
+                    padding: citation.section?.includes('6') ? '6px 10px' : '0',
+                    borderRadius: 6,
+                  }}
+                >
+                  Because the agents are non-diagnostic, Hippocratic AI&apos;s position is that they are not Software as a Medical Device. This position will be documented in a regulatory classification memo against UAE MOHAP SaMD guidance and the DoH Abu Dhabi Policy on Use of AI in the Healthcare Sector, submitted to M42 before go-live.
+                </p>
+
+                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12, marginTop: 16 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#475569', marginBottom: 4 }}>
+                    Sources (verify against these authoritative references):
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
+                    • Hippocratic AI Safety page – https://hippocraticai.com/safety/<br />
+                    • Bhimani et al., &ldquo;Real-World Evaluation of Large Language Models in Healthcare (RWE-LLM)&rdquo;, medRxiv (2025)<br />
+                    • ISO 14971:2019 Medical devices – Application of risk management<br />
+                    • Department of Health – Abu Dhabi – https://www.doh.gov.ae/
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div
+          style={{
+            padding: '12px 20px',
+            background: '#ffffff',
+            borderTop: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ fontSize: 12, color: '#64748b' }}>
+            Page {currentPage} of 2 • Attachment_A_Clinical_Safety_Case_Hazard_Log.pdf
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '7px 20px',
+              borderRadius: 8,
+              border: '1px solid #e2e8f0',
+              background: '#f8fafc',
+              color: '#334155',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Close Preview
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+/* ── Field Provenance Trace Drawer ────────────────────────────────────────── */
+
+export function FieldTraceDrawer({
+  traceData,
+  onClose,
+  onOpenCitation,
+}: {
+  traceData: TraceRecord
+  onClose: () => void
+  onOpenCitation: (doc: ContextCitationTarget) => void
+}) {
+  useEffect(() => {
+    const originalBodyOverflow = document.body.style.overflow
+    const originalHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
+    const scrollContainers = document.querySelectorAll<HTMLElement>('.overflow-y-auto, [style*="overflow"]')
+    const prevStyles: { el: HTMLElement; overflow: string }[] = []
+    scrollContainers.forEach((el) => {
+      prevStyles.push({ el, overflow: el.style.overflow })
+      el.style.overflow = 'hidden'
+    })
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalBodyOverflow
+      document.documentElement.style.overflow = originalHtmlOverflow
+      prevStyles.forEach(({ el, overflow }) => {
+        el.style.overflow = overflow
+      })
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9998,
+        background: 'transparent',
+        display: 'flex',
+        justifyContent: 'flex-end',
+      }}
+      onClick={onClose}
+      onWheel={(e) => e.stopPropagation()}
+    >
+      <div
+        style={{
+          width: '560px',
+          maxWidth: '92vw',
+          height: '100%',
+          background: '#ffffff',
+          boxShadow: '-8px 0 32px rgba(0,0,0,0.12)',
+          borderLeft: '1px solid #e2e8f0',
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'slideInRight 0.25s ease-out',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Drawer Header */}
+        <div
+          style={{
+            padding: '18px 24px',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#fafafa',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+              <Sparkles size={16} color="#00a0a0" />
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
+                {traceData.fieldLabel}
+              </span>
+              {traceData.isManuallyEdited && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    background: '#fef3c7',
+                    color: '#b45309',
+                    border: '1px solid #fde68a',
+                    padding: '1px 7px',
+                    borderRadius: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  Manually Modified
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b' }}>
+              Provenance Audit Trail &amp; AI Extraction History
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: '#f1f5f9',
+              border: 'none',
+              borderRadius: 8,
+              width: 32,
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#64748b',
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Timeline Content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 24px', background: '#f8fafc' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
+            {/* Vertical connector line */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 18,
+                top: 24,
+                bottom: 24,
+                width: 2,
+                background: '#e2e8f0',
+                zIndex: 1,
+              }}
+            />
+
+            {/* Step 1: Source Document */}
+            <div style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: '#2563eb',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(37,99,235,0.3)',
+                }}
+              >
+                1
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <FileText size={15} color="#2563eb" />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+                      Source Document
+                    </span>
+                  </div>
+                  <button
+                    onClick={() =>
+                      onOpenCitation({
+                        title: traceData.fieldLabel,
+                        sourceDoc: traceData.sourceDoc.fileName,
+                        page: traceData.sourceDoc.page,
+                        section: traceData.sourceDoc.section,
+                        highlightSnippet: traceData.sourceDoc.quote,
+                      })
+                    }
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 11.5,
+                      color: '#2563eb',
+                      fontWeight: 600,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    View page <ExternalLink size={12} />
+                  </button>
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b', marginBottom: 2 }}>
+                  {traceData.sourceDoc.fileName}
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <span style={{ background: '#fee2e2', color: '#dc2626', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
+                    PDF
+                  </span>
+                  <span>Page {traceData.sourceDoc.page} • {traceData.sourceDoc.section}</span>
+                </div>
+                <div
+                  style={{
+                    background: '#eff6ff',
+                    borderLeft: '3px solid #3b82f6',
+                    padding: '8px 10px',
+                    fontSize: 12,
+                    color: '#1e3a8a',
+                    borderRadius: 4,
+                    lineHeight: 1.5,
+                    fontStyle: 'italic',
+                    marginBottom: 10,
+                  }}
+                >
+                  &ldquo;{traceData.sourceDoc.quote}&rdquo;
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontSize: 11, color: '#64748b', gap: 6 }}>
+                  <FileCheck size={12} color="#64748b" />
+                  <span>Added by <strong>{traceData.sourceDoc.addedBy}</strong> • {traceData.sourceDoc.timestamp}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Context Item */}
+            <div style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: '#0d9488',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(13,148,136,0.3)',
+                }}
+              >
+                2
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <CheckSquare size={15} color="#0d9488" />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+                      Context Item
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11.5, color: '#0d9488', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    View context <ExternalLink size={12} />
+                  </span>
+                </div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1e293b' }}>
+                  {traceData.contextItem.title}
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>
+                  {traceData.contextItem.source}
+                </div>
+                <div
+                  style={{
+                    background: '#f0fdfa',
+                    border: '1px solid #ccfbf1',
+                    padding: '8px 10px',
+                    fontSize: 12,
+                    color: '#134e4a',
+                    borderRadius: 6,
+                    lineHeight: 1.5,
+                    marginBottom: 10,
+                  }}
+                >
+                  {traceData.contextItem.summary}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontSize: 11, color: '#64748b', gap: 6 }}>
+                  <FileCheck size={12} color="#64748b" />
+                  <span>Added by <strong>{traceData.contextItem.addedBy}</strong> • {traceData.contextItem.timestamp}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Question / Answer */}
+            <div style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: '#9333ea',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(147,51,234,0.3)',
+                }}
+              >
+                3
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <MessageSquare size={15} color="#9333ea" />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+                      Question / Answer
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11.5, color: '#9333ea', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    View Q&amp;A <ExternalLink size={12} />
+                  </span>
+                </div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1e293b' }}>
+                  {traceData.questionAnswer.question}
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>
+                  {traceData.questionAnswer.context}
+                </div>
+                <div
+                  style={{
+                    background: '#faf5ff',
+                    border: '1px solid #f3e8ff',
+                    padding: '8px 10px',
+                    fontSize: 12,
+                    color: '#581c87',
+                    borderRadius: 6,
+                    lineHeight: 1.5,
+                    marginBottom: 10,
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>Answer (Client):</span> {traceData.questionAnswer.answer}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontSize: 11, color: '#64748b', gap: 6 }}>
+                  <FileCheck size={12} color="#64748b" />
+                  <span>Added by <strong>{traceData.questionAnswer.addedBy}</strong> • {traceData.questionAnswer.timestamp}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4: Draft Statement */}
+            <div style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: '#0284c7',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(2,132,199,0.3)',
+                }}
+              >
+                4
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <FileText size={15} color="#0284c7" />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+                      {traceData.draftStatement.title}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11.5, color: '#0284c7', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    View in document <ExternalLink size={12} />
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>
+                  {traceData.draftStatement.meta}
+                </div>
+                <div
+                  style={{
+                    background: '#f0f9ff',
+                    border: '1px solid #e0f2fe',
+                    padding: '8px 10px',
+                    fontSize: 12,
+                    color: '#0369a1',
+                    borderRadius: 6,
+                    lineHeight: 1.5,
+                    marginBottom: 10,
+                  }}
+                >
+                  {traceData.draftStatement.statement}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontSize: 11, color: '#64748b', gap: 6 }}>
+                  <Sparkles size={12} color="#0284c7" />
+                  <span>Created by <strong>{traceData.draftStatement.createdBy}</strong> • {traceData.draftStatement.timestamp}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 5: Manual Modification (If Edited) */}
+            {traceData.isManuallyEdited && (
+              <div style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: '#d97706',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 14,
+                    flexShrink: 0,
+                    boxShadow: '0 2px 8px rgba(217,119,6,0.3)',
+                  }}
+                >
+                  5
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    background: '#ffffff',
+                    border: '1.5px solid #fde68a',
+                    borderRadius: 12,
+                    padding: '14px 16px',
+                    boxShadow: '0 2px 8px rgba(217,119,6,0.08)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Edit2 size={15} color="#d97706" />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#b45309' }}>
+                        Manual Field Modification
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 11, background: '#fef3c7', color: '#92400e', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>
+                      Latest Edit
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5, marginBottom: 8 }}>
+                    Field contents were updated directly by the PMO Lead during context review. Citation tag is replaced with a manual edit indicator.
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontSize: 11, color: '#92400e', gap: 6 }}>
+                    <span>Modified by <strong>{traceData.manualEditBy || 'Ashika Jain (PMO)'}</strong> • {traceData.manualEditTimestamp || 'Just now'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+/* ── SOW Participants Modal (View-Only) ───────────────────────────────────── */
+
+export function SOWParticipantsModal({
+  onClose,
+}: {
+  onClose: () => void
+}) {
+  const [activeCategory, setActiveCategory] = useState<'all' | 'reviewers' | 'contributors' | 'clients' | 'pmo'>('all')
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
+  const PARTICIPANTS = [
+    { id: '1', name: 'Sarah Khan', role: 'Clinical Safety Lead', type: 'reviewers', email: 'sarah.khan@m42.ae', initials: 'SK', color: '#8b5cf6', status: 'Active' },
+    { id: '2', name: 'Marcus Brody', role: 'Compliance Officer', type: 'reviewers', email: 'marcus.brody@m42.ae', initials: 'MB', color: '#ec4899', status: 'Active' },
+    { id: '3', name: 'Priya Nair', role: 'Legal & Risk Lead', type: 'reviewers', email: 'priya.nair@m42.ae', initials: 'PN', color: '#3b82f6', status: 'Pending Review' },
+    { id: '4', name: 'Mike Chen', role: 'Solutions Architect', type: 'contributors', email: 'mike.chen@hippocratic.ai', initials: 'MC', color: '#10b981', status: 'Active' },
+    { id: '5', name: 'Emily Davis', role: 'Senior Cloud Engineer', type: 'contributors', email: 'emily.davis@hippocratic.ai', initials: 'ED', color: '#f59e0b', status: 'Active' },
+    { id: '6', name: 'David Kim', role: 'Integration Lead', type: 'contributors', email: 'david.kim@hippocratic.ai', initials: 'DK', color: '#6366f1', status: 'Active' },
+    { id: '7', name: 'Dr. Sultan Al Hashimi', role: 'M42 Healthcare Director', type: 'clients', email: 'sultan.hashimi@m42.ae', initials: 'SH', color: '#0ea5e9', status: 'Client Stakeholder' },
+    { id: '8', name: 'Fatima Al Mansoori', role: 'Head of Procurement', type: 'clients', email: 'fatima.mansoori@m42.ae', initials: 'FM', color: '#14b8a6', status: 'Client Stakeholder' },
+    { id: '9', name: 'Ashika Jain', role: 'Lead PMO Manager', type: 'pmo', email: 'ashika.jain@organization.com', initials: 'AJ', color: '#00C4C4', status: 'Owner / PMO' },
+  ]
+
+  const filtered = activeCategory === 'all' ? PARTICIPANTS : PARTICIPANTS.filter((p) => p.type === activeCategory)
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(15, 23, 42, 0.55)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          width: '640px',
+          maxWidth: '94vw',
+          height: '520px',
+          maxHeight: '85vh',
+          borderRadius: '16px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          border: '1px solid #e2e8f0',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: '18px 24px',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#fafafa',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: 'rgba(0,196,196,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#00a0a0',
+              }}
+            >
+              <Users size={18} />
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
+              SOW Participants
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: '#f1f5f9',
+              border: 'none',
+              borderRadius: 8,
+              width: 30,
+              height: 30,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#64748b',
+            }}
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        {/* Category Filter Tabs */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            padding: '10px 24px',
+            borderBottom: '1px solid #f1f5f9',
+            background: '#ffffff',
+            overflowX: 'auto',
+          }}
+        >
+          {[
+            { id: 'all', label: `All (${PARTICIPANTS.length})` },
+            { id: 'reviewers', label: `Reviewers (3)` },
+            { id: 'contributors', label: `Contributors (3)` },
+            { id: 'clients', label: `Clients (2)` },
+            { id: 'pmo', label: `PMO (1)` },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveCategory(tab.id as 'all' | 'reviewers' | 'contributors' | 'clients' | 'pmo')}
+              style={{
+                padding: '5px 12px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                background: activeCategory === tab.id ? '#00C4C4' : '#f1f5f9',
+                color: activeCategory === tab.id ? '#ffffff' : '#64748b',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Participants List */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtered.map((user) => {
+            const roleLabel =
+              user.type === 'reviewers'
+                ? 'Reviewer'
+                : user.type === 'contributors'
+                ? 'Contributor'
+                : user.type === 'clients'
+                ? 'Client'
+                : 'PMO'
+
+            return (
+              <div
+                key={user.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 14px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 12,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: '50%',
+                    background: user.color,
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {user.initials}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c' }}>
+                      {user.name}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        padding: '1px 7px',
+                        borderRadius: 4,
+                        background:
+                          user.type === 'reviewers'
+                            ? '#f3e8ff'
+                            : user.type === 'contributors'
+                            ? '#ecfdf5'
+                            : user.type === 'clients'
+                            ? '#e0f2fe'
+                            : '#ccfbf1',
+                        color:
+                          user.type === 'reviewers'
+                            ? '#7e22ce'
+                            : user.type === 'contributors'
+                            ? '#047857'
+                            : user.type === 'clients'
+                            ? '#0369a1'
+                            : '#0f766e',
+                      }}
+                    >
+                      {roleLabel}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#64748b' }}>
+                    {user.email}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: '12px 24px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#fafafa',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: '7px 18px',
+              borderRadius: 8,
+              border: '1px solid #e2e8f0',
+              background: '#ffffff',
+              color: '#0d212c',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Context Field Header (Matches User Image 1 Placement) ─────────────────── */
+
+function ContextFieldHeader({
+  label,
+  citation,
+  isManuallyEdited = false,
+  onOpenCitation,
+  onOpenTrace,
 }: {
   label: string
-  value: string
-  onChange: (v: string) => void
-  citation?: string
-  isEditable?: boolean
+  citation?: {
+    sourceDoc: string
+    page: number
+    section: string
+    highlightSnippet: string
+  }
+  isManuallyEdited?: boolean
+  onOpenCitation?: () => void
+  onOpenTrace?: () => void
 }) {
   return (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+        padding: '2px 0',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
         <label
           style={{
             fontSize: 13,
-            fontWeight: 600,
+            fontWeight: 700,
             color: '#0d212c',
+            whiteSpace: 'nowrap',
           }}
         >
           {label}
         </label>
-        {citation && (
-          <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-            Source: {citation}
+
+        {/* Source Citation or Manually Edited Chip */}
+        {isManuallyEdited ? (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#b45309',
+              background: '#fef3c7',
+              border: '1px solid #fde68a',
+              padding: '2px 8px',
+              borderRadius: 6,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Edit2 size={11} />
+            Manually Edited
           </span>
-        )}
+        ) : citation ? (
+          <button
+            type="button"
+            onClick={onOpenCitation}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 11,
+              fontWeight: 500,
+              color: '#64748b',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              padding: '2px 8px',
+              borderRadius: 5,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+            title="Click to preview citation with highlighted text in document"
+            onMouseEnter={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+              ;(e.currentTarget as HTMLButtonElement).style.color = '#334155'
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
+              ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
+            }}
+          >
+            <FileText size={11} color="#64748b" />
+            <span>Source: {citation.sourceDoc} (Page {citation.page})</span>
+          </button>
+        ) : null}
       </div>
+
+      {/* Right Actions: View Trace — Text only, no stroke, no fill */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button
+          type="button"
+          onClick={onOpenTrace}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 11.5,
+            fontWeight: 600,
+            color: '#008b8b',
+            background: 'none',
+            border: 'none',
+            padding: '2px 4px',
+            cursor: 'pointer',
+            transition: 'opacity 0.15s ease',
+          }}
+          title="View provenance audit trail & AI extraction history"
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.opacity = '0.75'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.opacity = '1'
+          }}
+        >
+          <ExternalLink size={12} />
+          View trace
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ── Context Rich Text Field ──────────────────────────────────────────────── */
+
+function ContextRichTextField({
+  label,
+  value,
+  onChange,
+  fieldKey,
+  citation,
+  isManuallyEdited = false,
+  isEditable = true,
+  onOpenCitation,
+  onOpenTrace,
+  rows = 3,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  fieldKey: string
+  citation?: {
+    sourceDoc: string
+    page: number
+    section: string
+    highlightSnippet: string
+  }
+  isManuallyEdited?: boolean
+  isEditable?: boolean
+  onOpenCitation: (doc: ContextCitationTarget) => void
+  onOpenTrace: (fieldKey: string) => void
+  rows?: number
+}) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <ContextFieldHeader
+        label={label}
+        citation={citation}
+        isManuallyEdited={isManuallyEdited}
+        onOpenCitation={() =>
+          citation &&
+          onOpenCitation({
+            title: label,
+            sourceDoc: citation.sourceDoc,
+            page: citation.page,
+            section: citation.section,
+            highlightSnippet: citation.highlightSnippet,
+          })
+        }
+        onOpenTrace={() => onOpenTrace(fieldKey)}
+      />
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         readOnly={!isEditable}
-        rows={3}
+        rows={rows}
         style={{
           width: '100%',
           padding: '10px 12px',
           fontSize: 14,
           color: '#0d212c',
-          background: '#fff',
+          background: isEditable ? '#ffffff' : '#f8fafc',
           border: '1.5px solid #e2e8f0',
           borderRadius: 8,
-          resize: 'vertical',
+          resize: isEditable ? 'vertical' : 'none',
           fontFamily: 'inherit',
           lineHeight: 1.6,
           outline: 'none',
           boxSizing: 'border-box',
           transition: 'border-color 0.15s',
+          cursor: isEditable ? 'text' : 'default',
         }}
         onFocus={(e) => {
-          e.target.style.borderColor = '#00C4C4'
+          if (isEditable) e.target.style.borderColor = '#cbd5e1'
         }}
         onBlur={(e) => {
-          e.target.style.borderColor = '#e2e8f0'
+          if (isEditable) e.target.style.borderColor = '#e2e8f0'
         }}
       />
     </div>
   )
 }
 
-/* ── Form Loading Animation & Shimmer Skeleton ──────────────────────────── */
+/* ── Document Uploader Card (For Bottom of Context Tab) ───────────────────── */
+
+function DocumentUploaderCard({
+  files,
+  onAddFiles,
+  onRemoveFile,
+  isEditable = true,
+}: {
+  files: UploadedFile[]
+  onAddFiles: (files: UploadedFile[]) => void
+  onRemoveFile: (id: string) => void
+  isEditable?: boolean
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    if (!isEditable) return
+    const dropped = Array.from(e.dataTransfer.files)
+    if (dropped.length > 0) {
+      const newFiles: UploadedFile[] = dropped.map((f) => ({
+        id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        name: f.name,
+        size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+        type: f.name.split('.').pop() || 'doc',
+        file: f,
+        status: 'complete',
+        progress: 100,
+      }))
+      onAddFiles(newFiles)
+    }
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
+    const selected = Array.from(e.target.files)
+    const newFiles: UploadedFile[] = selected.map((f) => ({
+      id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      name: f.name,
+      size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+      type: f.name.split('.').pop() || 'doc',
+      file: f,
+      status: 'complete',
+      progress: 100,
+    }))
+    onAddFiles(newFiles)
+  }
+
+  return (
+    <div
+      style={{
+        marginTop: 24,
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: 14,
+        padding: '20px 22px',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <UploadCloud size={17} color="#00a0a0" />
+            Reference Document Repository
+          </div>
+          <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+            Upload supplementary RFP, questionnaire, or vendor contracts to strengthen AI extraction accuracy.
+          </div>
+        </div>
+      </div>
+
+      {isEditable && (
+        <div
+          onDragOver={(e) => {
+            e.preventDefault()
+            setIsDragging(true)
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleFileDrop}
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            border: isDragging ? '2px dashed #00C4C4' : '2px dashed #cbd5e1',
+            borderRadius: 12,
+            padding: '22px 16px',
+            textAlign: 'center',
+            background: isDragging ? 'rgba(0,196,196,0.04)' : '#f8fafc',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            marginBottom: files.length > 0 ? 16 : 0,
+          }}
+        >
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileInputChange}
+            multiple
+            accept=".pdf,.docx,.xlsx,.txt"
+            style={{ display: 'none' }}
+          />
+          <UploadCloud size={28} color={isDragging ? '#00C4C4' : '#94a3b8'} style={{ margin: '0 auto 8px' }} />
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
+            Click or drag &amp; drop files here
+          </div>
+          <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 2 }}>
+            Supported formats: PDF, DOCX, XLSX, TXT (up to 25MB each)
+          </div>
+        </div>
+      )}
+
+      {files.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+          {files.map((file) => (
+            <div
+              key={file.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 14px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 8,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <FileText size={16} color="#00a0a0" />
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: '#0d212c',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {file.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                    {file.size} • {file.type.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+              {isEditable && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onRemoveFile(file.id)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    padding: 4,
+                  }}
+                  title="Remove file"
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#94a3b8')}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── Default Mock Form Data ──────────────────────────────────────────────── */
+
+const MOCK_FORM_DATA: SOWFormData = {
+  commitments: [
+    {
+      id: '1',
+      text: 'Deliver a fully functional cloud-based platform within agreed clinical timelines.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe...',
+      citationPage: 1,
+    },
+    {
+      id: '2',
+      text: 'Provide post-go-live hypercare support with continuous human clinical supervision.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Phase 3 – Human clinical supervision of live operation. Phase 4 – Escalation to human nurses...',
+      citationPage: 1,
+    },
+    {
+      id: '3',
+      text: 'Ensure 99.9% uptime SLA for production environment with robust fail-safe architecture.',
+      citation: 'Attachment A: Clinical Safety Case (Page 2 • Table H-07)',
+      citationSnippet: 'H-07 Dependency outage mid-call: Fail-safe: no clinical guidance without supervisor checks...',
+      citationPage: 2,
+    },
+    {
+      id: '4',
+      text: 'Conduct executive steering reviews and quarterly safety hazard log refreshes.',
+      citation: 'Attachment A: Clinical Safety Case (Page 2 • Section 5)',
+      citationSnippet: 'monthly joint safety review with M42 (escalation rates, flagged calls, near-misses), and a quarterly hazard-log refresh.',
+      citationPage: 2,
+    },
+    {
+      id: '5',
+      text: 'Migrate all historical clinical context and data with zero loss and PHI protection.',
+      citation: 'Attachment A: Clinical Safety Case (Page 2 • Table H-03)',
+      citationSnippet: 'H-03 PHI disclosed to wrong person: Identity verification before any PHI; caregiver-consent rules; privacy supervisor',
+      citationPage: 2,
+    },
+    {
+      id: '6',
+      text: 'Deliver role-based training sessions for all 120 clinical and procurement staff.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Phase 2 – Output testing. U.S.-licensed clinicians evaluate the agent by posing as patients; the company reports 7.7K+ clinicians and 775K+ test calls.',
+      citationPage: 1,
+    },
+  ],
+  clientName: 'M42 Health Platform',
+  description:
+    'End-to-end digital transformation of clinical and procurement operations, pairing conversational AI agents with specialist safety supervisor models to automate patient-facing workflows and vendor lifecycle management.',
+  businessOutcome:
+    'Reduce procurement cycle time by 40%, achieve 15% cost savings through AI-driven vendor recommendations, and maintain zero S4 severe safety incidents across all healthcare operations.',
+  importanceValue:
+    'Procurement and operational inefficiencies currently cost M42 an estimated $4.2M annually in delayed onboarding and manual overhead. Implementing Polaris constellation architecture directly resolves these bottlenecks.',
+  inScope:
+    'Vendor portal setup, AI sourcing engine integration, contract repository migration, role-based access control, real-time spend analytics dashboard, and clinical safety monitoring protocols.',
+  outOfScope:
+    'Direct diagnostic or prescribing services, hospice or mental-health disorder deployments, and any operations outside the agreed non-diagnostic patient-facing scope.',
+  tags: ['Procurement', 'Digital Transformation', 'AI/ML', 'Healthcare', 'Cloud Migration', 'SaaS', 'Clinical Safety'],
+  otherContext:
+    'Deployment must comply with UAE MOHAP SaMD guidance and DoH Abu Dhabi AI policies. All data processing and integration contract tests must be HIPAA and local regulation compliant.',
+}
+
+/* ── Form Generating Animation & Shimmer ─────────────────────────────────── */
 
 function FormGeneratingAnimation() {
   return (
@@ -563,7 +2635,6 @@ function FormGeneratingAnimation() {
               stroke="#00C4C4"
               strokeWidth="2"
             />
-            {/* Form field lines inside icon */}
             <rect x="22" y="22" width="28" height="5" rx="2" fill="rgba(0,196,196,0.4)" />
             <rect
               x="22"
@@ -605,45 +2676,10 @@ function FormGeneratingAnimation() {
             top: 6,
             right: 14,
             animation: 'sow-pulse 1.6s ease-in-out infinite',
-            animationDelay: '0s',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path d="M9 1l2 6h6l-5 3.5 2 6L9 13l-5 3.5 2-6L1 7h6z" fill="#00C4C4" opacity=".7" />
-          </svg>
-        </div>
-        <div
-          style={{
-            position: 'absolute',
-            top: 28,
-            left: 4,
-            animation: 'sow-pulse 2s ease-in-out infinite',
-            animationDelay: '.5s',
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12">
-            <path
-              d="M6 .5l1.5 4H12L8.5 7l1.5 4L6 8.5 2 11l1.5-4L0 4.5h4.5z"
-              fill="#7ff0f0"
-              opacity=".6"
-            />
-          </svg>
-        </div>
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 20,
-            right: 8,
-            animation: 'sow-pulse 1.8s ease-in-out infinite',
-            animationDelay: '.9s',
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14">
-            <path
-              d="M7 .5l1.8 5H13L9 8l1.8 5L7 10 3.2 13 5 8 1 5.5h4.2z"
-              fill="#00a0a0"
-              opacity=".5"
-            />
           </svg>
         </div>
       </div>
@@ -685,8 +2721,7 @@ function ShimmerForm() {
   }
 
   return (
-    <div style={{ padding: '20px 16px', maxWidth: 820 }}>
-      {/* Commitments Card Shimmer */}
+    <div style={{ padding: '20px 16px', maxWidth: 840 }}>
       <div
         style={{
           background: 'rgba(255,255,255,0.7)',
@@ -696,14 +2731,7 @@ function ShimmerForm() {
           marginBottom: 16,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-          }}
-        >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ ...sk, height: 16, width: 140 }} />
           <div style={{ ...sk, height: 12, width: 180 }} />
         </div>
@@ -730,7 +2758,6 @@ function ShimmerForm() {
         <div style={{ ...sk, height: 38, width: '100%', borderRadius: 8 }} />
       </div>
 
-      {/* Form Fields Shimmer */}
       {[140, 180, 160, 120, 150].map((labelW, i) => (
         <div
           key={i}
@@ -750,8 +2777,10 @@ function ShimmerForm() {
   )
 }
 
+/* ── Form Tab Component (Full Interactive Implementation) ─────────────────── */
+
 function FormTab({
-  files: _files,
+  files: initialFiles,
   showUploadedDocs = false,
   onReady,
   onSubmit: _onSubmit,
@@ -769,7 +2798,12 @@ function FormTab({
   formVersions?: { id: string; timestamp: string }[]
   isEditable?: boolean
 }) {
+  const [extraFiles, setExtraFiles] = useState<UploadedFile[]>(initialFiles || [])
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
+  const [citationModalTarget, setCitationModalTarget] = useState<ContextCitationTarget | null>(null)
+  const [activeTraceTarget, setActiveTraceTarget] = useState<TraceRecord | null>(null)
+  const [customTagInput, setCustomTagInput] = useState('')
+
   const [loadingState, setLoadingState] = useState<'generating' | 'shimmer' | 'ready'>(
     skipLoading ? 'ready' : 'generating'
   )
@@ -812,7 +2846,7 @@ function FormTab({
   }, [])
 
   const initialDataRef = useRef<SOWFormData | null>(null)
-  
+
   useEffect(() => {
     if (loadingState === 'ready') {
       if (!initialDataRef.current) {
@@ -823,26 +2857,113 @@ function FormTab({
     }
   }, [formData, loadingState, onDirtyChange])
 
+  // Field change handlers that set manuallyEdited flag
+  const handleFieldChange = (key: keyof SOWFormData, val: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: val,
+      manuallyEditedFields: {
+        ...(prev.manuallyEditedFields || {}),
+        [key]: true,
+      },
+    }))
+  }
+
+  const handleCommitmentTextChange = (id: string, text: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      commitments: prev.commitments.map((c) =>
+        c.id === id ? { ...c, text, manuallyEdited: true } : c
+      ),
+    }))
+  }
+
   const addCommitment = () => {
     if (!newCommitment.trim()) return
     setFormData((prev) => ({
       ...prev,
-      commitments: [...prev.commitments, { id: Date.now().toString(), text: newCommitment.trim() }],
+      commitments: [
+        ...prev.commitments,
+        {
+          id: Date.now().toString(),
+          text: newCommitment.trim(),
+          citation: 'Manual Input (PMO Added)',
+          manuallyEdited: true,
+          citationPage: 1,
+        },
+      ],
     }))
     setNewCommitment('')
   }
+
   const removeCommitment = (id: string) =>
     setFormData((prev) => ({
       ...prev,
       commitments: prev.commitments.filter((c: CommitmentItem) => c.id !== id),
     }))
-  const toggleTag = (tag: string) =>
+
+  const handleAddCustomTag = () => {
+    if (!customTagInput.trim()) return
+    const tag = customTagInput.trim()
+    if (!formData.tags.includes(tag)) {
+      setFormData((prev) => ({
+        ...prev,
+        tags: [...prev.tags, tag],
+      }))
+    }
+    setCustomTagInput('')
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
     setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter((t: string) => t !== tag)
-        : [...prev.tags, tag],
+      tags: prev.tags.filter((t) => t !== tagToRemove),
     }))
+  }
+
+  const openTraceForField = (fieldKey: string) => {
+    const baseTrace = TRACE_DATA_MAP[fieldKey] || {
+      fieldKey,
+      fieldLabel: fieldKey,
+      sourceDoc: {
+        fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+        page: 1,
+        section: 'General Context',
+        quote: 'Extracted directly from project documentation.',
+        addedBy: 'Sarah Khan',
+        timestamp: '08 Oct 2026, 11:24',
+      },
+      contextItem: {
+        title: 'Project Requirements',
+        source: 'From client intake',
+        summary: 'Intake data processed by AI Assistant.',
+        addedBy: 'Mike Chen',
+        timestamp: '08 Oct 2026, 13:17',
+      },
+      questionAnswer: {
+        question: `What is the scope for ${fieldKey}?`,
+        context: 'From stakeholder questionnaire',
+        answer: 'Verified against M42 requirements.',
+        addedBy: 'Priya Nair',
+        timestamp: '08 Oct 2026, 15:03',
+      },
+      draftStatement: {
+        title: 'Draft Statement',
+        meta: 'Generated using client input and template',
+        statement: (formData as unknown as Record<string, string>)[fieldKey] || '',
+        createdBy: 'AI Assistant',
+        timestamp: '08 Oct 2026, 15:12',
+      },
+    }
+
+    const isEdited = !!(formData.manuallyEditedFields && formData.manuallyEditedFields[fieldKey])
+    setActiveTraceTarget({
+      ...baseTrace,
+      isManuallyEdited: isEdited,
+      manualEditBy: 'Ashika Jain (PMO)',
+      manualEditTimestamp: 'Just now',
+    })
+  }
 
   if (loadingState === 'generating') {
     return <FormGeneratingAnimation />
@@ -853,9 +2974,9 @@ function FormTab({
   }
 
   return (
-    <div style={{ padding: '20px 16px', maxWidth: 820 }}>
-      {/* ── Uploaded Documents while editing context ── */}
-      {showUploadedDocs && _files.length > 0 && (
+    <div style={{ padding: '20px 16px', maxWidth: 840 }}>
+      {/* ── Top Reference Documents (if present) ── */}
+      {showUploadedDocs && extraFiles.length > 0 && (
         <div
           style={{
             marginBottom: 20,
@@ -875,7 +2996,7 @@ function FormTab({
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {_files.map((file) => (
+            {extraFiles.map((file) => (
               <button
                 key={file.id}
                 type="button"
@@ -896,14 +3017,10 @@ function FormTab({
                 onMouseEnter={(e) => {
                   ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#cbd5e1'
                   ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
-                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-                    '0 4px 12px rgba(0,0,0,0.06)'
                 }}
                 onMouseLeave={(e) => {
                   ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'
                   ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
-                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-                    '0 1px 3px rgba(0,0,0,0.04)'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, flexShrink: 0 }}>
@@ -934,74 +3051,231 @@ function FormTab({
       )}
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
 
-      {/* ── Version History ── */}
-
       {/* ── Commitments card ── */}
       <SectionCard
         title={
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
-              Commitments
-              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
-                List the key deliverables and obligations.
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                Commitments
               </span>
-            </div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: '2px 8px', borderRadius: 4, border: '1px solid #e2e8f0' }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
-                <polyline points="14 2 14 8 20 8" />
-                <path d="M2 15h10" />
-                <path d="m9 18 3-3-3-3" />
-              </svg>
-              <span style={{ fontSize: 10, color: '#64748b', fontWeight: 500 }}>Vendor_MSA_Template.docx (Page 13)</span>
+              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
+                Deliverables &amp; safety requirements (each with dedicated citation).
+              </span>
             </div>
           </div>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-          {formData.commitments.map((c: CommitmentItem) => (
-            <div
-              key={c.id}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 10,
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 8,
-                padding: '10px 14px',
-              }}
-            >
-              <span style={{ color: '#00C4C4', fontSize: 16, marginTop: 1, flexShrink: 0 }}>•</span>
-              <span style={{ flex: 1, fontSize: 14, color: '#0d212c', lineHeight: 1.5 }}>
-                {c.text}
-              </span>
-              {isEditable && (
-                <button
-                  onClick={() => removeCommitment(c.id)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#cbd5e1',
-                    fontSize: 18,
-                    lineHeight: 1,
-                    padding: '0 2px',
-                    flexShrink: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.color = '#ef4444'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'
-                  }}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
+          {formData.commitments.map((c: CommitmentItem, idx: number) => {
+            const isEdited = !!c.manuallyEdited
+            return (
+              <div
+                key={c.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}
+              >
+                {/* Header for commitment citation & trace */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        background: 'rgba(0,196,196,0.15)',
+                        color: '#00a0a0',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
+
+                    {/* Individual Citation Tag — Minimal style */}
+                    {isEdited ? (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 11,
+                          fontWeight: 500,
+                          color: '#b45309',
+                          background: '#fef3c7',
+                          border: '1px solid #fde68a',
+                          padding: '2px 8px',
+                          borderRadius: 5,
+                        }}
+                      >
+                        <Edit2 size={10} />
+                        Manually Edited
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCitationModalTarget({
+                            title: `Commitment #${idx + 1}`,
+                            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+                            page: c.citationPage || 1,
+                            section: c.citation || 'Clinical Safety',
+                            highlightSnippet: c.citationSnippet || c.text,
+                          })
+                        }
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 11,
+                          fontWeight: 500,
+                          color: '#64748b',
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          padding: '2px 8px',
+                          borderRadius: 5,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        title="Click to view full cited PDF document preview"
+                        onMouseEnter={(e) => {
+                          ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                          ;(e.currentTarget as HTMLButtonElement).style.color = '#334155'
+                        }}
+                        onMouseLeave={(e) => {
+                          ;(e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
+                          ;(e.currentTarget as HTMLButtonElement).style.color = '#64748b'
+                        }}
+                      >
+                        <FileText size={10} color="#64748b" />
+                        {c.citation || 'Attachment A: Clinical Safety Case (Page 1)'}
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveTraceTarget({
+                          fieldKey: `commitment-${c.id}`,
+                          fieldLabel: `Commitment #${idx + 1}`,
+                          sourceDoc: {
+                            fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+                            page: c.citationPage || 1,
+                            section: c.citation || 'Section 2. Safety-assurance approach',
+                            quote: c.citationSnippet || c.text,
+                            addedBy: 'Sarah Khan',
+                            timestamp: '08 Oct 2026, 11:24',
+                          },
+                          contextItem: {
+                            title: `Commitment #${idx + 1} Deliverable`,
+                            source: 'From SOW Intake Engine',
+                            summary: c.text,
+                            addedBy: 'Mike Chen',
+                            timestamp: '08 Oct 2026, 13:17',
+                          },
+                          questionAnswer: {
+                            question: `Is this commitment deliverable required for M42 rollout?`,
+                            context: 'From Clinical Safety Board review',
+                            answer: 'Confirmed as mandatory requirement.',
+                            addedBy: 'Priya Nair',
+                            timestamp: '08 Oct 2026, 15:03',
+                          },
+                          draftStatement: {
+                            title: 'Draft Statement',
+                            meta: 'Extracted from source contract',
+                            statement: c.text,
+                            createdBy: 'AI Assistant',
+                            timestamp: '08 Oct 2026, 15:12',
+                          },
+                          isManuallyEdited: isEdited,
+                          manualEditBy: 'Ashika Jain (PMO)',
+                          manualEditTimestamp: 'Just now',
+                        })
+                      }
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        fontSize: 11.5,
+                        color: '#008b8b',
+                        background: 'none',
+                        border: 'none',
+                        padding: '2px 4px',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        transition: 'opacity 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.75')}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
+                    >
+                      <ExternalLink size={10} />
+                      View trace
+                    </button>
+
+                    {isEditable && (
+                      <button
+                        type="button"
+                        onClick={() => removeCommitment(c.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#94a3b8',
+                          padding: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        title="Remove commitment"
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#94a3b8')}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Editable In-Place Input for Commitment — Same design as client name input field */}
+                {isEditable ? (
+                  <input
+                    type="text"
+                    value={c.text}
+                    onChange={(e) => handleCommitmentTextChange(c.id, e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      fontSize: 14,
+                      color: '#0d212c',
+                      background: '#ffffff',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: 8,
+                      outline: 'none',
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.15s',
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = '#cbd5e1')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                  />
+                ) : (
+                  <div style={{ fontSize: 14, color: '#0d212c', lineHeight: 1.5, padding: '4px 0' }}>
+                    {c.text}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
+
         {isEditable && (
           <div style={{ display: 'flex', gap: 8 }}>
             <input
@@ -1010,7 +3284,7 @@ function FormTab({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') addCommitment()
               }}
-              placeholder="Add a commitment and press Enter…"
+              placeholder="Add a new commitment and press Enter…"
               style={{
                 flex: 1,
                 padding: '9px 12px',
@@ -1023,69 +3297,75 @@ function FormTab({
                 fontFamily: 'inherit',
                 transition: 'border-color 0.15s',
               }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#00C4C4'
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0'
-              }}
+              onFocus={(e) => (e.target.style.borderColor = '#cbd5e1')}
+              onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
             />
             <button
               onClick={addCommitment}
               style={{
                 padding: '9px 16px',
-                background: '#f1f5f9',
-                border: '1px solid #e2e8f0',
+                background: '#00C4C4',
+                border: 'none',
                 borderRadius: 8,
                 fontSize: 13,
-                color: '#64748b',
+                color: '#ffffff',
                 cursor: 'pointer',
-                fontWeight: 500,
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: '0 2px 6px rgba(0,196,196,0.25)',
               }}
             >
-              + Add
+              <Plus size={14} /> Add
             </button>
           </div>
         )}
       </SectionCard>
 
-      {/* ── Fields card ── */}
+      {/* ── Context Fields Card ── */}
       <SectionCard
         title={
           <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
-            Fields
+            Context Fields
             <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
-              Review and edit the AI-extracted details.
+              Review, edit, and trace AI-extracted fields.
             </span>
           </div>
         }
       >
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
-            <label
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#0d212c',
-              }}
-            >
-              Client Name
-            </label>
-            <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-              Source: Procurement_Requirements.xlsx (Page 1)
-            </span>
-          </div>
+        {/* Client Name */}
+        <div style={{ marginBottom: 18 }}>
+          <ContextFieldHeader
+            label="Client Name"
+            citation={{
+              sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+              page: 1,
+              section: '1. Purpose and scope',
+              highlightSnippet: 'Hippocratic AI – response to M42 Vendor Architecture & Due-Diligence Questionnaire (Round 1)',
+            }}
+            isManuallyEdited={!!formData.manuallyEditedFields?.clientName}
+            onOpenCitation={() =>
+              setCitationModalTarget({
+                title: 'Client Name',
+                sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+                page: 1,
+                section: '1. Purpose and scope',
+                highlightSnippet: 'Hippocratic AI – response to M42 Vendor Architecture & Due-Diligence Questionnaire (Round 1)',
+              })
+            }
+            onOpenTrace={() => openTraceForField('clientName')}
+          />
           <input
             value={formData.clientName}
-            onChange={(e) => setFormData((prev) => ({ ...prev, clientName: e.target.value }))}
+            onChange={(e) => handleFieldChange('clientName', e.target.value)}
             readOnly={!isEditable}
             style={{
               width: '100%',
               padding: '10px 12px',
               fontSize: 14,
               color: '#0d212c',
-              background: '#fff',
+              background: isEditable ? '#ffffff' : '#f8fafc',
               border: '1.5px solid #e2e8f0',
               borderRadius: 8,
               outline: 'none',
@@ -1094,50 +3374,105 @@ function FormTab({
               transition: 'border-color 0.15s',
             }}
             onFocus={(e) => {
-              e.target.style.borderColor = '#00C4C4'
+              if (isEditable) e.target.style.borderColor = '#cbd5e1'
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = '#e2e8f0'
+              if (isEditable) e.target.style.borderColor = '#e2e8f0'
             }}
           />
         </div>
-        <RichTextField
+
+        {/* Description */}
+        <ContextRichTextField
           label="Description"
+          fieldKey="description"
           value={formData.description}
-          onChange={(v) => setFormData((p) => ({ ...p, description: v }))}
-          citation="Meridian_RFP.pdf (Page 3)"
+          onChange={(v) => handleFieldChange('description', v)}
+          citation={{
+            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+            page: 1,
+            section: '2. Safety-assurance approach',
+            highlightSnippet: 'The Polaris constellation pairs a primary conversational agent with specialist support models...',
+          }}
+          isManuallyEdited={!!formData.manuallyEditedFields?.description}
           isEditable={isEditable}
-        />
-        <RichTextField
-          label="Business Outcome"
-          value={formData.businessOutcome}
-          onChange={(v) => setFormData((p) => ({ ...p, businessOutcome: v }))}
-          citation="Meridian_RFP.pdf (Page 4)"
-          isEditable={isEditable}
-        />
-        <RichTextField
-          label="Importance & Value of Solution"
-          value={formData.importanceValue}
-          onChange={(v) => setFormData((p) => ({ ...p, importanceValue: v }))}
-          citation="Meridian_RFP.pdf (Page 5)"
-          isEditable={isEditable}
-        />
-        <RichTextField
-          label="In Scope"
-          value={formData.inScope}
-          onChange={(v) => setFormData((p) => ({ ...p, inScope: v }))}
-          citation="Vendor_MSA_Template.docx (Page 12)"
-          isEditable={isEditable}
-        />
-        <RichTextField
-          label="Out of Scope"
-          value={formData.outOfScope}
-          onChange={(v) => setFormData((p) => ({ ...p, outOfScope: v }))}
-          citation="Vendor_MSA_Template.docx (Page 14)"
-          isEditable={isEditable}
+          onOpenCitation={setCitationModalTarget}
+          onOpenTrace={openTraceForField}
         />
 
-        {/* Tags */}
+        {/* Business Outcome */}
+        <ContextRichTextField
+          label="Business Outcome"
+          fieldKey="businessOutcome"
+          value={formData.businessOutcome}
+          onChange={(v) => handleFieldChange('businessOutcome', v)}
+          citation={{
+            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+            page: 1,
+            section: '3. Harm-severity scale',
+            highlightSnippet: 'Harm-severity scale: S4 Severe, S3 Moderate, S2 Minor, S1 Negligible.',
+          }}
+          isManuallyEdited={!!formData.manuallyEditedFields?.businessOutcome}
+          isEditable={isEditable}
+          onOpenCitation={setCitationModalTarget}
+          onOpenTrace={openTraceForField}
+        />
+
+        {/* Importance & Value of Solution */}
+        <ContextRichTextField
+          label="Importance & Value of Solution"
+          fieldKey="importanceValue"
+          value={formData.importanceValue}
+          onChange={(v) => handleFieldChange('importanceValue', v)}
+          citation={{
+            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+            page: 1,
+            section: '1. Purpose and scope',
+            highlightSnippet: 'structured on ISO 14971 risk-management principles so M42 clinical safety officers can review in a familiar form.',
+          }}
+          isManuallyEdited={!!formData.manuallyEditedFields?.importanceValue}
+          isEditable={isEditable}
+          onOpenCitation={setCitationModalTarget}
+          onOpenTrace={openTraceForField}
+        />
+
+        {/* In Scope */}
+        <ContextRichTextField
+          label="In Scope"
+          fieldKey="inScope"
+          value={formData.inScope}
+          onChange={(v) => handleFieldChange('inScope', v)}
+          citation={{
+            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+            page: 1,
+            section: '2. Safety-assurance approach',
+            highlightSnippet: 'Phase 1 – Architecture. The Polaris constellation pairs a primary conversational agent with specialist support models',
+          }}
+          isManuallyEdited={!!formData.manuallyEditedFields?.inScope}
+          isEditable={isEditable}
+          onOpenCitation={setCitationModalTarget}
+          onOpenTrace={openTraceForField}
+        />
+
+        {/* Out of Scope */}
+        <ContextRichTextField
+          label="Out of Scope"
+          fieldKey="outOfScope"
+          value={formData.outOfScope}
+          onChange={(v) => handleFieldChange('outOfScope', v)}
+          citation={{
+            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+            page: 1,
+            section: '1. Purpose and scope (Intended use)',
+            highlightSnippet: 'Intended use (public position). Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.',
+          }}
+          isManuallyEdited={!!formData.manuallyEditedFields?.outOfScope}
+          isEditable={isEditable}
+          onOpenCitation={setCitationModalTarget}
+          onOpenTrace={openTraceForField}
+        />
+
+        {/* AI Generated Tags (With Delete Cross & Input Field to Add New Tags) */}
         <div style={{ marginBottom: 18 }}>
           <label
             style={{
@@ -1145,93 +3480,154 @@ function FormTab({
               fontSize: 13,
               fontWeight: 600,
               color: '#0d212c',
-              marginBottom: 6,
+              marginBottom: 8,
             }}
           >
-            Tags{' '}
+            Context Tags{' '}
             <span style={{ fontWeight: 400, color: '#94a3b8' }}>
-              (AI-generated — select the ones that apply)
+              (AI-extracted tags — add or remove as needed)
             </span>
           </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {MOCK_FORM_DATA.tags.map((tag) => {
-              const selected = formData.tags.includes(tag)
-              return (
-                <button
-                  key={tag}
-                  onClick={() => isEditable && toggleTag(tag)}
-                  style={{
-                    padding: '5px 14px',
-                    borderRadius: 20,
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: isEditable ? 'pointer' : 'default',
-                    transition: 'all 0.15s',
-                    background: selected ? 'rgba(0,196,196,0.1)' : '#f8fafc',
-                    border: selected ? '1.5px solid #00C4C4' : '1.5px solid #e2e8f0',
-                    color: selected ? '#00a0a0' : '#64748b',
-                  }}
-                >
-                  {tag}
-                </button>
-              )
-            })}
+
+          {/* Tags List */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: isEditable ? 10 : 0 }}>
+            {formData.tags.map((tag) => (
+              <span
+                key={tag}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '5px 12px',
+                  borderRadius: 20,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  background: 'rgba(0,196,196,0.1)',
+                  border: '1.5px solid #00C4C4',
+                  color: '#007a7a',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {tag}
+                {isEditable && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#007a7a',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      lineHeight: 1,
+                    }}
+                    title={`Remove ${tag}`}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#007a7a')}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </span>
+            ))}
           </div>
+
+          {/* Tag Input Field */}
+          {isEditable && (
+            <div style={{ display: 'flex', gap: 8, maxWidth: 360, marginTop: 8 }}>
+              <input
+                value={customTagInput}
+                onChange={(e) => setCustomTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddCustomTag()
+                  }
+                }}
+                placeholder="Add custom tag…"
+                style={{
+                  flex: 1,
+                  padding: '7px 12px',
+                  fontSize: 13,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: 8,
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  transition: 'border-color 0.15s',
+                }}
+                onFocus={(e) => (e.target.style.borderColor = '#cbd5e1')}
+                onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+              />
+              <button
+                type="button"
+                onClick={handleAddCustomTag}
+                style={{
+                  padding: '7px 14px',
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: 8,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                + Add Tag
+              </button>
+            </div>
+          )}
         </div>
 
-        <div>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#0d212c',
-              marginBottom: 6,
-            }}
-          >
-            Any Other Relevant Context
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: '2px 8px', borderRadius: 4, border: '1px solid #e2e8f0' }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
-                <polyline points="14 2 14 8 20 8" />
-                <path d="M2 15h10" />
-                <path d="m9 18 3-3-3-3" />
-              </svg>
-              <span style={{ fontSize: 10, color: '#64748b', fontWeight: 500 }}>Vendor_MSA_Template.docx (Page 15)</span>
-            </div>
-          </label>
-          <textarea
-            value={formData.otherContext}
-            onChange={(e) => setFormData((p) => ({ ...p, otherContext: e.target.value }))}
-            readOnly={!isEditable}
-            rows={3}
-            placeholder="Add any additional context, constraints, or notes…"
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              fontSize: 14,
-              color: '#0d212c',
-              background: '#fff',
-              border: '1.5px solid #e2e8f0',
-              borderRadius: 8,
-              resize: 'vertical',
-              fontFamily: 'inherit',
-              lineHeight: 1.6,
-              outline: 'none',
-              boxSizing: 'border-box',
-              transition: 'border-color 0.15s',
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#00C4C4'
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#e2e8f0'
-            }}
-          />
-        </div>
+        {/* Any Other Relevant Context */}
+        <ContextRichTextField
+          label="Any Other Relevant Context"
+          fieldKey="otherContext"
+          value={formData.otherContext}
+          onChange={(v) => handleFieldChange('otherContext', v)}
+          citation={{
+            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+            page: 2,
+            section: '6. Regulatory positioning in the UAE',
+            highlightSnippet: 'documented in a regulatory classification memo against UAE MOHAP SaMD guidance and the DoH Abu Dhabi Policy on Use of AI in the Healthcare Sector, submitted to M42 before go-live.',
+          }}
+          isManuallyEdited={!!formData.manuallyEditedFields?.otherContext}
+          isEditable={isEditable}
+          onOpenCitation={setCitationModalTarget}
+          onOpenTrace={openTraceForField}
+        />
       </SectionCard>
+
+      {/* ── Document Uploader at Bottom of Context Tab ── */}
+      <DocumentUploaderCard
+        files={extraFiles}
+        onAddFiles={(newDocs) => setExtraFiles((prev) => [...prev, ...newDocs])}
+        onRemoveFile={(id) => setExtraFiles((prev) => prev.filter((d) => d.id !== id))}
+        isEditable={isEditable}
+      />
+
+      {/* Citation Preview Modal */}
+      {citationModalTarget && (
+        <DocumentCitationPreviewModal
+          citation={citationModalTarget}
+          onClose={() => setCitationModalTarget(null)}
+        />
+      )}
+
+      {/* Field Provenance Trace Drawer */}
+      {activeTraceTarget && (
+        <FieldTraceDrawer
+          traceData={activeTraceTarget}
+          onClose={() => setActiveTraceTarget(null)}
+          onOpenCitation={(target) => {
+            setActiveTraceTarget(null)
+            setCitationModalTarget(target)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -2497,6 +4893,133 @@ function MemberAvatar({ memberId, size = 24 }: { memberId: string; size?: number
   )
 }
 
+function AssigneesDisplay({
+  assignedTo,
+  inClientQueue,
+}: {
+  assignedTo?: string | string[]
+  inClientQueue?: boolean
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  if (inClientQueue) {
+    return (
+      <span
+        style={{
+          fontSize: 11,
+          color: '#10b981',
+          fontWeight: 600,
+          background: 'rgba(16, 185, 129, 0.1)',
+          padding: '2px 8px',
+          borderRadius: 4,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Client Queue
+      </span>
+    )
+  }
+
+  const ids = Array.isArray(assignedTo)
+    ? assignedTo
+    : assignedTo
+    ? [assignedTo]
+    : []
+
+  if (ids.length === 0) {
+    return (
+      <span
+        style={{
+          fontSize: 11,
+          color: '#94a3b8',
+          fontStyle: 'italic',
+        }}
+      >
+        Unassigned
+      </span>
+    )
+  }
+
+  const members = ids.map(memberById)
+
+  return (
+    <div
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+        {members.map((m, idx) => (
+          <div
+            key={m.id}
+            style={{
+              marginLeft: idx > 0 ? -6 : 0,
+              zIndex: members.length - idx,
+            }}
+          >
+            <MemberAvatar memberId={m.id} size={22} />
+          </div>
+        ))}
+      </div>
+
+      {hovered && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 'calc(100% + 6px)',
+            right: 0,
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+            padding: '6px 10px',
+            zIndex: 100,
+            minWidth: 160,
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#94a3b8',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: 5,
+            }}
+          >
+            Assigned Contributors
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {members.map((m) => (
+              <div
+                key={m.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <MemberAvatar memberId={m.id} size={18} />
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: '#0d212c',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {m.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Add Item Modal ── */
 function AddItemModal({
   sectionTitle,
@@ -2882,7 +5405,23 @@ function AddItemModal({
 }
 
 /* ── Three-dot section menu ── */
-function SectionDotMenu({ onRename, onDelete, onSetDeadline, currentDeadline, idx, total }: { onRename: () => void; onDelete: () => void; onSetDeadline: (date: string) => void; currentDeadline?: string; idx?: number; total?: number }) {
+function SectionDotMenu({
+  onRename,
+  onDelete,
+  onSetDeadline,
+  currentDeadline,
+  sowDeadline = '2026-10-31',
+  idx,
+  total,
+}: {
+  onRename: () => void
+  onDelete: () => void
+  onSetDeadline: (date: string) => void
+  currentDeadline?: string
+  sowDeadline?: string
+  idx?: number
+  total?: number
+}) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -2941,8 +5480,13 @@ function SectionDotMenu({ onRename, onDelete, onSetDeadline, currentDeadline, id
             <input
               type="date"
               min={new Date().toISOString().split('T')[0]}
-              value={currentDeadline || ''}
-              onChange={(e) => onSetDeadline(e.target.value)}
+              max={sowDeadline || '2026-10-31'}
+              value={currentDeadline || sowDeadline || '2026-10-31'}
+              onChange={(e) => {
+                const val = e.target.value
+                if (val && sowDeadline && val > sowDeadline) return
+                onSetDeadline(val)
+              }}
               onClick={(e) => e.stopPropagation()}
               style={{
                 width: '100%',
@@ -3026,6 +5570,8 @@ function StructureTab({
   disableAnswer = false,
   hasPendingChanges = false,
   onResolveChanges,
+  onOpenParticipantsModal,
+  sowDeadline = '2026-10-31',
 }: {
   initialSections?: SOWSection[]
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin'
@@ -3034,19 +5580,31 @@ function StructureTab({
   disableAnswer?: boolean
   hasPendingChanges?: boolean
   onResolveChanges?: (accept: boolean) => void
+  onOpenParticipantsModal?: () => void
+  sowDeadline?: string
 }) {
   const isContributor = viewerRole === 'contributor'
   const isReviewer = viewerRole === 'reviewer'
   const [sections, setSections] = useState<SOWSection[]>(initialSections)
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
   const [editingSectionTitle, setEditingSectionTitle] = useState('')
-  const [sectionDeadlines, setSectionDeadlines] = useState<Record<string, string>>({})
+  const [sectionDeadlines, setSectionDeadlines] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {}
+    initialSections.forEach((s) => {
+      init[s.id] = sowDeadline || '2026-10-31'
+    })
+    return init
+  })
+  const [citationModalTarget, setCitationModalTarget] = useState<ContextCitationTarget | null>(null)
   const [activeId, setActiveId] = useState<string>(initialSections[0].id)
   const [showAddSectionModal, setShowAddSectionModal] = useState(false)
   const [addItemFor, setAddItemFor] = useState<string | null>(null) // section id
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [hoveredSection, setHoveredSection] = useState<string | null>(null)
   const [assignDropdownOpen, setAssignDropdownOpen] = useState(false)
+  // Drag & drop state (PMO only)
+  const [dragSectionId, setDragSectionId] = useState<string | null>(null)
+  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null)
   const [assignLimitError, setAssignLimitError] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean
@@ -3056,7 +5614,7 @@ function StructureTab({
     onConfirm: (reason: string, text: string) => void
   } | null>(null)
   const [clientQueueModalOpen, setClientQueueModalOpen] = useState(false)
-  const [feedbackModalOpen, setFeedbackModalOpen] = useState<string | null>(null)
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState<{ sectionId: string; type: 'positive' | 'negative' } | null>(null)
   const assignDropdownRef = useRef<HTMLDivElement>(null)
   const rightPaneRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -3436,30 +5994,64 @@ function StructureTab({
             >
               Sections
             </span>
-            <span style={{ fontSize: 11, color: '#94a3b8' }}>{visibleSections.length}</span>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
             {visibleSections.map((sec, idx) => {
               const isActive = activeId === sec.id
               const isHovered = hoveredSection === sec.id
+              const isDragOver = dragOverSectionId === sec.id && dragSectionId !== sec.id
+              const isDragging = dragSectionId === sec.id
+              // Progress: answered questions count
+              const totalQ = sec.items.filter(i => i.type === 'question').length
+              const doneQ = sec.items.filter(i => i.type === 'question' && i.answered).length
+              const totalA = sec.items.filter(i => i.type === 'assumption').length
+              const doneA = sec.items.filter(i => i.type === 'assumption' && i.answered).length
+              const totalItems = totalQ + totalA
+              const doneItems = doneQ + doneA
+              // Deadline breach
+              const deadline = sectionDeadlines[sec.id] || sowDeadline || '2026-10-31'
+              const isDeadlineBreached = deadline && new Date(deadline) < new Date(new Date().toDateString())
               return (
                 <div
                   key={sec.id}
-                  style={{ position: 'relative', marginBottom: 2 }}
+                  style={{ position: 'relative', marginBottom: 2, opacity: isDragging ? 0.4 : 1, transition: 'opacity 0.15s' }}
                   onMouseEnter={() => setHoveredSection(sec.id)}
                   onMouseLeave={() => setHoveredSection(null)}
+                  draggable={!isContributor && !isReviewer}
+                  onDragStart={() => setDragSectionId(sec.id)}
+                  onDragEnd={() => { setDragSectionId(null); setDragOverSectionId(null) }}
+                  onDragOver={(e) => { e.preventDefault(); if (sec.id !== dragSectionId) setDragOverSectionId(sec.id) }}
+                  onDrop={() => {
+                    if (!dragSectionId || dragSectionId === sec.id) return
+                    setSections(prev => {
+                      const from = prev.findIndex(s => s.id === dragSectionId)
+                      const to = prev.findIndex(s => s.id === sec.id)
+                      if (from === -1 || to === -1) return prev
+                      const updated = [...prev]
+                      const [moved] = updated.splice(from, 1)
+                      updated.splice(to, 0, moved)
+                      return updated
+                    })
+                    setActiveId(dragSectionId)
+                    scrollToSection(dragSectionId)
+                    setDragSectionId(null)
+                    setDragOverSectionId(null)
+                  }}
                 >
+                  {isDragOver && (
+                    <div style={{ height: 2, background: '#00C4C4', borderRadius: 2, marginBottom: 2 }} />
+                  )}
                   <button
                     onClick={() => scrollToSection(sec.id)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 9,
+                      gap: 8,
                       width: '100%',
-                      padding: '9px 10px',
+                      padding: '8px 10px',
                       borderRadius: 8,
-                      border: 'none',
+                      border: isDragOver ? '1.5px solid rgba(0,196,196,0.5)' : 'none',
                       textAlign: 'left',
                       cursor: 'pointer',
                       transition: 'all 0.15s',
@@ -3472,24 +6064,20 @@ function StructureTab({
                       paddingRight: isHovered || isActive ? 38 : 10,
                     }}
                   >
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        background: isActive ? '#00C4C4' : 'rgba(0,196,196,0.12)',
-                        color: isActive ? '#fff' : '#64748b',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {idx + 1}
-                    </span>
+                    {/* Drag handle — PMO only */}
+                    {!isContributor && !isReviewer && (
+                      <svg
+                        width="10" height="14" viewBox="0 0 10 14" fill="none"
+                        style={{ flexShrink: 0, opacity: isHovered || isActive ? 0.45 : 0.2, cursor: 'grab', transition: 'opacity 0.15s' }}
+                      >
+                        <circle cx="3" cy="2" r="1.3" fill="#64748b" />
+                        <circle cx="7" cy="2" r="1.3" fill="#64748b" />
+                        <circle cx="3" cy="7" r="1.3" fill="#64748b" />
+                        <circle cx="7" cy="7" r="1.3" fill="#64748b" />
+                        <circle cx="3" cy="12" r="1.3" fill="#64748b" />
+                        <circle cx="7" cy="12" r="1.3" fill="#64748b" />
+                      </svg>
+                    )}
                     {editingSectionId === sec.id ? (
                       <input
                         autoFocus
@@ -3522,7 +6110,6 @@ function StructureTab({
                           outline: 'none',
                           background: '#fff',
                           color: '#0d212c',
-                          marginLeft: -4
                         }}
                       />
                     ) : (
@@ -3540,8 +6127,33 @@ function StructureTab({
                         {sec.title}
                       </span>
                     )}
+                    {/* Remaining questions count at section level */}
+                    {totalQ > 0 && (
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: doneQ === totalQ ? '#16a34a' : '#64748b',
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {doneQ}/{totalQ} questions
+                      </span>
+                    )}
+                    {/* Deadline breached chip */}
+                    {isDeadlineBreached && (
+                      <span style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        color: '#ef4444',
+                        background: 'rgba(239,68,68,0.1)',
+                        padding: '1px 5px',
+                        borderRadius: 4,
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                      }}>Overdue</span>
+                    )}
                   </button>
-                  {/* Three-dot menu — visible on hover/active */}
+                  {/* Three-dot menu — visible on hover/active, PMO only */}
                   {!isContributor && !isReviewer && (isHovered || isActive) && (
                     <div
                       style={{
@@ -3555,8 +6167,12 @@ function StructureTab({
                       <SectionDotMenu
                         idx={idx}
                         total={sections.length}
-                        currentDeadline={sectionDeadlines[sec.id]}
-                        onSetDeadline={(date) => setSectionDeadlines(prev => ({ ...prev, [sec.id]: date }))}
+                        currentDeadline={deadline}
+                        sowDeadline={sowDeadline}
+                        onSetDeadline={(date) => {
+                          if (sowDeadline && date > sowDeadline) return
+                          setSectionDeadlines(prev => ({ ...prev, [sec.id]: date }))
+                        }}
                         onRename={() => {
                           setEditingSectionTitle(sec.title)
                           setEditingSectionId(sec.id)
@@ -3898,37 +6514,67 @@ function StructureTab({
                 )}
               </div>
 
-              {/* Client Queue button on right */}
-              <button
-                onClick={() => setClientQueueModalOpen(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: 'none',
-                  border: 'none',
-                  color: '#0d212c',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  padding: '6px 10px',
-                  borderRadius: 6,
-                }}
-                title="Client Queue"
-              >
-                <div style={{ position: 'relative' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2 }}>
-                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
-                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
-                  </svg>
-                  {queuedCount > 0 && (
-                    <div style={{ position: 'absolute', top: -8, left: -10, background: '#ef4444', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 12, padding: '1px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {queuedCount}
-                    </div>
-                  )}
-                </div>
-                {queuedCount} in Client Queue
-              </button>
+              {/* Participants & Client Queue button on right */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  onClick={() => onOpenParticipantsModal?.()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'rgba(0,196,196,0.08)',
+                    border: '1px solid rgba(0,196,196,0.25)',
+                    color: '#007a7a',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="View SOW Participants"
+                  onMouseEnter={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.15)'
+                  }}
+                  onMouseLeave={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.08)'
+                  }}
+                >
+                  <Users size={14} color="#00a0a0" />
+                  View Participants
+                </button>
+
+                <button
+                  onClick={() => setClientQueueModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: 'none',
+                    border: 'none',
+                    color: '#0d212c',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                  }}
+                  title="Client Queue"
+                >
+                  <div style={{ position: 'relative' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2 }}>
+                      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                      <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                    </svg>
+                    {queuedCount > 0 && (
+                      <div style={{ position: 'absolute', top: -8, left: -10, background: '#ef4444', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 12, padding: '1px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {queuedCount}
+                      </div>
+                    )}
+                  </div>
+                  {queuedCount} in Client Queue
+                </button>
+              </div>
             </div>
           )}
 
@@ -3950,63 +6596,67 @@ function StructureTab({
                   }}
                 >
                   {/* Section header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-                    <span
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: '50%',
-                        background: 'rgba(0,196,196,0.15)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: '#00a0a0',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {idx + 1}
-                    </span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {sec.title}
-                        <div style={{ display: 'flex', gap: 4 }}>
-                        </div>
-                    </span>
-                    {/* Assigned members */}
-                    {/* Add item CTA */}
-                    {!isContributor && !isReviewer && (
-                      <button
-                        onClick={() => setAddItemFor(sec.id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 5,
-                          padding: '5px 12px',
-                          borderRadius: 7,
-                          border: '1.5px solid rgba(0,196,196,0.3)',
-                          background: 'rgba(0,196,196,0.05)',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: '#00a0a0',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.8"
-                          strokeLinecap="round"
-                        >
-                          <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        Add
-                      </button>
-                    )}
-                  </div>
+                  {(() => {
+                    const secDeadline = sectionDeadlines[sec.id] || sowDeadline || '2026-10-31'
+                    const secDeadlineBreached = secDeadline && new Date(secDeadline) < new Date(new Date().toDateString())
+                    const totalSecQ = sec.items.filter(i => i.type === 'question').length
+                    const doneSecQ = sec.items.filter(i => i.type === 'question' && i.answered).length
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {sec.title}
+                          {totalSecQ > 0 && (
+                            <span style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: doneSecQ === totalSecQ ? '#16a34a' : '#64748b',
+                              background: doneSecQ === totalSecQ ? 'rgba(22,163,74,0.1)' : '#f1f5f9',
+                              padding: '2px 8px',
+                              borderRadius: 12,
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {doneSecQ}/{totalSecQ} questions
+                            </span>
+                          )}
+                          {secDeadlineBreached && (
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: '#ef4444',
+                              background: 'rgba(239,68,68,0.1)',
+                              padding: '2px 7px',
+                              borderRadius: 5,
+                              whiteSpace: 'nowrap',
+                            }}>Overdue</span>
+                          )}
+                        </span>
+                        {/* Add item CTA */}
+                        {!isContributor && !isReviewer && (
+                          <button
+                            onClick={() => setAddItemFor(sec.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              padding: '5px 12px',
+                              borderRadius: 7,
+                              border: '1.5px solid rgba(0,196,196,0.3)',
+                              background: 'rgba(0,196,196,0.05)',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: '#00a0a0',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+                              <path d="M12 5v14M5 12h14" />
+                            </svg>
+                            Add
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {/* Items list */}
                   {sec.items.length === 0 ? (
@@ -4039,6 +6689,7 @@ function StructureTab({
                           disableAnswer={disableAnswer || isReviewer}
                           onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
                           onToggleQueue={() => toggleClientQueue(item.id)}
+                          onOpenCitation={setCitationModalTarget}
                           onDelete={() => setDeleteConfirm({
                             isOpen: true,
                             title: 'Delete Assumption',
@@ -4061,6 +6712,7 @@ function StructureTab({
                           disableAnswer={disableAnswer || isReviewer}
                           onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
                           onToggleQueue={() => toggleClientQueue(item.id)}
+                          onOpenCitation={setCitationModalTarget}
                           onDelete={() => setDeleteConfirm({
                             isOpen: true,
                             title: 'Delete Question',
@@ -4075,7 +6727,7 @@ function StructureTab({
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start', marginTop: 12 }}>
                       <button
                         title="Helpful"
-                        onClick={() => setFeedbackModalOpen(sec.id)}
+                        onClick={() => setFeedbackModalOpen({ sectionId: sec.id, type: 'positive' })}
                         style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: '#64748b' }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -4084,7 +6736,7 @@ function StructureTab({
                       </button>
                       <button
                         title="Not Helpful"
-                        onClick={() => setFeedbackModalOpen(sec.id)}
+                        onClick={() => setFeedbackModalOpen({ sectionId: sec.id, type: 'negative' })}
                         style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: '#64748b' }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -4136,6 +6788,7 @@ function StructureTab({
       )}
       {feedbackModalOpen && (
         <FeedbackModal
+          type={feedbackModalOpen.type}
           onClose={() => setFeedbackModalOpen(null)}
           onSubmit={(text) => {
              // In a real app this would send the feedback to backend
@@ -4156,6 +6809,12 @@ function StructureTab({
             />
           )
         })()}
+      {citationModalTarget && (
+        <DocumentCitationPreviewModal
+          citation={citationModalTarget}
+          onClose={() => setCitationModalTarget(null)}
+        />
+      )}
     </div>
   )
 }
@@ -4175,6 +6834,7 @@ function ItemRow({
   onToggleQueue,
   hideAssigneesAndQueue = false,
   pendingStatus,
+  onOpenCitation,
 }: {
   item: SectionItem
   label: string
@@ -4189,6 +6849,7 @@ function ItemRow({
   onToggleQueue?: () => void
   hideAssigneesAndQueue?: boolean
   pendingStatus?: 'modified' | 'removed'
+  onOpenCitation?: (target: ContextCitationTarget) => void
 }) {
   const [hovered, setHovered] = useState(false)
   const [draft, setDraft] = useState(item.response ?? '')
@@ -4196,6 +6857,26 @@ function ItemRow({
   const [isAiGenerated, setIsAiGenerated] = useState(item.isAiGenerated ?? false)
   const [isEditedAi, setIsEditedAi] = useState(false)
   const [hasAttachedDoc, setHasAttachedDoc] = useState(false)
+  const [attachedDoc, setAttachedDoc] = useState<{
+    name: string
+    page: number
+    section: string
+  } | null>(() => {
+    if (
+      item.text.toLowerCase().includes('clinical') ||
+      item.text.toLowerCase().includes('safety') ||
+      item.text.toLowerCase().includes('hazard') ||
+      item.text.toLowerCase().includes('attachment a') ||
+      (item.response && item.response.toLowerCase().includes('clinical safety'))
+    ) {
+      return {
+        name: 'Clinical Safety Case & Hazard Log Attachment A.pdf',
+        page: 1,
+        section: 'Clinical Safety Case & Hazard Log Attachment A',
+      }
+    }
+    return null
+  })
   const [isResolved, setIsResolved] = useState(false)
   const [isPinned, setIsPinned] = useState(false)
   const isAssumption = item.type === 'assumption'
@@ -4516,6 +7197,60 @@ function ItemRow({
             )}
           </div>
         )}
+        {item.response && !editing && attachedDoc && (
+          <div style={{ marginTop: 6, display: 'flex' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '3px 10px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 6,
+                fontSize: 12,
+                color: '#334155',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <FileText size={13} color="#0284c7" />
+                <span style={{ fontSize: 11.5, fontWeight: 500, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {attachedDoc.name}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpenCitation?.({
+                    title: item.text,
+                    sourceDoc: attachedDoc.name,
+                    page: attachedDoc.page || 1,
+                    section: attachedDoc.section || 'Clinical Safety Case & Hazard Log Attachment A',
+                    highlightSnippet: 'Clinical Safety Case & Hazard Log',
+                  })
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '2px 7px',
+                  borderRadius: 4,
+                  background: 'rgba(0,196,196,0.1)',
+                  border: '1px solid rgba(0,196,196,0.3)',
+                  color: '#008080',
+                  fontSize: 10.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <ExternalLink size={10} />
+                Citation (Page 1)
+              </button>
+            </div>
+          </div>
+        )}
         {!disableAnswer && (!item.response || editing) && (
           <div
             style={{
@@ -4548,6 +7283,80 @@ function ItemRow({
                 color: '#0d212c',
               }}
             />
+            {attachedDoc && (
+              <div style={{ display: 'flex' }}>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '3px 10px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    color: '#334155',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <FileText size={13} color="#0284c7" />
+                    <span style={{ fontSize: 11.5, fontWeight: 500, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {attachedDoc.name}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onOpenCitation?.({
+                        title: item.text,
+                        sourceDoc: attachedDoc.name,
+                        page: attachedDoc.page || 1,
+                        section: attachedDoc.section || 'Clinical Safety Case & Hazard Log Attachment A',
+                        highlightSnippet: 'Clinical Safety Case & Hazard Log',
+                      })
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '2px 7px',
+                      borderRadius: 4,
+                      background: 'rgba(0,196,196,0.1)',
+                      border: '1px solid rgba(0,196,196,0.3)',
+                      color: '#008080',
+                      fontSize: 10.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <ExternalLink size={10} />
+                    Citation (Page 1)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setAttachedDoc(null)
+                      setHasAttachedDoc(false)
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 0,
+                    }}
+                    title="Remove attachment"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <label>
                 <input
@@ -4555,8 +7364,15 @@ function ItemRow({
                   style={{ display: 'none' }}
                   onChange={(e) => {
                     if (e.target.files && e.target.files.length > 0) {
+                      const file = e.target.files[0]
+                      const docName = file.name || 'Clinical Safety Case & Hazard Log Attachment A.pdf'
+                      setAttachedDoc({
+                        name: docName,
+                        page: 1,
+                        section: 'Clinical Safety Case & Hazard Log Attachment A',
+                      })
                       setHasAttachedDoc(true)
-                      const extracted = "Based on the attached document, the requirement is confirmed."
+                      const extracted = `Document "${docName}" attached. The requirement is confirmed per Clinical Safety Case standards.`
                       setDraft(draft ? draft + '\n' + extracted : extracted)
                       setIsAiGenerated(true)
                       setIsEditedAi(false)
@@ -4579,8 +7395,8 @@ function ItemRow({
                   }}
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-                  {hasAttachedDoc ? 'Doc Attached' : 'Upload Doc'}
-                  {!hasAttachedDoc && <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(15 Tokens)</span>}
+                  {attachedDoc ? 'Doc Attached' : 'Upload Doc'}
+                  {!attachedDoc && <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(15 Tokens)</span>}
                 </div>
               </label>
               <button
@@ -4666,40 +7482,7 @@ function ItemRow({
       {/* Assigned to & Delete */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 2 }}>
         {!hideAssigneesAndQueue && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          {Array.isArray(item.assignedTo) && item.assignedTo.length > 0 ? (
-            item.assignedTo.map((a, i) => {
-              const mem = memberById(a)
-              return (
-                <div key={a} style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: i > 0 ? -4 : 0 }}>
-                  <MemberAvatar memberId={a} size={20} />
-                  <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>
-                    {mem.name.split(' ')[0]}
-                  </span>
-                </div>
-              )
-            })
-          ) : typeof item.assignedTo === 'string' && item.assignedTo ? (
-            <>
-              <MemberAvatar memberId={item.assignedTo} size={20} />
-              <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>
-                {memberById(item.assignedTo).name.split(' ')[0]}
-              </span>
-            </>
-          ) : (
-            <span style={{
-              fontSize: 11,
-              color: item.inClientQueue ? '#10b981' : '#94a3b8',
-              fontStyle: item.inClientQueue ? 'normal' : 'italic',
-              fontWeight: item.inClientQueue ? 600 : 400,
-              background: item.inClientQueue ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
-              padding: item.inClientQueue ? '2px 6px' : 0,
-              borderRadius: 4
-            }}>
-              {item.inClientQueue ? 'Client Queue' : 'Unassigned'}
-            </span>
-          )}
-        </div>
+          <AssigneesDisplay assignedTo={item.assignedTo} inClientQueue={item.inClientQueue} />
         )}
         {!isContributor && !isReviewer && !hideAssigneesAndQueue && (
           <button
@@ -4797,10 +7580,16 @@ function SOWDraftTab({
   isContributor = false,
   isReviewer = false,
   onSendForReview,
+  onOpenParticipantsModal,
+  isReadOnly = false,
+  sowDeadline = '2026-10-31',
 }: {
   isContributor?: boolean
   isReviewer?: boolean
   onSendForReview?: () => void
+  onOpenParticipantsModal?: () => void
+  isReadOnly?: boolean
+  sowDeadline?: string
 }) {
   // ── State ───────────────────────────────────────────────────────────────────
   const { showToast } = useToast()
@@ -4818,6 +7607,9 @@ function SOWDraftTab({
   const [addReviewerIdx, setAddReviewerIdx] = useState<number | null>(null)
   const [reviewerSearch, setReviewerSearch] = useState('')
   const [approvalComment, setApprovalComment] = useState('')
+  const [sectionDeadlines, setSectionDeadlines] = useState<Record<number, string>>({})
+  const [dragTocIdx, setDragTocIdx] = useState<number | null>(null)
+  const [dragOverTocIdx, setDragOverTocIdx] = useState<number | null>(null)
 
   // ── Inline document comments ────────────────────────────────────────────────
   type CommentReply = { id: string; author: string; text: string; timestamp: string }
@@ -5314,6 +8106,19 @@ function SOWDraftTab({
 
   const [contentHtml] = useState(() => generateHtml(tocItems))
 
+  const reorderToc = (from: number, to: number) => {
+    setTocItems((prev) => {
+      const updated = [...prev]
+      const [moved] = updated.splice(from, 1)
+      updated.splice(to, 0, moved)
+      if (editorRef.current) {
+        editorRef.current.innerHTML = generateHtml(updated)
+      }
+      return updated
+    })
+    setActiveSectionIdx(to)
+  }
+
   // ── Set initial editor content ──────────────────────────────────────────────
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML === '') {
@@ -5559,9 +8364,6 @@ function SOWDraftTab({
             >
               Sections
             </span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>
-              {tocItems.length}
-            </span>
           </div>
 
           {/* Section list */}
@@ -5571,11 +8373,31 @@ function SOWDraftTab({
               const isApproved = item.status === 'Approved'
               const isRejected = item.status === 'Rejected'
               const hasReviewer = item.reviewers.length > 0
+              const isDragOver = dragOverTocIdx === idx && dragTocIdx !== idx
+              const isDragging = dragTocIdx === idx
+              const secDeadline = sectionDeadlines[idx] || sowDeadline || '2026-10-31'
+              const isOverdue = secDeadline && new Date(secDeadline) < new Date(new Date().toDateString())
               return (
                 <div
                   key={idx}
                   onMouseEnter={() => setHoveredTocIdx(idx)}
                   onMouseLeave={() => setHoveredTocIdx(null)}
+                  draggable={!isContributor && !isReviewer}
+                  onDragStart={() => setDragTocIdx(idx)}
+                  onDragEnd={() => {
+                    setDragTocIdx(null)
+                    setDragOverTocIdx(null)
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    if (idx !== dragTocIdx) setDragOverTocIdx(idx)
+                  }}
+                  onDrop={() => {
+                    if (dragTocIdx === null || dragTocIdx === idx) return
+                    reorderToc(dragTocIdx, idx)
+                    setDragTocIdx(null)
+                    setDragOverTocIdx(null)
+                  }}
                   onClick={() => {
                     setActiveSectionIdx(idx)
                     const el = document.getElementById(`sow-section-${idx}`)
@@ -5590,58 +8412,71 @@ function SOWDraftTab({
                     }
                   }}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 10px',
-                    borderRadius: 6,
+                    position: 'relative',
                     marginBottom: 2,
-                    cursor: 'pointer',
-                    background: isActive ? 'rgba(0,196,196,0.1)' : 'transparent',
-                    transition: 'background 0.15s',
+                    opacity: isDragging ? 0.4 : 1,
+                    transition: 'opacity 0.15s',
                   }}
                 >
-                  {/* Left: numbered circle + title */}
+                  {isDragOver && (
+                    <div style={{ height: 2, background: '#00C4C4', borderRadius: 2, marginBottom: 2 }} />
+                  )}
                   <div
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      border: isDragOver ? '1.5px solid rgba(0,196,196,0.5)' : 'none',
+                      cursor: 'pointer',
+                      background: isActive ? 'rgba(0,196,196,0.1)' : 'transparent',
+                      transition: 'background 0.15s',
+                    }}
                   >
+                    {/* Left: drag handle (PMO) + title + overdue badge */}
                     <div
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: '50%',
-                        background: isActive ? '#00C4C4' : 'rgba(0,196,196,0.12)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        transition: 'all 0.15s',
-                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}
                     >
+                      {/* Drag handle — PMO only */}
+                      {!isContributor && !isReviewer && (
+                        <svg
+                          width="10" height="14" viewBox="0 0 10 14" fill="none"
+                          style={{ flexShrink: 0, opacity: hoveredTocIdx === idx || isActive ? 0.45 : 0.2, cursor: 'grab', transition: 'opacity 0.15s' }}
+                        >
+                          <circle cx="3" cy="2" r="1.3" fill="#64748b" />
+                          <circle cx="7" cy="2" r="1.3" fill="#64748b" />
+                          <circle cx="3" cy="7" r="1.3" fill="#64748b" />
+                          <circle cx="7" cy="7" r="1.3" fill="#64748b" />
+                          <circle cx="3" cy="12" r="1.3" fill="#64748b" />
+                          <circle cx="7" cy="12" r="1.3" fill="#64748b" />
+                        </svg>
+                      )}
                       <span
                         style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: isActive ? '#fff' : '#64748b',
-                          lineHeight: 1,
+                          fontSize: 12.5,
+                          fontWeight: isActive ? 600 : 500,
+                          color: isActive ? '#00a0a0' : '#374151',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
                       >
-                        {idx + 1}
+                        {item.title}
                       </span>
+                      {isOverdue && (
+                        <span style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          color: '#ef4444',
+                          background: 'rgba(239,68,68,0.1)',
+                          padding: '1px 5px',
+                          borderRadius: 4,
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
+                        }}>Overdue</span>
+                      )}
                     </div>
-                    <span
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: isActive ? 600 : 500,
-                        color: isActive ? '#00a0a0' : '#374151',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {item.title}
-                    </span>
-                  </div>
 
                   {/* Right: score + reviewer + approved tick + menu */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -5788,19 +8623,21 @@ function SOWDraftTab({
                           </div>
                         ) : (
                           <div
-                            title="Assign Reviewer"
+                            title="Assign Contributors"
                             onClick={(e) => {
+                              if (isReadOnly) return
                               e.stopPropagation()
                               setAddReviewerIdx(idx)
                               setOpenMenuIdx(null)
                             }}
                             style={{
-                              cursor: 'pointer',
+                              cursor: isReadOnly ? 'default' : 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               padding: 2,
                               borderRadius: 4,
                               color: '#00C4C4',
+                              opacity: isReadOnly ? 0.6 : 1,
                             }}
                           >
                             <svg
@@ -5869,6 +8706,29 @@ function SOWDraftTab({
                                 padding: 6,
                               }}
                             >
+                              <div style={{ padding: '8px 12px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Section Deadline</span>
+                                <input
+                                  type="date"
+                                  min={new Date().toISOString().split('T')[0]}
+                                  max={sowDeadline || '2026-10-31'}
+                                  value={secDeadline}
+                                  onChange={(e) => {
+                                    const val = e.target.value
+                                    if (val && sowDeadline && val > sowDeadline) return
+                                    setSectionDeadlines((prev) => ({ ...prev, [idx]: val }))
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    width: '100%',
+                                    padding: '4px 8px',
+                                    fontSize: 12,
+                                    borderRadius: 6,
+                                    border: '1px solid #cbd5e1',
+                                    outline: 'none',
+                                  }}
+                                />
+                              </div>
                               {!isApproved && (
                                 <button
                                   onClick={(e) => {
@@ -5897,22 +8757,8 @@ function SOWDraftTab({
                                     (e.currentTarget.style.background = 'transparent')
                                   }
                                 >
-                                  <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                    <circle cx="8.5" cy="7" r="4" />
-                                    <line x1="20" y1="8" x2="20" y2="14" />
-                                    <line x1="23" y1="11" x2="17" y2="11" />
-                                  </svg>
-                                  Add Reviewer
+                                  <Users size={16} color="#00a0a0" />
+                                  Assign Contributors
                                 </button>
                               )}
                               {!isApproved && (
@@ -6009,8 +8855,9 @@ function SOWDraftTab({
                     )}
                   </div>
                 </div>
-              )
-            })}
+              </div>
+            )
+          })}
           </div>
         </div>
 
@@ -6047,6 +8894,28 @@ function SOWDraftTab({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => onOpenParticipantsModal?.()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(0,196,196,0.3)',
+                    background: 'rgba(0,196,196,0.08)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#007a7a',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="View SOW Participants"
+                >
+                  <Users size={13} color="#00a0a0" />
+                  View Participants
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowCommentsPanel((prev) => !prev)}
@@ -6583,6 +9452,28 @@ function SOWDraftTab({
               }
             />
             <div style={{ flex: 1 }} />
+            <button
+              type="button"
+              onClick={() => onOpenParticipantsModal?.()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                borderRadius: 6,
+                border: '1px solid rgba(0,196,196,0.3)',
+                background: 'rgba(0,196,196,0.08)',
+                color: '#007a7a',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginRight: 8,
+              }}
+              title="View SOW Participants"
+            >
+              <Users size={13} color="#00a0a0" />
+              View Participants
+            </button>
             <button
               type="button"
               onClick={() => setShowCommentsPanel((v) => !v)}
@@ -7377,49 +10268,66 @@ function SOWDraftTab({
             <div
               style={{ padding: '22px 28px 16px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}
             >
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Assign Reviewer</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Assign Contributors</div>
               <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
                 &quot;{tocItems[addReviewerIdx]?.title}&quot;
               </div>
             </div>
-            <div style={{ padding: '16px 28px 20px' }}>
+            <div style={{ padding: '16px 28px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {allMembers.map((name) => {
-                const already = tocItems[addReviewerIdx]?.reviewers.includes(name)
+                const isChecked = !!tocItems[addReviewerIdx]?.reviewers.includes(name)
                 const matches = name.toLowerCase().includes(reviewerSearch.toLowerCase())
                 if (!matches) return null
                 return (
-                  <label
+                  <div
                     key={name}
+                    onClick={() => {
+                      setTocItems((prev) =>
+                        prev.map((t, i) => {
+                          if (i !== addReviewerIdx) return t
+                          return {
+                            ...t,
+                            reviewers: isChecked
+                              ? t.reviewers.filter((r) => r !== name)
+                              : [...t.reviewers.filter((r) => r !== name), name],
+                          }
+                        })
+                      )
+                    }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 10,
-                      padding: '8px 0',
+                      padding: '8px 6px',
                       cursor: 'pointer',
                       fontSize: 13,
                       color: '#374151',
+                      borderRadius: 6,
+                      userSelect: 'none',
+                      transition: 'background 0.15s ease',
                     }}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = '#f8fafc')}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'transparent')}
                   >
-                    <input
-                      type="checkbox"
-                      defaultChecked={already}
-                      onChange={(e) => {
-                        setTocItems((prev) =>
-                          prev.map((t, i) => {
-                            if (i !== addReviewerIdx) return t
-                            return {
-                              ...t,
-                              reviewers: e.target.checked
-                                ? [...t.reviewers.filter((r) => r !== name), name]
-                                : t.reviewers.filter((r) => r !== name),
-                            }
-                          })
-                        )
+                    {/* Custom Lucide Checkbox matching primary light / #00C4C4 theme */}
+                    <div
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 4,
+                        background: isChecked ? '#00C4C4' : '#ffffff',
+                        border: isChecked ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.15s ease',
+                        flexShrink: 0,
                       }}
-                      style={{ accentColor: '#00C4C4', width: 15, height: 15 }}
-                    />
-                    {name}
-                  </label>
+                    >
+                      {isChecked && <Check size={12} color="#ffffff" strokeWidth={3} />}
+                    </div>
+                    <span>{name}</span>
+                  </div>
                 )
               })}
             </div>
@@ -7452,7 +10360,7 @@ function SOWDraftTab({
                 onClick={() => {
                   setAddReviewerIdx(null)
                   setReviewerSearch('')
-                  showToast('Reviewer assigned.')
+                  showToast('Contributors assigned successfully.')
                 }}
                 style={{
                   padding: '8px 18px',
@@ -7715,7 +10623,57 @@ function SendForReviewModal({
   onConfirm: () => void
 }) {
   const [reviewers, setReviewers] = useState(REVIEWERS_DEFAULT)
+  const [selectedIds, setSelectedIds] = useState<string[]>(REVIEWERS_DEFAULT.map((r) => r.id))
   const [newEmail, setNewEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+
+  const handleAddReviewer = () => {
+    const trimmed = newEmail.trim()
+    if (!trimmed) {
+      setEmailError('Please enter an email address')
+      return
+    }
+    if (!emailRegex.test(trimmed)) {
+      setEmailError('Please enter a valid email address (e.g. user@organization.com)')
+      return
+    }
+    const newId = `r${Date.now()}`
+    setReviewers((prev) => [
+      ...prev,
+      {
+        id: newId,
+        name: trimmed.split('@')[0].replace('.', ' '),
+        role: 'Reviewer',
+        initials: trimmed.slice(0, 2).toUpperCase(),
+        color: '#00C4C4',
+      },
+    ])
+    setSelectedIds((prev) => [...prev, newId])
+    setNewEmail('')
+    setEmailError('')
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
   return (
     <div
       style={{
@@ -7733,8 +10691,8 @@ function SendForReviewModal({
         style={{
           background: '#fff',
           borderRadius: 18,
-          padding: '20px 16px 16px',
-          width: 440,
+          padding: '22px 20px 18px',
+          width: 460,
           boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
           position: 'relative',
         }}
@@ -7764,120 +10722,161 @@ function SendForReviewModal({
         <div style={{ fontSize: 17, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
           Send for Review
         </div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-          The following reviewers will receive this SOW for their input.
+        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 18 }}>
+          Select the reviewers who will receive access to this SOW draft.
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
-          {reviewers.map((r) => (
-            <div
-              key={r.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '10px 14px',
-                borderRadius: 10,
-                border: '1px solid #e2e8f0',
-                background: '#f8fafc',
-              }}
-            >
+
+        {/* Reviewers with styled checkboxes */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, maxHeight: 220, overflowY: 'auto' }}>
+          {reviewers.map((r) => {
+            const isChecked = selectedIds.includes(r.id)
+            return (
               <div
+                key={r.id}
+                onClick={() => toggleSelect(r.id)}
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: '50%',
-                  background: r.color,
-                  color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  flexShrink: 0,
-                }}
-              >
-                {r.initials}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>{r.name}</div>
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>{r.role}</div>
-              </div>
-              <button
-                onClick={() => setReviewers((prev) => prev.filter((x) => x.id !== r.id))}
-                style={{
-                  background: 'none',
-                  border: 'none',
+                  gap: 12,
+                  padding: '9px 12px',
+                  borderRadius: 10,
+                  border: isChecked ? '1.5px solid rgba(0,196,196,0.35)' : '1px solid #e2e8f0',
+                  background: isChecked ? 'rgba(0,196,196,0.03)' : '#f8fafc',
                   cursor: 'pointer',
-                  color: '#94a3b8',
-                  fontSize: 14,
-                  padding: '2px 4px',
+                  transition: 'all 0.15s ease',
+                  userSelect: 'none',
                 }}
-                title="Remove"
               >
-                ✕
-              </button>
+                {/* Styled Lucide Checkbox */}
+                <div
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 4,
+                    background: isChecked ? '#00C4C4' : '#ffffff',
+                    border: isChecked ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                    flexShrink: 0,
+                  }}
+                >
+                  {isChecked && <Check size={12} color="#ffffff" strokeWidth={3} />}
+                </div>
+
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: r.color,
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {r.initials}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {r.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{r.role}</div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setReviewers((prev) => prev.filter((x) => x.id !== r.id))
+                    setSelectedIds((prev) => prev.filter((x) => x !== r.id))
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#cbd5e1',
+                    fontSize: 14,
+                    padding: '2px 4px',
+                  }}
+                  title="Remove"
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1')}
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Add Reviewer Input with Validation */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={newEmail}
+              onChange={(e) => {
+                setNewEmail(e.target.value)
+                if (emailError) setEmailError('')
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddReviewer()
+                }
+              }}
+              placeholder="Enter reviewer email (e.g. name@company.com)…"
+              style={{
+                flex: 1,
+                border: emailError ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0',
+                borderRadius: 8,
+                padding: '8px 12px',
+                fontSize: 13,
+                outline: 'none',
+                fontFamily: 'inherit',
+                background: '#ffffff',
+                transition: 'all 0.15s ease',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.background = '#f8fafc'
+                e.currentTarget.style.borderColor = emailError ? '#ef4444' : '#cbd5e1'
+                e.currentTarget.style.boxShadow = emailError ? '0 0 0 2px rgba(239, 68, 68, 0.2)' : '0 0 0 2px rgba(203, 213, 225, 0.4)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.background = '#ffffff'
+                e.currentTarget.style.borderColor = emailError ? '#ef4444' : '#e2e8f0'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            />
+            <button
+              onClick={handleAddReviewer}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#00C4C4',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#ffffff',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
+              }}
+            >
+              + Add
+            </button>
+          </div>
+          {emailError && (
+            <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+              <AlertTriangle size={12} />
+              {emailError}
             </div>
-          ))}
+          )}
         </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 22 }}>
-          <input
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && newEmail.trim()) {
-                setReviewers((prev) => [
-                  ...prev,
-                  {
-                    id: `r${Date.now()}`,
-                    name: newEmail.trim(),
-                    role: 'Reviewer',
-                    initials: newEmail.slice(0, 2).toUpperCase(),
-                    color: '#00C4C4',
-                  },
-                ])
-                setNewEmail('')
-              }
-            }}
-            placeholder="Add reviewer by name or email…"
-            style={{
-              flex: 1,
-              border: '1px solid #e2e8f0',
-              borderRadius: 8,
-              padding: '8px 12px',
-              fontSize: 13,
-              outline: 'none',
-              fontFamily: 'inherit',
-            }}
-          />
-          <button
-            onClick={() => {
-              if (!newEmail.trim()) return
-              setReviewers((prev) => [
-                ...prev,
-                {
-                  id: `r${Date.now()}`,
-                  name: newEmail.trim(),
-                  role: 'Reviewer',
-                  initials: newEmail.slice(0, 2).toUpperCase(),
-                  color: '#00C4C4',
-                },
-              ])
-              setNewEmail('')
-            }}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 8,
-              border: '1.5px solid rgba(0,196,196,0.4)',
-              background: 'rgba(0,196,196,0.08)',
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#007a7a',
-              cursor: 'pointer',
-            }}
-          >
-            Add
-          </button>
-        </div>
+
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button
             onClick={onClose}
@@ -7905,9 +10904,10 @@ function SendForReviewModal({
               fontWeight: 700,
               color: '#fff',
               cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
             }}
           >
-            Confirm &amp; Send
+            Send ({selectedIds.length}) for Review
           </button>
         </div>
       </div>
@@ -7976,9 +10976,15 @@ export function SOWDetailScreen({
   sowVariant = 'v1',
   viewerRole = 'pmo',
   currentMemberId = 'm5',
+  isDeactivated: isDeactivatedProp = false,
+  onReactivateSOW,
+  sowDeadline = '2026-10-31',
 }: SOWDetailScreenProps) {
+  const [activeSOWStatus, setActiveSOWStatus] = useState(sowStatus)
+  const isDeactivated = isDeactivatedProp || activeSOWStatus === 'Deactivated' || sowStatus === 'Deactivated'
   const isContributor = viewerRole === 'contributor'
   const isReviewer = viewerRole === 'reviewer'
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const { showToast } = useToast()
 
   const defaultMockFiles: UploadedFile[] = [
@@ -8028,7 +11034,7 @@ export function SOWDetailScreen({
     showToast('SOW sent for review successfully!', 'success')
   }
 
-  const tabs = buildTabs(isStructureUnlocked, isDraftUnlocked)
+  const tabs = buildTabs(isStructureUnlocked || isDeactivated, isDraftUnlocked || isDeactivated)
 
   const [isFormDirty, setIsFormDirty] = useState(false)
   const [showOverrideConfirm, setShowOverrideConfirm] = useState(false)
@@ -8636,7 +11642,7 @@ export function SOWDetailScreen({
               skipLoading={isContributor || isStructureUnlocked}
               onDirtyChange={(dirty) => setIsFormDirty(dirty)}
               formVersions={formVersions}
-              isEditable={isStructureUnlocked ? isFormEditable : !isContributor}
+              isEditable={!isDeactivated && (isStructureUnlocked ? isFormEditable : !isContributor)}
             />
           )}
           {activeTab === 'structure' &&
@@ -8653,11 +11659,13 @@ export function SOWDetailScreen({
                 currentMemberId={currentMemberId}
                 onScoreChange={setCompletionScore}
                 disableAnswer={
-                  (sowVariant === 'v1' && !isContributor) ||
+                  isDeactivated ||
                   (isContributor && isSentForReview)
                 }
                 hasPendingChanges={hasPendingStructureChanges}
                 onResolveChanges={(accept) => setHasPendingStructureChanges(false)}
+                onOpenParticipantsModal={() => setShowParticipantsModal(true)}
+                sowDeadline={sowDeadline || '2026-10-31'}
               />
             ) : (
               <LockedTabState
@@ -8673,6 +11681,9 @@ export function SOWDetailScreen({
                 <SOWDraftTab
                   isContributor={isContributor}
                   isReviewer={isReviewer}
+                  isReadOnly={isDeactivated}
+                  sowDeadline={sowDeadline || '2026-10-31'}
+                  onOpenParticipantsModal={() => setShowParticipantsModal(true)}
                   onSendForReview={() => {
                     showToast('Review comments sent to PMO successfully!', 'success')
                   }}
@@ -8721,6 +11732,13 @@ export function SOWDetailScreen({
         <SendForReviewModal
           onClose={() => setShowReviewModal(false)}
           onConfirm={handleSendForReview}
+        />
+      )}
+
+      {/* SOW Participants Modal */}
+      {showParticipantsModal && (
+        <SOWParticipantsModal
+          onClose={() => setShowParticipantsModal(false)}
         />
       )}
     </>
@@ -8918,13 +11936,48 @@ function DeleteConfirmModal({
 function ClientQueueModal({
   sections,
   onRemoveFromQueue,
-  onClose
+  onClose,
 }: {
   sections: SOWSection[]
   onRemoveFromQueue: (id: string) => void
   onClose: () => void
 }) {
   const { showToast } = useToast()
+  const [clientEmail, setClientEmail] = useState('')
+  const [clientEmailError, setClientEmailError] = useState('')
+  const [clientList, setClientList] = useState<string[]>([])
+
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+
+  const handleAddClient = () => {
+    const val = clientEmail.trim()
+    if (!val) {
+      setClientEmailError('Please enter an email address.')
+      return
+    }
+    if (!emailRegex.test(val)) {
+      setClientEmailError('Please enter a valid email address (e.g. user@company.com).')
+      return
+    }
+    if (clientList.includes(val)) {
+      setClientEmailError('This client email has already been added.')
+      return
+    }
+    setClientList((prev) => [...prev, val])
+    setClientEmail('')
+    setClientEmailError('')
+  }
+
+  const handleSendInvite = () => {
+    const val = clientEmail.trim()
+    if (val && !emailRegex.test(val)) {
+      setClientEmailError('Please enter a valid email address (e.g. user@company.com).')
+      return
+    }
+    showToast('Items and invite sent to client queue successfully!', 'success')
+    onClose()
+  }
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 600, maxWidth: '90vw', position: 'relative' }}>
@@ -8932,8 +11985,120 @@ function ClientQueueModal({
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
         </button>
         <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue</div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>Questions and Assumptions to be sent to the client.</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 400, overflowY: 'auto', marginBottom: 20 }}>
+        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Questions and Assumptions to be sent to the client.</div>
+
+        {/* Add Client Field with custom error check */}
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+            Add Client
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <input
+                type="text"
+                placeholder="e.g. client.reviewer@company.com"
+                value={clientEmail}
+                onChange={(e) => {
+                  setClientEmail(e.target.value)
+                  if (clientEmailError) setClientEmailError('')
+                }}
+                onBlur={(e) => {
+                  const val = e.target.value.trim()
+                  if (val && !emailRegex.test(val)) {
+                    setClientEmailError('Please enter a valid email address (e.g. user@company.com).')
+                  } else {
+                    setClientEmailError('')
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: 8,
+                  border: '1.5px solid ' + (clientEmailError ? '#dc2626' : '#e2e8f0'),
+                  background: '#ffffff',
+                  fontSize: 13,
+                  color: '#0d212c',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'all 0.15s ease',
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddClient()
+                  }
+                }}
+              />
+              {clientEmailError && (
+                <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 4, fontWeight: 500 }}>
+                  {clientEmailError}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleAddClient}
+              style={{
+                padding: '9px 16px',
+                borderRadius: 8,
+                background: '#f1f5f9',
+                border: '1px solid #cbd5e1',
+                color: '#334155',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                height: 38,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              + Add
+            </button>
+          </div>
+
+          {/* Added clients chips */}
+          {clientList.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+              {clientList.map((em) => (
+                <span
+                  key={em}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '3px 10px',
+                    borderRadius: 16,
+                    background: '#e0f2fe',
+                    border: '1px solid #bae6fd',
+                    color: '#0369a1',
+                    fontSize: 12,
+                    fontWeight: 500,
+                  }}
+                >
+                  {em}
+                  <button
+                    type="button"
+                    onClick={() => setClientList((prev) => prev.filter((c) => c !== em))}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      color: '#0284c7',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 360, overflowY: 'auto', marginBottom: 20 }}>
           {sections.every(s => !s.items.some(i => i.inClientQueue)) ? (
             <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '20px 0' }}>No items in queue.</div>
           ) : sections.map((s) => {
@@ -8942,11 +12107,6 @@ function ClientQueueModal({
              return (
                <div key={s.id} style={{ marginBottom: 12 }}>
                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', marginBottom: 8, display: 'flex', alignItems: 'center' }}>
-                    <span style={{ 
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      width: 20, height: 20, borderRadius: '50%', background: '#e0f2f1', color: '#00796b',
-                      fontSize: 12, marginRight: 8 
-                    }}>{sections.findIndex(x => x.id === s.id) + 1}</span>
                     {s.title}
                  </div>
                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -8985,10 +12145,7 @@ function ClientQueueModal({
             Cancel
           </button>
           <button
-            onClick={() => {
-              showToast('Items sent to client queue successfully!', 'success')
-              onClose()
-            }}
+            onClick={handleSendInvite}
             style={{
               padding: '12px 24px',
               borderRadius: 12,
@@ -9010,34 +12167,114 @@ function ClientQueueModal({
 }
 
 function FeedbackModal({
+  type = 'positive',
   onClose,
   onSubmit
 }: {
+  type?: 'positive' | 'negative'
   onClose: () => void
   onSubmit: (text: string) => void
 }) {
   const [feedback, setFeedback] = useState('')
+  const isPositive = type === 'positive'
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 420, maxWidth: '90vw', position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 24,
+          padding: '32px 24px',
+          width: 420,
+          maxWidth: '90vw',
+          position: 'relative',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+        }}
+      >
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#94a3b8',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
         </button>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Provide Feedback</div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>How can we improve these generated items?</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>
+          Provide Feedback
+        </div>
+        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+          {isPositive
+            ? 'What went well with these generated items? (Optional)'
+            : 'How can we improve these generated items?'}
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span>Feedback</span>
+          {!isPositive && <span style={{ color: '#ef4444', fontWeight: 700 }}>*</span>}
+        </div>
         <textarea
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
-          placeholder="Tell us what went wrong..."
+          placeholder={isPositive ? 'Share your feedback (optional)...' : 'Tell us what went wrong...'}
           rows={4}
-          style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #cbd5e1', fontSize: 14, outline: 'none', color: '#0d212c', resize: 'vertical', marginBottom: 20 }}
-          onFocus={(e) => e.target.style.borderColor = '#00C4C4'}
-          onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+          style={{
+            width: '100%',
+            padding: '10px 14px',
+            borderRadius: 10,
+            border: '1.5px solid #e2e8f0',
+            background: '#ffffff',
+            fontSize: 14,
+            outline: 'none',
+            color: '#0d212c',
+            resize: 'vertical',
+            marginBottom: 20,
+            transition: 'background-color 0.15s, border-color 0.15s',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.backgroundColor = '#f8fafc'
+            e.currentTarget.style.borderColor = '#cbd5e1'
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.backgroundColor = '#ffffff'
+            e.currentTarget.style.borderColor = '#e2e8f0'
+          }}
         />
         <button
           onClick={() => onSubmit(feedback)}
-          disabled={!feedback.trim()}
-          style={{ width: '100%', padding: '12px', borderRadius: 10, background: feedback.trim() ? '#00C4C4' : '#f1f5f9', color: feedback.trim() ? '#fff' : '#94a3b8', border: 'none', fontSize: 14, fontWeight: 700, cursor: feedback.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.15s' }}
+          disabled={!isPositive && !feedback.trim()}
+          style={{
+            width: '100%',
+            padding: '12px',
+            borderRadius: 10,
+            background: (isPositive || feedback.trim()) ? '#00C4C4' : '#f1f5f9',
+            color: (isPositive || feedback.trim()) ? '#fff' : '#94a3b8',
+            border: 'none',
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: (isPositive || feedback.trim()) ? 'pointer' : 'not-allowed',
+            transition: 'all 0.15s',
+            boxShadow: (isPositive || feedback.trim()) ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
+          }}
         >
           Submit Feedback
         </button>
