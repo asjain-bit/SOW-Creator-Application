@@ -33,6 +33,9 @@ import {
   Sparkles,
   FileCheck,
   CheckSquare,
+  Download,
+  RotateCcw,
+  History,
 } from 'lucide-react'
 import { AuditLogView, addGlobalAuditLog } from '../AuditLogView'
 import type {
@@ -1422,7 +1425,10 @@ export function FieldTraceDrawer({
     <div
       style={{
         position: 'fixed',
-        inset: 0,
+        top: 112,
+        bottom: 0,
+        left: 0,
+        right: 0,
         zIndex: 9998,
         background: 'transparent',
         display: 'flex',
@@ -1439,6 +1445,8 @@ export function FieldTraceDrawer({
           background: '#ffffff',
           boxShadow: '-8px 0 32px rgba(0,0,0,0.12)',
           borderLeft: '1px solid #e2e8f0',
+          borderTop: '1px solid #e2e8f0',
+          borderTopLeftRadius: 16,
           display: 'flex',
           flexDirection: 'column',
           animation: 'slideInRight 0.25s ease-out',
@@ -1871,7 +1879,674 @@ export function FieldTraceDrawer({
   )
 }
 
-/* ── SOW Participants Modal (View-Only) ───────────────────────────────────── */
+/* ── Statement-Level Item Trace Modal (Planning / Structure Tab) ─────────── */
+
+export function ItemTraceModal({
+  item,
+  label,
+  onClose,
+  onOpenCitation,
+}: {
+  item: SectionItem
+  label: string
+  onClose: () => void
+  onOpenCitation?: (target: ContextCitationTarget) => void
+}) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  // Mock authentic revision logs representing the statement lifecycle
+  const revisions = [
+    {
+      version: 3,
+      isCurrent: true,
+      tag: 'Latest Revision',
+      author: item.response ? 'Ashika Jain' : 'Narendra',
+      role: item.response ? 'PMO Lead' : 'Contributor',
+      avatarColor: item.response ? '#00C4C4' : '#10b981',
+      initials: item.response ? 'AJ' : 'NA',
+      timestamp: 'Today, 15:42',
+      changeReason: item.response
+        ? 'Captured validated stakeholder response and refined requirement scope'
+        : 'Updated question phrasing for clarity and client alignment',
+      content: item.text,
+      response: item.response,
+    },
+    {
+      version: 2,
+      isCurrent: false,
+      tag: 'Revision 2',
+      author: 'Marcus Brody',
+      role: 'Compliance Lead',
+      avatarColor: '#ec4899',
+      initials: 'MB',
+      timestamp: 'Yesterday, 11:20',
+      changeReason: 'Refined compliance requirements and verified HL7/FHIR cross-reference',
+      content: item.text.includes('?')
+        ? item.text.replace(/\?$/, ' with mandatory data governance checks?')
+        : item.text + ' (subject to data governance audit)',
+      response: undefined,
+    },
+    {
+      version: 1,
+      isCurrent: false,
+      tag: 'Initial AI Extraction',
+      author: 'AI Extraction Agent',
+      role: 'RFP Parser v2.4',
+      avatarColor: '#8b5cf6',
+      initials: 'AI',
+      timestamp: 'Oct 2, 2026, 09:30',
+      changeReason: 'Initial extraction from Scope_Requirements_RFP.pdf (Section 3.2)',
+      content: item.text.length > 55 ? item.text.slice(0, 50) + '... [Original RFP extract]' : item.text,
+      sourceDoc: 'Clinical Safety Case & Hazard Log Attachment A.pdf',
+      page: 1,
+      response: undefined,
+    },
+  ]
+
+  const totalModifications = revisions.length - 1
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        background: 'rgba(15, 23, 42, 0.55)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          width: 620,
+          maxWidth: '94vw',
+          maxHeight: '88vh',
+          borderRadius: 16,
+          boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          border: '1px solid #e2e8f0',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: '18px 24px',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#fafafa',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: 'rgba(0,196,196,0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#00a0a0',
+              }}
+            >
+              <History size={18} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
+                  Statement Traceability
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#00a0a0',
+                    background: 'rgba(0,196,196,0.12)',
+                    padding: '2px 8px',
+                    borderRadius: 12,
+                  }}
+                >
+                  {label}
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#64748b',
+                    background: '#f1f5f9',
+                    padding: '2px 8px',
+                    borderRadius: 12,
+                  }}
+                >
+                  Changed {totalModifications} {totalModifications === 1 ? 'time' : 'times'} ({revisions.length} versions)
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                Full provenance audit log, modification history and editor timestamps
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: '#f1f5f9',
+              border: 'none',
+              borderRadius: 8,
+              width: 30,
+              height: 30,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#64748b',
+            }}
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        {/* Scrollable Revision Timeline */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', background: '#f8fafc' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
+            {/* Timeline connector line */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 17,
+                top: 20,
+                bottom: 20,
+                width: 2,
+                background: '#e2e8f0',
+                zIndex: 0,
+              }}
+            />
+
+            {revisions.map((rev) => (
+              <div key={rev.version} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 1 }}>
+                {/* Node icon / avatar */}
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: rev.avatarColor,
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    boxShadow: `0 2px 8px ${rev.avatarColor}40`,
+                    border: '2px solid #ffffff',
+                  }}
+                >
+                  {rev.initials}
+                </div>
+
+                {/* Content card */}
+                <div
+                  style={{
+                    flex: 1,
+                    background: '#ffffff',
+                    border: rev.isCurrent ? '1.5px solid rgba(0,196,196,0.5)' : '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '14px 16px',
+                    boxShadow: rev.isCurrent ? '0 4px 12px rgba(0,196,196,0.1)' : '0 1px 3px rgba(0,0,0,0.03)',
+                  }}
+                >
+                  {/* Top metadata */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+                        {rev.author}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          background: rev.isCurrent ? 'rgba(0,196,196,0.12)' : '#f1f5f9',
+                          color: rev.isCurrent ? '#008080' : '#64748b',
+                        }}
+                      >
+                        {rev.role}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {rev.isCurrent && (
+                        <span
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            background: '#dcfce7',
+                            color: '#15803d',
+                          }}
+                        >
+                          Current Version
+                        </span>
+                      )}
+                      <span style={{ fontSize: 11, color: '#94a3b8' }}>{rev.timestamp}</span>
+                    </div>
+                  </div>
+
+                  {/* Change reason */}
+                  <div style={{ fontSize: 11.5, color: '#64748b', marginBottom: 10, fontStyle: 'italic' }}>
+                    {rev.changeReason}
+                  </div>
+
+                  {/* Exact Content Block */}
+                  <div
+                    style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      padding: '10px 12px',
+                      fontSize: 12.5,
+                      color: '#1e293b',
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', marginBottom: 4 }}>
+                      Exact Statement Content:
+                    </div>
+                    {rev.content}
+                  </div>
+
+                  {/* Response thread if present */}
+                  {rev.response && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        background: 'rgba(0,196,196,0.06)',
+                        border: '1px solid rgba(0,196,196,0.2)',
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 12,
+                        color: '#007a7a',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#00a0a0', marginBottom: 2 }}>
+                        Captured Answer / Stakeholder Response:
+                      </div>
+                      {rev.response}
+                    </div>
+                  )}
+
+                  {/* Source citation if present */}
+                  {rev.sourceDoc && (
+                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenCitation?.({
+                            title: item.text,
+                            sourceDoc: rev.sourceDoc!,
+                            page: rev.page || 1,
+                            section: 'Clinical Safety Case & Hazard Log',
+                            highlightSnippet: 'Clinical Safety Case',
+                          })
+                        }
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: '3px 8px',
+                          borderRadius: 5,
+                          background: 'rgba(37,99,235,0.08)',
+                          border: '1px solid rgba(37,99,235,0.25)',
+                          color: '#2563eb',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <FileText size={11} />
+                        View Source Document ({rev.sourceDoc})
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: '12px 24px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#fafafa',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ fontSize: 12, color: '#64748b' }}>
+            Statement UID: <code style={{ fontSize: 11, background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>{item.id}</code>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '7px 18px',
+              borderRadius: 8,
+              border: '1px solid #e2e8f0',
+              background: '#ffffff',
+              color: '#0d212c',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Draft Section Trace Modal (Draft Tab) ───────────────────────────────── */
+
+export function DraftSectionTraceModal({
+  sectionTitle,
+  sectionIdx,
+  onClose,
+  onOpenCitation,
+}: {
+  sectionTitle: string
+  sectionIdx: number
+  onClose: () => void
+  onOpenCitation?: (target: ContextCitationTarget) => void
+}) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  const draftSectionRevisions = [
+    {
+      version: 3,
+      isCurrent: true,
+      tag: 'Latest Review Edit',
+      author: 'Ashika Jain',
+      role: 'PMO Lead',
+      initials: 'AJ',
+      avatarColor: '#00C4C4',
+      timestamp: 'Today, 16:15',
+      summary: 'Updated deliverable deadlines, SLA terms, and compliance sign-off requirements.',
+      diffSummary: '+3 clauses updated, SLA response hours refined.',
+    },
+    {
+      version: 2,
+      isCurrent: false,
+      tag: 'Reviewer Feedback',
+      author: 'Ishita',
+      role: 'Reviewer',
+      initials: 'IR',
+      avatarColor: '#8b5cf6',
+      timestamp: 'Yesterday, 14:02',
+      summary: 'Reviewed against RFP specifications and added cross-reference to Attachment A.',
+      diffSummary: 'Resolved comment c1 and confirmed Phase 1 milestones.',
+    },
+    {
+      version: 1,
+      isCurrent: false,
+      tag: 'AI Agent Generation',
+      author: 'AI SOW Agent',
+      role: 'Deep Extraction v3',
+      initials: 'AI',
+      avatarColor: '#0284c7',
+      timestamp: 'Oct 3, 2026, 10:15',
+      summary: 'Synthesized initial draft from RFP_Document.pdf & Project_Plan.pdf.',
+      diffSummary: 'Initial section generation (1,420 words).',
+    },
+  ]
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        background: 'rgba(15, 23, 42, 0.55)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          width: 600,
+          maxWidth: '94vw',
+          maxHeight: '85vh',
+          borderRadius: 16,
+          boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          border: '1px solid #e2e8f0',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            padding: '18px 24px',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#fafafa',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: 'rgba(0,196,196,0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#00a0a0',
+              }}
+            >
+              <History size={18} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
+                  Section Trace: {sectionTitle}
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#00a0a0',
+                    background: 'rgba(0,196,196,0.12)',
+                    padding: '2px 8px',
+                    borderRadius: 12,
+                  }}
+                >
+                  3 Changes Logged
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                Audit history of edits, AI generation, and reviewer modifications
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: '#f1f5f9',
+              border: 'none',
+              borderRadius: 8,
+              width: 30,
+              height: 30,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#64748b',
+            }}
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', background: '#f8fafc' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
+            <div
+              style={{
+                position: 'absolute',
+                left: 17,
+                top: 20,
+                bottom: 20,
+                width: 2,
+                background: '#e2e8f0',
+                zIndex: 0,
+              }}
+            />
+
+            {draftSectionRevisions.map((rev) => (
+              <div key={rev.version} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 1 }}>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: rev.avatarColor,
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    boxShadow: `0 2px 8px ${rev.avatarColor}40`,
+                    border: '2px solid #ffffff',
+                  }}
+                >
+                  {rev.initials}
+                </div>
+
+                <div
+                  style={{
+                    flex: 1,
+                    background: '#ffffff',
+                    border: rev.isCurrent ? '1.5px solid rgba(0,196,196,0.5)' : '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '14px 16px',
+                    boxShadow: rev.isCurrent ? '0 4px 12px rgba(0,196,196,0.1)' : '0 1px 3px rgba(0,0,0,0.03)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>{rev.author}</span>
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          background: rev.isCurrent ? 'rgba(0,196,196,0.12)' : '#f1f5f9',
+                          color: rev.isCurrent ? '#008080' : '#64748b',
+                        }}
+                      >
+                        {rev.role}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{rev.timestamp}</span>
+                  </div>
+
+                  <div style={{ fontSize: 12, color: '#334155', lineHeight: 1.5, marginBottom: 8 }}>
+                    {rev.summary}
+                  </div>
+
+                  <div
+                    style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 6,
+                      padding: '6px 10px',
+                      fontSize: 11.5,
+                      color: '#64748b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <FileCheck size={13} color="#00a0a0" />
+                    <span>{rev.diffSummary}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: '12px 24px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#fafafa',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: '7px 18px',
+              borderRadius: 8,
+              border: '1px solid #e2e8f0',
+              background: '#ffffff',
+              color: '#0d212c',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── SOW Participants Modal (With View / Edit Access Indicators) ─────────── */
 
 export function SOWParticipantsModal({
   onClose,
@@ -1964,8 +2639,13 @@ export function SOWParticipantsModal({
             >
               <Users size={18} />
             </div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
-              SOW Participants
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
+                SOW Participants &amp; Access Levels
+              </div>
+              <div style={{ fontSize: 11.5, color: '#64748b' }}>
+                Team members, reviewers and client stakeholders with designated permissions
+              </div>
             </div>
           </div>
           <button
@@ -2037,6 +2717,8 @@ export function SOWParticipantsModal({
                 ? 'Client'
                 : 'PMO'
 
+            const hasEditAccess = user.type === 'pmo' || user.type === 'contributors'
+
             return (
               <div
                 key={user.id}
@@ -2103,6 +2785,51 @@ export function SOWParticipantsModal({
                   <div style={{ fontSize: 12, color: '#64748b' }}>
                     {user.email}
                   </div>
+                </div>
+
+                {/* Right side: Access Type Badge (Edit Access vs View Only) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  {hasEditAccess ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4.5,
+                        padding: '3px 10px',
+                        borderRadius: 6,
+                        background: '#ecfdf5',
+                        border: '1px solid #a7f3d0',
+                        color: '#047857',
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                      }}
+                      title="This participant has edit access to assigned sections and questions"
+                    >
+                      <Edit2 size={11} strokeWidth={2.4} />
+                      Edit Access
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4.5,
+                        padding: '3px 10px',
+                        borderRadius: 6,
+                        background: '#f1f5f9',
+                        border: '1px solid #cbd5e1',
+                        color: '#475569',
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                      }}
+                      title="This participant has view-only access"
+                    >
+                      <Eye size={12} strokeWidth={2.2} />
+                      View Access
+                    </span>
+                  )}
                 </div>
               </div>
             )
@@ -4896,11 +5623,14 @@ function MemberAvatar({ memberId, size = 24 }: { memberId: string; size?: number
 function AssigneesDisplay({
   assignedTo,
   inClientQueue,
+  onReassign,
 }: {
   assignedTo?: string | string[]
   inClientQueue?: boolean
+  onReassign?: (newMemberId: string) => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   if (inClientQueue) {
     return (
@@ -4928,15 +5658,87 @@ function AssigneesDisplay({
 
   if (ids.length === 0) {
     return (
-      <span
-        style={{
-          fontSize: 11,
-          color: '#94a3b8',
-          fontStyle: 'italic',
-        }}
-      >
-        Unassigned
-      </span>
+      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+        <button
+          type="button"
+          onClick={(e) => {
+            if (onReassign) {
+              e.stopPropagation()
+              setMenuOpen((v) => !v)
+            }
+          }}
+          style={{
+            fontSize: 11,
+            color: onReassign ? '#0284c7' : '#94a3b8',
+            fontStyle: 'italic',
+            background: 'none',
+            border: 'none',
+            cursor: onReassign ? 'pointer' : 'default',
+            padding: 0,
+          }}
+        >
+          {onReassign ? '+ Assign' : 'Unassigned'}
+        </button>
+        {menuOpen && onReassign && (
+          <>
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setMenuOpen(false)
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 4px)',
+                right: 0,
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: 8,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                padding: 4,
+                zIndex: 999,
+                minWidth: 160,
+              }}
+            >
+              <div style={{ padding: '4px 8px', fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                Assign to
+              </div>
+              {SECTION_MEMBERS.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onReassign(m.id)
+                    setMenuOpen(false)
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '5px 8px',
+                    borderRadius: 5,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    color: '#0d212c',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                >
+                  <MemberAvatar memberId={m.id} size={18} />
+                  <span>{m.name}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     )
   }
 
@@ -4948,7 +5750,20 @@ function AssigneesDisplay({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          cursor: onReassign ? 'pointer' : 'default',
+        }}
+        onClick={(e) => {
+          if (onReassign) {
+            e.stopPropagation()
+            setMenuOpen((v) => !v)
+          }
+        }}
+        title={onReassign ? 'Click to reassign this question' : undefined}
+      >
         {members.map((m, idx) => (
           <div
             key={m.id}
@@ -4962,7 +5777,8 @@ function AssigneesDisplay({
         ))}
       </div>
 
-      {hovered && (
+      {/* Tooltip when hovering and menu is not open */}
+      {hovered && !menuOpen && (
         <div
           style={{
             position: 'absolute',
@@ -5014,11 +5830,96 @@ function AssigneesDisplay({
               </div>
             ))}
           </div>
+          {onReassign && (
+            <div style={{ marginTop: 6, paddingTop: 4, borderTop: '1px solid #f1f5f9', fontSize: 10, color: '#00C4C4', fontWeight: 600 }}>
+              Click avatar to reassign
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Reassign dropdown menu */}
+      {menuOpen && onReassign && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setMenuOpen(false)
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 5px)',
+              right: 0,
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              padding: 5,
+              zIndex: 999,
+              minWidth: 180,
+            }}
+          >
+            <div
+              style={{
+                padding: '6px 10px 4px',
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Reassign to
+            </div>
+            {SECTION_MEMBERS.map((m) => {
+              const isCurrent = ids.includes(m.id)
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onReassign(m.id)
+                    setMenuOpen(false)
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    background: isCurrent ? 'rgba(0,196,196,0.08)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    color: isCurrent ? '#008080' : '#0d212c',
+                    fontWeight: isCurrent ? 700 : 500,
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                  }}
+                >
+                  <MemberAvatar memberId={m.id} size={18} />
+                  <span style={{ flex: 1 }}>{m.name}</span>
+                  {isCurrent && <Check size={13} color="#00C4C4" strokeWidth={2.5} />}
+                </button>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )
 }
+
 
 /* ── Add Item Modal ── */
 function AddItemModal({
@@ -5574,7 +6475,7 @@ function StructureTab({
   sowDeadline = '2026-10-31',
 }: {
   initialSections?: SOWSection[]
-  viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin'
+  viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
   currentMemberId?: string
   onScoreChange?: (score: number) => void
   disableAnswer?: boolean
@@ -5583,6 +6484,7 @@ function StructureTab({
   onOpenParticipantsModal?: () => void
   sowDeadline?: string
 }) {
+  const { showToast } = useToast()
   const isContributor = viewerRole === 'contributor'
   const isReviewer = viewerRole === 'reviewer'
   const [sections, setSections] = useState<SOWSection[]>(initialSections)
@@ -5590,11 +6492,19 @@ function StructureTab({
   const [editingSectionTitle, setEditingSectionTitle] = useState('')
   const [sectionDeadlines, setSectionDeadlines] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {}
-    initialSections.forEach((s) => {
-      init[s.id] = sowDeadline || '2026-10-31'
+    initialSections.forEach((s, idx) => {
+      if (idx === 1) {
+        init[s.id] = '2026-09-25'
+      } else if (idx === 3) {
+        init[s.id] = '2026-09-30'
+      } else {
+        init[s.id] = sowDeadline || '2026-10-31'
+      }
     })
     return init
   })
+  const [dependentPromptVisible, setDependentPromptVisible] = useState(true)
+  const [hasCreatedDependentQuestion, setHasCreatedDependentQuestion] = useState(false)
   const [citationModalTarget, setCitationModalTarget] = useState<ContextCitationTarget | null>(null)
   const [activeId, setActiveId] = useState<string>(initialSections[0].id)
   const [showAddSectionModal, setShowAddSectionModal] = useState(false)
@@ -5614,6 +6524,7 @@ function StructureTab({
     onConfirm: (reason: string, text: string) => void
   } | null>(null)
   const [clientQueueModalOpen, setClientQueueModalOpen] = useState(false)
+  const [activeTraceItem, setActiveTraceItem] = useState<{ item: SectionItem; label: string } | null>(null)
   const [feedbackModalOpen, setFeedbackModalOpen] = useState<{ sectionId: string; type: 'positive' | 'negative' } | null>(null)
   const assignDropdownRef = useRef<HTMLDivElement>(null)
   const rightPaneRef = useRef<HTMLDivElement>(null)
@@ -5760,22 +6671,19 @@ function StructureTab({
     clearSelection()
   }
 
-  // All item ids across all sections (for "select all" within multi-select bar)
-  const allItemIds = sections.flatMap((s) => s.items.filter(i => !i.inClientQueue).map((i) => i.id))
-  const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
+  // Contributors see their assigned sections (where they are an assigned member or have assigned questions)
+  // Inside their assigned sections, they can see all items, assign, reassign, delete, and add new questions!
+  const isSectionAssignedToContributor = (s: SOWSection) =>
+    s.assignedMembers.includes(currentMemberId) || s.items.some((i) => i.assignedTo === currentMemberId)
 
-  // Contributors only ever see their own assigned items, in sections that have at least one.
-  // Unanswered items surface first within each section so open work is easy to find.
   // Reviewers see all sections and all items with answers populated.
   const visibleSections = isContributor
     ? sections
+        .filter(isSectionAssignedToContributor)
         .map((s) => ({
           ...s,
-          items: s.items
-            .filter((i) => i.assignedTo === currentMemberId)
-            .sort((a, b) => Number(a.answered) - Number(b.answered)),
+          items: [...s.items].sort((a, b) => Number(a.answered) - Number(b.answered)),
         }))
-        .filter((s) => s.items.length > 0)
     : isReviewer
     ? sections.map((s) => ({
         ...s,
@@ -5790,6 +6698,10 @@ function StructureTab({
         })),
       }))
     : sections
+
+  // All item ids across visible sections (for "select all" within multi-select bar)
+  const allItemIds = visibleSections.flatMap((s) => s.items.filter(i => !i.inClientQueue).map((i) => i.id))
+  const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
   const answerItem = (itemId: string, response: string, isAiGenerated: boolean, isEdited: boolean) => {
     let itemName = ''
@@ -5809,7 +6721,7 @@ function StructureTab({
       const action = isAiGenerated
         ? (isEdited ? 'Edited AI-Generated Answer' : 'Answer Generated using AI')
         : 'Manually Answered Question'
-      addGlobalAuditLog(action, `Answered: "${itemName.substring(0, 50)}..."`, isContributor ? 'Narendra (Contributor)' : 'Ashika Jain (PMO)', 'form')
+      addGlobalAuditLog(action, `Answered: "${itemName.substring(0, 50)}..."`, isContributor ? 'Ashika Jain (Contributor)' : 'Ashika Jain (PMO)', 'form')
     }
   }
 
@@ -5820,6 +6732,18 @@ function StructureTab({
         items: s.items.filter((it) => it.id !== itemId),
       }))
     )
+    showToast('Deleted item successfully.', 'info')
+  }
+
+  const reassignItem = (itemId: string, newMemberId: string) => {
+    setSections((prev) =>
+      prev.map((s) => ({
+        ...s,
+        items: s.items.map((it) => (it.id === itemId ? { ...it, assignedTo: newMemberId } : it)),
+      }))
+    )
+    const targetMember = memberById(newMemberId)
+    showToast(`Assigned question to ${targetMember.name}.`, 'success')
   }
 
   const kpiQuestions = (() => {
@@ -5983,17 +6907,37 @@ function StructureTab({
               justifyContent: 'space-between',
             }}
           >
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#94a3b8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}
-            >
-              Sections
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#94a3b8',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                Sections
+              </span>
+              <div
+                title="You can drag and drop sections to reposition them"
+                style={{
+                  width: 15,
+                  height: 15,
+                  borderRadius: '50%',
+                  background: 'rgba(0,196,196,0.14)',
+                  color: '#00a0a0',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'help',
+                }}
+              >
+                i
+              </div>
+            </div>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
@@ -6015,7 +6959,7 @@ function StructureTab({
               return (
                 <div
                   key={sec.id}
-                  style={{ position: 'relative', marginBottom: 2, opacity: isDragging ? 0.4 : 1, transition: 'opacity 0.15s' }}
+                  style={{ position: 'relative', marginBottom: 6, opacity: isDragging ? 0.4 : 1, transition: 'opacity 0.15s' }}
                   onMouseEnter={() => setHoveredSection(sec.id)}
                   onMouseLeave={() => setHoveredSection(null)}
                   draggable={!isContributor && !isReviewer}
@@ -6064,11 +7008,11 @@ function StructureTab({
                       paddingRight: isHovered || isActive ? 38 : 10,
                     }}
                   >
-                    {/* Drag handle — PMO only */}
-                    {!isContributor && !isReviewer && (
+                    {/* Drag handle — PMO only, only appears on hover */}
+                    {!isContributor && !isReviewer && isHovered && (
                       <svg
                         width="10" height="14" viewBox="0 0 10 14" fill="none"
-                        style={{ flexShrink: 0, opacity: isHovered || isActive ? 0.45 : 0.2, cursor: 'grab', transition: 'opacity 0.15s' }}
+                        style={{ flexShrink: 0, opacity: 0.6, cursor: 'grab', transition: 'opacity 0.15s' }}
                       >
                         <circle cx="3" cy="2" r="1.3" fill="#64748b" />
                         <circle cx="7" cy="2" r="1.3" fill="#64748b" />
@@ -6242,7 +7186,7 @@ function StructureTab({
         {/* ── Right pane ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           {/* Top Actions & Bulk-action bar combined */}
-          {!isContributor && !isReviewer && (
+          {!isReviewer && (
             <div style={{ padding: '8px 28px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -6630,8 +7574,8 @@ function StructureTab({
                             }}>Overdue</span>
                           )}
                         </span>
-                        {/* Add item CTA */}
-                        {!isContributor && !isReviewer && (
+                        {/* Add item CTA - contributors can add new questions in their assigned sections */}
+                        {!isReviewer && (!isContributor || isSectionAssignedToContributor(sec)) && (
                           <button
                             onClick={() => setAddItemFor(sec.id)}
                             style={{
@@ -6675,52 +7619,140 @@ function StructureTab({
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                      {assumptions.map((item, ai) => (
-                        <ItemRow
-                          key={item.id}
-                          item={item}
-                          pendingStatus={hasPendingChanges ? (ai === 0 ? 'modified' : ai === 1 ? 'removed' : undefined) : undefined}
-                          label={`Assumption ${ai + 1}`}
-                          isSelected={selected.has(item.id)}
-                          hasAnySelected={hasSelection}
-                          onToggle={() => toggleSelect(item.id)}
-                          isContributor={isContributor}
-                          isReviewer={isReviewer}
-                          disableAnswer={disableAnswer || isReviewer}
-                          onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
-                          onToggleQueue={() => toggleClientQueue(item.id)}
-                          onOpenCitation={setCitationModalTarget}
-                          onDelete={() => setDeleteConfirm({
-                            isOpen: true,
-                            title: 'Delete Assumption',
-                            message: 'Are you sure you want to delete this assumption?',
-                            onConfirm: (reason, text) => deleteItem(item.id)
-                          })}
-                        />
-                      ))}
-                      {questions.map((item, qi) => (
-                        <ItemRow
-                          key={item.id}
-                          item={item}
-                          pendingStatus={hasPendingChanges ? (qi === 0 ? 'modified' : qi === 1 ? 'removed' : undefined) : undefined}
-                          label={`Question ${qi + 1}`}
-                          isSelected={selected.has(item.id)}
-                          hasAnySelected={hasSelection}
-                          onToggle={() => toggleSelect(item.id)}
-                          isContributor={isContributor}
-                          isReviewer={isReviewer}
-                          disableAnswer={disableAnswer || isReviewer}
-                          onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
-                          onToggleQueue={() => toggleClientQueue(item.id)}
-                          onOpenCitation={setCitationModalTarget}
-                          onDelete={() => setDeleteConfirm({
-                            isOpen: true,
-                            title: 'Delete Question',
-                            message: 'Are you sure you want to delete this question?',
-                            onConfirm: (reason, text) => deleteItem(item.id)
-                          })}
-                        />
-                      ))}
+                      {assumptions.map((item, ai) => {
+                        const canEditSec = !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
+                        return (
+                          <ItemRow
+                            key={item.id}
+                            item={item}
+                            pendingStatus={hasPendingChanges ? (ai === 0 ? 'modified' : ai === 1 ? 'removed' : undefined) : undefined}
+                            label={`Assumption ${ai + 1}`}
+                            isSelected={selected.has(item.id)}
+                            hasAnySelected={hasSelection}
+                            onToggle={() => toggleSelect(item.id)}
+                            isContributor={isContributor}
+                            isReviewer={isReviewer}
+                            canEdit={canEditSec}
+                            onReassign={(newMemberId) => reassignItem(item.id, newMemberId)}
+                            disableAnswer={disableAnswer || isReviewer}
+                            onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
+                            onToggleQueue={() => toggleClientQueue(item.id)}
+                            onOpenCitation={setCitationModalTarget}
+                            onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
+                            onDelete={() => setDeleteConfirm({
+                              isOpen: true,
+                              title: 'Delete Assumption',
+                              message: 'Are you sure you want to delete this assumption?',
+                              onConfirm: (reason, text) => deleteItem(item.id)
+                            })}
+                          />
+                        )
+                      })}
+                      {questions.map((item, qi) => {
+                        const canEditSec = !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
+                        return (
+                          <ItemRow
+                            key={item.id}
+                            item={item}
+                            pendingStatus={hasPendingChanges ? (qi === 0 ? 'modified' : qi === 1 ? 'removed' : undefined) : undefined}
+                            label={`Question ${qi + 1}`}
+                            isSelected={selected.has(item.id)}
+                            hasAnySelected={hasSelection}
+                            onToggle={() => toggleSelect(item.id)}
+                            isContributor={isContributor}
+                            isReviewer={isReviewer}
+                            canEdit={canEditSec}
+                            onReassign={(newMemberId) => reassignItem(item.id, newMemberId)}
+                            disableAnswer={disableAnswer || isReviewer}
+                            onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
+                            onToggleQueue={() => toggleClientQueue(item.id)}
+                            onOpenCitation={setCitationModalTarget}
+                            onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
+                            onDelete={() => setDeleteConfirm({
+                              isOpen: true,
+                              title: 'Delete Question',
+                              message: 'Are you sure you want to delete this question?',
+                              onConfirm: (reason, text) => deleteItem(item.id)
+                            })}
+                          />
+                        )
+                      })}
+                      {/* Dependent Question Callout in Section 3 (Matches Snapshot 1) */}
+                      {(sec.id === 's3' || idx === 2) && dependentPromptVisible && !hasCreatedDependentQuestion && (
+                        <div
+                          style={{
+                            marginTop: 12,
+                            padding: '14px 18px',
+                            borderRadius: 12,
+                            background: '#f0f9ff',
+                            border: '1.5px solid #bae6fd',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', fontSize: 13, fontWeight: 700 }}>
+                            <span style={{ fontSize: 14 }}>✦</span>
+                            Dependent question identified
+                          </div>
+                          <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
+                            Your answer introduces &ldquo;delivered in phases&rdquo;. The SOW needs the phase sequence and scope to define the timeline accurately.
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => setDependentPromptVisible(false)}
+                              style={{
+                                padding: '6px 16px',
+                                borderRadius: 8,
+                                border: '1px solid #cbd5e1',
+                                background: '#ffffff',
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: '#475569',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Dismiss
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newDepQuestion: SectionItem = {
+                                  id: `dep-q-${Date.now()}`,
+                                  type: 'question',
+                                  text: 'What is the sequence and delivery scope breakdown across each implementation phase?',
+                                  assignedTo: isContributor ? 'm1' : 'm1',
+                                  answered: false,
+                                }
+                                setSections((prev) =>
+                                  prev.map((s) =>
+                                    s.id === sec.id
+                                      ? { ...s, items: [...s.items, newDepQuestion] }
+                                      : s
+                                  )
+                                )
+                                setHasCreatedDependentQuestion(true)
+                                setDependentPromptVisible(false)
+                                showToast('Dependent question added to Section 3', 'success')
+                              }}
+                              style={{
+                                padding: '6px 18px',
+                                borderRadius: 8,
+                                border: 'none',
+                                background: '#0284c7',
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: '#ffffff',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
+                              }}
+                            >
+                              Create dependent question
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   {!isContributor && !isReviewer && (
@@ -6815,6 +7847,14 @@ function StructureTab({
           onClose={() => setCitationModalTarget(null)}
         />
       )}
+      {activeTraceItem && (
+        <ItemTraceModal
+          item={activeTraceItem.item}
+          label={activeTraceItem.label}
+          onClose={() => setActiveTraceItem(null)}
+          onOpenCitation={setCitationModalTarget}
+        />
+      )}
     </div>
   )
 }
@@ -6835,6 +7875,10 @@ function ItemRow({
   hideAssigneesAndQueue = false,
   pendingStatus,
   onOpenCitation,
+  onOpenTrace,
+  canEdit: canEditProp,
+  showCheckboxAlways = false,
+  onReassign,
 }: {
   item: SectionItem
   label: string
@@ -6850,7 +7894,12 @@ function ItemRow({
   hideAssigneesAndQueue?: boolean
   pendingStatus?: 'modified' | 'removed'
   onOpenCitation?: (target: ContextCitationTarget) => void
+  onOpenTrace?: (item: SectionItem, label: string) => void
+  canEdit?: boolean
+  showCheckboxAlways?: boolean
+  onReassign?: (newMemberId: string) => void
 }) {
+  const canEdit = canEditProp !== undefined ? canEditProp : (!isContributor && !isReviewer)
   const [hovered, setHovered] = useState(false)
   const [draft, setDraft] = useState(item.response ?? '')
   const [editing, setEditing] = useState(false)
@@ -6880,7 +7929,7 @@ function ItemRow({
   const [isResolved, setIsResolved] = useState(false)
   const [isPinned, setIsPinned] = useState(false)
   const isAssumption = item.type === 'assumption'
-  const showCheckbox = hovered || isSelected || hasAnySelected
+  const showCheckbox = hovered || isSelected || hasAnySelected || showCheckboxAlways
   const showOverlay = (hovered || isPinned) && Boolean(pendingStatus) && !isResolved
 
   return (
@@ -6906,7 +7955,7 @@ function ItemRow({
       }}
     >
       {/* Checkbox */}
-      {!isContributor && !isReviewer && !hideAssigneesAndQueue && (
+      {((canEdit && !hideAssigneesAndQueue) || showCheckboxAlways) && (
         <div
           style={{
             width: 16,
@@ -7482,9 +8531,48 @@ function ItemRow({
       {/* Assigned to & Delete */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 2 }}>
         {!hideAssigneesAndQueue && (
-          <AssigneesDisplay assignedTo={item.assignedTo} inClientQueue={item.inClientQueue} />
+          <AssigneesDisplay
+            assignedTo={item.assignedTo}
+            inClientQueue={item.inClientQueue}
+            onReassign={canEdit ? onReassign : undefined}
+          />
         )}
-        {!isContributor && !isReviewer && !hideAssigneesAndQueue && (
+        {/* Statement-Level Traceability button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenTrace?.(item, label)
+          }}
+          title="View statement-level traceability history"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '3px 8px',
+            borderRadius: 6,
+            background: 'rgba(0,196,196,0.08)',
+            border: '1px solid rgba(0,196,196,0.25)',
+            color: '#008080',
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.12s ease',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(0,196,196,0.16)'
+            e.currentTarget.style.borderColor = 'rgba(0,196,196,0.45)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(0,196,196,0.08)'
+            e.currentTarget.style.borderColor = 'rgba(0,196,196,0.25)'
+          }}
+        >
+          <History size={11} />
+          View Trace
+        </button>
+        {canEdit && !hideAssigneesAndQueue && (
           <button
             onClick={() => onToggleQueue?.()}
             style={{
@@ -7523,7 +8611,7 @@ function ItemRow({
             </div>
           </button>
         )}
-        {!isContributor && !isReviewer && (
+        {canEdit && (
           <button
             onClick={() => {
               onDelete?.()
@@ -7576,9 +8664,914 @@ const SOW_DRAFT_SECTIONS = [
 
 type DraftComment = { id: string; sectionId: string; text: string; assignee: string }
 
+/* ── AI Review and Summary Modal (PMO & Reviewer) ────────────────────────── */
+
+interface AIReviewFinding {
+  id: string
+  criteria: 'Completeness' | 'Consistency' | 'Traceability' | 'Clarity'
+  severity: 'Critical' | 'Needs Review'
+  title: string
+  description: string
+  affected: string
+  evidence: string
+  resolved: boolean
+  resolutionType?: string
+}
+
+const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
+  {
+    id: 'f1',
+    criteria: 'Completeness',
+    severity: 'Critical',
+    title: 'Requirement R-014 is not addressed',
+    description: 'Requirement R-014 is not addressed in the Deliverables section.',
+    affected: 'Deliverables',
+    evidence: 'Review the highlighted evidence, choose a resolution, and the system records who resolved or dismissed it, when, and the before/after text.',
+    resolved: false,
+  },
+  {
+    id: 'f2',
+    criteria: 'Consistency',
+    severity: 'Needs Review',
+    title: 'Implementation timeline differs across sections',
+    description: 'Implementation timeline differs: Section 3 says 8 weeks; Section 7 says 10 weeks.',
+    affected: 'Scope · Timeline',
+    evidence: 'Implementation timeline differs: Section 3 states "8 weeks" for rollout completion while Section 7 timeline schedule lists "10 weeks".',
+    resolved: false,
+  },
+  {
+    id: 'f3',
+    criteria: 'Traceability',
+    severity: 'Needs Review',
+    title: 'Unlinked key statements in summary',
+    description: 'Two key statements have no linked requirement, source, or approved change.',
+    affected: 'Executive Summary',
+    evidence: 'Two key statements have no linked requirement, source, or approved change in the intake repository or validated stakeholder responses.',
+    resolved: false,
+  },
+  {
+    id: 'f4',
+    criteria: 'Clarity',
+    severity: 'Needs Review',
+    title: 'Ambiguous system performance objective',
+    description: '"Improve system performance" is ambiguous and has no measurable acceptance criterion.',
+    affected: 'Objectives',
+    evidence: '"Improve system performance" is ambiguous and has no measurable acceptance criterion or quantitative service-level threshold defined.',
+    resolved: false,
+  },
+  {
+    id: 'f5',
+    criteria: 'Clarity',
+    severity: 'Needs Review',
+    title: 'Deliverable 4 terminology mismatch',
+    description: 'Deliverable 4 uses terminology that differs from the approved client input.',
+    affected: 'Deliverables',
+    evidence: 'Deliverable 4 uses terminology that differs from the approved client input document "Scope_Requirements_RFP.pdf".',
+    resolved: false,
+  },
+]
+
+function AIReviewModal({
+  isOpen,
+  onClose,
+  onAcknowledge,
+  onSendToRework,
+  hasRunBefore,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onAcknowledge: () => void
+  onSendToRework: () => void
+  hasRunBefore: boolean
+}) {
+  const { showToast } = useToast()
+  const [stage, setStage] = useState<'thinking' | 'summary' | 'findings'>(hasRunBefore ? 'summary' : 'thinking')
+  const [thinkingStep, setThinkingStep] = useState(0)
+  const [findings, setFindings] = useState<AIReviewFinding[]>(INITIAL_AI_FINDINGS)
+  const [criteriaFilter, setCriteriaFilter] = useState<'All' | 'Completeness' | 'Consistency' | 'Traceability' | 'Clarity'>('All')
+  const [severityFilter, setSeverityFilter] = useState<'All' | 'Critical' | 'Needs Review'>('All')
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Open' | 'Resolved'>('All')
+  const [activeResolutionFinding, setActiveResolutionFinding] = useState<AIReviewFinding | null>(null)
+  const [chosenResolutionOption, setChosenResolutionOption] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    if (stage === 'thinking') {
+      setThinkingStep(0)
+      const t1 = setTimeout(() => setThinkingStep(1), 600)
+      const t2 = setTimeout(() => setThinkingStep(2), 1200)
+      const t3 = setTimeout(() => setThinkingStep(3), 1800)
+      const t4 = setTimeout(() => {
+        setStage('summary')
+      }, 2500)
+      return () => {
+        clearTimeout(t1)
+        clearTimeout(t2)
+        clearTimeout(t3)
+        clearTimeout(t4)
+      }
+    }
+  }, [isOpen, stage])
+
+  if (!isOpen) return null
+
+  const openFindings = findings.filter((f) => !f.resolved)
+  const filteredFindings = findings.filter((f) => {
+    if (criteriaFilter !== 'All' && f.criteria !== criteriaFilter) return false
+    if (severityFilter !== 'All' && f.severity !== severityFilter) return false
+    if (statusFilter === 'Open' && f.resolved) return false
+    if (statusFilter === 'Resolved' && !f.resolved) return false
+    return true
+  })
+
+  const completenessFindings = openFindings.filter((f) => f.criteria === 'Completeness').length
+  const consistencyFindings = openFindings.filter((f) => f.criteria === 'Consistency').length
+  const traceabilityFindings = openFindings.filter((f) => f.criteria === 'Traceability').length
+  const clarityFindings = openFindings.filter((f) => f.criteria === 'Clarity').length
+
+  const handleResolveActiveFinding = () => {
+    if (!activeResolutionFinding || !chosenResolutionOption) return
+    setFindings((prev) =>
+      prev.map((f) =>
+        f.id === activeResolutionFinding.id
+          ? { ...f, resolved: true, resolutionType: chosenResolutionOption }
+          : f
+      )
+    )
+    showToast(`Finding resolved: ${chosenResolutionOption}`, 'success')
+    setActiveResolutionFinding(null)
+    setChosenResolutionOption(null)
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        background: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(5px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !activeResolutionFinding) onClose()
+      }}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: 20,
+          boxShadow: '0 25px 60px -15px rgba(0,0,0,0.3)',
+          border: '1px solid #e2e8f0',
+          width: 780,
+          maxWidth: '94vw',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          animation: 'fadeIn 0.2s ease-out',
+        }}
+      >
+        {/* Modal Header */}
+        <div
+          style={{
+            padding: '18px 24px',
+            borderBottom: '1px solid #f1f5f9',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#ffffff',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, rgba(0,196,196,0.15) 0%, rgba(2,132,199,0.15) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Sparkles size={18} color="#00a0a0" />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center', gap: 8 }}>
+                AI Review & Summary
+                {stage === 'findings' && (
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>
+                    • Detailed Findings
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>
+                Automated document evaluation across 4 quality dimensions
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#94a3b8',
+              padding: 4,
+              display: 'flex',
+              borderRadius: 6,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+          {stage === 'thinking' && (
+            <div style={{ textAlign: 'center', padding: '36px 12px' }}>
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  background: 'rgba(0,196,196,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px',
+                  position: 'relative',
+                }}
+              >
+                <RefreshCw
+                  size={32}
+                  color="#00C4C4"
+                  style={{ animation: 'spin 1.5s linear infinite' }}
+                />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>
+                AI is reviewing the entire SOW draft…
+              </div>
+              <div style={{ fontSize: 13, color: '#64748b', maxWidth: 440, margin: '0 auto 28px', lineHeight: 1.5 }}>
+                Scanning all 19 sections against RFP requirements, commercial constraints, and compliance benchmarks.
+              </div>
+
+              {/* Steps list */}
+              <div
+                style={{
+                  maxWidth: 420,
+                  margin: '0 auto',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 12,
+                  padding: '16px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  textAlign: 'left',
+                }}
+              >
+                {[
+                  'Analyzing document completeness & structure',
+                  'Checking consistency between timeline & scope',
+                  'Verifying requirement traceability & citations',
+                  'Evaluating language clarity & acceptance criteria',
+                ].map((stepText, idx) => {
+                  const isDone = thinkingStep > idx
+                  const isCurrent = thinkingStep === idx
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          background: isDone ? '#16a34a' : isCurrent ? 'rgba(0,196,196,0.15)' : '#e2e8f0',
+                          color: isDone ? '#ffffff' : isCurrent ? '#00a0a0' : '#94a3b8',
+                        }}
+                      >
+                        {isDone ? '✓' : isCurrent ? '⟳' : idx + 1}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 12.5,
+                          fontWeight: isCurrent ? 600 : 500,
+                          color: isDone ? '#16a34a' : isCurrent ? '#0d212c' : '#94a3b8',
+                        }}
+                      >
+                        {stepText}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div style={{ marginTop: 24 }}>
+                <button
+                  type="button"
+                  onClick={() => setStage('summary')}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 8,
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    color: '#64748b',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Skip to Results
+                </button>
+              </div>
+            </div>
+          )}
+
+          {stage === 'summary' && (
+            <div>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c' }}>
+                  AI Review Summary
+                </div>
+                <div style={{ fontSize: 13, color: '#64748b', marginTop: 3 }}>
+                  Status + findings, not a percentage score.
+                </div>
+              </div>
+
+              {/* 4 Factor rows */}
+              <div
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  background: '#ffffff',
+                  marginBottom: 24,
+                }}
+              >
+                {[
+                  {
+                    name: 'Completeness',
+                    status: completenessFindings > 0 ? 'Not Ready' : 'Ready',
+                    statusColor: completenessFindings > 0 ? '#ef4444' : '#16a34a',
+                    dotColor: completenessFindings > 0 ? '#ef4444' : '#16a34a',
+                    count: completenessFindings,
+                    criteria: 'Completeness' as const,
+                  },
+                  {
+                    name: 'Consistency',
+                    status: consistencyFindings > 0 ? 'Review' : 'Ready',
+                    statusColor: consistencyFindings > 0 ? '#ea580c' : '#16a34a',
+                    dotColor: consistencyFindings > 0 ? '#ea580c' : '#16a34a',
+                    count: consistencyFindings,
+                    criteria: 'Consistency' as const,
+                  },
+                  {
+                    name: 'Traceability',
+                    status: traceabilityFindings > 0 ? 'Review' : 'Ready',
+                    statusColor: traceabilityFindings > 0 ? '#ea580c' : '#16a34a',
+                    dotColor: traceabilityFindings > 0 ? '#ea580c' : '#16a34a',
+                    count: traceabilityFindings,
+                    criteria: 'Traceability' as const,
+                  },
+                  {
+                    name: 'Clarity',
+                    status: clarityFindings > 0 ? 'Review' : 'Ready',
+                    statusColor: clarityFindings > 0 ? '#ea580c' : '#16a34a',
+                    dotColor: clarityFindings > 0 ? '#ea580c' : '#16a34a',
+                    count: clarityFindings,
+                    criteria: 'Clarity' as const,
+                  },
+                ].map((factor, idx) => (
+                  <div
+                    key={factor.name}
+                    onClick={() => {
+                      setCriteriaFilter(factor.criteria)
+                      setStage('findings')
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '16px 20px',
+                      borderBottom: idx < 3 ? '1px solid #f1f5f9' : 'none',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                  >
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: '#0d212c' }}>
+                      {factor.name}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: factor.statusColor,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: factor.dotColor,
+                            display: 'inline-block',
+                          }}
+                        />
+                        {factor.status}
+                      </div>
+                      <div
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 6,
+                          background: '#f1f5f9',
+                          color: '#64748b',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {factor.count}
+                      </div>
+                      <ChevronDown
+                        size={15}
+                        color="#94a3b8"
+                        style={{ transform: 'rotate(-90deg)' }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Status explanation */}
+              <div
+                style={{
+                  fontSize: 12,
+                  color: '#64748b',
+                  marginBottom: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                }}
+              >
+                <span>3 states:</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', fontWeight: 600 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a' }} />
+                  Ready
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#ea580c', fontWeight: 600 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ea580c' }} />
+                  Review
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#ef4444', fontWeight: 600 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444' }} />
+                  Not Ready
+                </span>
+              </div>
+
+              {/* Summary Bottom Actions (Send to Rework & Acknowledge) */}
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSendToRework()
+                    onClose()
+                    showToast('SOW sent to rework with AI review findings.', 'info')
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#334155',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Send to Rework
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAcknowledge()
+                    setStage('findings')
+                  }}
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: 10,
+                    background: '#00C4C4',
+                    border: 'none',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  }}
+                >
+                  Acknowledge
+                </button>
+              </div>
+            </div>
+          )}
+
+          {stage === 'findings' && (
+            <div>
+              {/* Top controls: count & filters */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 18,
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setStage('summary')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#00a0a0',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: 0,
+                    }}
+                  >
+                    ← Summary
+                  </button>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
+                    {openFindings.length} findings
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {/* Criteria filter */}
+                  <select
+                    value={criteriaFilter}
+                    onChange={(e) => setCriteriaFilter(e.target.value as any)}
+                    style={{
+                      padding: '6px 10px',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      color: '#334155',
+                      cursor: 'pointer',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="All">All criteria</option>
+                    <option value="Completeness">Completeness</option>
+                    <option value="Consistency">Consistency</option>
+                    <option value="Traceability">Traceability</option>
+                    <option value="Clarity">Clarity</option>
+                  </select>
+
+                  {/* Severity filter */}
+                  <select
+                    value={severityFilter}
+                    onChange={(e) => setSeverityFilter(e.target.value as any)}
+                    style={{
+                      padding: '6px 10px',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      color: '#334155',
+                      cursor: 'pointer',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="All">All severity</option>
+                    <option value="Critical">Critical</option>
+                    <option value="Needs Review">Needs Review</option>
+                  </select>
+
+                  {/* Status filter */}
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    style={{
+                      padding: '6px 10px',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border: '1px solid #cbd5e1',
+                      background: '#ffffff',
+                      color: '#334155',
+                      cursor: 'pointer',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="All">All status</option>
+                    <option value="Open">Open</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Findings list (Matches Snapshot 3) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {filteredFindings.map((finding) => (
+                  <div
+                    key={finding.id}
+                    style={{
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 12,
+                      padding: '16px 18px',
+                      background: finding.resolved ? '#f8fafc' : '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 16,
+                      opacity: finding.resolved ? 0.7 : 1,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: finding.resolved
+                              ? '#16a34a'
+                              : finding.severity === 'Critical'
+                              ? '#ef4444'
+                              : '#ea580c',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c' }}>
+                          {finding.resolved
+                            ? `Resolved · ${finding.criteria}`
+                            : `${finding.severity} · ${finding.criteria}`}
+                        </span>
+                        {finding.resolved && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: '#16a34a',
+                              background: 'rgba(22,163,74,0.1)',
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                            }}
+                          >
+                            ✓ {finding.resolutionType || 'Resolved'}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginBottom: 8 }}>
+                        {finding.description}
+                      </div>
+                      <div>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: '#64748b',
+                            background: '#f1f5f9',
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                          }}
+                        >
+                          Affected: {finding.affected}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ONLY Review button (no compare or trace button) */}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveResolutionFinding(finding)
+                          setChosenResolutionOption(null)
+                        }}
+                        style={{
+                          padding: '8px 18px',
+                          borderRadius: 8,
+                          border: '1px solid #cbd5e1',
+                          background: '#ffffff',
+                          color: '#0284c7',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          whiteSpace: 'nowrap',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#f0f9ff'
+                          e.currentTarget.style.borderColor = '#0284c7'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#ffffff'
+                          e.currentTarget.style.borderColor = '#cbd5e1'
+                        }}
+                      >
+                        Review
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Resolution Modal Overlay (Matches Snapshot 4) */}
+        {activeResolutionFinding && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 100000,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backdropFilter: 'blur(3px)',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setActiveResolutionFinding(null)
+            }}
+          >
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: 20,
+                width: 580,
+                maxWidth: '92vw',
+                padding: '24px 26px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+                position: 'relative',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveResolutionFinding(null)}
+                style={{
+                  position: 'absolute',
+                  top: 18,
+                  right: 18,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', marginBottom: 2 }}>
+                {activeResolutionFinding.title}
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 18 }}>
+                {activeResolutionFinding.severity} · {activeResolutionFinding.affected}
+              </div>
+
+              {/* AI evidence box */}
+              <div
+                style={{
+                  background: 'rgba(2, 132, 199, 0.04)',
+                  border: '1px solid #bae6fd',
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  marginBottom: 20,
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0284c7', marginBottom: 4 }}>
+                  AI evidence
+                </div>
+                <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.5 }}>
+                  {activeResolutionFinding.evidence}
+                </div>
+              </div>
+
+              {/* Choose resolution */}
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', marginBottom: 12 }}>
+                Choose resolution
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+                {[
+                  { id: 'Resolve manually', icon: '✏️', label: 'Resolve manually' },
+                  { id: 'Accept suggested option', icon: '✓', label: 'Accept suggested option' },
+                  { id: 'Assign to contributor', icon: '👤', label: 'Assign to contributor' },
+                  { id: 'Dismiss with reason', icon: '⊘', label: 'Dismiss with reason' },
+                ].map((opt) => {
+                  const isSelected = chosenResolutionOption === opt.id
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => setChosenResolutionOption(opt.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 16px',
+                        borderRadius: 10,
+                        border: isSelected ? '1.5px solid #00C4C4' : '1px solid #e2e8f0',
+                        background: isSelected ? 'rgba(0,196,196,0.06)' : '#f8fafc',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) e.currentTarget.style.background = '#f1f5f9'
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) e.currentTarget.style.background = '#f8fafc'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
+                        <span>{opt.icon}</span>
+                        <span>{opt.label}</span>
+                      </div>
+                      <ChevronDown
+                        size={15}
+                        color="#94a3b8"
+                        style={{ transform: 'rotate(-90deg)' }}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Bottom buttons */}
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveResolutionFinding(null)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#64748b',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!chosenResolutionOption}
+                  onClick={handleResolveActiveFinding}
+                  style={{
+                    padding: '8px 22px',
+                    borderRadius: 8,
+                    background: chosenResolutionOption ? '#00C4C4' : '#cbd5e1',
+                    border: 'none',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    cursor: chosenResolutionOption ? 'pointer' : 'not-allowed',
+                    boxShadow: chosenResolutionOption ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
+                  }}
+                >
+                  Resolve
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function SOWDraftTab({
   isContributor = false,
   isReviewer = false,
+  viewerRole,
   onSendForReview,
   onOpenParticipantsModal,
   isReadOnly = false,
@@ -7586,6 +9579,7 @@ function SOWDraftTab({
 }: {
   isContributor?: boolean
   isReviewer?: boolean
+  viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
   onSendForReview?: () => void
   onOpenParticipantsModal?: () => void
   isReadOnly?: boolean
@@ -7593,9 +9587,16 @@ function SOWDraftTab({
 }) {
   // ── State ───────────────────────────────────────────────────────────────────
   const { showToast } = useToast()
+  const isPMO = viewerRole === 'pmo' || (!isContributor && !isReviewer && viewerRole !== 'admin' && viewerRole !== 'client')
+  const isAdmin = viewerRole === 'admin'
+  const isClient = viewerRole === 'client'
+
   const [activeSectionIdx, setActiveSectionIdx] = useState(0)
   const [hasUnsaved, setHasUnsaved] = useState(false)
   const [activeFormats, setActiveFormats] = useState<Record<string, boolean>>({})
+  const [activeHighlight, setActiveHighlight] = useState<'none' | 'ai' | 'questions' | 'reviewed'>('none')
+  const [draftCitationTarget, setDraftCitationTarget] = useState<ContextCitationTarget | null>(null)
+  const [draftTraceTarget, setDraftTraceTarget] = useState<{ sectionTitle: string; sectionIdx: number } | null>(null)
   const editorRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const [hoveredTocIdx, setHoveredTocIdx] = useState<number | null>(null)
@@ -7607,7 +9608,10 @@ function SOWDraftTab({
   const [addReviewerIdx, setAddReviewerIdx] = useState<number | null>(null)
   const [reviewerSearch, setReviewerSearch] = useState('')
   const [approvalComment, setApprovalComment] = useState('')
-  const [sectionDeadlines, setSectionDeadlines] = useState<Record<number, string>>({})
+  const [sectionDeadlines, setSectionDeadlines] = useState<Record<number, string>>(() => ({
+    1: '2026-09-25',
+    3: '2026-09-30',
+  }))
   const [dragTocIdx, setDragTocIdx] = useState<number | null>(null)
   const [dragOverTocIdx, setDragOverTocIdx] = useState<number | null>(null)
 
@@ -7619,6 +9623,7 @@ function SOWDraftTab({
     anchorText: string
     text: string
     assignee: string
+    taggedEmails?: string[]
     author: string
     timestamp: string
     resolved: boolean
@@ -7630,8 +9635,6 @@ function SOWDraftTab({
     text: string
     sectionTitle: string
   } | null>(null)
-  // Debounced hide so the mouse can travel from the paragraph to the comment
-  // pill (which sits outside the paragraph's own box) without losing hover.
   const hoverHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cancelHoverHide = () => {
     if (hoverHideTimer.current) {
@@ -7650,8 +9653,134 @@ function SOWDraftTab({
   } | null>(null)
   const [newCommentText, setNewCommentText] = useState('')
   const [newCommentAssignee, setNewCommentAssignee] = useState('')
+  const [newCommentTaggedEmails, setNewCommentTaggedEmails] = useState<string[]>([])
+  const [emailInput, setEmailInput] = useState('')
+  const [emailInputError, setEmailInputError] = useState(false)
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [editingCommentText, setEditingCommentText] = useState('')
+  const [editingCommentEmails, setEditingCommentEmails] = useState<string[]>([])
+  const [editEmailInput, setEditEmailInput] = useState('')
+  const [editEmailError, setEditEmailError] = useState(false)
   const [showCommentsPanel, setShowCommentsPanel] = useState(true)
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
+
+  const handleDocCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement
+    const citationEl = target.closest('.sow-draft-citation-btn, .sow-inline-citation') as HTMLElement | null
+    if (citationEl) {
+      e.preventDefault()
+      e.stopPropagation()
+      const fileName = citationEl.getAttribute('data-doc') || 'Scope_Requirements_RFP.pdf'
+      const page = parseInt(citationEl.getAttribute('data-page') || '1', 10)
+      const section = citationEl.getAttribute('data-section') || 'Section'
+      setDraftCitationTarget({
+        fileName,
+        page,
+        section,
+        snippet: `Validated RFP citation extracted for "${section}" from ${fileName} (Page ${page}).`
+      })
+      return
+    }
+
+    const traceEl = target.closest('.sow-draft-trace-btn') as HTMLElement | null
+    if (traceEl) {
+      e.preventDefault()
+      e.stopPropagation()
+      const sectionTitle = traceEl.getAttribute('data-section') || 'Section'
+      const sectionIdx = parseInt(traceEl.getAttribute('data-secidx') || '0', 10)
+      setDraftTraceTarget({ sectionTitle, sectionIdx })
+      return
+    }
+  }
+
+  // Version History state
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [draftVersions, setDraftVersions] = useState([
+    {
+      id: 'v1.2',
+      name: 'v1.2',
+      isCurrent: true,
+      timestamp: 'Today, 18:20',
+      author: 'Ashika Jain (PMO)',
+      summary: 'Updated Phase 1 timeline, deliverable descriptions & SLA terms',
+      changesCount: 6,
+    },
+    {
+      id: 'v1.1',
+      name: 'v1.1',
+      isCurrent: false,
+      timestamp: 'Today, 14:45',
+      author: 'Ishita (Reviewer)',
+      summary: 'Added compliance feedback and security attachment references',
+      changesCount: 12,
+    },
+    {
+      id: 'v1.0',
+      name: 'v1.0',
+      isCurrent: false,
+      timestamp: 'Yesterday, 17:30',
+      author: 'Narendra (Contributor)',
+      summary: 'Completed section 3 input responses for deliverables and scope',
+      changesCount: 18,
+    },
+    {
+      id: 'v0.9',
+      name: 'v0.9',
+      isCurrent: false,
+      timestamp: '2 days ago, 11:00',
+      author: 'Intake AI Agent',
+      summary: 'Automated initial draft generated from uploaded RFP and MSA docs',
+      changesCount: 45,
+    },
+  ])
+
+  // Export menu
+  const [showExportMenu, setShowExportMenu] = useState(false)
+
+  // PMO Approval state
+  const [isPMOApproved, setIsPMOApproved] = useState(false)
+  const [showApproveConfirmModal, setShowApproveConfirmModal] = useState(false)
+
+  // Send for approval popup (Reviewer / Contributor / Client)
+  const [showSendForApprovalPopup, setShowSendForApprovalPopup] = useState(false)
+
+  // AI Review modal state (PMO & Reviewer)
+  const [showAIReviewModal, setShowAIReviewModal] = useState(false)
+  const [hasRunAICheck, setHasRunAICheck] = useState(false)
+
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+
+  const handleAddEmail = (email: string, isEdit = false) => {
+    const trimmed = email.trim()
+    if (!trimmed) return
+    if (!isValidEmail(trimmed)) {
+      if (isEdit) setEditEmailError(true)
+      else setEmailInputError(true)
+      return
+    }
+    if (isEdit) {
+      if (!editingCommentEmails.includes(trimmed)) {
+        setEditingCommentEmails([...editingCommentEmails, trimmed])
+      }
+      setEditEmailInput('')
+      setEditEmailError(false)
+    } else {
+      if (!newCommentTaggedEmails.includes(trimmed)) {
+        setNewCommentTaggedEmails([...newCommentTaggedEmails, trimmed])
+      }
+      setEmailInput('')
+      setEmailInputError(false)
+    }
+  }
+
+  const handleRemoveEmail = (emailToRemove: string, isEdit = false) => {
+    if (isEdit) {
+      setEditingCommentEmails(editingCommentEmails.filter((e) => e !== emailToRemove))
+    } else {
+      setNewCommentTaggedEmails(newCommentTaggedEmails.filter((e) => e !== emailToRemove))
+    }
+  }
+
   const [comments, setComments] = useState<DocComment[]>([
     {
       id: 'c1',
@@ -7659,6 +9788,7 @@ function SOWDraftTab({
       anchorText: 'The client currently operates a fragmented technology landscape',
       text: 'Can we cite the specific legacy systems named in the RFP here instead of speaking generally?',
       assignee: 'Rohan Mehta',
+      taggedEmails: ['rohan.mehta@acme.corp'],
       author: 'Ashika Jain',
       timestamp: '2 hours ago',
       resolved: false,
@@ -7677,6 +9807,7 @@ function SOWDraftTab({
       anchorText: 'This is auto-generated content for the section',
       text: 'This placeholder line needs to be replaced before we send this out — flagging for final pass.',
       assignee: 'Priya Sharma',
+      taggedEmails: ['priya.sharma@acme.corp'],
       author: 'Ashika Jain',
       timestamp: 'Yesterday',
       resolved: true,
@@ -7695,6 +9826,7 @@ function SOWDraftTab({
         anchorText: commentPopup.anchorText,
         text: newCommentText.trim(),
         assignee: isContributor || isReviewer ? 'Ashika Jain (PMO)' : (newCommentAssignee || 'Unassigned'),
+        taggedEmails: newCommentTaggedEmails,
         author: isReviewer ? 'Ishita (Reviewer)' : isContributor ? 'Narendra (Contributor)' : 'Ashika Jain',
         timestamp: 'Just now',
         resolved: false,
@@ -7705,6 +9837,42 @@ function SOWDraftTab({
     setHoverBlock(null)
     setNewCommentText('')
     setNewCommentAssignee('')
+    setNewCommentTaggedEmails([])
+    setEmailInput('')
+    setEmailInputError(false)
+    showToast('Comment added successfully.', 'success')
+  }
+
+  const startEditComment = (c: DocComment) => {
+    setEditingCommentId(c.id)
+    setEditingCommentText(c.text)
+    setEditingCommentEmails(c.taggedEmails || [])
+    setEditEmailInput('')
+    setEditEmailError(false)
+  }
+
+  const saveEditComment = (commentId: string) => {
+    if (!editingCommentText.trim()) return
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              text: editingCommentText.trim(),
+              taggedEmails: editingCommentEmails,
+            }
+          : c
+      )
+    )
+    setEditingCommentId(null)
+    setEditingCommentText('')
+    setEditingCommentEmails([])
+    showToast('Comment updated successfully.', 'success')
+  }
+
+  const deleteComment = (commentId: string) => {
+    setComments((prev) => prev.filter((c) => c.id !== commentId))
+    showToast('Comment deleted.', 'info')
   }
 
   const addReply = (commentId: string) => {
@@ -7874,231 +10042,273 @@ function SOWDraftTab({
     },
   ])
 
-  // ── Generate document HTML ──────────────────────────────────────────────────
+  // ── Generate document HTML with Provenance & Citations ─────────────────────
   const generateHtml = (items: TocItem[]) =>
     items
       .map((item, idx) => {
+        const pageNum = (idx % 4) + 1
+        const citationTag = `<span class="sow-inline-citation" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;margin-left:5px;padding:2px 7px;font-size:11px;font-weight:600;color:#0284c7;background:#e0f2fe;border:1px solid #bae6fd;border-radius:4px;cursor:pointer;vertical-align:baseline;transition:all 0.15s ease;" title="Click to preview citation in ${item.fileName} page ${pageNum}">📄 [RFP Citation p.${pageNum}]</span>`
         let body = ''
         switch (item.title) {
           case 'Project Introduction':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated detailed content for the <strong>Project Introduction</strong> section based on the extracted requirements from your RFP document. Our AI analysis indicates that this section requires further manual review to align perfectly with your internal compliance standards. Please review and modify as needed to ensure it meets your exact specifications.</p>
-          <p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed engagement covers a comprehensive digital transformation initiative designed to modernize existing technology infrastructure, improve operational efficiency, and create a scalable foundation for future business growth. The delivery team will collaborate closely with all relevant stakeholders to validate requirements and confirm assumptions throughout the engagement lifecycle.</p>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated detailed content for the <strong>Project Introduction</strong> section based on the extracted requirements from your RFP document. ${citationTag} Our AI analysis indicates that this section aligns with industry standards. Please review and modify as needed to ensure it meets your exact specifications.</p>
+          <p class="provenance-block provenance-question" style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed engagement covers a comprehensive digital transformation initiative designed to modernize existing technology infrastructure, improve operational efficiency, and create a scalable foundation for future business growth. The delivery team will collaborate closely with all relevant stakeholders to validate requirements and confirm assumptions throughout the engagement lifecycle.</p>`
             break
           case 'Project Scope':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The scope of work is explicitly bounded to the backend infrastructure migration, API Gateway deployment, and database modernization. Clear demarcation of boundaries ensures that the project delivery remains strictly on schedule and within the agreed budget constraints.</p>
-          <p style="margin-bottom:8px;line-height:1.7;color:#374151;"><strong>In-Scope Activities:</strong></p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li>Migration of 5 core relational databases (MySQL/PostgreSQL) to a fully managed cloud SQL environment featuring automated daily snapshots and point-in-time recovery.</li>
-            <li>Design and implementation of an enterprise-grade API Gateway featuring advanced rate limiting, robust JWT-based authentication, and granular analytics tracking.</li>
-            <li>Containerization of 12 legacy backend services into optimized, scalable Docker images.</li>
-            <li>Deployment of a comprehensive observability stack (monitoring, logging, and alerting) using industry-standard tools like Prometheus, Grafana, and ELK.</li>
-          </ul>
-          <p style="margin-bottom:8px;line-height:1.7;color:#374151;"><strong>Out of Scope:</strong></p>
-          <ul style="margin-bottom:12px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li>Frontend application redesign or UI/UX modifications.</li>
-            <li>Native mobile application development.</li>
-            <li>Integration with third-party legacy ERP/CRM systems not listed in the initial RFP.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The scope of work is explicitly bounded to the backend infrastructure migration, API Gateway deployment, and database modernization. ${citationTag} Clear demarcation of boundaries ensures that the project delivery remains strictly on schedule and within the agreed budget constraints.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <p style="margin-bottom:8px;line-height:1.7;color:#374151;"><strong>In-Scope Activities:</strong></p>
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li>Migration of 5 core relational databases (MySQL/PostgreSQL) to a fully managed cloud SQL environment featuring automated daily snapshots and point-in-time recovery.</li>
+              <li>Design and implementation of an enterprise-grade API Gateway featuring advanced rate limiting, robust JWT-based authentication, and granular analytics tracking.</li>
+              <li>Containerization of 12 legacy backend services into optimized, scalable Docker images.</li>
+              <li>Deployment of a comprehensive observability stack (monitoring, logging, and alerting) using industry-standard tools like Prometheus, Grafana, and ELK.</li>
+            </ul>
+          </div>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:12px;">
+            <p style="margin-bottom:8px;line-height:1.7;color:#374151;"><strong>Out of Scope (Confirmed during review):</strong></p>
+            <ul style="margin-bottom:12px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li>Frontend application redesign or UI/UX modifications.</li>
+              <li>Native mobile application development.</li>
+              <li>Integration with third-party legacy ERP/CRM systems not listed in the initial RFP.</li>
+            </ul>
+          </div>`
             break
           case 'Business Requirements':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following business requirements have been extracted and validated from the submitted RFP documentation. These requirements form the foundation of the proposed solution architecture and delivery approach.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
-            <li><strong>High Availability:</strong> Achieve 99.99% uptime SLA by implementing cross-region failover and automated disaster recovery.</li>
-            <li><strong>Security Posture:</strong> Achieve SOC2 and ISO 27001 compliance for the new infrastructure layer.</li>
-            <li><strong>Developer Velocity:</strong> Establish zero-touch CI/CD pipelines for continuous integration and seamless deployments.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The following business requirements have been extracted and validated from the submitted RFP documentation. ${citationTag} These requirements form the foundation of the proposed solution architecture and delivery approach.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
+              <li><strong>High Availability:</strong> Achieve 99.99% uptime SLA by implementing cross-region failover and automated disaster recovery.</li>
+              <li><strong>Security Posture:</strong> Achieve SOC2 and ISO 27001 compliance for the new infrastructure layer.</li>
+              <li><strong>Developer Velocity:</strong> Establish zero-touch CI/CD pipelines for continuous integration and seamless deployments.</li>
+            </ul>
+          </div>`
             break
           case 'Solution Approach':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Edge &amp; Ingress Layer:</strong> A highly available Cloud Load Balancer integrated with a Web Application Firewall (WAF) to defend against DDoS attacks.</li>
-            <li><strong>Compute Layer:</strong> Auto-scaling Kubernetes clusters spanning multiple availability zones.</li>
-            <li><strong>Data &amp; Caching Layer:</strong> Managed PostgreSQL database cluster with read-replicas and a distributed Redis caching layer.</li>
-            <li><strong>Event Streaming:</strong> Apache Kafka for asynchronous communication between microservices.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. ${citationTag} This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Edge &amp; Ingress Layer:</strong> A highly available Cloud Load Balancer integrated with a Web Application Firewall (WAF) to defend against DDoS attacks.</li>
+              <li><strong>Compute Layer:</strong> Auto-scaling Kubernetes clusters spanning multiple availability zones.</li>
+              <li><strong>Data &amp; Caching Layer:</strong> Managed PostgreSQL database cluster with read-replicas and a distributed Redis caching layer.</li>
+              <li><strong>Event Streaming:</strong> Apache Kafka for asynchronous communication between microservices.</li>
+            </ul>
+          </div>`
             break
           case 'Deliverables':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The engagement will yield a series of concrete, verifiable deliverables across the project lifecycle. Acceptance of these deliverables will trigger subsequent project phases and associated commercial milestones.</p>
-          <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
-            <thead><tr style="background:rgba(0,196,196,0.07);">
-              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Deliverable</th>
-              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Description</th>
-            </tr></thead>
-            <tbody>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Architecture Design Document [Week 2]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Comprehensive blueprint detailing network topology, component interactions, and security protocols.</td></tr>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Infrastructure as Code Scripts [Week 4]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Fully parameterized Terraform and Ansible scripts for automated cloud provisioning.</td></tr>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Containerized Services [Week 8]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">12 migrated backend services packaged as Docker containers, deployed in QA environment.</td></tr>
-              <tr><td style="padding:12px;"><strong>Final Handover Package [Week 12]</strong></td><td style="padding:12px;">Complete runbooks, operational manuals, disaster recovery procedures, and formal sign-off document.</td></tr>
-            </tbody>
-          </table>`
+            body = `<p class="provenance-block provenance-question" style="margin-bottom:12px;line-height:1.7;color:#374151;">The engagement will yield a series of concrete, verifiable deliverables across the project lifecycle. Acceptance of these deliverables will trigger subsequent project phases and associated commercial milestones.</p>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:16px;">
+            <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
+              <thead><tr style="background:rgba(0,196,196,0.07);">
+                <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Deliverable</th>
+                <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Description</th>
+              </tr></thead>
+              <tbody>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Architecture Design Document [Week 2]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Comprehensive blueprint detailing network topology, component interactions, and security protocols.</td></tr>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Infrastructure as Code Scripts [Week 4]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Fully parameterized Terraform and Ansible scripts for automated cloud provisioning.</td></tr>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Containerized Services [Week 8]</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">12 migrated backend services packaged as Docker containers, deployed in QA environment.</td></tr>
+                <tr><td style="padding:12px;"><strong>Final Handover Package [Week 12]</strong></td><td style="padding:12px;">Complete runbooks, operational manuals, disaster recovery procedures, and formal sign-off document.</td></tr>
+              </tbody>
+            </table>
+          </div>`
             break
           case 'Roles & Responsibilities':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following table outlines the roles and responsibilities of both the delivery team and the client organization throughout the project lifecycle.</p>
-          <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
-            <thead><tr style="background:rgba(0,196,196,0.07);">
-              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Role</th>
-              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Responsibilities</th>
-            </tr></thead>
-            <tbody>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Project Manager</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Overall project coordination, stakeholder communication, risk management, and milestone tracking.</td></tr>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Solution Architect</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Technical design, architecture decisions, and quality assurance of all technical deliverables.</td></tr>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Client PMO</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Approvals, resource allocation, stakeholder alignment, and UAT sign-off.</td></tr>
-            </tbody>
-          </table>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The following table outlines the roles and responsibilities of both the delivery team and the client organization throughout the project lifecycle. ${citationTag}</p>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:16px;">
+            <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
+              <thead><tr style="background:rgba(0,196,196,0.07);">
+                <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Role</th>
+                <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Responsibilities</th>
+              </tr></thead>
+              <tbody>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Project Manager</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Overall project coordination, stakeholder communication, risk management, and milestone tracking.</td></tr>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Solution Architect</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Technical design, architecture decisions, and quality assurance of all technical deliverables.</td></tr>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);"><strong>Client PMO</strong></td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Approvals, resource allocation, stakeholder alignment, and UAT sign-off.</td></tr>
+              </tbody>
+            </table>
+          </div>`
             break
           case 'Commercial Terms':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this project is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. This covers all engineering, project management, and specialized architectural consulting hours required over the 12-week period.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Milestone 1 (20% - $29,000):</strong> Project kickoff and formal SOW signing.</li>
-            <li><strong>Milestone 2 (30% - $43,500):</strong> Delivery and approval of the Architecture Design Document.</li>
-            <li><strong>Milestone 3 (30% - $43,500):</strong> Successful completion of User Acceptance Testing.</li>
-            <li><strong>Milestone 4 (20% - $29,000):</strong> Final go-live and knowledge transfer completion.</li>
-          </ul>`
+          case 'Commercials':
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this project is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. ${citationTag} This covers all engineering, project management, and specialized architectural consulting hours required over the 12-week period.</p>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Milestone 1 (20% - $29,000):</strong> Project kickoff and formal SOW signing.</li>
+              <li><strong>Milestone 2 (30% - $43,500):</strong> Delivery and approval of the Architecture Design Document.</li>
+              <li><strong>Milestone 3 (30% - $43,500):</strong> Successful completion of User Acceptance Testing.</li>
+              <li><strong>Milestone 4 (20% - $29,000):</strong> Final go-live and knowledge transfer completion.</li>
+            </ul>
+          </div>`
             break
           case 'Risks & Mitigations':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, several assumptions have been made. Deviation from these assumptions may result in changes to the project timeline or budget, subject to the formal Change Request process.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Assumption 1:</strong> Client SMEs will be available for a minimum of 4 hours per week to clarify business logic and validate migration strategies.</li>
-            <li><strong>Assumption 2:</strong> The existing legacy source code is fully accessible and accurately documented.</li>
-            <li><strong>Risk:</strong> Delays in UAT sign-off by client stakeholders may push the final go-live date. <strong>Mitigation:</strong> Weekly status reports and early, frequent testing cycles will be employed to ensure alignment.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-question" style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, several assumptions have been made. Deviation from these assumptions may result in changes to the project timeline or budget, subject to the formal Change Request process.</p>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Assumption 1:</strong> Client SMEs will be available for a minimum of 4 hours per week to clarify business logic and validate migration strategies.</li>
+              <li><strong>Assumption 2:</strong> The existing legacy source code is fully accessible and accurately documented.</li>
+              <li><strong>Risk:</strong> Delays in UAT sign-off by client stakeholders may push the final go-live date. <strong>Mitigation:</strong> Weekly status reports and early, frequent testing cycles will be employed to ensure alignment.</li>
+            </ul>
+          </div>`
             break
           case 'Background':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This Statement of Work has been prepared in response to the Request for Proposal (RFP) issued by the client organization. The engagement is aimed at addressing key technology modernization objectives identified through a series of discovery workshops and stakeholder interviews conducted prior to this submission.</p>
-          <p style="margin-bottom:12px;line-height:1.7;color:#374151;">The client currently operates a fragmented technology landscape with multiple legacy systems that present challenges around scalability, data integrity, and operational efficiency. This engagement proposes a structured, phased approach to address these gaps while minimizing disruption to business-as-usual operations.</p>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This Statement of Work has been prepared in response to the Request for Proposal (RFP) issued by the client organization. ${citationTag} The engagement is aimed at addressing key technology modernization objectives identified through discovery workshops.</p>
+          <p class="provenance-block provenance-question" style="margin-bottom:12px;line-height:1.7;color:#374151;">The client currently operates a fragmented technology landscape with multiple legacy systems that present challenges around scalability, data integrity, and operational efficiency. This engagement proposes a structured, phased approach to address these gaps while minimizing disruption to business-as-usual operations.</p>`
             break
           case 'Objectives':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The primary objectives of this engagement are structured to address the core business challenges identified during the discovery phase. By executing on these objectives, the delivery team aims to deliver measurable improvements in performance, scalability, and cost efficiency.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
-            <li><strong>High Availability &amp; Resilience:</strong> Improve system reliability to achieve a 99.99% uptime SLA by implementing cross-region failover and automated disaster recovery.</li>
-            <li><strong>Application Modernization:</strong> Transition current monolithic application structure into a decoupled microservices architecture.</li>
-            <li><strong>Operational Agility:</strong> Establish zero-touch CI/CD pipelines for continuous integration and seamless zero-downtime deployments.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The primary objectives of this engagement are structured to address the core business challenges identified during the discovery phase. ${citationTag} By executing on these objectives, the delivery team aims to deliver measurable improvements in performance, scalability, and cost efficiency.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
+              <li><strong>High Availability &amp; Resilience:</strong> Improve system reliability to achieve a 99.99% uptime SLA by implementing cross-region failover and automated disaster recovery.</li>
+              <li><strong>Application Modernization:</strong> Transition current monolithic application structure into a decoupled microservices architecture.</li>
+              <li><strong>Operational Agility:</strong> Establish zero-touch CI/CD pipelines for continuous integration and seamless zero-downtime deployments.</li>
+            </ul>
+          </div>`
             break
           case 'Out of Scope':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following items and activities are explicitly excluded from this Statement of Work. Any work falling within these categories will require a formal Change Request and may result in adjustments to cost and timeline.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li>Frontend application redesign, web portal enhancements, or any UI/UX modifications.</li>
-            <li>Native mobile application development or updates for iOS and Android platforms.</li>
-            <li>Integration with third-party legacy ERP/CRM systems not explicitly listed in the initial RFP documentation.</li>
-            <li>Data cleansing or manual data remediation prior to database migration.</li>
-            <li>Ongoing managed services or post-go-live support beyond the defined hypercare period.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The following items and activities are explicitly excluded from this Statement of Work. ${citationTag} Any work falling within these categories will require a formal Change Request.</p>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li>Frontend application redesign, web portal enhancements, or any UI/UX modifications.</li>
+              <li>Native mobile application development or updates for iOS and Android platforms.</li>
+              <li>Integration with third-party legacy ERP/CRM systems not explicitly listed in the initial RFP documentation.</li>
+              <li>Data cleansing or manual data remediation prior to database migration.</li>
+              <li>Ongoing managed services or post-go-live support beyond the defined hypercare period.</li>
+            </ul>
+          </div>`
             break
           case 'Requirements':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The following functional and non-functional requirements have been extracted and validated from the submitted RFP documentation. These requirements form the foundation of the proposed solution architecture.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>FR-01:</strong> The system shall support concurrent access by a minimum of 5,000 active users without performance degradation.</li>
-            <li><strong>FR-02:</strong> All data transmissions must be encrypted using TLS 1.3 or higher.</li>
-            <li><strong>FR-03:</strong> The platform must provide role-based access control (RBAC) with granular permission management.</li>
-            <li><strong>NFR-01:</strong> System response time for standard operations must not exceed 200ms at the 95th percentile.</li>
-            <li><strong>NFR-02:</strong> The solution must be deployable across AWS, GCP, and Azure without vendor lock-in dependencies.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The following functional and non-functional requirements have been extracted and validated from the submitted RFP documentation. ${citationTag} These requirements form the foundation of the proposed solution architecture.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>FR-01:</strong> The system shall support concurrent access by a minimum of 5,000 active users without performance degradation.</li>
+              <li><strong>FR-02:</strong> All data transmissions must be encrypted using TLS 1.3 or higher.</li>
+              <li><strong>FR-03:</strong> The platform must provide role-based access control (RBAC) with granular permission management.</li>
+              <li><strong>NFR-01:</strong> System response time for standard operations must not exceed 200ms at the 95th percentile.</li>
+              <li><strong>NFR-02:</strong> The solution must be deployable across AWS, GCP, and Azure without vendor lock-in dependencies.</li>
+            </ul>
+          </div>`
             break
           case 'Approach & Methodology':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The delivery team will adopt an Agile-first approach, structured around two-week sprint cycles with continuous stakeholder involvement and feedback loops. This methodology ensures transparency, early risk identification, and rapid course correction when required.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Phase 1 — Discovery &amp; Design (Weeks 1–3):</strong> Requirements validation, architecture finalization, and approval of the Architecture Design Document (ADD).</li>
-            <li><strong>Phase 2 — Infrastructure Provisioning (Weeks 4–6):</strong> Cloud environment setup, network configuration, and CI/CD pipeline establishment.</li>
-            <li><strong>Phase 3 — Development &amp; Migration (Weeks 7–10):</strong> Service containerization, database migration, and integration testing.</li>
-            <li><strong>Phase 4 — UAT &amp; Deployment (Weeks 11–14):</strong> User acceptance testing, performance tuning, production deployment, and knowledge transfer.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The delivery team will adopt an Agile-first approach, structured around two-week sprint cycles with continuous stakeholder involvement and feedback loops. ${citationTag} This methodology ensures transparency, early risk identification, and rapid course correction when required.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Phase 1 — Discovery &amp; Design (Weeks 1–3):</strong> Requirements validation, architecture finalization, and approval of the Architecture Design Document (ADD).</li>
+              <li><strong>Phase 2 — Infrastructure Provisioning (Weeks 4–6):</strong> Cloud environment setup, network configuration, and CI/CD pipeline establishment.</li>
+              <li><strong>Phase 3 — Development &amp; Migration (Weeks 7–10):</strong> Service containerization, database migration, and integration testing.</li>
+              <li><strong>Phase 4 — UAT &amp; Deployment (Weeks 11–14):</strong> User acceptance testing, performance tuning, production deployment, and knowledge transfer.</li>
+            </ul>
+          </div>`
             break
           case 'Timeline & Milestones':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The project is estimated to be completed over a period of 14 weeks, divided into four distinct delivery phases. This timeline is contingent upon timely approvals, resource availability from the client, and successful completion of UAT within the defined windows.</p>
-          <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
-            <thead><tr style="background:rgba(0,196,196,0.07);">
-              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Milestone</th>
-              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Target Week</th>
-              <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Deliverable</th>
-            </tr></thead>
-            <tbody>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M1 — Kickoff</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 1</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Project charter signed, team onboarded</td></tr>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M2 — Architecture Sign-off</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 3</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Architecture Design Document approved</td></tr>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M3 — Infrastructure Ready</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 6</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Cloud environments provisioned and validated</td></tr>
-              <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M4 — UAT Complete</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 12</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">All test cases passed, sign-off obtained</td></tr>
-              <tr><td style="padding:12px;">M5 — Go-Live</td><td style="padding:12px;">Week 14</td><td style="padding:12px;">Production deployment and handover complete</td></tr>
-            </tbody>
-          </table>`
-            break
-          case 'Commercials':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The total estimated cost for this engagement is based on a Time &amp; Materials (T&amp;M) model with a capped maximum budget of <strong>$145,000 USD</strong>. This covers all engineering, project management, and specialized architectural consulting hours required over the 14-week delivery period.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Milestone 1 (20% — $29,000):</strong> Project kickoff and formal SOW signing.</li>
-            <li><strong>Milestone 2 (30% — $43,500):</strong> Delivery and approval of the Architecture Design Document.</li>
-            <li><strong>Milestone 3 (30% — $43,500):</strong> Successful completion of User Acceptance Testing.</li>
-            <li><strong>Milestone 4 (20% — $29,000):</strong> Final go-live and knowledge transfer completion.</li>
-          </ul>
-          <p style="margin-bottom:12px;line-height:1.7;color:#374151;"><em>Note: Cloud infrastructure consumption costs are explicitly excluded and will be billed directly to the client's corporate accounts.</em></p>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The project is estimated to be completed over a period of 14 weeks, divided into four distinct delivery phases. ${citationTag}</p>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:16px;">
+            <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid rgba(0,196,196,0.2);font-size:14px;">
+              <thead><tr style="background:rgba(0,196,196,0.07);">
+                <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Milestone</th>
+                <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Target Week</th>
+                <th style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.2);text-align:left;">Deliverable</th>
+              </tr></thead>
+              <tbody>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M1 — Kickoff</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 1</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Project charter signed, team onboarded</td></tr>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M2 — Architecture Sign-off</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 3</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Architecture Design Document approved</td></tr>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M3 — Infrastructure Ready</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 6</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Cloud environments provisioned and validated</td></tr>
+                <tr><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">M4 — UAT Complete</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">Week 12</td><td style="padding:12px;border-bottom:1px solid rgba(0,196,196,0.1);">All test cases passed, sign-off obtained</td></tr>
+                <tr><td style="padding:12px;">M5 — Go-Live</td><td style="padding:12px;">Week 14</td><td style="padding:12px;">Production deployment and handover complete</td></tr>
+              </tbody>
+            </table>
+          </div>`
             break
           case 'Assumptions':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, the following assumptions have been made. Deviation from any of these may result in changes to the project timeline, cost, or scope, subject to the formal Change Request process.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li>Client subject matter experts (SMEs) will be available for a minimum of 4 hours per week.</li>
-            <li>The existing legacy source code is fully accessible and can be compiled without unavailable proprietary dependencies.</li>
-            <li>Access credentials for all necessary environments will be provided within 3 business days of project kickoff.</li>
-            <li>The client will provide timely feedback on deliverables within the agreed review windows of 5 business days.</li>
-            <li>All required third-party software licenses are either already procured or will be made available by the client.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">To accurately scope this engagement, the following assumptions have been made. ${citationTag} Deviation from any of these may result in changes to the project timeline, cost, or scope, subject to the formal Change Request process.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li>Client subject matter experts (SMEs) will be available for a minimum of 4 hours per week.</li>
+              <li>The existing legacy source code is fully accessible and can be compiled without unavailable proprietary dependencies.</li>
+              <li>Access credentials for all necessary environments will be provided within 3 business days of project kickoff.</li>
+              <li>The client will provide timely feedback on deliverables within the agreed review windows of 5 business days.</li>
+              <li>All required third-party software licenses are either already procured or will be made available by the client.</li>
+            </ul>
+          </div>`
             break
           case 'Security':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Security is a first-class concern throughout this engagement. All solution components will be designed, implemented, and tested in accordance with industry-standard security frameworks and the client's internal security policy.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Identity &amp; Access Management:</strong> Role-Based Access Control (RBAC) via Azure AD or Okta integration for Single Sign-On (SSO) across all infrastructure components.</li>
-            <li><strong>Data Encryption:</strong> All data at rest encrypted using AES-256; all data in transit encrypted using TLS 1.3.</li>
-            <li><strong>Vulnerability Management:</strong> Automated security scanning integrated into the CI/CD pipeline using OWASP ZAP and Snyk.</li>
-            <li><strong>Compliance:</strong> Solution architecture designed to meet SOC2 Type II and ISO 27001 certification requirements.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">Security is a first-class concern throughout this engagement. ${citationTag} All solution components will be designed, implemented, and tested in accordance with industry-standard security frameworks.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Identity &amp; Access Management:</strong> Role-Based Access Control (RBAC) via Azure AD or Okta integration for Single Sign-On (SSO) across all infrastructure components.</li>
+              <li><strong>Data Encryption:</strong> All data at rest encrypted using AES-256; all data in transit encrypted using TLS 1.3.</li>
+              <li><strong>Vulnerability Management:</strong> Automated security scanning integrated into the CI/CD pipeline using OWASP ZAP and Snyk.</li>
+              <li><strong>Compliance:</strong> Solution architecture designed to meet SOC2 Type II and ISO 27001 certification requirements.</li>
+            </ul>
+          </div>`
             break
           case 'Architecture':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Edge &amp; Ingress Layer:</strong> Cloud Load Balancer with WAF integration, routing through API Gateway for authentication and rate limiting.</li>
-            <li><strong>Compute Layer:</strong> Auto-scaling Kubernetes clusters across multiple availability zones with dynamic workload distribution.</li>
-            <li><strong>Data Layer:</strong> Managed PostgreSQL with read-replicas and distributed Redis caching for high-throughput read operations.</li>
-            <li><strong>Event Streaming:</strong> Apache Kafka for reliable asynchronous communication between microservices.</li>
-            <li><strong>Observability:</strong> Prometheus + Grafana for metrics, ELK stack for centralized logging, and PagerDuty for alerting.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed solution architecture is designed around a highly decoupled, event-driven microservices pattern hosted on a managed Kubernetes environment. ${citationTag} This design prioritizes fault tolerance, horizontal scalability, and strict security compliance.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Edge &amp; Ingress Layer:</strong> Cloud Load Balancer with WAF integration, routing through API Gateway for authentication and rate limiting.</li>
+              <li><strong>Compute Layer:</strong> Auto-scaling Kubernetes clusters across multiple availability zones with dynamic workload distribution.</li>
+              <li><strong>Data Layer:</strong> Managed PostgreSQL with read-replicas and distributed Redis caching for high-throughput read operations.</li>
+              <li><strong>Event Streaming:</strong> Apache Kafka for reliable asynchronous communication between microservices.</li>
+              <li><strong>Observability:</strong> Prometheus + Grafana for metrics, ELK stack for centralized logging, and PagerDuty for alerting.</li>
+            </ul>
+          </div>`
             break
           case 'Acceptance Criteria':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">The project will be deemed complete and ready for final sign-off when all of the following acceptance criteria have been demonstrably met in the production environment.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li>All backend services are deployed to the Kubernetes cluster and passing automated health checks.</li>
-            <li>The API Gateway is routing traffic correctly, enforcing JWT authentication, and applying configured rate limits.</li>
-            <li>The migrated cloud databases are fully synchronized and automated backup routines have been verified.</li>
-            <li>Performance tests demonstrate the infrastructure handles 200% of current peak load with sub-200ms API response times.</li>
-            <li>The client operations team has formally signed off on handover documentation and runbooks.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-question" style="margin-bottom:12px;line-height:1.7;color:#374151;">The project will be deemed complete and ready for final sign-off when all of the following acceptance criteria have been demonstrably met in the production environment.</p>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li>All backend services are deployed to the Kubernetes cluster and passing automated health checks.</li>
+              <li>The API Gateway is routing traffic correctly, enforcing JWT authentication, and applying configured rate limits.</li>
+              <li>The migrated cloud databases are fully synchronized and automated backup routines have been verified.</li>
+              <li>Performance tests demonstrate the infrastructure handles 200% of current peak load with sub-200ms API response times.</li>
+              <li>The client operations team has formally signed off on handover documentation and runbooks.</li>
+            </ul>
+          </div>`
             break
           case 'Change Management':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Any requests for changes to the agreed scope, timeline, or commercial terms must follow the formal Change Request (CR) process defined below. Unauthorized scope changes will not be accepted and will not form part of the delivery commitment.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Step 1:</strong> Client submits a Change Request Form describing the proposed change, business justification, and urgency.</li>
-            <li><strong>Step 2:</strong> Delivery team assesses impact on scope, timeline, and cost within 5 business days.</li>
-            <li><strong>Step 3:</strong> Impact assessment reviewed and approved by both parties' project sponsors.</li>
-            <li><strong>Step 4:</strong> Approved CR formally incorporated into the amended SOW via a signed addendum.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">Any requests for changes to the agreed scope, timeline, or commercial terms must follow the formal Change Request (CR) process defined below. ${citationTag} Unauthorized scope changes will not be accepted.</p>
+          <div class="provenance-block provenance-reviewed" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Step 1:</strong> Client submits a Change Request Form describing the proposed change, business justification, and urgency.</li>
+              <li><strong>Step 2:</strong> Delivery team assesses impact on scope, timeline, and cost within 5 business days.</li>
+              <li><strong>Step 3:</strong> Impact assessment reviewed and approved by both parties' project sponsors.</li>
+              <li><strong>Step 4:</strong> Approved CR formally incorporated into the amended SOW via a signed addendum.</li>
+            </ul>
+          </div>`
             break
           case 'Support & Handover':
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">Upon successful completion of the project, the delivery team will provide a structured handover to the client's internal operations team. A defined hypercare period will follow go-live to ensure operational stability and knowledge continuity.</p>
-          <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
-            <li><strong>Knowledge Transfer Sessions:</strong> Minimum 3 structured sessions covering infrastructure management, deployment procedures, and incident response.</li>
-            <li><strong>Documentation Handover:</strong> Complete runbooks, architectural diagrams, API documentation, and disaster recovery playbooks.</li>
-            <li><strong>Hypercare Period:</strong> 4 weeks of enhanced support post go-live with priority SLA (P1 — 2hr response, P2 — 8hr response).</li>
-            <li><strong>Transition to BAU Support:</strong> Formal transition to client's BAU support model with clear RACI documented.</li>
-          </ul>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">Upon successful completion of the project, the delivery team will provide a structured handover to the client's internal operations team. ${citationTag} A defined hypercare period will follow go-live to ensure operational stability and knowledge continuity.</p>
+          <div class="provenance-block provenance-question" style="margin-bottom:14px;">
+            <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
+              <li><strong>Knowledge Transfer Sessions:</strong> Minimum 3 structured sessions covering infrastructure management, deployment procedures, and incident response.</li>
+              <li><strong>Documentation Handover:</strong> Complete runbooks, architectural diagrams, API documentation, and disaster recovery playbooks.</li>
+              <li><strong>Hypercare Period:</strong> 4 weeks of enhanced support post go-live with priority SLA (P1 — 2hr response, P2 — 8hr response).</li>
+              <li><strong>Transition to BAU Support:</strong> Formal transition to client's BAU support model with clear RACI documented.</li>
+            </ul>
+          </div>`
             break
           default:
-            body = `<p style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated content for the <strong>${item.title}</strong> section based on extracted requirements from your RFP document. Please review and modify as needed to ensure it meets your exact specifications.</p>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated content for the <strong>${item.title}</strong> section based on extracted requirements from your RFP document. ${citationTag} Please review and modify as needed to ensure it meets your exact specifications.</p>`
         }
         return `<div id="sow-section-${idx}" class="sow-section" style="margin-bottom:0;">
         <h2 style="font-size:22px;font-weight:700;color:#0d212c;margin-bottom:16px;">${item.title}</h2>
         ${body}
-        <div style="margin-top:16px;font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          Source: ${item.fileName}
+        <div style="margin-top:20px;padding-top:12px;border-top:1px dashed #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:12px;color:#64748b;display:inline-flex;align-items:center;gap:5px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Source: ${item.fileName}
+            </span>
+            <button type="button" class="sow-draft-citation-btn" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;background:rgba(2,132,199,0.08);border:1px solid rgba(2,132,199,0.3);color:#0284c7;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">
+              <span>📄</span> Citation (p. ${pageNum})
+            </button>
+          </div>
+          <button type="button" class="sow-draft-trace-btn" data-section="${item.title}" data-secidx="${idx}" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:5px;background:rgba(0,196,196,0.08);border:1px solid rgba(0,196,196,0.25);color:#007a7a;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            View Trace (3 revisions)
+          </button>
         </div>
       </div>`
       })
@@ -8353,17 +10563,37 @@ function SOWDraftTab({
               justifyContent: 'space-between',
             }}
           >
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#94a3b8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}
-            >
-              Sections
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#94a3b8',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                Sections
+              </span>
+              <div
+                title="You can drag and drop sections to reposition them"
+                style={{
+                  width: 15,
+                  height: 15,
+                  borderRadius: '50%',
+                  background: 'rgba(0,196,196,0.14)',
+                  color: '#00a0a0',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'help',
+                }}
+              >
+                i
+              </div>
+            </div>
           </div>
 
           {/* Section list */}
@@ -8413,7 +10643,7 @@ function SOWDraftTab({
                   }}
                   style={{
                     position: 'relative',
-                    marginBottom: 2,
+                    marginBottom: 6,
                     opacity: isDragging ? 0.4 : 1,
                     transition: 'opacity 0.15s',
                   }}
@@ -8438,11 +10668,11 @@ function SOWDraftTab({
                     <div
                       style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}
                     >
-                      {/* Drag handle — PMO only */}
-                      {!isContributor && !isReviewer && (
+                      {/* Drag handle — PMO only, only appears on hover */}
+                      {!isContributor && !isReviewer && hoveredTocIdx === idx && (
                         <svg
                           width="10" height="14" viewBox="0 0 10 14" fill="none"
-                          style={{ flexShrink: 0, opacity: hoveredTocIdx === idx || isActive ? 0.45 : 0.2, cursor: 'grab', transition: 'opacity 0.15s' }}
+                          style={{ flexShrink: 0, opacity: 0.6, cursor: 'grab', transition: 'opacity 0.15s' }}
                         >
                           <circle cx="3" cy="2" r="1.3" fill="#64748b" />
                           <circle cx="7" cy="2" r="1.3" fill="#64748b" />
@@ -8937,31 +11167,162 @@ function SOWDraftTab({
                   <MessageSquare size={13} />
                   Comments ({comments.length})
                 </button>
+                {/* AI Review & Summary for Reviewer */}
+                {isReviewer && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAIReviewModal(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      border: '1.5px solid rgba(0,196,196,0.4)',
+                      background: hasRunAICheck
+                        ? 'rgba(0,196,196,0.1)'
+                        : 'linear-gradient(135deg, rgba(0,196,196,0.15) 0%, rgba(2,132,199,0.15) 100%)',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#007a7a',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.15s ease',
+                    }}
+                    title="AI Document Review & Verdict"
+                  >
+                    <Sparkles size={13} color="#00a0a0" />
+                    {hasRunAICheck ? 'Rerun AI Check' : 'AI Review & Summary'}
+                  </button>
+                )}
+
+                {/* Export SOW button */}
+                <div style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowExportMenu((prev) => !prev)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(0,196,196,0.3)',
+                      background: '#fff',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#007a7a',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    title="Export SOW"
+                  >
+                    <Download size={13} />
+                    Export SOW
+                    <ChevronDown size={12} />
+                  </button>
+                  {showExportMenu && (
+                    <>
+                      <div
+                        style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                        onClick={() => setShowExportMenu(false)}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 4px)',
+                          right: 0,
+                          background: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 8,
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                          padding: 4,
+                          zIndex: 100,
+                          minWidth: 170,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowExportMenu(false)
+                            showToast('Exporting SOW as PDF...', 'info')
+                            setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
+                          }}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '8px 12px',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: 6,
+                            cursor: 'pointer',
+                            fontSize: 12.5,
+                            color: '#0d212c',
+                            textAlign: 'left',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <span>📄</span> Export as PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowExportMenu(false)
+                            showToast('Exporting SOW as Word document (.docx)...', 'info')
+                            setTimeout(() => showToast('SOW exported as DOCX successfully!', 'success'), 1200)
+                          }}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '8px 12px',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: 6,
+                            cursor: 'pointer',
+                            fontSize: 12.5,
+                            color: '#0d212c',
+                            textAlign: 'left',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <span>📝</span> Export as Word (.docx)
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Send for Approval Button */}
                 <button
-                  onClick={() => {
-                    onSendForReview?.()
-                    showToast(isReviewer ? 'Review comments sent to PMO successfully!' : 'Comments sent to PMO for review successfully!', 'success')
-                  }}
+                  type="button"
+                  onClick={() => setShowSendForApprovalPopup(true)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
                     padding: '6px 14px',
                     borderRadius: 8,
-                    border: '1.5px solid rgba(0,196,196,0.5)',
-                    background: 'rgba(0,196,196,0.12)',
+                    border: 'none',
+                    background: '#00C4C4',
                     fontSize: 12,
-                    fontWeight: 600,
-                    color: '#007a7a',
+                    fontWeight: 700,
+                    color: '#ffffff',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                    ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
                   }}
                   onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)'
+                    ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
                   }}
                 >
                   <svg
@@ -8977,7 +11338,7 @@ function SOWDraftTab({
                     <path d="M22 2L11 13" />
                     <path d="M22 2L15 22 11 13 2 9l20-7z" />
                   </svg>
-                  Send for Review
+                  Send for Approval
                 </button>
               </div>
             </div>
@@ -9495,6 +11856,257 @@ function SOWDraftTab({
               <MessageSquare size={13} />
               Comments ({comments.length})
             </button>
+
+            {/* Version History Button */}
+            <button
+              type="button"
+              onClick={() => setShowVersionHistory(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                borderRadius: 6,
+                border: '1px solid rgba(0,196,196,0.3)',
+                background: '#fff',
+                color: '#007a7a',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginRight: 8,
+              }}
+              title="Version History"
+            >
+              <Clock size={13} color="#00a0a0" />
+              Version History
+            </button>
+
+            {/* AI Review & Summary (PMO & Reviewer) */}
+            {!isAdmin && !isContributor && (
+              <button
+                type="button"
+                onClick={() => setShowAIReviewModal(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  border: '1.5px solid rgba(0,196,196,0.4)',
+                  background: hasRunAICheck
+                    ? 'rgba(0,196,196,0.1)'
+                    : 'linear-gradient(135deg, rgba(0,196,196,0.15) 0%, rgba(2,132,199,0.15) 100%)',
+                  color: '#007a7a',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  marginRight: 8,
+                }}
+                title="AI Document Review & Verdict"
+              >
+                <Sparkles size={13} color="#00a0a0" />
+                {hasRunAICheck ? 'Rerun AI Check' : 'AI Review & Summary'}
+              </button>
+            )}
+
+            {/* Export SOW Button */}
+            <div style={{ position: 'relative', marginRight: 8 }}>
+              <button
+                type="button"
+                onClick={() => setShowExportMenu((prev) => !prev)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(0,196,196,0.3)',
+                  background: '#fff',
+                  color: '#007a7a',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                title="Export SOW"
+              >
+                <Download size={13} color="#00a0a0" />
+                Export SOW
+                <ChevronDown size={11} />
+              </button>
+              {showExportMenu && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                    onClick={() => setShowExportMenu(false)}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 4px)',
+                      right: 0,
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      padding: 4,
+                      zIndex: 100,
+                      minWidth: 170,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExportMenu(false)
+                        showToast('Exporting SOW as PDF...', 'info')
+                        setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 12px',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        fontSize: 12.5,
+                        color: '#0d212c',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <span>📄</span> Export as PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExportMenu(false)
+                        showToast('Exporting SOW as Word document (.docx)...', 'info')
+                        setTimeout(() => showToast('SOW exported as DOCX successfully!', 'success'), 1200)
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 12px',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        fontSize: 12.5,
+                        color: '#0d212c',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <span>📝</span> Export as Word (.docx)
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* PMO 2 Buttons: Send for Review & Approve / Withdraw Approval */}
+            {isPMO && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSendForReview?.()
+                    showToast('SOW sent to reviewers and contributors for review successfully!', 'success')
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '5px 12px',
+                    borderRadius: 6,
+                    border: '1.5px solid rgba(0,196,196,0.4)',
+                    background: 'rgba(0,196,196,0.08)',
+                    color: '#007a7a',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    marginRight: 8,
+                    whiteSpace: 'nowrap',
+                  }}
+                  title="Send to reviewers and contributors"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M22 2L11 13" />
+                    <path d="M22 2L15 22 11 13 2 9l20-7z" />
+                  </svg>
+                  Send for Review
+                </button>
+
+                {!isPMOApproved ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowApproveConfirmModal(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 14px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: '#16a34a',
+                      color: '#ffffff',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      marginRight: 8,
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
+                    }}
+                  >
+                    <Check size={13} strokeWidth={3} />
+                    Approve
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPMOApproved(false)
+                      showToast('SOW approval withdrawn. Editing is unlocked.', 'info')
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 14px',
+                      borderRadius: 6,
+                      border: '1.5px solid #f59e0b',
+                      background: 'rgba(245,158,11,0.1)',
+                      color: '#b45309',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      marginRight: 8,
+                      whiteSpace: 'nowrap',
+                    }}
+                    title="Click to withdraw PMO approval"
+                  >
+                    <RotateCcw size={13} />
+                    Withdraw Approval
+                  </button>
+                )}
+              </>
+            )}
+
             {/* Save */}
             <button
               onClick={() => {
@@ -9537,12 +12149,256 @@ function SOWDraftTab({
           </div>
           )}
 
+          {/* Provenance Highlighting Toolbar (AI 42%, Questions 35%, Review 23%) */}
+          <div
+            style={{
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '7px 20px',
+              background: '#f8fafc',
+              borderBottom: '1px solid #e2e8f0',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#64748b',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  marginRight: 4,
+                }}
+              >
+                <Sparkles size={13} color="#00C4C4" />
+                Provenance:
+              </span>
+
+              {/* Button 1: AI generated content */}
+              <button
+                type="button"
+                onClick={() => setActiveHighlight((prev) => (prev === 'ai' ? 'none' : 'ai'))}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.18s ease',
+                  border: activeHighlight === 'ai' ? '1.5px solid #0284c7' : '1px solid #bae6fd',
+                  background:
+                    activeHighlight === 'ai'
+                      ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)'
+                      : '#f0f9ff',
+                  color: activeHighlight === 'ai' ? '#ffffff' : '#0369a1',
+                  boxShadow: activeHighlight === 'ai' ? '0 2px 8px rgba(2,132,199,0.28)' : 'none',
+                }}
+                title="Highlight AI Generated Content"
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: activeHighlight === 'ai' ? '#ffffff' : '#0284c7',
+                    display: 'inline-block',
+                  }}
+                />
+                <span>AI generated content</span>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: 10,
+                    background: activeHighlight === 'ai' ? 'rgba(255,255,255,0.25)' : '#e0f2fe',
+                    color: activeHighlight === 'ai' ? '#ffffff' : '#0284c7',
+                  }}
+                >
+                  42%
+                </span>
+              </button>
+
+              {/* Button 2: Directly from the questions */}
+              <button
+                type="button"
+                onClick={() => setActiveHighlight((prev) => (prev === 'questions' ? 'none' : 'questions'))}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.18s ease',
+                  border: activeHighlight === 'questions' ? '1.5px solid #6366f1' : '1px solid #c7d2fe',
+                  background:
+                    activeHighlight === 'questions'
+                      ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+                      : '#eef2ff',
+                  color: activeHighlight === 'questions' ? '#ffffff' : '#4338ca',
+                  boxShadow: activeHighlight === 'questions' ? '0 2px 8px rgba(99,102,241,0.28)' : 'none',
+                }}
+                title="Highlight content directly derived from questions and assumptions"
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: activeHighlight === 'questions' ? '#ffffff' : '#6366f1',
+                    display: 'inline-block',
+                  }}
+                />
+                <span>Directly from the questions</span>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: 10,
+                    background: activeHighlight === 'questions' ? 'rgba(255,255,255,0.25)' : '#e0e7ff',
+                    color: activeHighlight === 'questions' ? '#ffffff' : '#4338ca',
+                  }}
+                >
+                  35%
+                </span>
+              </button>
+
+              {/* Button 3: Content getting edited during the review */}
+              <button
+                type="button"
+                onClick={() => setActiveHighlight((prev) => (prev === 'reviewed' ? 'none' : 'reviewed'))}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.18s ease',
+                  border: activeHighlight === 'reviewed' ? '1.5px solid #d97706' : '1px solid #fde68a',
+                  background:
+                    activeHighlight === 'reviewed'
+                      ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)'
+                      : '#fffbeb',
+                  color: activeHighlight === 'reviewed' ? '#ffffff' : '#b45309',
+                  boxShadow: activeHighlight === 'reviewed' ? '0 2px 8px rgba(217,119,6,0.28)' : 'none',
+                }}
+                title="Highlight content edited during review cycles"
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: activeHighlight === 'reviewed' ? '#ffffff' : '#d97706',
+                    display: 'inline-block',
+                  }}
+                />
+                <span>Content getting edited during the review</span>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: 10,
+                    background: activeHighlight === 'reviewed' ? 'rgba(255,255,255,0.25)' : '#fef3c7',
+                    color: activeHighlight === 'reviewed' ? '#ffffff' : '#b45309',
+                  }}
+                >
+                  23%
+                </span>
+              </button>
+
+              {/* Clear highlight button */}
+              {activeHighlight !== 'none' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveHighlight('none')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '3px 8px',
+                    borderRadius: 16,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    color: '#64748b',
+                  }}
+                  title="Clear highlight"
+                >
+                  <X size={12} />
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {activeHighlight !== 'none' && (
+              <div
+                style={{
+                  fontSize: 11.5,
+                  color:
+                    activeHighlight === 'ai'
+                      ? '#0369a1'
+                      : activeHighlight === 'questions'
+                      ? '#4338ca'
+                      : '#b45309',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontWeight: 600,
+                }}
+              >
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background:
+                      activeHighlight === 'ai'
+                        ? '#0284c7'
+                        : activeHighlight === 'questions'
+                        ? '#6366f1'
+                        : '#d97706',
+                  }}
+                />
+                Highlighting{' '}
+                {activeHighlight === 'ai'
+                  ? 'AI generated content (42%)'
+                  : activeHighlight === 'questions'
+                  ? 'direct question & assumption sources (35%)'
+                  : 'content edited during review (23%)'}{' '}
+                — all document text remains visible
+              </div>
+            )}
+          </div>
+
           {/* Scroll area & Comments Panel Container (Below Header / Toolbar) */}
           <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
             {/* Scroll area */}
             <div
               ref={scrollAreaRef}
               id="sow-editor-scroll-area"
+              className={`sow-editor-scroll-area highlight-mode-${activeHighlight}`}
               style={{
                 flex: 1,
                 overflowY: 'auto',
@@ -9551,9 +12407,80 @@ function SOWDraftTab({
                 position: 'relative',
               }}
             >
+              <style>{`
+                .sow-draft-citation-btn:hover {
+                  background: #e0f2fe !important;
+                  border-color: #0284c7 !important;
+                }
+                .sow-draft-trace-btn:hover {
+                  background: #f1f5f9 !important;
+                  border-color: #94a3b8 !important;
+                }
+                .sow-inline-citation:hover {
+                  background: #0284c7 !important;
+                  color: #ffffff !important;
+                }
+                /* Provenance Highlight Mode: AI (42%) */
+                .highlight-mode-ai .provenance-ai {
+                  background: rgba(2, 132, 199, 0.08) !important;
+                  border-left: 4px solid #0284c7 !important;
+                  padding-left: 14px !important;
+                  border-radius: 0 6px 6px 0 !important;
+                  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.12) !important;
+                  transition: all 0.2s ease !important;
+                }
+                .highlight-mode-ai .provenance-ai::before {
+                  content: '⚡ AI Generated Content (42%)';
+                  display: block;
+                  font-size: 10px;
+                  font-weight: 700;
+                  color: #0284c7;
+                  letter-spacing: 0.04em;
+                  margin-bottom: 5px;
+                }
+
+                /* Provenance Highlight Mode: Questions (35%) */
+                .highlight-mode-questions .provenance-question {
+                  background: rgba(99, 102, 241, 0.08) !important;
+                  border-left: 4px solid #6366f1 !important;
+                  padding-left: 14px !important;
+                  border-radius: 0 6px 6px 0 !important;
+                  box-shadow: 0 1px 4px rgba(99, 102, 241, 0.12) !important;
+                  transition: all 0.2s ease !important;
+                }
+                .highlight-mode-questions .provenance-question::before {
+                  content: '📋 Directly From Questions & Assumptions (35%)';
+                  display: block;
+                  font-size: 10px;
+                  font-weight: 700;
+                  color: #6366f1;
+                  letter-spacing: 0.04em;
+                  margin-bottom: 5px;
+                }
+
+                /* Provenance Highlight Mode: Reviewed (23%) */
+                .highlight-mode-reviewed .provenance-reviewed {
+                  background: rgba(217, 119, 6, 0.09) !important;
+                  border-left: 4px solid #d97706 !important;
+                  padding-left: 14px !important;
+                  border-radius: 0 6px 6px 0 !important;
+                  box-shadow: 0 1px 4px rgba(217, 119, 6, 0.12) !important;
+                  transition: all 0.2s ease !important;
+                }
+                .highlight-mode-reviewed .provenance-reviewed::before {
+                  content: '✍ Content Edited During Review (23%)';
+                  display: block;
+                  font-size: 10px;
+                  font-weight: 700;
+                  color: #d97706;
+                  letter-spacing: 0.04em;
+                  margin-bottom: 5px;
+                }
+              `}</style>
             {/* Document card */}
             <div
               ref={docCardRef}
+              onClick={handleDocCardClick}
               onMouseMove={(e) => {
                 if (commentPopup) return
                 // Hovering the comment pill itself — keep the current block, just cancel the hide.
@@ -9721,6 +12648,97 @@ function SOWDraftTab({
                       marginBottom: 8,
                     }}
                   />
+                  {/* Tag people using valid email ID */}
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 4 }}>
+                      Tag people (@email)
+                    </div>
+                    {newCommentTaggedEmails.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+                        {newCommentTaggedEmails.map((email) => (
+                          <span
+                            key={email}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              background: 'rgba(0,196,196,0.12)',
+                              color: '#007a7a',
+                              borderRadius: 4,
+                              padding: '2px 6px',
+                              fontSize: 11,
+                              fontWeight: 600,
+                            }}
+                          >
+                            @{email}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveEmail(email, false)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                padding: 0,
+                                cursor: 'pointer',
+                                color: '#007a7a',
+                                fontSize: 12,
+                                lineHeight: 1,
+                              }}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <input
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => {
+                          setEmailInput(e.target.value)
+                          setEmailInputError(false)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAddEmail(emailInput, false)
+                          }
+                        }}
+                        placeholder="colleague@domain.com"
+                        style={{
+                          flex: 1,
+                          padding: '5px 8px',
+                          fontSize: 11.5,
+                          borderRadius: 6,
+                          border: emailInputError ? '1px solid #ef4444' : '1px solid rgba(0,196,196,0.3)',
+                          outline: 'none',
+                          color: '#0d212c',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddEmail(emailInput, false)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          borderRadius: 6,
+                          background: 'rgba(0,196,196,0.15)',
+                          color: '#007a7a',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        + Tag
+                      </button>
+                    </div>
+                    {emailInputError && (
+                      <div style={{ fontSize: 10, color: '#ef4444', marginTop: 3 }}>
+                        Please enter a valid email address (e.g. name@domain.com)
+                      </div>
+                    )}
+                  </div>
+
                   {!isContributor && !isReviewer && (
                     <select
                       value={newCommentAssignee}
@@ -9752,6 +12770,9 @@ function SOWDraftTab({
                         setCommentPopup(null)
                         setNewCommentText('')
                         setNewCommentAssignee('')
+                        setNewCommentTaggedEmails([])
+                        setEmailInput('')
+                        setEmailInputError(false)
                       }}
                       style={{
                         padding: '6px 12px',
@@ -9793,7 +12814,7 @@ function SOWDraftTab({
           {showCommentsPanel && (
           <div
             style={{
-              width: 320,
+              width: 330,
               flexShrink: 0,
               borderLeft: '1px solid rgba(0,196,196,0.15)',
               display: 'flex',
@@ -9843,121 +12864,333 @@ function SOWDraftTab({
                   icon to add one.
                 </div>
               ) : (
-                comments.map((c) => (
-                  <div
-                    key={c.id}
-                    style={{
-                      background: '#fff',
-                      border: '1px solid rgba(0,196,196,0.18)',
-                      borderRadius: 10,
-                      padding: 12,
-                      marginBottom: 10,
-                      opacity: c.resolved ? 0.6 : 1,
-                    }}
-                  >
+                comments.map((c) => {
+                  const canResolve = (isPMO || isReviewer) && ((c.taggedEmails && c.taggedEmails.length > 0) || (c.assignee && c.assignee !== 'Unassigned'))
+                  const isEditing = editingCommentId === c.id
+
+                  return (
                     <div
+                      key={c.id}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: 6,
+                        background: '#fff',
+                        border: '1px solid rgba(0,196,196,0.18)',
+                        borderRadius: 10,
+                        padding: 12,
+                        marginBottom: 10,
+                        opacity: c.resolved ? 0.6 : 1,
                       }}
                     >
-                      <span
+                      <div
                         style={{
-                          fontSize: 10.5,
-                          fontWeight: 700,
-                          color: '#00a0a0',
-                          background: 'rgba(0,196,196,0.1)',
-                          padding: '2px 7px',
-                          borderRadius: 5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: 6,
+                          gap: 6,
                         }}
                       >
-                        {c.sectionTitle}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleResolved(c.id)}
-                        style={{
-                          fontSize: 10.5,
-                          fontWeight: 600,
-                          color: c.resolved ? '#16a34a' : '#94a3b8',
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {c.resolved ? '✓ Resolved' : 'Resolve'}
-                      </button>
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: '#94a3b8',
-                        fontStyle: 'italic',
-                        marginBottom: 8,
-                        paddingLeft: 8,
-                        borderLeft: '2px solid rgba(0,196,196,0.3)',
-                      }}
-                    >
-                      &ldquo;{c.anchorText}&hellip;&rdquo;
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                      <MemberAvatar memberId={memberIdByName(c.author)} size={22} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c' }}>
-                            {c.author}
-                          </span>
-                          <span style={{ fontSize: 10.5, color: '#94a3b8' }}>{c.timestamp}</span>
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 12.5,
-                            color: '#374151',
-                            lineHeight: 1.5,
-                            marginTop: 2,
-                          }}
-                        >
-                          {c.text}
-                        </div>
-                        <div
+                        <span
                           style={{
                             fontSize: 10.5,
+                            fontWeight: 700,
                             color: '#00a0a0',
-                            marginTop: 4,
-                            fontWeight: 600,
+                            background: 'rgba(0,196,196,0.1)',
+                            padding: '2px 7px',
+                            borderRadius: 5,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: 140,
                           }}
                         >
-                          → {c.assignee}
+                          {c.sectionTitle}
+                        </span>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {/* Resolve toggle for PMO & Reviewers when someone is tagged/assigned */}
+                          {canResolve && (
+                            <button
+                              type="button"
+                              onClick={() => toggleResolved(c.id)}
+                              title={c.resolved ? "Unresolve comment" : "Resolve comment for tagged member"}
+                              style={{
+                                fontSize: 10.5,
+                                fontWeight: 600,
+                                color: c.resolved ? '#16a34a' : '#00a0a0',
+                                background: c.resolved ? 'rgba(22,163,74,0.1)' : 'rgba(0,196,196,0.08)',
+                                border: 'none',
+                                borderRadius: 4,
+                                padding: '2px 6px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {c.resolved ? '✓ Resolved' : 'Resolve'}
+                            </button>
+                          )}
+
+                          {/* Edit button */}
+                          {!isEditing && (
+                            <button
+                              type="button"
+                              onClick={() => startEditComment(c)}
+                              title="Edit comment"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: '#94a3b8',
+                                padding: 2,
+                                display: 'flex',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.color = '#00a0a0')}
+                              onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                          )}
+
+                          {/* Delete button */}
+                          <button
+                            type="button"
+                            onClick={() => deleteComment(c.id)}
+                            title="Delete comment"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#94a3b8',
+                              padding: 2,
+                              display: 'flex',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
+                          >
+                            <Trash2 size={12} />
+                          </button>
                         </div>
                       </div>
-                    </div>
 
-                    {c.replies.map((r) => (
                       <div
-                        key={r.id}
-                        style={{ display: 'flex', gap: 8, marginLeft: 14, marginBottom: 6 }}
+                        style={{
+                          fontSize: 11,
+                          color: '#94a3b8',
+                          fontStyle: 'italic',
+                          marginBottom: 8,
+                          paddingLeft: 8,
+                          borderLeft: '2px solid rgba(0,196,196,0.3)',
+                        }}
                       >
-                        <MemberAvatar memberId={memberIdByName(r.author)} size={18} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0d212c' }}>
-                              {r.author}
+                        &ldquo;{c.anchorText}&hellip;&rdquo;
+                      </div>
+
+                      {/* Tagged emails badges */}
+                      {c.taggedEmails && c.taggedEmails.length > 0 && !isEditing && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+                          {c.taggedEmails.map((email) => (
+                            <span
+                              key={email}
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: '#007a7a',
+                                background: 'rgba(0,196,196,0.1)',
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                              }}
+                            >
+                              @{email}
                             </span>
-                            <span style={{ fontSize: 10, color: '#94a3b8' }}>{r.timestamp}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Inline Edit Form */}
+                      {isEditing ? (
+                        <div style={{ marginBottom: 8, marginTop: 4 }}>
+                          <textarea
+                            value={editingCommentText}
+                            onChange={(e) => setEditingCommentText(e.target.value)}
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              padding: '6px 8px',
+                              fontSize: 12,
+                              borderRadius: 6,
+                              border: '1px solid #00C4C4',
+                              outline: 'none',
+                              fontFamily: 'inherit',
+                              marginBottom: 6,
+                            }}
+                          />
+                          {/* Edit tagged emails */}
+                          <div style={{ marginBottom: 6 }}>
+                            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#64748b', marginBottom: 3 }}>
+                              Tagged:
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 4 }}>
+                              {editingCommentEmails.map((em) => (
+                                <span
+                                  key={em}
+                                  style={{
+                                    fontSize: 10,
+                                    background: 'rgba(0,196,196,0.12)',
+                                    color: '#007a7a',
+                                    borderRadius: 4,
+                                    padding: '1px 5px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                  }}
+                                >
+                                  @{em}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveEmail(em, true)}
+                                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#007a7a' }}
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <input
+                                type="email"
+                                value={editEmailInput}
+                                onChange={(e) => {
+                                  setEditEmailInput(e.target.value)
+                                  setEditEmailError(false)
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    handleAddEmail(editEmailInput, true)
+                                  }
+                                }}
+                                placeholder="Add email tag…"
+                                style={{
+                                  flex: 1,
+                                  padding: '4px 6px',
+                                  fontSize: 11,
+                                  borderRadius: 4,
+                                  border: editEmailError ? '1px solid #ef4444' : '1px solid #cbd5e1',
+                                  outline: 'none',
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleAddEmail(editEmailInput, true)}
+                                style={{
+                                  padding: '3px 6px',
+                                  fontSize: 10.5,
+                                  fontWeight: 600,
+                                  background: 'rgba(0,196,196,0.15)',
+                                  color: '#007a7a',
+                                  border: 'none',
+                                  borderRadius: 4,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                + Add
+                              </button>
+                            </div>
+                            {editEmailError && (
+                              <div style={{ fontSize: 9.5, color: '#ef4444', marginTop: 2 }}>
+                                Valid email required
+                              </div>
+                            )}
                           </div>
-                          <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.5 }}>
-                            {r.text}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                            <button
+                              type="button"
+                              onClick={() => setEditingCommentId(null)}
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: 4,
+                                border: '1px solid #cbd5e1',
+                                background: 'transparent',
+                                fontSize: 11,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => saveEditComment(c.id)}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 4,
+                                border: 'none',
+                                background: '#00C4C4',
+                                color: '#fff',
+                                fontSize: 11,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Save
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ) : (
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                          <MemberAvatar memberId={memberIdByName(c.author)} size={22} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c' }}>
+                                {c.author}
+                              </span>
+                              <span style={{ fontSize: 10.5, color: '#94a3b8' }}>{c.timestamp}</span>
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 12.5,
+                                color: '#374151',
+                                lineHeight: 1.5,
+                                marginTop: 2,
+                              }}
+                            >
+                              {c.text}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 10.5,
+                                color: '#00a0a0',
+                                marginTop: 4,
+                                fontWeight: 600,
+                              }}
+                            >
+                              → {c.assignee}
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                      <input
-                        type="text"
-                        value={replyDrafts[c.id] ?? ''}
+                      {c.replies.map((r) => (
+                        <div
+                          key={r.id}
+                          style={{ display: 'flex', gap: 8, marginLeft: 14, marginBottom: 6 }}
+                        >
+                          <MemberAvatar memberId={memberIdByName(r.author)} size={18} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0d212c' }}>
+                                {r.author}
+                              </span>
+                              <span style={{ fontSize: 10, color: '#94a3b8' }}>{r.timestamp}</span>
+                            </div>
+                            <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.5 }}>
+                              {r.text}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                        <input
+                          type="text"
+                          value={replyDrafts[c.id] ?? ''}
                         onChange={(e) =>
                           setReplyDrafts((prev) => ({ ...prev, [c.id]: e.target.value }))
                         }
@@ -9996,7 +13229,8 @@ function SOWDraftTab({
                       </button>
                     </div>
                   </div>
-                ))
+                )
+              })
               )}
             </div>
           </div>
@@ -10378,6 +13612,471 @@ function SOWDraftTab({
             </div>
           </div>
         </div>
+      )}
+      {/* ── AI Review Modal (PMO & Reviewer) ── */}
+      {showAIReviewModal && (
+        <AIReviewModal
+          isOpen={showAIReviewModal}
+          onClose={() => setShowAIReviewModal(false)}
+          onAcknowledge={() => {
+            setHasRunAICheck(true)
+            setShowAIReviewModal(false)
+          }}
+          onSendToRework={() => {
+            setHasRunAICheck(true)
+            setShowAIReviewModal(false)
+            showToast('SOW marked for rework based on AI review findings.', 'info')
+          }}
+          hasRunBefore={hasRunAICheck}
+        />
+      )}
+
+      {/* ── Version History Modal ── */}
+      {showVersionHistory && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowVersionHistory(false)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 20,
+              width: 580,
+              maxWidth: '92vw',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '85vh',
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                padding: '20px 24px',
+                borderBottom: '1px solid #f1f5f9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: 'rgba(0,196,196,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Clock size={18} color="#00a0a0" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>Version History</div>
+                  <div style={{ fontSize: 12, color: '#64748b' }}>View past snapshots and restore prior draft versions</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVersionHistory(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  padding: 4,
+                  display: 'flex',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Version List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {draftVersions.map((v) => (
+                <div
+                  key={v.id}
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: 12,
+                    border: v.isCurrent ? '1.5px solid #00C4C4' : '1px solid #e2e8f0',
+                    background: v.isCurrent ? 'rgba(0,196,196,0.04)' : '#ffffff',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                        Version {v.name}
+                      </span>
+                      {v.isCurrent && (
+                        <span
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: '#00a0a0',
+                            background: 'rgba(0,196,196,0.12)',
+                            padding: '2px 8px',
+                            borderRadius: 10,
+                          }}
+                        >
+                          Current Version
+                        </span>
+                      )}
+                      <span style={{ fontSize: 11, color: '#94a3b8' }}>• {v.timestamp}</span>
+                    </div>
+                    {!v.isCurrent && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraftVersions((prev) =>
+                            prev.map((ver) => ({ ...ver, isCurrent: ver.id === v.id }))
+                          )
+                          showToast(`Restored to Version ${v.name}`, 'success')
+                          setShowVersionHistory(false)
+                        }}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 6,
+                          border: '1px solid rgba(0,196,196,0.4)',
+                          background: '#fff',
+                          color: '#007a7a',
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,196,196,0.08)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
+                      >
+                        Restore
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.45 }}>
+                    {v.summary}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 11.5, color: '#64748b' }}>
+                    <span>Author: <strong style={{ color: '#0d212c' }}>{v.author}</strong></span>
+                    <span>• {v.changesCount} tracked changes</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                padding: '12px 24px 18px',
+                borderTop: '1px solid #f1f5f9',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowVersionHistory(false)}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: 8,
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#475569',
+                  cursor: 'pointer',
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PMO Approve Confirmation Modal ── */}
+      {showApproveConfirmModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowApproveConfirmModal(false)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setShowApproveConfirmModal(false)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Icon Circle */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'rgba(22,163,74,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <Check size={28} color="#16a34a" strokeWidth={2.5} />
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Approve SOW?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Are you sure you want to approve? After this no one can edit the document and it will be sent for client review.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setShowApproveConfirmModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setIsPMOApproved(true)
+                  setShowApproveConfirmModal(false)
+                  showToast('SOW approved and sent for client review!', 'success')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#16a34a',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#15803d')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#16a34a')}
+              >
+                Approve SOW
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Send for Approval Confirmation Modal (Reviewer / Contributor / Client) ── */}
+      {showSendForApprovalPopup && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowSendForApprovalPopup(false)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setShowSendForApprovalPopup(false)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Icon Circle */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#00C4C4"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M22 2L11 13" />
+                <path d="M22 2L15 22 11 13 2 9l20-7z" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Send for Approval?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Are you sure you want to send this for approval? After this you will not be able to make any edits.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setShowSendForApprovalPopup(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowSendForApprovalPopup(false)
+                  showToast('SOW sent for approval successfully!', 'success')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#00C4C4',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+              >
+                Send for Approval
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Document Citation Preview Modal ── */}
+      {draftCitationTarget && (
+        <DocumentCitationPreviewModal
+          citation={draftCitationTarget}
+          onClose={() => setDraftCitationTarget(null)}
+        />
+      )}
+
+      {/* ── Draft Section Trace Modal ── */}
+      {draftTraceTarget && (
+        <DraftSectionTraceModal
+          sectionTitle={draftTraceTarget.sectionTitle}
+          sectionIdx={draftTraceTarget.sectionIdx}
+          onClose={() => setDraftTraceTarget(null)}
+          onOpenCitation={(citation) => {
+            setDraftTraceTarget(null)
+            setDraftCitationTarget(citation)
+          }}
+        />
       )}
     </>
   )
@@ -10982,8 +14681,17 @@ export function SOWDetailScreen({
 }: SOWDetailScreenProps) {
   const [activeSOWStatus, setActiveSOWStatus] = useState(sowStatus)
   const isDeactivated = isDeactivatedProp || activeSOWStatus === 'Deactivated' || sowStatus === 'Deactivated'
-  const isContributor = viewerRole === 'contributor'
-  const isReviewer = viewerRole === 'reviewer'
+  const [activeViewerRole, setActiveViewerRole] = useState<'pmo' | 'contributor' | 'reviewer'>(
+    viewerRole === 'contributor' ? 'contributor' : viewerRole === 'reviewer' ? 'reviewer' : 'pmo'
+  )
+  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
+
+  const effectiveViewerRole = viewerRole === 'pmo' ? activeViewerRole : viewerRole
+  const isContributor = effectiveViewerRole === 'contributor'
+  const isReviewer = effectiveViewerRole === 'reviewer'
+  const effectiveMemberId =
+    viewerRole === 'pmo' && activeViewerRole === 'contributor' ? 'm1' : currentMemberId
+
   const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const { showToast } = useToast()
 
@@ -11001,15 +14709,17 @@ export function SOWDetailScreen({
   const [isStructureUnlocked, setIsStructureUnlocked] = useState(
     sowVariant === 'v2' || sowVariant === 'meridian' || isContributor || isReviewer
   )
-  const [isDraftUnlocked, setIsDraftUnlocked] = useState(isReviewer)
+  const [isDraftUnlocked, setIsDraftUnlocked] = useState(true)
   const [isFormReady, setIsFormReady] = useState(false)
   const [isFormEditable, setIsFormEditable] = useState(false)
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
   const [draftGenState, setDraftGenState] = useState<DraftGenState>('idle')
   const [showReviewModal, setShowReviewModal] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
   const [completionScore, setCompletionScore] = useState(0)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [isSentForReview, setIsSentForReview] = useState(false)
+  const [showSendForApprovalConfirm, setShowSendForApprovalConfirm] = useState(false)
+  const isClient = viewerRole === 'client'
 
   const showInviteToast = () => {
     showToast('Participants invited successfully!', 'success')
@@ -11160,6 +14870,255 @@ export function SOWDetailScreen({
             <span style={{ fontWeight: 600, color: '#0d212c' }}>200/3000</span>
             <span>Tokens</span>
           </div>
+
+          {/* PMO Multi-Role Switcher (only shown when viewerRole === 'pmo') */}
+          {viewerRole === 'pmo' && (
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setRoleSwitcherOpen((prev) => !prev)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '5px 12px',
+                  borderRadius: 8,
+                  border: '1.5px solid rgba(0,196,196,0.4)',
+                  background:
+                    activeViewerRole === 'pmo'
+                      ? '#ffffff'
+                      : activeViewerRole === 'contributor'
+                      ? '#eff6ff'
+                      : '#faf5ff',
+                  color:
+                    activeViewerRole === 'pmo'
+                      ? '#0d212c'
+                      : activeViewerRole === 'contributor'
+                      ? '#1d4ed8'
+                      : '#7e22ce',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                  transition: 'all 0.15s ease',
+                }}
+                title="Switch role preview (PMO, Contributor, Reviewer)"
+              >
+                <div
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background:
+                      activeViewerRole === 'pmo'
+                        ? '#00C4C4'
+                        : activeViewerRole === 'contributor'
+                        ? '#3b82f6'
+                        : '#a855f7',
+                  }}
+                />
+                <span style={{ color: '#64748b', fontWeight: 500, fontSize: 11.5 }}>Preview as:</span>
+                <span style={{ fontWeight: 700 }}>
+                  {activeViewerRole === 'pmo'
+                    ? 'PMO (Ashika)'
+                    : activeViewerRole === 'contributor'
+                    ? 'Contributor (Ashika)'
+                    : 'Reviewer (Ashika)'}
+                </span>
+                <ChevronDown
+                  size={13}
+                  color="#64748b"
+                  style={{
+                    transform: roleSwitcherOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.15s',
+                  }}
+                />
+              </button>
+
+              {roleSwitcherOpen && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                    onClick={() => setRoleSwitcherOpen(false)}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      zIndex: 1000,
+                      width: 250,
+                      background: '#ffffff',
+                      borderRadius: 12,
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 12px 32px rgba(13,33,44,0.14)',
+                      padding: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: '6px 8px 4px',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      Switch Profile View
+                    </div>
+
+                    {/* Option 1: PMO (Ashika) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveViewerRole('pmo')
+                        setRoleSwitcherOpen(false)
+                        showToast('Switched view to PMO (Ashika)', 'info')
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: activeViewerRole === 'pmo' ? 'rgba(0,196,196,0.1)' : 'transparent',
+                        color: activeViewerRole === 'pmo' ? '#007a7a' : '#334155',
+                        fontWeight: activeViewerRole === 'pmo' ? 700 : 500,
+                        fontSize: 12.5,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeViewerRole !== 'pmo') e.currentTarget.style.background = '#f8fafc'
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeViewerRole !== 'pmo') e.currentTarget.style.background = 'transparent'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: '#00C4C4',
+                            display: 'inline-block',
+                          }}
+                        />
+                        <span>PMO (Ashika)</span>
+                      </div>
+                      {activeViewerRole === 'pmo' && <Check size={14} color="#00C4C4" strokeWidth={2.5} />}
+                    </button>
+
+                    {/* Option 2: Contributor (Ashika) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveViewerRole('contributor')
+                        setRoleSwitcherOpen(false)
+                        showToast(
+                          'Switched view to Contributor (Ashika) — viewing assigned sections',
+                          'info'
+                        )
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background:
+                          activeViewerRole === 'contributor' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                        color: activeViewerRole === 'contributor' ? '#1d4ed8' : '#334155',
+                        fontWeight: activeViewerRole === 'contributor' ? 700 : 500,
+                        fontSize: 12.5,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeViewerRole !== 'contributor') e.currentTarget.style.background = '#f8fafc'
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeViewerRole !== 'contributor') e.currentTarget.style.background = 'transparent'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: '#3b82f6',
+                            display: 'inline-block',
+                          }}
+                        />
+                        <span>Contributor (Ashika)</span>
+                      </div>
+                      {activeViewerRole === 'contributor' && (
+                        <Check size={14} color="#3b82f6" strokeWidth={2.5} />
+                      )}
+                    </button>
+
+                    {/* Option 3: Reviewer (Ashika) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveViewerRole('reviewer')
+                        setRoleSwitcherOpen(false)
+                        showToast('Switched view to Reviewer (Ashika) — viewing review mode', 'info')
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background:
+                          activeViewerRole === 'reviewer' ? 'rgba(168,85,247,0.1)' : 'transparent',
+                        color: activeViewerRole === 'reviewer' ? '#7e22ce' : '#334155',
+                        fontWeight: activeViewerRole === 'reviewer' ? 700 : 500,
+                        fontSize: 12.5,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeViewerRole !== 'reviewer') e.currentTarget.style.background = '#f8fafc'
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeViewerRole !== 'reviewer') e.currentTarget.style.background = 'transparent'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: '#a855f7',
+                            display: 'inline-block',
+                          }}
+                        />
+                        <span>Reviewer (Ashika)</span>
+                      </div>
+                      {activeViewerRole === 'reviewer' && (
+                        <Check size={14} color="#a855f7" strokeWidth={2.5} />
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {/* end header area */}
@@ -11281,22 +15240,35 @@ export function SOWDetailScreen({
                     </div>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {/* Send for Review (Secondary) */}
+                      {/* Send for Review / Send for Approval (Secondary) */}
                       <button
                         onClick={() => {
-                          setIsSentForReview(true)
-                          setIsDraftUnlocked(true)
-                          showToast('SOW sent for review successfully!', 'success')
+                          if (isContributor || isReviewer || isClient) {
+                            setShowSendForApprovalConfirm(true)
+                          } else {
+                            setIsSentForReview(true)
+                            setIsDraftUnlocked(true)
+                            showToast('SOW sent for review successfully!', 'success')
+                          }
                         }}
                         disabled={completionScore === 0}
-                        title={completionScore === 0 ? "At least one question must be answered before sending for review" : "Send for review"}
+                        title={
+                          completionScore === 0
+                            ? 'At least one question must be answered before sending'
+                            : isContributor || isReviewer || isClient
+                            ? 'Send for Approval'
+                            : 'Send for review'
+                        }
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 6,
                           padding: '6px 14px',
                           borderRadius: 8,
-                          border: completionScore === 0 ? '1.5px solid #e2e8f0' : '1.5px solid rgba(0,196,196,0.5)',
+                          border:
+                            completionScore === 0
+                              ? '1.5px solid #e2e8f0'
+                              : '1.5px solid rgba(0,196,196,0.5)',
                           background: completionScore === 0 ? '#f8fafc' : 'rgba(0,196,196,0.12)',
                           fontSize: 12,
                           fontWeight: 600,
@@ -11330,7 +15302,7 @@ export function SOWDetailScreen({
                           <path d="M22 2L11 13" />
                           <path d="M22 2L15 22 11 13 2 9l20-7z" />
                         </svg>
-                        Send for Review
+                        {isContributor || isReviewer || isClient ? 'Send for Approval' : 'Send for Review'}
                       </button>
 
                       {/* Generate Draft (Primary) */}
@@ -11389,7 +15361,13 @@ export function SOWDetailScreen({
                 draftGenState === 'ready' ? (
                   activeTab !== 'sow-draft' ? null : (
                     <button
-                      onClick={() => setShowReviewModal(true)}
+                      onClick={() => {
+                        if (isContributor || isReviewer || isClient) {
+                          setShowSendForApprovalConfirm(true)
+                        } else {
+                          setShowReviewModal(true)
+                        }
+                      }}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -11424,7 +15402,7 @@ export function SOWDetailScreen({
                         <path d="M22 2L11 13" />
                         <path d="M22 2L15 22 11 13 2 9l20-7z" />
                       </svg>
-                      Send for Review
+                      {isContributor || isReviewer || isClient ? 'Send for Approval' : 'Send for Review'}
                     </button>
                   )
                 ) : draftGenState === 'generating' || draftGenState === 'shimmer' ? (
@@ -11681,6 +15659,7 @@ export function SOWDetailScreen({
                 <SOWDraftTab
                   isContributor={isContributor}
                   isReviewer={isReviewer}
+                  viewerRole={viewerRole}
                   isReadOnly={isDeactivated}
                   sowDeadline={sowDeadline || '2026-10-31'}
                   onOpenParticipantsModal={() => setShowParticipantsModal(true)}
@@ -11740,6 +15719,137 @@ export function SOWDetailScreen({
         <SOWParticipantsModal
           onClose={() => setShowParticipantsModal(false)}
         />
+      )}
+
+      {/* Send for Approval Confirmation Modal (Contributor / Reviewer / Client) */}
+      {showSendForApprovalConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowSendForApprovalConfirm(false)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setShowSendForApprovalConfirm(false)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Icon Circle */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#00C4C4"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M22 2L11 13" />
+                <path d="M22 2L15 22 11 13 2 9l20-7z" />
+              </svg>
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              Send for Approval?
+            </div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Are you sure you want to send this for approval? After this you will not be able to make any edits.
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setShowSendForApprovalConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setIsSentForReview(true)
+                  setIsDraftUnlocked(true)
+                  setShowSendForApprovalConfirm(false)
+                  showToast('SOW sent for approval successfully!', 'success')
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#00C4C4',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+              >
+                Send for Approval
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
@@ -11949,6 +16059,22 @@ function ClientQueueModal({
 
   const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
 
+  const allQueueItems = sections.flatMap((s) => s.items.filter((i) => i.inClientQueue))
+  const [selectedQueueItemIds, setSelectedQueueItemIds] = useState<Set<string>>(
+    () => new Set(allQueueItems.map((i) => i.id))
+  )
+
+  const toggleSelectItem = (id: string) => {
+    setSelectedQueueItemIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const allQueueSelected = allQueueItems.length > 0 && allQueueItems.every((i) => selectedQueueItemIds.has(i.id))
+
   const handleAddClient = () => {
     const val = clientEmail.trim()
     if (!val) {
@@ -11974,18 +16100,23 @@ function ClientQueueModal({
       setClientEmailError('Please enter a valid email address (e.g. user@company.com).')
       return
     }
-    showToast('Items and invite sent to client queue successfully!', 'success')
+    if (selectedQueueItemIds.size === 0) {
+      showToast('Please select at least one question or assumption to assign to the client.', 'error')
+      return
+    }
+    const recipients = clientList.length > 0 ? clientList : (val ? [val] : ['client.reviewer@m42.ae'])
+    showToast(`Successfully assigned ${selectedQueueItemIds.size} selected item(s) to ${recipients.join(', ')}!`, 'success')
     onClose()
   }
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 600, maxWidth: '90vw', position: 'relative' }}>
+      <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 620, maxWidth: '92vw', position: 'relative' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
         </button>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue</div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Questions and Assumptions to be sent to the client.</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue Assignment</div>
+        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Select questions and assumptions with the checkboxes to assign them to designated clients.</div>
 
         {/* Add Client Field with custom error check */}
         <div style={{ marginBottom: 18 }}>
@@ -12098,7 +16229,68 @@ function ClientQueueModal({
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 360, overflowY: 'auto', marginBottom: 20 }}>
+        {/* Selection Subheader */}
+        {allQueueItems.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '6px 4px 10px',
+              borderBottom: '1px solid #e2e8f0',
+              marginBottom: 10,
+            }}
+          >
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: '#334155',
+                userSelect: 'none',
+              }}
+              onClick={() => {
+                if (allQueueSelected) setSelectedQueueItemIds(new Set())
+                else setSelectedQueueItemIds(new Set(allQueueItems.map((i) => i.id)))
+              }}
+            >
+              <div
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: 4,
+                  border: allQueueSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                  background: allQueueSelected ? '#00C4C4' : '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.12s ease',
+                }}
+              >
+                {allQueueSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
+              </div>
+              Select all items to assign
+            </label>
+            <span
+              style={{
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: '#00a0a0',
+                background: 'rgba(0,196,196,0.1)',
+                padding: '2px 8px',
+                borderRadius: 12,
+              }}
+            >
+              {selectedQueueItemIds.size} of {allQueueItems.length} selected
+            </span>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 340, overflowY: 'auto', marginBottom: 20 }}>
           {sections.every(s => !s.items.some(i => i.inClientQueue)) ? (
             <div style={{ fontSize: 13, color: '#94a3b8', textAlign: 'center', padding: '20px 0' }}>No items in queue.</div>
           ) : sections.map((s) => {
@@ -12106,7 +16298,7 @@ function ClientQueueModal({
              if (queueItems.length === 0) return null
              return (
                <div key={s.id} style={{ marginBottom: 12 }}>
-                 <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                 <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c', marginBottom: 8, display: 'flex', alignItems: 'center' }}>
                     {s.title}
                  </div>
                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -12115,11 +16307,13 @@ function ClientQueueModal({
                        key={it.id}
                        item={it}
                        label={it.type === 'question' ? 'Question' : 'Assumption'}
-                       isSelected={false}
-                       hasAnySelected={false}
-                       onToggle={() => {}}
+                       isSelected={selectedQueueItemIds.has(it.id)}
+                       hasAnySelected={selectedQueueItemIds.size > 0}
+                       showCheckboxAlways={true}
+                       onToggle={() => toggleSelectItem(it.id)}
                        disableAnswer={true}
-                       hideAssigneesAndQueue={true}
+                       hideAssigneesAndQueue={false}
+                       canEdit={true}
                        onDelete={() => onRemoveFromQueue(it.id)}
                      />
                    ))}
@@ -12155,10 +16349,14 @@ function ClientQueueModal({
               fontSize: 14,
               fontWeight: 700,
               cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(0,196,196,0.25)'
+              boxShadow: '0 8px 20px rgba(0,196,196,0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
-            Send Invite
+            <CheckSquare size={16} />
+            Assign Selected Items ({selectedQueueItemIds.size})
           </button>
         </div>
       </div>
