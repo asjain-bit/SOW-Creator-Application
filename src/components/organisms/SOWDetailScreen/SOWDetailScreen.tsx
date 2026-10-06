@@ -1567,73 +1567,72 @@ export function ItemTraceModal({
         {/* Scrollable Revision Timeline */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', background: '#f8fafc' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
-            {/* Timeline connector line */}
+            {/* Subtle timeline track */}
             <div
               style={{
                 position: 'absolute',
-                left: 17,
-                top: 20,
-                bottom: 20,
-                width: 2,
+                left: 7,
+                top: 14,
+                bottom: 14,
+                width: 1.5,
                 background: '#e2e8f0',
-                zIndex: 0,
+                zIndex: 1,
               }}
             />
 
             {revisions.map((rev) => (
-              <div key={rev.version} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 1 }}>
-                {/* Node icon / avatar */}
+              <div key={rev.version} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
+                {/* Timeline node */}
                 <div
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 16,
+                    height: 16,
                     borderRadius: '50%',
-                    background: rev.avatarColor,
-                    color: '#ffffff',
+                    background: '#ffffff',
+                    border: rev.isCurrent ? '2.5px solid #00a0a0' : '2px solid #cbd5e1',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 700,
                     flexShrink: 0,
-                    boxShadow: `0 2px 8px ${rev.avatarColor}40`,
-                    border: '2px solid #ffffff',
+                    marginTop: 2,
                   }}
-                >
-                  {rev.initials}
-                </div>
+                />
 
-                {/* Content card */}
+                {/* Content Details */}
                 <div
                   style={{
                     flex: 1,
                     background: '#ffffff',
-                    border: rev.isCurrent ? '1.5px solid rgba(0,196,196,0.5)' : '1px solid #e2e8f0',
-                    borderRadius: 12,
-                    padding: '14px 16px',
-                    boxShadow: rev.isCurrent ? '0 4px 12px rgba(0,196,196,0.1)' : '0 1px 3px rgba(0,0,0,0.03)',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 8,
+                    padding: '12px 14px',
                   }}
                 >
-                  {/* Top metadata */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 6,
+                      gap: 8,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
                         {rev.author}
                       </span>
                       <span
                         style={{
-                          fontSize: 10.5,
-                          fontWeight: 600,
+                          fontSize: 11,
+                          color: '#64748b',
+                          background: '#f1f5f9',
                           padding: '1px 6px',
                           borderRadius: 4,
-                          background: rev.isCurrent ? 'rgba(0,196,196,0.12)' : '#f1f5f9',
-                          color: rev.isCurrent ? '#008080' : '#64748b',
                         }}
                       >
                         {rev.role}
                       </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {rev.isCurrent && (
                         <span
                           style={{
@@ -1645,58 +1644,39 @@ export function ItemTraceModal({
                             color: '#15803d',
                           }}
                         >
-                          Current Version
+                          Current
                         </span>
                       )}
-                      <span style={{ fontSize: 11, color: '#94a3b8' }}>{rev.timestamp}</span>
                     </div>
+                    <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                      {rev.timestamp}
+                    </span>
                   </div>
 
-                  {/* Change reason */}
-                  <div style={{ fontSize: 11.5, color: '#64748b', marginBottom: 10, fontStyle: 'italic' }}>
-                    {rev.changeReason}
-                  </div>
-
-                  {/* Exact Content Block */}
                   <div
                     style={{
-                      background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 8,
-                      padding: '10px 12px',
                       fontSize: 12.5,
-                      color: '#1e293b',
+                      color: '#334155',
                       lineHeight: 1.55,
+                      background: '#f8fafc',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      border: '1px solid #f1f5f9',
                     }}
                   >
-                    <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', marginBottom: 4 }}>
-                      Exact Statement Content:
-                    </div>
-                    {rev.content}
+                    <div>{rev.content}</div>
+                    {rev.response && (
+                      <div style={{ marginTop: 6, color: '#007a7a', fontWeight: 500 }}>
+                        {rev.response}
+                      </div>
+                    )}
+                    {rev.changeReason && (
+                      <div style={{ marginTop: 4, fontSize: 11.5, color: '#64748b', fontStyle: 'italic' }}>
+                        {rev.changeReason}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Response thread if present */}
-                  {rev.response && (
-                    <div
-                      style={{
-                        marginTop: 8,
-                        background: 'rgba(0,196,196,0.06)',
-                        border: '1px solid rgba(0,196,196,0.2)',
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        color: '#007a7a',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#00a0a0', marginBottom: 2 }}>
-                        Captured Answer / Stakeholder Response:
-                      </div>
-                      {rev.response}
-                    </div>
-                  )}
-
-                  {/* Source citation if present */}
                   {rev.sourceDoc && (
                     <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
                       <button
@@ -2262,8 +2242,8 @@ export function ReviewerAndParticipantsModal({
               Select the reviewers who will receive access to this SOW draft.
             </div>
 
-            {/* Reviewers List with Neutral Cards */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4, marginBottom: 16 }}>
+            {/* Reviewers List with Horizontal Separators (No bounding box / stroke / fill) */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingRight: 4, marginBottom: 16 }}>
               {reviewers.map((r) => {
                 const isChecked = selectedIds.includes(r.id)
                 return (
@@ -2274,12 +2254,11 @@ export function ReviewerAndParticipantsModal({
                       display: 'flex',
                       alignItems: 'center',
                       gap: 12,
-                      padding: '10px 14px',
-                      borderRadius: 10,
-                      border: '1px solid #e2e8f0',
-                      background: '#f8fafc',
+                      padding: '12px 4px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid #f1f5f9',
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease',
                       userSelect: 'none',
                     }}
                   >
@@ -5253,7 +5232,12 @@ const MERIDIAN_OVERRIDES: Record<
 > = {
   s1a: { assignedTo: 'm5', answered: true, response: 'Confirmed.' },
   s1b: { assignedTo: 'm5', answered: false },
-  s4a: { assignedTo: 'm5', answered: false },
+  s4a: {
+    assignedTo: 'm5',
+    answered: true,
+    response:
+      'Source-to-Contract and Supplier Performance Management confirmed as top priorities by Procurement Lead on 14 Sept.',
+  },
   s4b: {
     assignedTo: 'm5',
     answered: true,
@@ -5265,7 +5249,11 @@ const MERIDIAN_OVERRIDES: Record<
     response:
       'Confirmed. Sprint cadence agreed in the Project Initiation doc, with fortnightly client showcases booked from kick-off through to go-live, and a mid-phase checkpoint scheduled to reassess velocity.',
   },
-  s7b: { assignedTo: 'm5', answered: false },
+  s7b: {
+    assignedTo: 'm5',
+    answered: true,
+    response: 'Scrum at scale agreed during Architecture alignment session on 22 Sept.',
+  },
   s10a: { assignedTo: 'm5', answered: true, response: 'Booked for 3 Nov 2026.' },
   s13a: {
     assignedTo: 'm5',
@@ -5273,7 +5261,12 @@ const MERIDIAN_OVERRIDES: Record<
     response:
       'Reviewed with the client Risk Committee on 16 Sept — 6 of 8 Tier-1 risks accepted outright, the remaining 2 need additional mitigation plans before sign-off, due by 30 Sept.',
   },
-  s16a: { assignedTo: 'm5', answered: false },
+  s16a: {
+    assignedTo: 'm5',
+    answered: true,
+    response:
+      'Yes — UAT acceptance criteria defined in Annex B with client sign-off threshold set at 95% pass rate.',
+  },
 }
 
 const MERIDIAN_SECTIONS: SOWSection[] = INITIAL_SECTIONS_V2.map((sec) => ({
@@ -7192,36 +7185,8 @@ function StructureTab({
                 )}
               </div>
 
-              {/* Participants & Client Queue button on right */}
+              {/* Client Queue button on right */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  onClick={() => onOpenParticipantsModal?.()}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#007a7a',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    padding: '6px 10px',
-                    borderRadius: 8,
-                    transition: 'all 0.15s ease',
-                  }}
-                  title="View SOW Participants"
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.color = '#0d212c'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.color = '#007a7a'
-                  }}
-                >
-                  <Users size={14} color="#00a0a0" />
-                  View Participants
-                </button>
-
                 <button
                   onClick={() => setClientQueueModalOpen(true)}
                   style={{
@@ -11372,13 +11337,14 @@ function SOWDraftTab({
               }
             />
             <div style={{ flex: 1 }} />
-            {/* Reviewer & Participants (text only button) */}
+            {/* Reviewer & Participants button with icon, no hover animation */}
             <button
               type="button"
               onClick={() => onOpenParticipantsModal?.()}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                gap: 6,
                 padding: '5px 10px',
                 borderRadius: 6,
                 border: 'none',
@@ -11388,16 +11354,10 @@ function SOWDraftTab({
                 fontWeight: 600,
                 cursor: 'pointer',
                 marginRight: 8,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.color = '#0d212c'
-              }}
-              onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.color = '#007a7a'
               }}
               title="Reviewer & Participants"
             >
+              <Users size={14} color="#00a0a0" />
               Reviewer &amp; Participants
             </button>
 
@@ -13803,7 +13763,6 @@ export function SOWDetailScreen({
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
   const [draftGenState, setDraftGenState] = useState<DraftGenState>('idle')
   const [showReviewModal, setShowReviewModal] = useState(false)
-  const [showTopExportMenu, setShowTopExportMenu] = useState(false)
   const [completionScore, setCompletionScore] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSentForReview, setIsSentForReview] = useState(false)
@@ -14284,124 +14243,7 @@ export function SOWDetailScreen({
                   )}
                 </div>
               ) : showGenerateDraft ? (
-                draftGenState === 'ready' ? (
-                  activeTab !== 'sow-draft' ? null : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {/* Export SOW Button */}
-                      <div style={{ position: 'relative' }}>
-                        <button
-                          type="button"
-                          onClick={() => setShowTopExportMenu((prev) => !prev)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            padding: '6px 14px',
-                            borderRadius: 8,
-                            border: 'none',
-                            background: '#00C4C4',
-                            color: '#ffffff',
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
-                            transition: 'all 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
-                          }}
-                          onMouseLeave={(e) => {
-                            ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
-                          }}
-                          title="Export SOW"
-                        >
-                          <Download size={13} color="#ffffff" />
-                          Export SOW
-                          <ChevronDown size={12} color="#ffffff" />
-                        </button>
-                        {showTopExportMenu && (
-                          <>
-                            <div
-                              style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-                              onClick={() => setShowTopExportMenu(false)}
-                            />
-                            <div
-                              style={{
-                                position: 'absolute',
-                                top: 'calc(100% + 6px)',
-                                right: 0,
-                                background: '#ffffff',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: 8,
-                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                                zIndex: 100,
-                                minWidth: 200,
-                                overflow: 'hidden',
-                                padding: '4px 0',
-                              }}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setShowTopExportMenu(false)
-                                  showToast('Exporting SOW as PDF...', 'info')
-                                  setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
-                                }}
-                                style={{
-                                  width: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 8,
-                                  padding: '8px 14px',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  fontSize: 12,
-                                  fontWeight: 500,
-                                  color: '#0f172a',
-                                  cursor: 'pointer',
-                                  textAlign: 'left',
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                              >
-                                <FileText size={14} color="#ef4444" />
-                                Export as PDF
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setShowTopExportMenu(false)
-                                  showToast('Exporting SOW as Word document (.docx)...', 'info')
-                                  setTimeout(() => showToast('SOW exported as DOCX successfully!', 'success'), 1200)
-                                }}
-                                style={{
-                                  width: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 8,
-                                  padding: '8px 14px',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  fontSize: 12,
-                                  fontWeight: 500,
-                                  color: '#0f172a',
-                                  cursor: 'pointer',
-                                  textAlign: 'left',
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                              >
-                                <FileText size={14} color="#2563eb" />
-                                Export as Word (.docx)
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )
-                ) : draftGenState === 'generating' || draftGenState === 'shimmer' ? (
+                draftGenState === 'ready' ? null : draftGenState === 'generating' || draftGenState === 'shimmer' ? (
                   <div
                     style={{
                       display: 'flex',
@@ -14629,7 +14471,7 @@ export function SOWDetailScreen({
       {/* Reviewer & Participants Modal */}
       {(showReviewModal || showParticipantsModal) && (
         <ReviewerAndParticipantsModal
-          initialTab={showReviewModal ? 'reviewers' : 'participants'}
+          initialTab="reviewers"
           onClose={() => {
             setShowReviewModal(false)
             setShowParticipantsModal(false)
@@ -15332,39 +15174,46 @@ function ClientQueueModal({
              )
           })}
         </div>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '12px 24px',
-              borderRadius: 12,
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              color: '#0d212c',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSendInvite}
-            style={{
-              padding: '12px 28px',
-              borderRadius: 12,
-              background: '#00C4C4',
-              border: 'none',
-              color: '#fff',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(0,196,196,0.25)',
-            }}
-          >
-            Assign
-          </button>
-        </div>
+        {(() => {
+          const isAssignDisabled = allQueueItems.length === 0 || selectedQueueItemIds.size === 0
+          return (
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={onClose}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendInvite}
+                disabled={isAssignDisabled}
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: 12,
+                  background: isAssignDisabled ? '#cbd5e1' : '#00C4C4',
+                  border: 'none',
+                  color: isAssignDisabled ? '#64748b' : '#fff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: isAssignDisabled ? 'not-allowed' : 'pointer',
+                  boxShadow: isAssignDisabled ? 'none' : '0 8px 20px rgba(0,196,196,0.25)',
+                  opacity: isAssignDisabled ? 0.65 : 1,
+                }}
+              >
+                Assign
+              </button>
+            </div>
+          )
+        })()}
       </div>
     </div>
   )

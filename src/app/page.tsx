@@ -18,7 +18,7 @@ const CONTRIBUTOR_SOWS: SOWItem[] = [
     createdDate: 'Sep 02, 2026',
     lastUpdated: 'Today, 9:10 AM',
     status: 'At Risk',
-    readiness: 72,
+    readiness: 75,
     openQuestions: 3,
     overdueQuestions: 1,
     reviewComments: 11,
