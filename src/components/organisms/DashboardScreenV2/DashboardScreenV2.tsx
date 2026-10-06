@@ -89,7 +89,7 @@ const DEFAULT_SOWS: SOWItem[] = [
     createdDate: 'Aug 10, 2026',
     lastUpdated: 'Aug 28, 2026',
     status: 'On Track',
-    readiness: 90,
+    readiness: 75,
     openQuestions: 1,
     overdueQuestions: 0,
     reviewComments: 5,
@@ -4744,7 +4744,7 @@ function AdminHomeView({
       status: 'On Track',
       statusBg: '#dcfce7',
       statusColor: '#15803d',
-      readiness: '90%',
+      readiness: '75%',
       pmoName: 'Parag Sharma',
       dueDate: 'Nov 05, 2026',
       updatedOn: '3 days ago',
@@ -5923,46 +5923,48 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     }}
                   >
                     <span>Hi {userName} 👋</span>
-                    <button
-                      type="button"
-                      onClick={() => setRoleDropdownOpen((prev) => !prev)}
-                      title="Switch role preview"
-                      style={{
-                        background: 'rgba(0,196,196,0.08)',
-                        border: '1px solid rgba(0,196,196,0.25)',
-                        borderRadius: 8,
-                        padding: '4px 8px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        cursor: 'pointer',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: '#008b8b',
-                        transition: 'all 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(0,196,196,0.15)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(0,196,196,0.08)'
-                      }}
-                    >
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#0d212c' }}>
-                        {effectiveRole}
-                      </span>
-                      <ChevronDown
-                        size={14}
-                        color="#008b8b"
+                    {userRole === 'PMO' && !isContributor && !isReviewer && !isClient && (
+                      <button
+                        type="button"
+                        onClick={() => setRoleDropdownOpen((prev) => !prev)}
+                        title="Switch role preview"
                         style={{
-                          transform: roleDropdownOpen ? 'rotate(180deg)' : 'none',
-                          transition: 'transform 0.15s',
+                          background: 'rgba(0,196,196,0.08)',
+                          border: '1px solid rgba(0,196,196,0.25)',
+                          borderRadius: 8,
+                          padding: '4px 8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: '#008b8b',
+                          transition: 'all 0.15s ease',
                         }}
-                      />
-                    </button>
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(0,196,196,0.15)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(0,196,196,0.08)'
+                        }}
+                      >
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#0d212c' }}>
+                          {effectiveRole}
+                        </span>
+                        <ChevronDown
+                          size={14}
+                          color="#008b8b"
+                          style={{
+                            transform: roleDropdownOpen ? 'rotate(180deg)' : 'none',
+                            transition: 'transform 0.15s',
+                          }}
+                        />
+                      </button>
+                    )}
                   </h1>
 
-                  {roleDropdownOpen && (
+                  {roleDropdownOpen && userRole === 'PMO' && !isContributor && !isReviewer && !isClient && (
                     <>
                       <div
                         style={{ position: 'fixed', inset: 0, zIndex: 999 }}

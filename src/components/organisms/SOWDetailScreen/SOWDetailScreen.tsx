@@ -1176,33 +1176,12 @@ export function FieldTraceDrawer({
   onOpenCitation: (doc: ContextCitationTarget) => void
 }) {
   useEffect(() => {
-    const originalBodyOverflow = document.body.style.overflow
-    const originalHtmlOverflow = document.documentElement.style.overflow
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
-
-    const scrollContainers = document.querySelectorAll<HTMLElement>('.overflow-y-auto, [style*="overflow"]')
-    const prevStyles: { el: HTMLElement; overflow: string }[] = []
-    scrollContainers.forEach((el) => {
-      prevStyles.push({ el, overflow: el.style.overflow })
-      el.style.overflow = 'hidden'
-    })
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.body.style.overflow = originalBodyOverflow
-      document.documentElement.style.overflow = originalHtmlOverflow
-      prevStyles.forEach(({ el, overflow }) => {
-        el.style.overflow = overflow
-      })
-      window.removeEventListener('keydown', handleKeyDown)
-    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
-
-  if (typeof document === 'undefined') return null
 
   const historyItems: {
     id: string
@@ -1248,200 +1227,158 @@ export function FieldTraceDrawer({
     })
   }
 
-  return createPortal(
+  return (
     <div
       style={{
-        position: 'fixed',
-        top: 170,
+        position: 'absolute',
+        top: 0,
         bottom: 0,
-        left: 0,
         right: 0,
-        zIndex: 9998,
-        background: 'transparent',
+        width: 440,
+        maxWidth: '100%',
+        height: '100%',
+        background: '#ffffff',
+        borderLeft: '1px solid #e2e8f0',
         display: 'flex',
-        justifyContent: 'flex-end',
+        flexDirection: 'column',
+        boxShadow: '-4px 0 16px rgba(0,0,0,0.06)',
+        borderTopRightRadius: 0,
+        borderBottomRightRadius: 16,
+        zIndex: 50,
       }}
-      onClick={onClose}
-      onWheel={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
+      {/* Drawer Header */}
       <div
         style={{
-          width: '460px',
-          maxWidth: '92vw',
-          height: '100%',
-          background: '#ffffff',
-          boxShadow: 'none',
-          borderLeft: '1px solid #e2e8f0',
-          borderTop: '1px solid #e2e8f0',
+          padding: '16px 20px',
+          borderBottom: '1px solid #e2e8f0',
           display: 'flex',
-          flexDirection: 'column',
-          animation: 'slideInRight 0.25s ease-out',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: '#ffffff',
+          flexShrink: 0,
         }}
-        onClick={(e) => e.stopPropagation()}
       >
-        {/* Drawer Header */}
-        <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>
+            View trace
+          </span>
+          <span style={{ fontSize: 13, color: '#64748b' }}>
+            &mdash; {traceData.fieldLabel}
+          </span>
+        </div>
+        <button
+          onClick={onClose}
           style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #e2e8f0',
+            background: 'transparent',
+            border: 'none',
+            padding: 4,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            background: '#ffffff',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#64748b',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>
-              View trace
-            </span>
-            <span style={{ fontSize: 13, color: '#64748b' }}>
-              &mdash; {traceData.fieldLabel}
-            </span>
-          </div>
-          <button
-            onClick={onClose}
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* Minimal Context History List */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#fafbfc' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
+          {/* Subtle timeline track */}
+          <div
             style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#64748b',
+              position: 'absolute',
+              left: 7,
+              top: 14,
+              bottom: 14,
+              width: 1.5,
+              background: '#e2e8f0',
+              zIndex: 1,
             }}
-          >
-            <X size={18} />
-          </button>
-        </div>
+          />
 
-        {/* Minimal Context History List */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#fafbfc' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
-            {/* Subtle timeline track */}
-            <div
-              style={{
-                position: 'absolute',
-                left: 7,
-                top: 14,
-                bottom: 14,
-                width: 1.5,
-                background: '#e2e8f0',
-                zIndex: 1,
-              }}
-            />
+          {historyItems.map((item) => (
+            <div key={item.id} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
+              {/* Timeline node */}
+              <div
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  background: '#ffffff',
+                  border: item.isLatest ? '2.5px solid #00a0a0' : '2px solid #cbd5e1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: 2,
+                }}
+              />
 
-            {historyItems.map((item) => (
-              <div key={item.id} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
-                {/* Timeline node */}
+              {/* Content Details */}
+              <div
+                style={{
+                  flex: 1,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 8,
+                  padding: '12px 14px',
+                }}
+              >
                 <div
                   style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    background: '#ffffff',
-                    border: item.isLatest ? '2.5px solid #00a0a0' : '2px solid #cbd5e1',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    marginTop: 2,
-                  }}
-                />
-
-                {/* Content Details */}
-                <div
-                  style={{
-                    flex: 1,
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 8,
-                    padding: '12px 14px',
+                    justifyContent: 'space-between',
+                    marginBottom: 6,
+                    gap: 8,
+                    flexWrap: 'wrap',
                   }}
                 >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: 6,
-                      gap: 8,
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-                        {item.who}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: '#64748b',
-                          background: '#f1f5f9',
-                          padding: '1px 6px',
-                          borderRadius: 4,
-                        }}
-                      >
-                        {item.role}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
-                      {item.when}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
+                      {item.who}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: '#64748b',
+                        background: '#f1f5f9',
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      {item.role}
                     </span>
                   </div>
+                  <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                    {item.when}
+                  </span>
+                </div>
 
-                  <div
-                    style={{
-                      fontSize: 12.5,
-                      color: '#334155',
-                      lineHeight: 1.55,
-                      background: '#f8fafc',
-                      padding: '8px 10px',
-                      borderRadius: 6,
-                      border: '1px solid #f1f5f9',
-                    }}
-                  >
-                    {item.content}
-                  </div>
-
-                  {item.canViewPage && (
-                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onOpenCitation({
-                            title: traceData.fieldLabel,
-                            sourceDoc: traceData.sourceDoc.fileName,
-                            page: traceData.sourceDoc.page,
-                            section: traceData.sourceDoc.section,
-                            highlightSnippet: traceData.sourceDoc.quote,
-                          })
-                        }
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                          color: '#00a0a0',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        View source page <ExternalLink size={12} />
-                      </button>
-                    </div>
-                  )}
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: '#334155',
+                    lineHeight: 1.55,
+                    background: '#f8fafc',
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    border: '1px solid #f1f5f9',
+                  }}
+                >
+                  {item.content}
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   )
 }
 
@@ -1990,90 +1927,94 @@ export function DraftSectionTraceModal({
           </button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', background: '#f8fafc' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', background: '#fafbfc' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
             <div
               style={{
                 position: 'absolute',
-                left: 17,
-                top: 20,
-                bottom: 20,
-                width: 2,
+                left: 7,
+                top: 14,
+                bottom: 14,
+                width: 1.5,
                 background: '#e2e8f0',
-                zIndex: 0,
+                zIndex: 1,
               }}
             />
 
             {draftSectionRevisions.map((rev) => (
-              <div key={rev.version} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 1 }}>
+              <div key={rev.version} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
                 <div
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 16,
+                    height: 16,
                     borderRadius: '50%',
-                    background: rev.avatarColor,
-                    color: '#ffffff',
+                    background: '#ffffff',
+                    border: rev.isCurrent ? '2.5px solid #00a0a0' : '2px solid #cbd5e1',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 700,
                     flexShrink: 0,
-                    boxShadow: `0 2px 8px ${rev.avatarColor}40`,
-                    border: '2px solid #ffffff',
+                    marginTop: 2,
                   }}
-                >
-                  {rev.initials}
-                </div>
+                />
 
                 <div
                   style={{
                     flex: 1,
                     background: '#ffffff',
-                    border: rev.isCurrent ? '1.5px solid rgba(0,196,196,0.5)' : '1px solid #e2e8f0',
-                    borderRadius: 12,
-                    padding: '14px 16px',
-                    boxShadow: rev.isCurrent ? '0 4px 12px rgba(0,196,196,0.1)' : '0 1px 3px rgba(0,0,0,0.03)',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 8,
+                    padding: '12px 14px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>{rev.author}</span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 6,
+                      gap: 8,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
+                        {rev.author}
+                      </span>
                       <span
                         style={{
-                          fontSize: 10.5,
-                          fontWeight: 600,
+                          fontSize: 11,
+                          color: '#64748b',
+                          background: '#f1f5f9',
                           padding: '1px 6px',
                           borderRadius: 4,
-                          background: rev.isCurrent ? 'rgba(0,196,196,0.12)' : '#f1f5f9',
-                          color: rev.isCurrent ? '#008080' : '#64748b',
                         }}
                       >
                         {rev.role}
                       </span>
                     </div>
-                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{rev.timestamp}</span>
-                  </div>
-
-                  <div style={{ fontSize: 12, color: '#334155', lineHeight: 1.5, marginBottom: 8 }}>
-                    {rev.summary}
+                    <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
+                      {rev.timestamp}
+                    </span>
                   </div>
 
                   <div
                     style={{
+                      fontSize: 12.5,
+                      color: '#334155',
+                      lineHeight: 1.55,
                       background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
+                      padding: '8px 10px',
                       borderRadius: 6,
-                      padding: '6px 10px',
-                      fontSize: 11.5,
-                      color: '#64748b',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
+                      border: '1px solid #f1f5f9',
                     }}
                   >
-                    <FileCheck size={13} color="#00a0a0" />
-                    <span>{rev.diffSummary}</span>
+                    <div>{rev.summary}</div>
+                    {rev.diffSummary && (
+                      <div style={{ marginTop: 4, fontSize: 11.5, color: '#64748b' }}>
+                        {rev.diffSummary}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2112,14 +2053,30 @@ export function DraftSectionTraceModal({
   )
 }
 
-/* ── SOW Participants Modal (With View / Edit Access Indicators) ─────────── */
+/* ── Reviewer & Participants Modal ─────────────────────────────────────────── */
 
-export function SOWParticipantsModal({
+const REVIEWERS_DEFAULT = [
+  { id: 'r1', name: 'Dr. Sultan Al Hashimi', role: 'Clinical Safety Lead', initials: 'SH', color: '#00C4C4' },
+  { id: 'r2', name: 'Fatima Al Mansoori', role: 'Compliance Officer', initials: 'FM', color: '#8b5cf6' },
+  { id: 'r3', name: 'Karan Bose', role: 'PMO Analyst', initials: 'KB', color: '#ef4444' },
+]
+
+export function ReviewerAndParticipantsModal({
   onClose,
+  initialTab = 'reviewers',
+  onConfirmReviewers,
 }: {
   onClose: () => void
+  initialTab?: 'reviewers' | 'participants'
+  onConfirmReviewers?: (count: number) => void
 }) {
+  const [modalTab, setModalTab] = useState<'reviewers' | 'participants'>(initialTab)
   const [activeCategory, setActiveCategory] = useState<'all' | 'reviewers' | 'contributors' | 'clients' | 'pmo'>('all')
+  const [reviewers, setReviewers] = useState(REVIEWERS_DEFAULT)
+  const [selectedIds, setSelectedIds] = useState<string[]>(REVIEWERS_DEFAULT.map((r) => r.id))
+  const [newEmail, setNewEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const { showToast } = useToast()
 
   useEffect(() => {
     const originalOverflow = document.body.style.overflow
@@ -2148,6 +2105,46 @@ export function SOWParticipantsModal({
 
   const filtered = activeCategory === 'all' ? PARTICIPANTS : PARTICIPANTS.filter((p) => p.type === activeCategory)
 
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+
+  const handleAddReviewer = () => {
+    const trimmed = newEmail.trim()
+    if (!trimmed) {
+      setEmailError('Please enter an email address')
+      return
+    }
+    if (!emailRegex.test(trimmed)) {
+      setEmailError('Please enter a valid email address (e.g. user@organization.com)')
+      return
+    }
+    const newId = `r${Date.now()}`
+    setReviewers((prev) => [
+      ...prev,
+      {
+        id: newId,
+        name: trimmed.split('@')[0].replace('.', ' '),
+        role: 'Reviewer',
+        initials: trimmed.slice(0, 2).toUpperCase(),
+        color: '#00C4C4',
+      },
+    ])
+    setSelectedIds((prev) => [...prev, newId])
+    setNewEmail('')
+    setEmailError('')
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
+  const handleSaveReviewers = () => {
+    showToast(`${selectedIds.length} reviewer${selectedIds.length === 1 ? '' : 's'} assigned successfully!`, 'success')
+    onConfirmReviewers?.(selectedIds.length)
+    onClose()
+  }
+
   return (
     <div
       style={{
@@ -2168,8 +2165,8 @@ export function SOWParticipantsModal({
           background: '#ffffff',
           width: '640px',
           maxWidth: '94vw',
-          height: '640px',
-          maxHeight: '90vh',
+          height: '660px',
+          maxHeight: '92vh',
           borderRadius: '16px',
           boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
           display: 'flex',
@@ -2182,7 +2179,7 @@ export function SOWParticipantsModal({
         {/* Header */}
         <div
           style={{
-            padding: '18px 24px',
+            padding: '16px 24px',
             borderBottom: '1px solid #f1f5f9',
             display: 'flex',
             alignItems: 'center',
@@ -2190,10 +2187,8 @@ export function SOWParticipantsModal({
             background: '#ffffff',
           }}
         >
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
-              SOW Participants &amp; Access Levels
-            </div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
+            Reviewer &amp; Participants
           </div>
           <button
             onClick={onClose}
@@ -2214,173 +2209,414 @@ export function SOWParticipantsModal({
           </button>
         </div>
 
-        {/* Category Filter Tabs */}
+        {/* Top Navigation Tabs: Assign Reviewers (1st) | Participants (2nd) */}
         <div
           style={{
             display: 'flex',
-            gap: 6,
-            padding: '10px 24px',
             borderBottom: '1px solid #f1f5f9',
-            background: '#ffffff',
-            overflowX: 'auto',
-          }}
-        >
-          {[
-            { id: 'all', label: `All (${PARTICIPANTS.length})` },
-            { id: 'reviewers', label: `Reviewers (3)` },
-            { id: 'contributors', label: `Contributors (3)` },
-            { id: 'clients', label: `Clients (2)` },
-            { id: 'pmo', label: `PMO (1)` },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveCategory(tab.id as 'all' | 'reviewers' | 'contributors' | 'clients' | 'pmo')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-                background: activeCategory === tab.id ? '#00C4C4' : '#f1f5f9',
-                color: activeCategory === tab.id ? '#ffffff' : '#64748b',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Participants List */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 24px', display: 'flex', flexDirection: 'column' }}>
-          {filtered.map((user) => {
-            const roleLabel =
-              user.type === 'reviewers'
-                ? 'Reviewer'
-                : user.type === 'contributors'
-                ? 'Contributor'
-                : user.type === 'clients'
-                ? 'Client'
-                : 'PMO'
-
-            const hasEditAccess = user.type !== 'reviewers'
-
-            return (
-              <div
-                key={user.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '14px 0',
-                  background: '#ffffff',
-                  borderBottom: '1px solid #f1f5f9',
-                }}
-              >
-                <div
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: '50%',
-                    background: user.color,
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {user.initials}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c' }}>
-                      {user.name}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 500,
-                        padding: '1px 7px',
-                        borderRadius: 4,
-                        background:
-                          user.type === 'reviewers'
-                            ? '#f3e8ff'
-                            : user.type === 'contributors'
-                            ? '#ecfdf5'
-                            : user.type === 'clients'
-                            ? '#e0f2fe'
-                            : '#ccfbf1',
-                        color:
-                          user.type === 'reviewers'
-                            ? '#7e22ce'
-                            : user.type === 'contributors'
-                            ? '#047857'
-                            : user.type === 'clients'
-                            ? '#0369a1'
-                            : '#0f766e',
-                      }}
-                    >
-                      {roleLabel}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 12, color: '#64748b' }}>
-                    {user.email}
-                  </div>
-                </div>
-
-                {/* Right side: Simple text access indicator */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: hasEditAccess ? '#047857' : '#64748b',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {hasEditAccess ? 'Edit Access' : 'View Access'}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Footer */}
-        <div
-          style={{
-            padding: '12px 24px',
-            borderTop: '1px solid #f1f5f9',
-            background: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
+            background: '#fafbfc',
+            padding: '0 24px',
+            gap: 24,
           }}
         >
           <button
-            onClick={onClose}
+            type="button"
+            onClick={() => setModalTab('reviewers')}
             style={{
-              padding: '7px 18px',
-              borderRadius: 8,
-              border: '1px solid #e2e8f0',
-              background: '#ffffff',
-              color: '#0d212c',
-              fontSize: 12.5,
-              fontWeight: 600,
+              padding: '12px 2px',
+              border: 'none',
+              borderBottom: modalTab === 'reviewers' ? '2.5px solid #00C4C4' : '2.5px solid transparent',
+              background: 'transparent',
+              fontSize: 13.5,
+              fontWeight: modalTab === 'reviewers' ? 700 : 500,
+              color: modalTab === 'reviewers' ? '#007a7a' : '#64748b',
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
-            Close
+            Assign Reviewers
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalTab('participants')}
+            style={{
+              padding: '12px 2px',
+              border: 'none',
+              borderBottom: modalTab === 'participants' ? '2.5px solid #00C4C4' : '2.5px solid transparent',
+              background: 'transparent',
+              fontSize: 13.5,
+              fontWeight: modalTab === 'participants' ? 700 : 500,
+              color: modalTab === 'participants' ? '#007a7a' : '#64748b',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            Participants
           </button>
         </div>
+
+        {modalTab === 'reviewers' ? (
+          /* ── Assign Reviewers Tab (1st Tab) ── */
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '20px 24px' }}>
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 14 }}>
+              Select the reviewers who will receive access to this SOW draft.
+            </div>
+
+            {/* Reviewers List with Neutral Cards */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4, marginBottom: 16 }}>
+              {reviewers.map((r) => {
+                const isChecked = selectedIds.includes(r.id)
+                return (
+                  <div
+                    key={r.id}
+                    onClick={() => toggleSelect(r.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      userSelect: 'none',
+                    }}
+                  >
+                    {/* Styled Lucide Checkbox */}
+                    <div
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 4,
+                        background: isChecked ? '#00C4C4' : '#ffffff',
+                        border: isChecked ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.15s ease',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isChecked && <Check size={12} color="#ffffff" strokeWidth={3} />}
+                    </div>
+
+                    <div
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: '50%',
+                        background: r.color,
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {r.initials}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: '#0d212c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {r.name}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: '#94a3b8' }}>{r.role}</div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setReviewers((prev) => prev.filter((x) => x.id !== r.id))
+                        setSelectedIds((prev) => prev.filter((x) => x !== r.id))
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#cbd5e1',
+                        fontSize: 14,
+                        padding: '2px 4px',
+                      }}
+                      title="Remove"
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1')}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Add Reviewer Input with Validation */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={newEmail}
+                  onChange={(e) => {
+                    setNewEmail(e.target.value)
+                    if (emailError) setEmailError('')
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleAddReviewer()
+                    }
+                  }}
+                  placeholder="Enter reviewer email (e.g. name@company.com)…"
+                  style={{
+                    flex: 1,
+                    border: emailError ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    fontSize: 13,
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                    background: '#ffffff',
+                    transition: 'all 0.15s ease',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddReviewer}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#00C4C4',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
+                  }}
+                >
+                  + Add
+                </button>
+              </div>
+              {emailError && (
+                <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+                  <AlertTriangle size={12} />
+                  {emailError}
+                </div>
+              )}
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: 9,
+                  border: '1px solid #e2e8f0',
+                  background: '#fff',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#64748b',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveReviewers}
+                style={{
+                  padding: '9px 20px',
+                  borderRadius: 9,
+                  border: 'none',
+                  background: '#00C4C4',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#fff',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
+                }}
+              >
+                Save Reviewers ({selectedIds.length})
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Participants Tab (2nd Tab) ── */
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Category Filter Tabs */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 6,
+                padding: '12px 24px',
+                borderBottom: '1px solid #f1f5f9',
+                background: '#ffffff',
+                overflowX: 'auto',
+              }}
+            >
+              {[
+                { id: 'all', label: `All (${PARTICIPANTS.length})` },
+                { id: 'reviewers', label: `Reviewers (3)` },
+                { id: 'contributors', label: `Contributors (3)` },
+                { id: 'clients', label: `Clients (2)` },
+                { id: 'pmo', label: `PMO (1)` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveCategory(tab.id as 'all' | 'reviewers' | 'contributors' | 'clients' | 'pmo')}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: activeCategory === tab.id ? '#00C4C4' : '#f1f5f9',
+                    color: activeCategory === tab.id ? '#ffffff' : '#64748b',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Participants List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 24px', display: 'flex', flexDirection: 'column' }}>
+              {filtered.map((user) => {
+                const roleLabel =
+                  user.type === 'reviewers'
+                    ? 'Reviewer'
+                    : user.type === 'contributors'
+                    ? 'Contributor'
+                    : user.type === 'clients'
+                    ? 'Client'
+                    : 'PMO'
+
+                const hasEditAccess = user.type !== 'reviewers'
+
+                return (
+                  <div
+                    key={user.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '14px 0',
+                      background: '#ffffff',
+                      borderBottom: '1px solid #f1f5f9',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: '50%',
+                        background: user.color,
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {user.initials}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: '#0d212c' }}>
+                          {user.name}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 500,
+                            padding: '1px 7px',
+                            borderRadius: 4,
+                            background:
+                              user.type === 'reviewers'
+                                ? '#f3e8ff'
+                                : user.type === 'contributors'
+                                ? '#ecfdf5'
+                                : user.type === 'clients'
+                                ? '#e0f2fe'
+                                : '#ccfbf1',
+                            color:
+                              user.type === 'reviewers'
+                                ? '#7e22ce'
+                                : user.type === 'contributors'
+                                ? '#047857'
+                                : user.type === 'clients'
+                                ? '#0369a1'
+                                : '#0f766e',
+                          }}
+                        >
+                          {roleLabel}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#64748b' }}>
+                        {user.email}
+                      </div>
+                    </div>
+
+                    {/* Right side: Simple text access indicator */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 500,
+                          color: hasEditAccess ? '#047857' : '#64748b',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {hasEditAccess ? 'Edit Access' : 'View Access'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                padding: '12px 24px',
+                borderTop: '1px solid #f1f5f9',
+                background: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: '7px 18px',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
+                  background: '#ffffff',
+                  color: '#0d212c',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
+
+export const SOWParticipantsModal = ReviewerAndParticipantsModal
 
 /* ── Context Field Header (Matches User Image 1 Placement) ─────────────────── */
 
@@ -3215,84 +3451,11 @@ function FormTab({
   }
 
   return (
-    <div style={{ padding: '20px 16px', maxWidth: 840 }}>
-      {/* ── Top Reference Documents (if present) ── */}
-      {showUploadedDocs && extraFiles.length > 0 && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: '16px 18px',
-            background: 'rgba(255,255,255,0.7)',
-            borderRadius: 14,
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-          }}
-        >
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', marginBottom: 2 }}>
-              Uploaded Documents
-            </div>
-            <div style={{ fontSize: 12, color: '#64748b' }}>
-              Reference documents provided for this SOW context.
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {extraFiles.map((file) => (
-              <button
-                key={file.id}
-                type="button"
-                onClick={() => setPreviewFile(file)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '12px 14px',
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 10,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.15s ease',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#cbd5e1'
-                  ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'
-                  ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, flexShrink: 0 }}>
-                  <FileIconElement ext={getFileExt(file.name)} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      color: '#0d212c',
-                      fontSize: 12.5,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                    title={file.name}
-                  >
-                    {file.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>
-                    {file.size} · {file.type.toUpperCase()}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+    <div style={{ display: 'flex', width: '100%', minHeight: '100%', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', maxWidth: 840, width: '100%' }}>
+        {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
 
-      {/* ── Commitments card ── */}
+        {/* ── Commitments card ── */}
       <SectionCard
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
@@ -3849,6 +4012,8 @@ function FormTab({
         onRemoveFile={(id) => setExtraFiles((prev) => prev.filter((d) => d.id !== id))}
         isEditable={isEditable}
       />
+
+      </div>
 
       {/* Citation Preview Modal */}
       {citationModalTarget && (
@@ -5155,6 +5320,7 @@ function AssigneesDisplay({
   onReassign?: (newMemberId: string) => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [clickedOpen, setClickedOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   if (inClientQueue) {
@@ -5279,15 +5445,13 @@ function AssigneesDisplay({
         style={{
           display: 'flex',
           alignItems: 'center',
-          cursor: onReassign ? 'pointer' : 'default',
+          cursor: 'pointer',
         }}
         onClick={(e) => {
-          if (onReassign) {
-            e.stopPropagation()
-            setMenuOpen((v) => !v)
-          }
+          e.stopPropagation()
+          setClickedOpen((prev) => !prev)
         }}
-        title={onReassign ? 'Click to reassign this question' : undefined}
+        title="View assigned contributors"
       >
         {members.map((m, idx) => (
           <div
@@ -5302,65 +5466,98 @@ function AssigneesDisplay({
         ))}
       </div>
 
-      {/* Tooltip when hovering and menu is not open */}
-      {hovered && !menuOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 'calc(100% + 6px)',
-            right: 0,
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: 8,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-            padding: '6px 10px',
-            zIndex: 100,
-            minWidth: 160,
-            pointerEvents: 'none',
-          }}
-        >
+      {/* Tooltip / overlay when hovering or clicked and menu is not open */}
+      {(hovered || clickedOpen) && !menuOpen && (
+        <>
+          {clickedOpen && (
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setClickedOpen(false)
+              }}
+            />
+          )}
           <div
             style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: '#94a3b8',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 5,
+              position: 'absolute',
+              top: 'calc(100% + 6px)',
+              right: 0,
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 8,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              padding: '8px 12px',
+              zIndex: 100,
+              minWidth: 200,
+              width: 'max-content',
+              pointerEvents: 'auto',
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            Assigned Contributors
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {members.map((m) => (
-              <div
-                key={m.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <MemberAvatar memberId={m.id} size={18} />
-                <span
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#64748b',
+                marginBottom: 6,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Assigned contributors
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {members.map((m) => (
+                <div
+                  key={m.id}
                   style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: '#0d212c',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                 >
-                  {m.name}
-                </span>
-              </div>
-            ))}
-          </div>
-          {onReassign && (
-            <div style={{ marginTop: 6, paddingTop: 4, borderTop: '1px solid #f1f5f9', fontSize: 10, color: '#00C4C4', fontWeight: 600 }}>
-              Click avatar to reassign
+                  <MemberAvatar memberId={m.id} size={18} />
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: '#0d212c',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {m.name}
+                  </span>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+            {onReassign && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setClickedOpen(false)
+                  setMenuOpen(true)
+                }}
+                style={{
+                  marginTop: 6,
+                  paddingTop: 6,
+                  borderTop: '1px solid #f1f5f9',
+                  fontSize: 10.5,
+                  color: '#00C4C4',
+                  fontWeight: 600,
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  display: 'block',
+                  textAlign: 'left',
+                }}
+              >
+                Change contributor →
+              </button>
+            )}
+          </div>
+        </>
       )}
 
       {/* Reassign dropdown menu */}
@@ -6676,7 +6873,7 @@ function StructureTab({
           </div>
 
           {/* Add section — centered at bottom */}
-          {!isContributor && !isReviewer && (
+          {!isContributor && !isReviewer && !disableAnswer && (
             <div style={{ padding: '10px 10px 14px', borderTop: '1px solid rgba(0,196,196,0.1)' }}>
               <button
                 onClick={() => setShowAddSectionModal(true)}
@@ -7112,7 +7309,7 @@ function StructureTab({
                           )}
                         </span>
                         {/* Add item CTA - contributors can add new questions in their assigned sections */}
-                        {!isReviewer && (!isContributor || isSectionAssignedToContributor(sec)) && (
+                        {!disableAnswer && !isReviewer && (!isContributor || isSectionAssignedToContributor(sec)) && (
                           <button
                             onClick={() => setAddItemFor(sec.id)}
                             style={{
@@ -8315,15 +8512,7 @@ function AIReviewModal({
     if (stage === 'thinking') {
       const timer = setTimeout(() => {
         setStage('summary')
-        if (hasRunBefore) {
-          setFindings((prev) =>
-            prev.map((f) => ({
-              ...f,
-              resolved: true,
-              resolutionType: 'Passed AI Re-check',
-            }))
-          )
-        }
+        // Check completed
         onAcknowledge?.()
       }, 2400)
       return () => clearTimeout(timer)
@@ -8344,13 +8533,19 @@ function AIReviewModal({
     setExpandedCriteria((prev) => ({ ...prev, [crit]: !prev[crit] }))
   }
 
-  // 1. Resolve manually
+  // 1. Resolve manually (keep popup open)
   const handleResolveManuallyClick = (finding: AIReviewFinding) => {
     onResolveManually?.(finding.affected)
-    onClose()
+    setFindings((prev) =>
+      prev.map((f) =>
+        f.id === finding.id
+          ? { ...f, resolved: true, resolutionType: 'Resolved manually' }
+          : f
+      )
+    )
   }
 
-  // 2. Accept AI option
+  // 2. Accept AI option (keep popup open)
   const handleAcceptAiOptionClick = (finding: AIReviewFinding) => {
     setFindings((prev) =>
       prev.map((f) =>
@@ -8359,7 +8554,6 @@ function AIReviewModal({
           : f
       )
     )
-    onClose()
   }
 
   // 3. Assign to contributor (with regex validation)
@@ -8384,7 +8578,6 @@ function AIReviewModal({
     setActiveAssignFindingId(null)
     setAssignEmail('')
     setAssignEmailError(null)
-    onClose()
   }
 
   // 4. Dismiss (mandatory reason)
@@ -8433,6 +8626,7 @@ function AIReviewModal({
     },
   ]
 
+  const hasActionTaken = findings.some((f) => f.resolved)
   const totalOpenFindings = findings.filter((f) => !f.resolved).length
 
   return (
@@ -8487,14 +8681,9 @@ function AIReviewModal({
             {stage === 'summary' && (
               <button
                 type="button"
+                disabled={!hasActionTaken}
                 onClick={() => {
-                  setFindings((prev) =>
-                    prev.map((f) => ({
-                      ...f,
-                      resolved: true,
-                      resolutionType: 'Passed AI Re-check',
-                    }))
-                  )
+                  if (!hasActionTaken) return
                   setStage('thinking')
                 }}
                 style={{
@@ -8503,24 +8692,29 @@ function AIReviewModal({
                   gap: 6,
                   padding: '6px 14px',
                   borderRadius: 8,
-                  background: '#00C4C4',
+                  background: hasActionTaken ? '#00C4C4' : '#cbd5e1',
                   border: 'none',
-                  color: '#ffffff',
+                  color: hasActionTaken ? '#ffffff' : '#64748b',
                   fontSize: 12,
                   fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,196,196,0.25)',
+                  cursor: hasActionTaken ? 'pointer' : 'not-allowed',
+                  boxShadow: hasActionTaken ? '0 2px 6px rgba(0,196,196,0.25)' : 'none',
+                  opacity: hasActionTaken ? 1 : 0.65,
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
+                  if (hasActionTaken) {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
+                  if (hasActionTaken) {
+                    ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
+                  }
                 }}
-                title="Rerun AI analysis across all sections"
+                title={hasActionTaken ? "Rerun AI analysis across all sections" : "Take action on at least one finding before rerunning"}
               >
-                <Sparkles size={13} color="#ffffff" />
+                <Sparkles size={13} color={hasActionTaken ? "#ffffff" : "#64748b"} />
                 Rerun AI Check
               </button>
             )}
@@ -8575,40 +8769,7 @@ function AIReviewModal({
               <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>
                 AI is reviewing the entire SOW draft…
               </div>
-              <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 24 }}>
-                Scanning all 20 sections against RFP requirements, commercial constraints, traceability citations, and quality dimensions.
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (hasRunBefore) {
-                    setFindings((prev) =>
-                      prev.map((f) => ({
-                        ...f,
-                        resolved: true,
-                        resolutionType: 'Passed AI Re-check',
-                      }))
-                    )
-                  }
-                  setStage('summary')
-                  onAcknowledge?.()
-                }}
-                style={{
-                  padding: '7px 22px',
-                  borderRadius: 8,
-                  background: '#ffffff',
-                  border: '1.5px solid #cbd5e1',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  color: '#475569',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
-              >
-                Skip to Summary
-              </button>
+              
             </div>
           </div>
         ) : (
@@ -8787,7 +8948,7 @@ function AIReviewModal({
                                       >
                                         {finding.severity}
                                       </span>
-                                      {finding.resolved && (
+                                      {finding.resolved && finding.resolutionType && finding.resolutionType !== 'Passed AI Re-check' && (
                                         <span
                                           style={{
                                             fontSize: 11,
@@ -9124,6 +9285,7 @@ function SOWDraftTab({
   onSendForReview,
   onOpenParticipantsModal,
   isReadOnly = false,
+  isDraftGenerating = false,
   sowDeadline = '2026-10-31',
 }: {
   isContributor?: boolean
@@ -9132,6 +9294,7 @@ function SOWDraftTab({
   onSendForReview?: () => void
   onOpenParticipantsModal?: () => void
   isReadOnly?: boolean
+  isDraftGenerating?: boolean
   sowDeadline?: string
 }) {
   // ── State ───────────────────────────────────────────────────────────────────
@@ -9163,6 +9326,8 @@ function SOWDraftTab({
   }))
   const [dragTocIdx, setDragTocIdx] = useState<number | null>(null)
   const [dragOverTocIdx, setDragOverTocIdx] = useState<number | null>(null)
+  const [showDraftSectionInfoTooltip, setShowDraftSectionInfoTooltip] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   // ── Inline document comments ────────────────────────────────────────────────
   type CommentReply = { id: string; author: string; text: string; timestamp: string }
@@ -10190,23 +10355,47 @@ function SOWDraftTab({
               >
                 Sections
               </span>
-              <div
-                title="You can drag and drop sections to reposition them"
-                style={{
-                  width: 15,
-                  height: 15,
-                  borderRadius: '50%',
-                  background: 'rgba(0,196,196,0.14)',
-                  color: '#00a0a0',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'help',
-                }}
-              >
-                i
+              <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onMouseEnter={() => setShowDraftSectionInfoTooltip(true)}
+                  onMouseLeave={() => setShowDraftSectionInfoTooltip(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'help',
+                    color: '#64748b',
+                  }}
+                >
+                  <Info size={14} color="#64748b" />
+                </button>
+                {showDraftSectionInfoTooltip && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      left: 0,
+                      zIndex: 9999,
+                      background: '#0d212c',
+                      color: '#ffffff',
+                      fontSize: 11,
+                      fontWeight: 500,
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      width: 210,
+                      whiteSpace: 'normal',
+                      lineHeight: 1.35,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    You can drag and drop sections to reposition them
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -10673,10 +10862,9 @@ function SOWDraftTab({
                   onMouseLeave={(e) => {
                     ;(e.currentTarget as HTMLButtonElement).style.color = '#007a7a'
                   }}
-                  title="View SOW Participants"
+                  title="Reviewer & Participants"
                 >
-                  <Users size={13} color="#00a0a0" />
-                  View Participants
+                  Reviewer &amp; Participants
                 </button>
                 {/* AI Review & Summary for Reviewer */}
                 {isReviewer && (
@@ -11184,14 +11372,14 @@ function SOWDraftTab({
               }
             />
             <div style={{ flex: 1 }} />
+            {/* Reviewer & Participants (text only button) */}
             <button
               type="button"
               onClick={() => onOpenParticipantsModal?.()}
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
-                padding: '4px 8px',
+                padding: '5px 10px',
                 borderRadius: 6,
                 border: 'none',
                 background: 'transparent',
@@ -11208,73 +11396,150 @@ function SOWDraftTab({
               onMouseLeave={(e) => {
                 ;(e.currentTarget as HTMLButtonElement).style.color = '#007a7a'
               }}
-              title="View SOW Participants"
+              title="Reviewer & Participants"
             >
-              <Users size={13} color="#00a0a0" />
-              View Participants
+              Reviewer &amp; Participants
             </button>
 
-
-
-
-
-            {/* PMO Approve / Withdraw Approval */}
-            {isPMO && (
-              <>
-                {!isPMOApproved ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowApproveConfirmModal(true)}
+            {/* Export SOW Dropdown button in place of Approve button */}
+            <div style={{ position: 'relative', marginRight: 8 }}>
+              <button
+                type="button"
+                onClick={() => setShowExportMenu((prev) => !prev)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '5px 14px',
+                  borderRadius: 6,
+                  border: 'none',
+                  background: '#00C4C4',
+                  color: '#ffffff',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
+                }}
+                title="Export SOW"
+              >
+                <Download size={13} color="#ffffff" />
+                Export SOW
+                <ChevronDown size={12} color="#ffffff" />
+              </button>
+              {showExportMenu && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                    onClick={() => setShowExportMenu(false)}
+                  />
+                  <div
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '5px 14px',
-                      borderRadius: 6,
-                      border: 'none',
-                      background: '#16a34a',
-                      color: '#ffffff',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      marginRight: 8,
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      zIndex: 100,
+                      minWidth: 190,
+                      overflow: 'hidden',
+                      padding: '4px 0',
                     }}
                   >
-                    <Check size={13} strokeWidth={3} />
-                    Approve
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsPMOApproved(false)
-                      showToast('SOW approval withdrawn. Editing is unlocked.', 'info')
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '5px 14px',
-                      borderRadius: 6,
-                      border: '1.5px solid #f59e0b',
-                      background: 'rgba(245,158,11,0.1)',
-                      color: '#b45309',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      marginRight: 8,
-                      whiteSpace: 'nowrap',
-                    }}
-                    title="Click to withdraw PMO approval"
-                  >
-                    <RotateCcw size={13} />
-                    Withdraw Approval
-                  </button>
-                )}
-              </>
-            )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExportMenu(false)
+                        showToast('Exporting SOW as PDF...', 'info')
+                        setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 14px',
+                        background: 'transparent',
+                        border: 'none',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: '#0f172a',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <FileText size={14} color="#ef4444" />
+                      Export as PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExportMenu(false)
+                        showToast('Exporting SOW as Word...', 'info')
+                        setTimeout(() => showToast('SOW exported as Word document successfully!', 'success'), 1200)
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 14px',
+                        background: 'transparent',
+                        border: 'none',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: '#0f172a',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <FileText size={14} color="#2563eb" />
+                      Export as Word (.docx)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExportMenu(false)
+                        showToast('Exporting SOW as Markdown...', 'info')
+                        setTimeout(() => showToast('SOW exported as Markdown successfully!', 'success'), 1200)
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 14px',
+                        background: 'transparent',
+                        border: 'none',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: '#0f172a',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <FileText size={14} color="#64748b" />
+                      Export as Markdown (.md)
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           )}
 
@@ -11492,6 +11757,65 @@ function SOWDraftTab({
                 — all document text remains visible
               </div>
             )}
+
+            {/* PMO Approve SOW / Withdraw Approval on right side */}
+            {isPMO && (
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                {!isPMOApproved ? (
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    onClick={() => setShowApproveConfirmModal(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 14px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: isReadOnly ? '#94a3b8' : '#16a34a',
+                      color: '#ffffff',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap',
+                      boxShadow: isReadOnly ? 'none' : '0 2px 8px rgba(22,163,74,0.3)',
+                    }}
+                  >
+                    <Check size={13} strokeWidth={3} />
+                    Approve SOW
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    onClick={() => {
+                      if (isReadOnly) return
+                      setIsPMOApproved(false)
+                      showToast('SOW approval withdrawn. Editing is unlocked.', 'info')
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 14px',
+                      borderRadius: 6,
+                      border: '1.5px solid #f59e0b',
+                      background: 'rgba(245,158,11,0.1)',
+                      color: '#b45309',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                    title="Click to withdraw PMO approval"
+                  >
+                    <RotateCcw size={13} />
+                    Withdraw Approval
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Scroll area & Comments Panel Container (Below Header / Toolbar) */}
@@ -11626,7 +11950,7 @@ function SOWDraftTab({
             >
               <div
                 ref={editorRef}
-                contentEditable={!isContributor && !isReviewer}
+                contentEditable={!isContributor && !isReviewer && !isReadOnly}
                 suppressContentEditableWarning
                 onInput={() => {
                   if (!isContributor && !isReviewer) {
@@ -12425,7 +12749,7 @@ function SOWDraftTab({
         )}
 
         {/* Center Floating FAB: AI Review & Summary */}
-        {!isAdmin && !isContributor && (
+        {!isAdmin && !isContributor && !isDraftGenerating && (
           <button
             type="button"
             onClick={() => setShowAIReviewModal(true)}
@@ -13360,13 +13684,7 @@ function ShimmerDraft() {
   )
 }
 
-/* ── Send for Review Modal ───────────────────────────────────────────────── */
-
-const REVIEWERS_DEFAULT = [
-  { id: 'r1', name: 'Rohan Mehta', role: 'Technical Lead', initials: 'RM', color: '#8b5cf6' },
-  { id: 'r2', name: 'Priya Sharma', role: 'Delivery Manager', initials: 'PS', color: '#f59e0b' },
-  { id: 'r3', name: 'Karan Bose', role: 'PMO Analyst', initials: 'KB', color: '#ef4444' },
-]
+/* ── Send for Review Modal Wrapper ───────────────────────────────────────── */
 
 function SendForReviewModal({
   onClose,
@@ -13375,296 +13693,12 @@ function SendForReviewModal({
   onClose: () => void
   onConfirm: () => void
 }) {
-  const [reviewers, setReviewers] = useState(REVIEWERS_DEFAULT)
-  const [selectedIds, setSelectedIds] = useState<string[]>(REVIEWERS_DEFAULT.map((r) => r.id))
-  const [newEmail, setNewEmail] = useState('')
-  const [emailError, setEmailError] = useState('')
-
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.body.style.overflow = originalOverflow
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [onClose])
-
-  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
-
-  const handleAddReviewer = () => {
-    const trimmed = newEmail.trim()
-    if (!trimmed) {
-      setEmailError('Please enter an email address')
-      return
-    }
-    if (!emailRegex.test(trimmed)) {
-      setEmailError('Please enter a valid email address (e.g. user@organization.com)')
-      return
-    }
-    const newId = `r${Date.now()}`
-    setReviewers((prev) => [
-      ...prev,
-      {
-        id: newId,
-        name: trimmed.split('@')[0].replace('.', ' '),
-        role: 'Reviewer',
-        initials: trimmed.slice(0, 2).toUpperCase(),
-        color: '#00C4C4',
-      },
-    ])
-    setSelectedIds((prev) => [...prev, newId])
-    setNewEmail('')
-    setEmailError('')
-  }
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    )
-  }
-
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 500,
-        background: 'rgba(0,0,0,0.38)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 18,
-          padding: '22px 20px 18px',
-          width: 460,
-          boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
-          position: 'relative',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            background: '#f1f5f9',
-            border: 'none',
-            borderRadius: 8,
-            width: 28,
-            height: 28,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 14,
-            color: '#64748b',
-          }}
-        >
-          ✕
-        </button>
-        <div style={{ fontSize: 17, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
-          Send for Review
-        </div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 18 }}>
-          Select the reviewers who will receive access to this SOW draft.
-        </div>
-
-        {/* Reviewers with styled checkboxes */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, maxHeight: 220, overflowY: 'auto' }}>
-          {reviewers.map((r) => {
-            const isChecked = selectedIds.includes(r.id)
-            return (
-              <div
-                key={r.id}
-                onClick={() => toggleSelect(r.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '9px 12px',
-                  borderRadius: 10,
-                  border: isChecked ? '1.5px solid rgba(0,196,196,0.35)' : '1px solid #e2e8f0',
-                  background: isChecked ? 'rgba(0,196,196,0.03)' : '#f8fafc',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  userSelect: 'none',
-                }}
-              >
-                {/* Styled Lucide Checkbox */}
-                <div
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 4,
-                    background: isChecked ? '#00C4C4' : '#ffffff',
-                    border: isChecked ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.15s ease',
-                    flexShrink: 0,
-                  }}
-                >
-                  {isChecked && <Check size={12} color="#ffffff" strokeWidth={3} />}
-                </div>
-
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: r.color,
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {r.initials}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {r.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{r.role}</div>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setReviewers((prev) => prev.filter((x) => x.id !== r.id))
-                    setSelectedIds((prev) => prev.filter((x) => x !== r.id))
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#cbd5e1',
-                    fontSize: 14,
-                    padding: '2px 4px',
-                  }}
-                  title="Remove"
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1')}
-                >
-                  ✕
-                </button>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Add Reviewer Input with Validation */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              value={newEmail}
-              onChange={(e) => {
-                setNewEmail(e.target.value)
-                if (emailError) setEmailError('')
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleAddReviewer()
-                }
-              }}
-              placeholder="Enter reviewer email (e.g. name@company.com)…"
-              style={{
-                flex: 1,
-                border: emailError ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0',
-                borderRadius: 8,
-                padding: '8px 12px',
-                fontSize: 13,
-                outline: 'none',
-                fontFamily: 'inherit',
-                background: '#ffffff',
-                transition: 'all 0.15s ease',
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.background = '#f8fafc'
-                e.currentTarget.style.borderColor = emailError ? '#ef4444' : '#cbd5e1'
-                e.currentTarget.style.boxShadow = emailError ? '0 0 0 2px rgba(239, 68, 68, 0.2)' : '0 0 0 2px rgba(203, 213, 225, 0.4)'
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.background = '#ffffff'
-                e.currentTarget.style.borderColor = emailError ? '#ef4444' : '#e2e8f0'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
-            />
-            <button
-              onClick={handleAddReviewer}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: '#00C4C4',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#ffffff',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
-              }}
-            >
-              + Add
-            </button>
-          </div>
-          {emailError && (
-            <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
-              <AlertTriangle size={12} />
-              {emailError}
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '9px 18px',
-              borderRadius: 9,
-              border: '1px solid #e2e8f0',
-              background: '#fff',
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#64748b',
-              cursor: 'pointer',
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              padding: '9px 20px',
-              borderRadius: 9,
-              border: 'none',
-              background: '#00C4C4',
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#fff',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
-            }}
-          >
-            Send ({selectedIds.length}) for Review
-          </button>
-        </div>
-      </div>
-    </div>
+    <ReviewerAndParticipantsModal
+      initialTab="reviewers"
+      onClose={onClose}
+      onConfirmReviewers={() => onConfirm()}
+    />
   )
 }
 
@@ -13752,18 +13786,18 @@ export function SOWDetailScreen({
   const defaultMockFiles: UploadedFile[] = [
     { id: '1', name: 'Scope_Requirements_RFP.pdf', size: '2.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
     { id: '2', name: 'Vendor_MSA_Template.docx', size: '1.2 MB', type: 'application/msword', status: 'complete', progress: 100 },
-    { id: '3', name: 'Technical_Specifications.xlsx', size: '845 KB', type: 'application/vnd.ms-excel', status: 'complete', progress: 100 }
+    { id: '3', name: 'Technical_Specifications.pdf', size: '845 KB', type: 'application/pdf', status: 'complete', progress: 100 }
   ]
-  const effectiveFiles = uploadedFiles && uploadedFiles.length > 0 ? uploadedFiles : (sowVariant === 'v2' || sowVariant === 'meridian') ? defaultMockFiles : uploadedFiles
+  const effectiveFiles = uploadedFiles && uploadedFiles.length > 0 ? uploadedFiles : (sowVariant === 'v2' || sowVariant === 'meridian' || isDeactivated) ? defaultMockFiles : uploadedFiles
 
   type DraftGenState = 'idle' | 'generating' | 'shimmer' | 'ready'
   const [activeTab, setActiveTab] = useState<SOWTab>(
     sowVariant === 'v2' || sowVariant === 'meridian' || isContributor || isReviewer ? 'structure' : 'overview'
   )
   const [isStructureUnlocked, setIsStructureUnlocked] = useState(
-    sowVariant === 'v2' || sowVariant === 'meridian' || isContributor || isReviewer
+    sowVariant === 'v2' || sowVariant === 'meridian' || isContributor || isReviewer || isDeactivated
   )
-  const [isDraftUnlocked, setIsDraftUnlocked] = useState(false)
+  const [isDraftUnlocked, setIsDraftUnlocked] = useState(isDeactivated)
   const [isFormReady, setIsFormReady] = useState(false)
   const [isFormEditable, setIsFormEditable] = useState(false)
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
@@ -14051,6 +14085,7 @@ export function SOWDetailScreen({
                       {/* Send for Review / Send for Approval (Secondary) */}
                       <button
                         onClick={() => {
+                          if (isDeactivated) return
                           if (isContributor || isReviewer || isClient) {
                             setShowSendForApprovalConfirm(true)
                           } else {
@@ -14059,7 +14094,7 @@ export function SOWDetailScreen({
                             showToast('SOW sent for review successfully!', 'success')
                           }
                         }}
-                        disabled={completionScore === 0}
+                        disabled={isDeactivated || completionScore === 0}
                         title={
                           completionScore === 0
                             ? 'At least one question must be answered before sending'
@@ -14116,8 +14151,8 @@ export function SOWDetailScreen({
                       {/* Generate Draft (Primary) */}
                       <button
                         onClick={handleGenerateDraft}
-                        disabled={completionScore < 80}
-                        title={completionScore < 80 ? "Completion must be at least 80% to generate draft" : "Generate Draft"}
+                        disabled={isDeactivated || completionScore < 80}
+                        title={isDeactivated ? "Document is deactivated" : completionScore < 80 ? "Completion must be at least 80% to generate draft" : "Generate Draft"}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -14125,13 +14160,13 @@ export function SOWDetailScreen({
                           padding: '6px 14px',
                           borderRadius: 8,
                           border: 'none',
-                          background: completionScore < 80 ? '#cbd5e1' : '#00C4C4',
+                          background: (isDeactivated || completionScore < 80) ? '#cbd5e1' : '#00C4C4',
                           fontSize: 12,
                           fontWeight: 700,
-                          color: completionScore < 80 ? '#64748b' : '#ffffff',
-                          cursor: completionScore < 80 ? 'not-allowed' : 'pointer',
+                          color: (isDeactivated || completionScore < 80) ? '#64748b' : '#ffffff',
+                          cursor: (isDeactivated || completionScore < 80) ? 'not-allowed' : 'pointer',
                           whiteSpace: 'nowrap',
-                          boxShadow: completionScore < 80 ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
+                          boxShadow: (isDeactivated || completionScore < 80) ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
                           transition: 'all 0.15s ease',
                         }}
                         onMouseEnter={(e) => {
@@ -14190,7 +14225,8 @@ export function SOWDetailScreen({
                   )}
                   {isStructureUnlocked && !isFormEditable ? (
                     <button
-                      onClick={() => setIsFormEditable(true)}
+                      disabled={isDeactivated}
+                      onClick={() => !isDeactivated && setIsFormEditable(true)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -14198,8 +14234,8 @@ export function SOWDetailScreen({
                         border: 'none',
                         fontSize: 13,
                         fontWeight: 600,
-                        color: '#00a0a0',
-                        cursor: 'pointer',
+                        color: isDeactivated ? '#94a3b8' : '#00a0a0',
+                        cursor: isDeactivated ? 'not-allowed' : 'pointer',
                         padding: '6px 14px',
                       }}
                     >
@@ -14207,27 +14243,27 @@ export function SOWDetailScreen({
                     </button>
                   ) : (
                     <button
-                      disabled={isStructureUnlocked && !isFormDirty}
-                      onClick={handleFormSubmit}
+                      disabled={isDeactivated || (isStructureUnlocked && !isFormDirty)}
+                      onClick={isDeactivated ? undefined : handleFormSubmit}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 6,
                         padding: '6px 14px',
                         borderRadius: 8,
-                        border: (!isStructureUnlocked || isFormDirty) ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid #cbd5e1',
-                        background: (!isStructureUnlocked || isFormDirty) ? 'rgba(0,196,196,0.07)' : '#f1f5f9',
+                        border: (!isDeactivated && (!isStructureUnlocked || isFormDirty)) ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid #cbd5e1',
+                        background: (!isDeactivated && (!isStructureUnlocked || isFormDirty)) ? 'rgba(0,196,196,0.07)' : '#f1f5f9',
                         fontSize: 12,
                         fontWeight: 600,
-                        color: (!isStructureUnlocked || isFormDirty) ? '#00a0a0' : '#94a3b8',
-                        cursor: (!isStructureUnlocked || isFormDirty) ? 'pointer' : 'not-allowed',
+                        color: (!isDeactivated && (!isStructureUnlocked || isFormDirty)) ? '#00a0a0' : '#94a3b8',
+                        cursor: (!isDeactivated && (!isStructureUnlocked || isFormDirty)) ? 'pointer' : 'not-allowed',
                         whiteSpace: 'nowrap',
                       }}
                       onMouseEnter={(e) => {
-                        if ((!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                        if (!isDeactivated && (!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
                       }}
                       onMouseLeave={(e) => {
-                        if ((!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
+                        if (!isDeactivated && (!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
                       }}
                     >
                       {isStructureUnlocked ? 'Resubmit' : 'Submit Form'}
@@ -14363,82 +14399,6 @@ export function SOWDetailScreen({
                           </>
                         )}
                       </div>
-
-                      {/* View Participants button (text & icon only) */}
-                      <button
-                        type="button"
-                        onClick={() => setShowParticipantsModal(true)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '6px 10px',
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#007a7a',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          ;(e.currentTarget as HTMLButtonElement).style.color = '#0d212c'
-                        }}
-                        onMouseLeave={(e) => {
-                          ;(e.currentTarget as HTMLButtonElement).style.color = '#007a7a'
-                        }}
-                        title="View SOW Participants"
-                      >
-                        <Users size={13} color="#00a0a0" />
-                        View Participants
-                      </button>
-
-                      {/* Send for Review / Send for Approval */}
-                      <button
-                        onClick={() => {
-                          if (isContributor || isReviewer || isClient) {
-                            setShowSendForApprovalConfirm(true)
-                          } else {
-                            setShowReviewModal(true)
-                          }
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '6px 14px',
-                          borderRadius: 8,
-                          border: '1.5px solid rgba(0,196,196,0.35)',
-                          background: 'rgba(0,196,196,0.07)',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: '#00a0a0',
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                        }}
-                        onMouseEnter={(e) => {
-                          ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
-                        }}
-                        onMouseLeave={(e) => {
-                          ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
-                        }}
-                      >
-                        <svg
-                          width="13"
-                          height="13"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M22 2L11 13" />
-                          <path d="M22 2L15 22 11 13 2 9l20-7z" />
-                        </svg>
-                        {isContributor || isReviewer || isClient ? 'Send for Approval' : 'Send for Review'}
-                      </button>
                     </div>
                   )
                 ) : draftGenState === 'generating' || draftGenState === 'shimmer' ? (
@@ -14481,8 +14441,8 @@ export function SOWDetailScreen({
                 ) : activeTab !== 'structure' ? null : (
                   <button
                     onClick={handleGenerateDraft}
-                    disabled={completionScore < 80}
-                    title={completionScore >= 80 ? "Generate Draft" : "Complete at least 80% to generate draft"}
+                    disabled={isDeactivated || completionScore < 80}
+                    title={isDeactivated ? "Document is deactivated" : completionScore >= 80 ? "Generate Draft" : "Complete at least 80% to generate draft"}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -14490,12 +14450,12 @@ export function SOWDetailScreen({
                       padding: '6px 14px',
                       borderRadius: 8,
                       border: 'none',
-                      background: completionScore >= 80 ? '#00C4C4' : '#cbd5e1',
+                      background: (!isDeactivated && completionScore >= 80) ? '#00C4C4' : '#cbd5e1',
                       fontSize: 12,
                       fontWeight: 700,
-                      color: completionScore >= 80 ? '#ffffff' : '#94a3b8',
-                      cursor: completionScore >= 80 ? 'pointer' : 'not-allowed',
-                      boxShadow: completionScore >= 80 ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
+                      color: (!isDeactivated && completionScore >= 80) ? '#ffffff' : '#94a3b8',
+                      cursor: (!isDeactivated && completionScore >= 80) ? 'pointer' : 'not-allowed',
+                      boxShadow: (!isDeactivated && completionScore >= 80) ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
                       whiteSpace: 'nowrap',
                       transition: 'all 0.15s ease',
                     }}
@@ -14555,7 +14515,7 @@ export function SOWDetailScreen({
               style={{
                 position: 'absolute',
                 inset: 0,
-                zIndex: 50,
+                zIndex: 100,
                 background: '#f8fafc',
                 display: 'flex',
                 flexDirection: 'column',
@@ -14620,6 +14580,7 @@ export function SOWDetailScreen({
                   isReviewer={isReviewer}
                   viewerRole={effectiveViewerRole}
                   isReadOnly={isDeactivated}
+                  isDraftGenerating={draftGenState === 'generating'}
                   sowDeadline={sowDeadline || '2026-10-31'}
                   onOpenParticipantsModal={() => setShowParticipantsModal(true)}
                   onSendForReview={() => {
@@ -14665,18 +14626,15 @@ export function SOWDetailScreen({
       )}
       {/* end glass box */}
 
-      {/* Send for Review modal */}
-      {showReviewModal && (
-        <SendForReviewModal
-          onClose={() => setShowReviewModal(false)}
-          onConfirm={handleSendForReview}
-        />
-      )}
-
-      {/* SOW Participants Modal */}
-      {showParticipantsModal && (
-        <SOWParticipantsModal
-          onClose={() => setShowParticipantsModal(false)}
+      {/* Reviewer & Participants Modal */}
+      {(showReviewModal || showParticipantsModal) && (
+        <ReviewerAndParticipantsModal
+          initialTab={showReviewModal ? 'reviewers' : 'participants'}
+          onClose={() => {
+            setShowReviewModal(false)
+            setShowParticipantsModal(false)
+          }}
+          onConfirmReviewers={handleSendForReview}
         />
       )}
 
@@ -15087,7 +15045,7 @@ function ClientQueueModal({
         <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
         </button>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue Assignment</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue</div>
         <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Select questions and assumptions with the checkboxes to assign them to designated clients.</div>
         
         {/* Horizontal Line Separator below title & subtitle */}
@@ -15238,32 +15196,6 @@ function ClientQueueModal({
                 </>
               )}
             </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedClientToAssign && !clientList.includes(selectedClientToAssign)) {
-                  setClientList((prev) => [...prev, selectedClientToAssign])
-                }
-              }}
-              style={{
-                padding: '9px 16px',
-                borderRadius: 8,
-                background: '#00C4C4',
-                border: 'none',
-                color: '#ffffff',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                height: 38,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Assign to
-            </button>
           </div>
 
           {/* Assigned clients badges */}
@@ -15419,7 +15351,7 @@ function ClientQueueModal({
           <button
             onClick={handleSendInvite}
             style={{
-              padding: '12px 24px',
+              padding: '12px 28px',
               borderRadius: 12,
               background: '#00C4C4',
               border: 'none',
@@ -15428,13 +15360,9 @@ function ClientQueueModal({
               fontWeight: 700,
               cursor: 'pointer',
               boxShadow: '0 8px 20px rgba(0,196,196,0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
             }}
           >
-            <CheckSquare size={16} />
-            Assign Selected Items ({selectedQueueItemIds.size})
+            Assign
           </button>
         </div>
       </div>

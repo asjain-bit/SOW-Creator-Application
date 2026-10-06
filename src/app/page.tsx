@@ -32,7 +32,7 @@ const CONTRIBUTOR_SOWS: SOWItem[] = [
     createdDate: 'Aug 10, 2026',
     lastUpdated: 'Aug 28, 2026',
     status: 'On Track',
-    readiness: 90,
+    readiness: 75,
     openQuestions: 1,
     overdueQuestions: 0,
     reviewComments: 5,
@@ -150,7 +150,7 @@ export default function Home() {
             uploadedFiles={[
               { id: '1', name: 'Meridian_RFP.pdf', size: '2.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
               { id: '2', name: 'Vendor_MSA_Template.docx', size: '1.2 MB', type: 'application/msword', status: 'complete', progress: 100 },
-              { id: '3', name: 'Procurement_Requirements.xlsx', size: '845 KB', type: 'application/vnd.ms-excel', status: 'complete', progress: 100 }
+              { id: '3', name: 'Procurement_Requirements.pdf', size: '845 KB', type: 'application/pdf', status: 'complete', progress: 100 }
             ]}
             onBack={() => setView('dashboard')}
           />
