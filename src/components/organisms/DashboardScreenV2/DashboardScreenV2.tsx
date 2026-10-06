@@ -1171,14 +1171,11 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
     { id: '2', name: 'SoW Domain Specialist', description: 'Applies domain expertise to validate and enrich SOW scope and requirements', status: 'Active' },
     { id: '3', name: 'Questionnaire & Section Design Agent', description: 'Designs questionnaires and structures SOW sections based on project type', status: 'Active' },
     { id: '4', name: 'Knowledge & Research Agent', description: 'Researches industry benchmarks and knowledge base to support SOW content', status: 'Active' },
-    { id: '5', name: 'PMO HITL Gate', description: 'Human-in-the-loop checkpoint for PMO review and approval before proceeding', status: 'Active' },
     { id: '6', name: 'SoW Drafting Agent', description: 'Generates the full SOW draft using structured inputs and domain knowledge', status: 'Active' },
     { id: '7', name: 'SoW Supervisor Agent', description: 'Oversees SOW drafting quality and coordinates between specialized agents', status: 'Active' },
     { id: '8', name: 'Reviewer Supervisor', description: 'Manages the review workflow and aggregates feedback from review agents', status: 'Active' },
     { id: '9', name: 'Change Impact Agent', description: 'Assesses the impact of changes and updates to SOW scope or requirements', status: 'Active' },
-    { id: '10', name: 'SoW Supervisor Agent', description: 'Final supervision pass to ensure SOW completeness and consistency', status: 'Active' },
     { id: '11', name: 'Quality Gate Agent', description: 'Validates SOW against quality standards and compliance requirements', status: 'Active' },
-    { id: '12', name: 'PMO HITL Gate', description: 'Final human-in-the-loop checkpoint for PMO sign-off before client delivery', status: 'Active' },
   ])
 
   const [actionMenuAgentId, setActionMenuAgentId] = useState<string | null>(null)
@@ -5371,54 +5368,68 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   }
 
   const renderNotificationButton = () => (
-    <button
-      onClick={() => setHomeView('notifications')}
+    <div
       style={{
         position: 'relative',
-        width: 36,
-        height: 36,
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.7)',
-        border: '1px solid rgba(255,255,255,0.9)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        cursor: 'pointer',
-        boxShadow: homeView === 'notifications' ? '0 0 0 2px rgba(0,196,196,0.3)' : '0 2px 8px rgba(0,0,0,0.06)',
-        transition: 'all 0.15s',
-        color: homeView === 'notifications' ? '#00C4C4' : '#0d212c',
+        overflow: 'visible',
         flexShrink: 0,
       }}
-      aria-label="Notifications"
     >
-      <Bell size={18} strokeWidth={2} />
-      {unreadCount > 0 && (
-        <span
-          style={{
-            position: 'absolute',
-            top: -2,
-            right: -2,
-            minWidth: 16,
-            height: 16,
-            padding: '0 4px',
-            background: '#e60000',
-            borderRadius: '9999px',
-            color: '#ffffff',
-            fontSize: 10,
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            lineHeight: 1,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-          }}
-        >
-          {unreadCount}
-        </span>
-      )}
-    </button>
+      <button
+        onClick={() => setHomeView('notifications')}
+        style={{
+          position: 'relative',
+          overflow: 'visible',
+          width: 36,
+          height: 36,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.7)',
+          border: '1px solid rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          boxShadow: homeView === 'notifications' ? '0 0 0 2px rgba(0,196,196,0.3)' : '0 2px 8px rgba(0,0,0,0.06)',
+          transition: 'all 0.15s',
+          color: homeView === 'notifications' ? '#00C4C4' : '#0d212c',
+          flexShrink: 0,
+        }}
+        aria-label="Notifications"
+      >
+        <Bell size={18} strokeWidth={2} />
+        {unreadCount > 0 && (
+          <span
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              minWidth: 15,
+              height: 15,
+              padding: '0 3.5px',
+              background: '#e60000',
+              borderRadius: '9999px',
+              color: '#ffffff',
+              fontSize: 9.5,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: 1,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              zIndex: 10,
+              pointerEvents: 'none',
+            }}
+          >
+            {unreadCount}
+          </span>
+        )}
+      </button>
+    </div>
   )
 
   const rppRef = useRef<HTMLDivElement>(null)
@@ -7463,6 +7474,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       flex: 1,
+                      minHeight: 250,
                     }}
                   >
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -7476,7 +7488,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           <th
                             style={{
                               width: '50%',
-                              padding: '10px 14px',
+                              padding: '11px 14px',
                               textAlign: 'left',
                               fontSize: 10,
                               fontWeight: 500,
@@ -7490,7 +7502,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           <th
                             style={{
                               width: '25%',
-                              padding: '10px 14px',
+                              padding: '11px 14px',
                               textAlign: 'left',
                               fontSize: 10,
                               fontWeight: 500,
@@ -7504,7 +7516,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           <th
                             style={{
                               width: '25%',
-                              padding: '10px 14px',
+                              padding: '11px 14px',
                               textAlign: 'left',
                               fontSize: 10,
                               fontWeight: 500,
@@ -7558,7 +7570,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             <tr
                               key={idx}
                               style={{
-                                height: 58,
+                                height: 46,
                                 borderBottom:
                                   idx < arr.length - 1
                                     ? '1px solid #f1f5f9'
@@ -7574,7 +7586,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 ;(e.currentTarget as HTMLTableRowElement).style.background = ''
                               }}
                             >
-                              <td style={{ padding: '10px 14px' }}>
+                              <td style={{ padding: '8px 14px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                                   <div
                                     style={{
@@ -7588,7 +7600,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                   <div style={{ minWidth: 0, overflow: 'hidden' }}>
                                     <div
                                       style={{
-                                        fontSize: 13,
+                                        fontSize: 12.5,
                                         fontWeight: 500,
                                         color: '#0d212c',
                                         overflow: 'hidden',
@@ -7600,9 +7612,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                     </div>
                                     <div
                                       style={{
-                                        fontSize: 11,
+                                        fontSize: 10.5,
                                         color: '#64748b',
-                                        marginTop: 1,
+                                        marginTop: 0,
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
@@ -7613,13 +7625,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                   </div>
                                 </div>
                               </td>
-                              <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                                <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                              <td style={{ padding: '8px 14px', whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>
                                   {item.questions.total} Total • {item.questions.open} Open
                                 </span>
                               </td>
-                              <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                                <span style={{ fontSize: 12.5, color: '#475569', fontWeight: 500 }}>
+                              <td style={{ padding: '8px 14px', whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>
                                   {item.reviewComments} comments
                                 </span>
                               </td>
@@ -7628,19 +7640,6 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         })}
                       </tbody>
                     </table>
-                    {/* Matching footer */}
-                    <div
-                      style={{
-                        padding: '10px 14px',
-                        borderTop: '1px solid rgba(0,196,196,0.08)',
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                      }}
-                    >
-                      <span style={{ fontSize: 12, fontWeight: 500, color: '#94a3b8' }}>
-                        4 items this week
-                      </span>
-                    </div>
                   </div>
                 </div>
 
@@ -7651,12 +7650,12 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      marginBottom: 12,
-                      height: 36,
+                      marginBottom: 10,
+                      height: 32,
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', lineHeight: 1.2 }}>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: '#0d212c', lineHeight: 1.2 }}>
                         SOW Workflow Status
                       </div>
                     </div>
@@ -7665,11 +7664,11 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: 6,
-                        padding: '5px 12px',
+                        padding: '4px 10px',
                         background: '#ffffff',
                         border: '1px solid rgba(0,0,0,0.1)',
                         borderRadius: 8,
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: '#475569',
                         fontWeight: 500,
                         cursor: 'pointer',
@@ -7678,8 +7677,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     >
                       <span>This Month</span>
                       <svg
-                        width="12"
-                        height="12"
+                        width="11"
+                        height="11"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -7698,18 +7697,19 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       borderRadius: 14,
                       overflow: 'hidden',
                       boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
-                      padding: '16px 20px',
+                      padding: '14px 18px',
                       flex: 1,
+                      minHeight: 250,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 20,
+                      gap: 16,
                     }}
                   >
                     {/* SVG Donut Chart */}
                     <div
                       style={{
-                        width: 210,
-                        height: 210,
+                        width: 170,
+                        height: 170,
                         flexShrink: 0,
                         display: 'flex',
                         alignItems: 'center',
@@ -7717,7 +7717,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         position: 'relative',
                       }}
                     >
-                      <svg width="210" height="210" viewBox="0 0 210 210">
+                      <svg width="170" height="170" viewBox="0 0 170 170">
                         {(() => {
                           const stages = [
                             { label: 'Context', count: 7, pct: 29, color: 'rgba(0, 196, 196, 0.65)', textColor: '#0f766e' },
@@ -7727,10 +7727,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             { label: 'Review', count: 3, pct: 12, color: 'rgba(250, 204, 21, 0.65)', textColor: '#854d0e' },
                             { label: 'Approval', count: 2, pct: 8, color: 'rgba(248, 113, 113, 0.65)', textColor: '#991b1b' },
                           ]
-                          const cx = 105
-                          const cy = 105
-                          const rIn = 58
-                          const rOut = 96
+                          const cx = 85
+                          const cy = 85
+                          const rIn = 45
+                          const rOut = 77
                           const rMid = (rIn + rOut) / 2
                           const toRad = (deg: number) => (deg * Math.PI) / 180
 
@@ -7760,7 +7760,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
 
                                 const midRad = toRad(midDeg)
                                 const lx = cx + rMid * Math.cos(midRad)
-                                const ly = cy + rMid * Math.sin(midRad) + 4
+                                const ly = cy + rMid * Math.sin(midRad) + 3.5
 
                                 return (
                                   <g key={st.label}>
@@ -7773,7 +7773,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                       x={lx}
                                       y={ly}
                                       textAnchor="middle"
-                                      fontSize="10.5"
+                                      fontSize="9.5"
                                       fontWeight="700"
                                       fill={st.textColor}
                                       style={{ pointerEvents: 'none', userSelect: 'none' }}
@@ -7792,7 +7792,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 x={cx}
                                 y={cy - 2}
                                 textAnchor="middle"
-                                fontSize="25"
+                                fontSize="21"
                                 fontWeight="700"
                                 fill="#0d212c"
                               >
@@ -7800,9 +7800,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                               </text>
                               <text
                                 x={cx}
-                                y={cy + 15}
+                                y={cy + 14}
                                 textAnchor="middle"
-                                fontSize="11"
+                                fontSize="10"
                                 fontWeight="500"
                                 fill="#64748b"
                               >
@@ -7814,7 +7814,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       </svg>
                     </div>
 
-                    {/* Legend list matching reference design */}
+                    {/* Legend list matching reference design with increased vertical gap */}
                     <div
                       style={{
                         display: 'flex',
@@ -7822,7 +7822,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         justifyContent: 'space-between',
                         flex: 1,
                         minWidth: 0,
-                        height: 210,
+                        height: 195,
                         padding: '2px 0',
                       }}
                     >
@@ -7842,6 +7842,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             gap: 10,
+                            padding: '3px 0',
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
@@ -7856,7 +7857,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             />
                             <span
                               style={{
-                                fontSize: 12.5,
+                                fontSize: 13,
                                 fontWeight: 500,
                                 color: '#1e293b',
                                 whiteSpace: 'nowrap',
@@ -7866,10 +7867,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0d212c' }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
                               {item.count}
                             </span>
-                            <span style={{ fontSize: 11.5, color: '#64748b' }}>({item.pct}%)</span>
+                            <span style={{ fontSize: 12, color: '#64748b' }}>({item.pct}%)</span>
                           </div>
                         </div>
                       ))}

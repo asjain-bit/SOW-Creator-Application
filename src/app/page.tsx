@@ -121,6 +121,7 @@ export default function Home() {
         view === 'sow-detail' ? (
           <SOWDetailScreen
             uploadedFiles={sowFiles}
+            showGenerateDraft={!isParag}
             viewerRole={isParag ? 'admin' : 'pmo'}
             onBack={() => setView('dashboard')}
           />
@@ -133,8 +134,8 @@ export default function Home() {
             viewerRole={isParag ? 'admin' : 'pmo'}
             uploadedFiles={[
               { id: '1', name: 'Digital_Transformation_RFP.pdf', size: '2.8 MB', type: 'application/pdf', status: 'complete', progress: 100 },
-              { id: '2', name: 'Enterprise_Architecture_Specs.docx', size: '1.4 MB', type: 'application/msword', status: 'complete', progress: 100 },
-              { id: '3', name: 'Workplace_Requirements_Matrix.xlsx', size: '920 KB', type: 'application/vnd.ms-excel', status: 'complete', progress: 100 }
+              { id: '2', name: 'Enterprise_Architecture_Specs.pdf', size: '1.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
+              { id: '3', name: 'Workplace_Requirements_Matrix.pdf', size: '920 KB', type: 'application/pdf', status: 'complete', progress: 100 }
             ]}
             onBack={() => setView('dashboard')}
           />
