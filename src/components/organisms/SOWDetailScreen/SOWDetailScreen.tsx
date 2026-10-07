@@ -417,11 +417,6 @@ function OverviewTab({
       <div
         style={{
           marginBottom: 24,
-          background: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: 14,
-          padding: '18px 22px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         }}
       >
         <div
@@ -436,25 +431,8 @@ function OverviewTab({
             <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>
               SOW Details
             </div>
-            <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 2 }}>
-              {isPMO ? 'Project metadata and parameters (editable by PMO).' : 'Project metadata and parameters (view only).'}
-            </div>
           </div>
-          {isPMO ? (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: '#008a8a',
-                background: 'rgba(0,196,196,0.1)',
-                padding: '3px 9px',
-                borderRadius: 6,
-                border: '1px solid rgba(0,196,196,0.25)',
-              }}
-            >
-              Editable
-            </span>
-          ) : (
+          {!isPMO && (
             <span
               style={{
                 fontSize: 11,
@@ -478,26 +456,17 @@ function OverviewTab({
           }}
         >
           {/* SOW Name */}
-          <div
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: 10,
-              padding: '12px 14px',
-            }}
-          >
+          <div>
             <label
               style={{
                 display: 'block',
                 fontSize: 11.5,
                 fontWeight: 700,
                 color: '#64748b',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
                 marginBottom: 6,
               }}
             >
-              SOW Name
+              SOW name
             </label>
             {isPMO ? (
               <input
@@ -508,11 +477,11 @@ function OverviewTab({
                 style={{
                   width: '100%',
                   padding: '7px 10px',
-                  borderRadius: 6,
-                  border: '1.5px solid #cbd5e1',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
                   background: '#ffffff',
-                  fontSize: 13.5,
-                  fontWeight: 600,
+                  fontSize: 13,
+                  fontWeight: 500,
                   color: '#0d212c',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -526,22 +495,13 @@ function OverviewTab({
           </div>
 
           {/* Deadline */}
-          <div
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: 10,
-              padding: '12px 14px',
-            }}
-          >
+          <div>
             <label
               style={{
                 display: 'block',
                 fontSize: 11.5,
                 fontWeight: 700,
                 color: '#64748b',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
                 marginBottom: 6,
               }}
             >
@@ -555,11 +515,11 @@ function OverviewTab({
                 style={{
                   width: '100%',
                   padding: '7px 10px',
-                  borderRadius: 6,
-                  border: '1.5px solid #cbd5e1',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
                   background: '#ffffff',
-                  fontSize: 13.5,
-                  fontWeight: 600,
+                  fontSize: 13,
+                  fontWeight: 500,
                   color: '#0d212c',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -573,22 +533,13 @@ function OverviewTab({
           </div>
 
           {/* Tokens */}
-          <div
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: 10,
-              padding: '12px 14px',
-            }}
-          >
+          <div>
             <label
               style={{
                 display: 'block',
                 fontSize: 11.5,
                 fontWeight: 700,
                 color: '#64748b',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
                 marginBottom: 6,
               }}
             >
@@ -604,11 +555,11 @@ function OverviewTab({
                 style={{
                   width: '100%',
                   padding: '7px 10px',
-                  borderRadius: 6,
-                  border: '1.5px solid #cbd5e1',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
                   background: '#ffffff',
-                  fontSize: 13.5,
-                  fontWeight: 600,
+                  fontSize: 13,
+                  fontWeight: 500,
                   color: '#0d212c',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -626,9 +577,6 @@ function OverviewTab({
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c', marginBottom: 2 }}>
           Uploaded Documents
-        </div>
-        <div style={{ fontSize: 13, color: '#64748b' }}>
-          Click a document to preview its content.
         </div>
       </div>
       {files.length === 0 ? (
@@ -1464,14 +1412,11 @@ export function FieldTraceDrawer({
         top: 0,
         bottom: 0,
         right: 0,
-        width: 440,
-        maxWidth: '100%',
+        width: '100%',
         height: '100%',
         background: '#ffffff',
-        borderLeft: '1px solid #e2e8f0',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '-4px 0 16px rgba(0,0,0,0.06)',
         borderTopRightRadius: 0,
         borderBottomRightRadius: 16,
         zIndex: 50,
@@ -1965,6 +1910,45 @@ export function ItemTraceModal({
 
 /* ── Draft Section Trace Modal (Draft Tab) ───────────────────────────────── */
 
+const DRAFT_SECTION_REVISIONS = [
+  {
+    version: 3,
+    isCurrent: true,
+    tag: 'Latest Review Edit',
+    author: 'Ashika Jain',
+    role: 'PMO Lead',
+    initials: 'AJ',
+    avatarColor: '#00C4C4',
+    timestamp: 'Today, 16:15',
+    summary: 'Updated deliverable deadlines, SLA terms, and compliance sign-off requirements.',
+    diffSummary: '+3 clauses updated, SLA response hours refined.',
+  },
+  {
+    version: 2,
+    isCurrent: false,
+    tag: 'Reviewer Feedback',
+    author: 'Ishita',
+    role: 'Reviewer',
+    initials: 'IR',
+    avatarColor: '#8b5cf6',
+    timestamp: 'Yesterday, 14:02',
+    summary: 'Reviewed against RFP specifications and added cross-reference to Attachment A.',
+    diffSummary: 'Resolved comment c1 and confirmed Phase 1 milestones.',
+  },
+  {
+    version: 1,
+    isCurrent: false,
+    tag: 'AI Agent Generation',
+    author: 'AI SOW Agent',
+    role: 'Deep Extraction v3',
+    initials: 'AI',
+    avatarColor: '#0284c7',
+    timestamp: 'Oct 3, 2026, 10:15',
+    summary: 'Synthesized initial draft from RFP_Document.pdf & Project_Plan.pdf.',
+    diffSummary: 'Initial section generation (1,420 words).',
+  },
+]
+
 export function DraftSectionTraceModal({
   sectionTitle,
   sectionIdx,
@@ -1984,44 +1968,6 @@ export function DraftSectionTraceModal({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const draftSectionRevisions = [
-    {
-      version: 3,
-      isCurrent: true,
-      tag: 'Latest Review Edit',
-      author: 'Ashika Jain',
-      role: 'PMO Lead',
-      initials: 'AJ',
-      avatarColor: '#00C4C4',
-      timestamp: 'Today, 16:15',
-      summary: 'Updated deliverable deadlines, SLA terms, and compliance sign-off requirements.',
-      diffSummary: '+3 clauses updated, SLA response hours refined.',
-    },
-    {
-      version: 2,
-      isCurrent: false,
-      tag: 'Reviewer Feedback',
-      author: 'Ishita',
-      role: 'Reviewer',
-      initials: 'IR',
-      avatarColor: '#8b5cf6',
-      timestamp: 'Yesterday, 14:02',
-      summary: 'Reviewed against RFP specifications and added cross-reference to Attachment A.',
-      diffSummary: 'Resolved comment c1 and confirmed Phase 1 milestones.',
-    },
-    {
-      version: 1,
-      isCurrent: false,
-      tag: 'AI Agent Generation',
-      author: 'AI SOW Agent',
-      role: 'Deep Extraction v3',
-      initials: 'AI',
-      avatarColor: '#0284c7',
-      timestamp: 'Oct 3, 2026, 10:15',
-      summary: 'Synthesized initial draft from RFP_Document.pdf & Project_Plan.pdf.',
-      diffSummary: 'Initial section generation (1,420 words).',
-    },
-  ]
 
   return (
     <div
@@ -2134,7 +2080,7 @@ export function DraftSectionTraceModal({
               }}
             />
 
-            {draftSectionRevisions.map((rev) => (
+            {DRAFT_SECTION_REVISIONS.map((rev) => (
               <div key={rev.version} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
                 <div
                   style={{
@@ -2249,9 +2195,9 @@ export function DraftSectionTraceModal({
 /* ── Reviewer & Participants Modal ─────────────────────────────────────────── */
 
 const REVIEWERS_DEFAULT = [
-  { id: 'r1', name: 'Dr. Sultan Al Hashimi', role: 'Clinical Safety Lead', initials: 'SH', color: '#00C4C4' },
-  { id: 'r2', name: 'Fatima Al Mansoori', role: 'Compliance Officer', initials: 'FM', color: '#8b5cf6' },
-  { id: 'r3', name: 'Karan Bose', role: 'PMO Analyst', initials: 'KB', color: '#ef4444' },
+  { id: 'r1', name: 'Dr. Sultan Al Hashimi', role: 'Clinical Safety Lead', email: 'sultan.hashimi@m42.ae', initials: 'SH', color: '#00C4C4' },
+  { id: 'r2', name: 'Fatima Al Mansoori', role: 'Compliance Officer', email: 'fatima.mansoori@m42.ae', initials: 'FM', color: '#8b5cf6' },
+  { id: 'r3', name: 'Karan Bose', role: 'PMO Analyst', email: 'karan.bose@m42.ae', initials: 'KB', color: '#ef4444' },
 ]
 
 export function ReviewerAndParticipantsModal({
@@ -2317,6 +2263,7 @@ export function ReviewerAndParticipantsModal({
         id: newId,
         name: trimmed.split('@')[0].replace('.', ' '),
         role: 'Reviewer',
+        email: trimmed,
         initials: trimmed.slice(0, 2).toUpperCase(),
         color: '#00C4C4',
       },
@@ -2407,7 +2354,7 @@ export function ReviewerAndParticipantsModal({
           style={{
             display: 'flex',
             borderBottom: '1px solid #f1f5f9',
-            background: '#fafbfc',
+            background: 'transparent',
             padding: '0 24px',
             gap: 24,
           }}
@@ -2514,7 +2461,7 @@ export function ReviewerAndParticipantsModal({
                       <div style={{ fontSize: 13.5, fontWeight: 600, color: '#0d212c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {r.name}
                       </div>
-                      <div style={{ fontSize: 11.5, color: '#94a3b8' }}>{r.role}</div>
+                      <div style={{ fontSize: 11.5, color: '#94a3b8' }}>{r.email}</div>
                     </div>
                     <button
                       onClick={(e) => {
@@ -2578,7 +2525,7 @@ export function ReviewerAndParticipantsModal({
                     border: 'none',
                     background: '#00C4C4',
                     fontSize: 13,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     color: '#ffffff',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
@@ -2603,7 +2550,7 @@ export function ReviewerAndParticipantsModal({
                 onClick={onClose}
                 style={{
                   padding: '9px 18px',
-                  borderRadius: 9,
+                  borderRadius: 8,
                   border: '1px solid #e2e8f0',
                   background: '#fff',
                   fontSize: 13,
@@ -2619,7 +2566,7 @@ export function ReviewerAndParticipantsModal({
                 onClick={handleSaveReviewers}
                 style={{
                   padding: '9px 20px',
-                  borderRadius: 9,
+                  borderRadius: 8,
                   border: 'none',
                   background: '#00C4C4',
                   fontSize: 13,
@@ -2999,10 +2946,10 @@ function ContextRichTextField({
         style={{
           width: '100%',
           padding: '10px 12px',
-          fontSize: 14,
+          fontSize: 13,
           color: '#0d212c',
           background: isEditable ? '#ffffff' : '#f8fafc',
-          border: '1.5px solid #e2e8f0',
+          border: '1px solid #e2e8f0',
           borderRadius: 8,
           resize: isEditable ? 'vertical' : 'none',
           fontFamily: 'inherit',
@@ -3263,7 +3210,15 @@ const MOCK_FORM_DATA: SOWFormData = {
 
 /* ── Form Generating Animation & Shimmer ─────────────────────────────────── */
 
-function FormGeneratingAnimation() {
+function FormGeneratingAnimation({
+  title = 'Analysing Documents for Form',
+  description = 'Our Intake Agent is analysing your uploaded files to pre-fill commitments, project scope, and business outcomes.',
+  hint = 'This usually takes just a few seconds…',
+}: {
+  title?: string
+  description?: string
+  hint?: string
+} = {}) {
   return (
     <div
       style={{
@@ -3354,11 +3309,10 @@ function FormGeneratingAnimation() {
       </div>
       <div style={{ textAlign: 'center', maxWidth: 380 }}>
         <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 10 }}>
-          Analysing Documents for Form
+          {title}
         </div>
         <div style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.65, marginBottom: 18 }}>
-          Our Intake Agent is analysing your uploaded files to pre-fill commitments, project scope,
-          and business outcomes.
+          {description}
         </div>
         <div style={{ display: 'flex', gap: 7, justifyContent: 'center', marginBottom: 12 }}>
           {[0, 1, 2].map((i) => (
@@ -3375,7 +3329,7 @@ function FormGeneratingAnimation() {
             />
           ))}
         </div>
-        <div style={{ fontSize: 11, color: '#94a3b8' }}>This usually takes just a few seconds…</div>
+        <div style={{ fontSize: 11, color: '#94a3b8' }}>{hint}</div>
       </div>
     </div>
   )
@@ -3644,7 +3598,7 @@ function FormTab({
 
   return (
     <div style={{ display: 'flex', width: '100%', minHeight: '100%', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', maxWidth: 840, width: '100%' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', width: '100%' }}>
         {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
 
         {/* ── Commitments card ── */}
@@ -3849,10 +3803,10 @@ function FormTab({
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      fontSize: 14,
+                      fontSize: 13,
                       color: '#0d212c',
                       background: '#ffffff',
-                      border: '1.5px solid #e2e8f0',
+                      border: '1px solid #e2e8f0',
                       borderRadius: 8,
                       outline: 'none',
                       fontFamily: 'inherit',
@@ -3884,9 +3838,9 @@ function FormTab({
               style={{
                 flex: 1,
                 padding: '9px 12px',
-                fontSize: 14,
+                fontSize: 13,
                 background: '#fff',
-                border: '1.5px solid #e2e8f0',
+                border: '1px solid #e2e8f0',
                 borderRadius: 8,
                 color: '#0d212c',
                 outline: 'none',
@@ -3906,7 +3860,7 @@ function FormTab({
                 fontSize: 13,
                 color: '#ffffff',
                 cursor: 'pointer',
-                fontWeight: 600,
+                fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
@@ -3959,10 +3913,10 @@ function FormTab({
             style={{
               width: '100%',
               padding: '10px 12px',
-              fontSize: 14,
+              fontSize: 13,
               color: '#0d212c',
               background: isEditable ? '#ffffff' : '#f8fafc',
-              border: '1.5px solid #e2e8f0',
+              border: '1px solid #e2e8f0',
               borderRadius: 8,
               outline: 'none',
               fontFamily: 'inherit',
@@ -4149,7 +4103,7 @@ function FormTab({
                   padding: '7px 12px',
                   fontSize: 13,
                   background: '#ffffff',
-                  border: '1.5px solid #e2e8f0',
+                  border: '1px solid #e2e8f0',
                   borderRadius: 8,
                   outline: 'none',
                   fontFamily: 'inherit',
@@ -4215,17 +4169,55 @@ function FormTab({
         />
       )}
 
-      {/* Field Provenance Trace Drawer */}
-      {activeTraceTarget && (
-        <FieldTraceDrawer
-          traceData={activeTraceTarget}
-          onClose={() => setActiveTraceTarget(null)}
-          onOpenCitation={(target) => {
-            setActiveTraceTarget(null)
-            setCitationModalTarget(target)
-          }}
-        />
-      )}
+      {/* Field Provenance Trace Panel (always visible; shows empty state until a field is traced) */}
+      <div
+        style={{
+          width: 420,
+          flexShrink: 0,
+          position: 'relative',
+          borderLeft: '1px solid rgba(0,196,196,0.15)',
+          background: '#f8fafc',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {activeTraceTarget ? (
+          <FieldTraceDrawer
+            traceData={activeTraceTarget}
+            onClose={() => setActiveTraceTarget(null)}
+            onOpenCitation={(target) => {
+              setActiveTraceTarget(null)
+              setCitationModalTarget(target)
+            }}
+          />
+        ) : (
+          <>
+            <div
+              style={{
+                padding: '12px 16px 10px',
+                borderBottom: '1.5px solid #e2e8f0',
+                background: '#ffffff',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#00a0a0',
+              }}
+            >
+              Trace
+            </div>
+            <div
+              style={{
+                fontSize: 12.5,
+                color: '#94a3b8',
+                textAlign: 'center',
+                padding: '36px 14px',
+                lineHeight: 1.5,
+              }}
+            >
+              Click &ldquo;View trace&rdquo; on any commitment or field to see where its content came from.
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -4250,8 +4242,9 @@ function AddSectionModal({
   onClose: () => void
   onAdd: (title: string, description: string) => void
 }) {
-  const [selectedTemplate, setSelectedTemplate] = useState('')
-  const [customTitle, setCustomTitle] = useState('')
+  const [sectionTitle, setSectionTitle] = useState('')
+  const [isTitleListOpen, setIsTitleListOpen] = useState(false)
+  const titleComboRef = useRef<HTMLDivElement>(null)
   const [description, setDescription] = useState('')
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string}[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -4264,7 +4257,24 @@ function AddSectionModal({
     return () => document.removeEventListener('keydown', h)
   }, [onClose])
 
-  const effectiveTitle = selectedTemplate === '__custom__' ? customTitle.trim() : selectedTemplate
+  useEffect(() => {
+    if (!isTitleListOpen) return
+    const h = (e: MouseEvent) => {
+      if (titleComboRef.current && !titleComboRef.current.contains(e.target as Node)) {
+        setIsTitleListOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [isTitleListOpen])
+
+  const effectiveTitle = sectionTitle.trim()
+  const filteredTemplates = ADMIN_SECTION_TEMPLATES.filter((t) =>
+    t.name.toLowerCase().includes(effectiveTitle.toLowerCase())
+  )
+  const visibleTemplates = ADMIN_SECTION_TEMPLATES.some((t) => t.name === sectionTitle)
+    ? ADMIN_SECTION_TEMPLATES
+    : filteredTemplates
 
   const handleAdd = () => {
     if (!effectiveTitle) return
@@ -4339,70 +4349,102 @@ function AddSectionModal({
           >
             Section Title <span style={{ color: '#ef4444' }}>*</span>
           </label>
-          <select
-            autoFocus
-            value={selectedTemplate}
-            onChange={(e) => {
-              const val = e.target.value
-              setSelectedTemplate(val)
-              if (val !== '__custom__') {
-                const found = ADMIN_SECTION_TEMPLATES.find((t) => t.name === val)
-                if (found && !description) {
-                  setDescription(found.description)
+          <div ref={titleComboRef} style={{ position: 'relative' }}>
+            <input
+              autoFocus
+              value={sectionTitle}
+              onChange={(e) => {
+                setSectionTitle(e.target.value)
+                setIsTitleListOpen(true)
+              }}
+              onFocus={() => setIsTitleListOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setIsTitleListOpen(false)
+                  handleAdd()
                 }
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              fontSize: 14,
-              color: selectedTemplate ? '#0d212c' : '#94a3b8',
-              background: '#f8fafc',
-              border: '1.5px solid #e2e8f0',
-              borderRadius: 8,
-              outline: 'none',
-              fontFamily: 'inherit',
-              boxSizing: 'border-box',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="" disabled>-- Select a Section Template --</option>
-            <optgroup label="Admin Section Templates">
-              {ADMIN_SECTION_TEMPLATES.map((tmpl) => (
-                <option key={tmpl.name} value={tmpl.name} style={{ color: '#0d212c' }}>
-                  {tmpl.name}
-                </option>
-              ))}
-            </optgroup>
-            <option value="__custom__" style={{ color: '#00a0a0', fontWeight: 600 }}>
-              + Add Custom / New Section
-            </option>
-          </select>
-          {selectedTemplate === '__custom__' && (
-            <div style={{ marginTop: 10 }}>
-              <input
-                autoFocus
-                value={customTitle}
-                onChange={(e) => setCustomTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAdd()
-                }}
-                placeholder="Enter custom section title..."
+              }}
+              placeholder="Select a section template or type a custom title"
+              style={{
+                width: '100%',
+                padding: '10px 36px 10px 12px',
+                fontSize: 13,
+                color: '#0d212c',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: 8,
+                outline: 'none',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+              }}
+            />
+            <button
+              type="button"
+              aria-label="Toggle section templates"
+              onClick={() => setIsTitleListOpen((o) => !o)}
+              style={{
+                position: 'absolute',
+                right: 6,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {isTitleListOpen && visibleTemplates.length > 0 && (
+              <div
                 style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  fontSize: 14,
-                  color: '#0d212c',
-                  background: '#f8fafc',
+                  position: 'absolute',
+                  top: 'calc(100% + 4px)',
+                  left: 0,
+                  right: 0,
+                  zIndex: 10,
+                  maxHeight: 220,
+                  overflowY: 'auto',
+                  background: '#fff',
                   border: '1.5px solid #e2e8f0',
                   borderRadius: 8,
-                  outline: 'none',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                  padding: 4,
                 }}
-              />
-            </div>
-          )}
+              >
+                {visibleTemplates.map((tmpl) => (
+                  <div
+                    key={tmpl.name}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      setSectionTitle(tmpl.name)
+                      if (!description) setDescription(tmpl.description)
+                      setIsTitleListOpen(false)
+                    }}
+                    style={{
+                      padding: '8px 10px',
+                      fontSize: 13.5,
+                      color: '#0d212c',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      ;(e.currentTarget as HTMLDivElement).style.background = '#f1f5f9'
+                    }}
+                    onMouseLeave={(e) => {
+                      ;(e.currentTarget as HTMLDivElement).style.background = 'transparent'
+                    }}
+                  >
+                    {tmpl.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div style={{ marginBottom: 24 }}>
@@ -4425,10 +4467,10 @@ function AddSectionModal({
             style={{
               width: '100%',
               padding: '10px 12px',
-              fontSize: 14,
+              fontSize: 13,
               color: '#0d212c',
               background: '#f8fafc',
-              border: '1.5px solid #e2e8f0',
+              border: '1px solid #e2e8f0',
               borderRadius: 8,
               resize: 'none',
               fontFamily: 'inherit',
@@ -5872,7 +5914,7 @@ function AssigneesDisplay({
                     alignItems: 'center',
                     gap: 8,
                     padding: '6px 10px',
-                    borderRadius: 6,
+                    borderRadius: 8,
                     background: isCurrent ? 'rgba(0,196,196,0.08)' : 'transparent',
                     border: 'none',
                     cursor: 'pointer',
@@ -6101,7 +6143,7 @@ function AddItemModal({
               padding: '10px 12px',
               fontSize: 13,
               borderRadius: 8,
-              border: '1.5px solid #e2e8f0',
+              border: '1px solid #e2e8f0',
               outline: 'none',
               resize: 'vertical',
               boxSizing: 'border-box',
@@ -7470,7 +7512,7 @@ function StructureTab({
                       fontWeight: 600,
                       cursor: 'pointer',
                       padding: '6px 10px',
-                      borderRadius: 6,
+                      borderRadius: 8,
                     }}
                     title="Client Queue"
                   >
@@ -8252,7 +8294,7 @@ function ItemRow({
                 width: '100%',
                 padding: '7px 10px',
                 fontSize: 12.5,
-                borderRadius: 6,
+                borderRadius: 8,
                 border: '1px solid #e2e8f0',
                 outline: 'none',
                 resize: 'vertical',
@@ -8663,7 +8705,7 @@ function ItemRow({
               Trace Document Confirmation
             </div>
             <div style={{ fontSize: 13.5, color: '#64748b', marginBottom: 26, lineHeight: 1.55 }}>
-              Answering a question/assumption using this document or basically document tracing will take 15 tokens are you sure you want to trace the document to answer the question?
+              Tracing this document to answer the question or assumption will use 15 tokens. Do you want to continue?
             </div>
 
             <div style={{ display: 'flex', gap: 12 }}>
@@ -8756,6 +8798,37 @@ const SOW_DRAFT_SECTIONS = [
 
 type DraftComment = { id: string; sectionId: string; text: string; assignee: string }
 
+/* ── Change impact (Draft tab) ───────────────────────────────────────────── */
+
+type ImpactItem = { id: string; section: string; reason: string; status: 'pending' | 'applied' | 'dismissed' }
+type ImpactChange = { id: string; sourceSection: string; items: ImpactItem[] }
+
+const IMPACT_RULES: Record<string, { section: string; reason: string }[]> = {
+  'Timeline & Milestones': [
+    { section: 'Deliverables', reason: 'Milestone wording references this timeline' },
+    { section: 'Roles & Responsibilities', reason: 'Staffing assumptions may change with duration' },
+    { section: 'Assumptions', reason: 'Current assumption states the delivery duration' },
+  ],
+  'Scope of Work': [
+    { section: 'Deliverables', reason: 'Deliverables are derived from the agreed scope' },
+    { section: 'Out of Scope', reason: 'Exclusions may overlap with the updated scope' },
+    { section: 'Commercials', reason: 'Pricing depends on the scope of work' },
+  ],
+  Deliverables: [
+    { section: 'Timeline & Milestones', reason: 'Milestones are tied to deliverables' },
+    { section: 'Acceptance Criteria', reason: 'Acceptance criteria reference each deliverable' },
+    { section: 'Commercials', reason: 'Payment milestones follow deliverables' },
+  ],
+  Commercials: [
+    { section: 'Assumptions', reason: 'Commercial assumptions may need to be updated' },
+    { section: 'Timeline & Milestones', reason: 'Payment schedule follows the milestones' },
+  ],
+}
+const IMPACT_DEFAULT_RULES: { section: string; reason: string }[] = [
+  { section: 'Executive Summary', reason: 'Summary may need to reflect this change' },
+  { section: 'Assumptions', reason: 'Related assumptions may need review' },
+]
+
 /* ── AI Review and Summary Modal (PMO & Reviewer) ────────────────────────── */
 
 interface AIReviewFinding {
@@ -8838,6 +8911,10 @@ function AIReviewModal({
   onSendToRework,
   hasRunBefore,
   onResolveManually,
+  onAcceptAiOption,
+  findings,
+  setFindings,
+  initialStage = 'thinking',
 }: {
   isOpen: boolean
   onClose: () => void
@@ -8845,9 +8922,12 @@ function AIReviewModal({
   onSendToRework?: () => void
   hasRunBefore: boolean
   onResolveManually?: (affected: string) => void
+  onAcceptAiOption?: (finding: AIReviewFinding) => void
+  findings: AIReviewFinding[]
+  setFindings: React.Dispatch<React.SetStateAction<AIReviewFinding[]>>
+  initialStage?: 'thinking' | 'summary'
 }) {
-  const [stage, setStage] = useState<'thinking' | 'summary'>('thinking')
-  const [findings, setFindings] = useState<AIReviewFinding[]>(INITIAL_AI_FINDINGS)
+  const [stage, setStage] = useState<'thinking' | 'summary'>(initialStage)
   const [expandedCriteria, setExpandedCriteria] = useState<Record<string, boolean>>({
     Completeness: false,
     Consistency: false,
@@ -8904,13 +8984,7 @@ function AIReviewModal({
 
   // 2. Accept AI option (keep popup open)
   const handleAcceptAiOptionClick = (finding: AIReviewFinding) => {
-    setFindings((prev) =>
-      prev.map((f) =>
-        f.id === finding.id
-          ? { ...f, resolved: true, resolutionType: 'Accepted AI option' }
-          : f
-      )
-    )
+    onAcceptAiOption?.(finding)
   }
 
   // 3. Assign to contributor (with regex validation)
@@ -8983,7 +9057,9 @@ function AIReviewModal({
     },
   ]
 
-  const hasActionTaken = findings.some((f) => f.resolved)
+  const hasActionTaken = CRITERIA_PARAMS.every((param) =>
+    findings.some((f) => f.criteria === param.key && f.resolved)
+  )
   const totalOpenFindings = findings.filter((f) => !f.resolved).length
 
   return (
@@ -9004,7 +9080,7 @@ function AIReviewModal({
       <div
         style={{
           width: '100%',
-          maxWidth: 960,
+          maxWidth: 720,
           maxHeight: '90vh',
           background: '#ffffff',
           borderRadius: 16,
@@ -9069,7 +9145,7 @@ function AIReviewModal({
                     ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
                   }
                 }}
-                title={hasActionTaken ? "Rerun AI analysis across all sections" : "Take action on at least one finding before rerunning"}
+                title={hasActionTaken ? "Rerun AI analysis across all sections" : "Take action on each of the 4 factors before rerunning"}
               >
                 <Sparkles size={13} color={hasActionTaken ? "#ffffff" : "#64748b"} />
                 Rerun AI Check
@@ -9121,12 +9197,12 @@ function AIReviewModal({
           >
             <div style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
               <div style={{ marginBottom: 16 }}>
-                <FormGeneratingAnimation />
+                <FormGeneratingAnimation
+                  title="Reviewing the SOW Draft"
+                  description="Our AI Review Agent is checking the draft for completeness, consistency, traceability and clarity."
+                  hint="Checking all sections against your inputs and source documents…"
+                />
               </div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>
-                AI is reviewing the entire SOW draft…
-              </div>
-              
             </div>
           </div>
         ) : (
@@ -9360,7 +9436,7 @@ function AIReviewModal({
                                           onClick={() => handleResolveManuallyClick(finding)}
                                           style={{
                                             padding: '6px 13px',
-                                            borderRadius: 7,
+                                            borderRadius: 8,
                                             border: '1px solid #cbd5e1',
                                             background: '#ffffff',
                                             color: '#334155',
@@ -9382,7 +9458,7 @@ function AIReviewModal({
                                           onClick={() => handleAcceptAiOptionClick(finding)}
                                           style={{
                                             padding: '6px 14px',
-                                            borderRadius: 7,
+                                            borderRadius: 8,
                                             border: 'none',
                                             background: '#00C4C4',
                                             color: '#ffffff',
@@ -9409,7 +9485,7 @@ function AIReviewModal({
                                           }}
                                           style={{
                                             padding: '6px 13px',
-                                            borderRadius: 7,
+                                            borderRadius: 8,
                                             border: isAssigning ? '1.5px solid #00a0a0' : '1px solid #cbd5e1',
                                             background: isAssigning ? 'rgba(0,196,196,0.08)' : '#ffffff',
                                             color: isAssigning ? '#007a7a' : '#334155',
@@ -9432,7 +9508,7 @@ function AIReviewModal({
                                           }}
                                           style={{
                                             padding: '6px 10px',
-                                            borderRadius: 6,
+                                            borderRadius: 8,
                                             border: 'none',
                                             background: 'transparent',
                                             color: isDismissing ? '#0d212c' : '#64748b',
@@ -9480,7 +9556,7 @@ function AIReviewModal({
                                               style={{
                                                 flex: 1,
                                                 padding: '7px 12px',
-                                                borderRadius: 6,
+                                                borderRadius: 8,
                                                 border: assignEmailError ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
                                                 fontSize: 12.5,
                                                 color: '#0d212c',
@@ -9492,7 +9568,7 @@ function AIReviewModal({
                                               onClick={() => handleConfirmAssign(finding)}
                                               style={{
                                                 padding: '7px 16px',
-                                                borderRadius: 6,
+                                                borderRadius: 8,
                                                 background: '#00C4C4',
                                                 border: 'none',
                                                 color: '#ffffff',
@@ -9513,7 +9589,7 @@ function AIReviewModal({
                                               }}
                                               style={{
                                                 padding: '7px 12px',
-                                                borderRadius: 6,
+                                                borderRadius: 8,
                                                 background: 'transparent',
                                                 border: '1px solid #cbd5e1',
                                                 color: '#64748b',
@@ -9538,10 +9614,9 @@ function AIReviewModal({
                                         <div
                                           style={{
                                             marginTop: 10,
-                                            padding: '12px 14px',
-                                            background: '#f8fafc',
-                                            border: '1px solid #cbd5e1',
-                                            borderRadius: 8,
+                                            padding: '8px 0',
+                                            background: 'transparent',
+                                            border: 'none',
                                             display: 'flex',
                                             flexDirection: 'column',
                                             gap: 8,
@@ -9562,7 +9637,7 @@ function AIReviewModal({
                                               style={{
                                                 flex: 1,
                                                 padding: '7px 12px',
-                                                borderRadius: 6,
+                                                borderRadius: 8,
                                                 border: dismissReasonError ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
                                                 fontSize: 12.5,
                                                 color: '#0d212c',
@@ -9574,17 +9649,17 @@ function AIReviewModal({
                                               onClick={() => handleConfirmDismiss(finding)}
                                               style={{
                                                 padding: '7px 16px',
-                                                borderRadius: 6,
+                                                borderRadius: 8,
                                                 background: '#475569',
                                                 border: 'none',
                                                 color: '#ffffff',
                                                 fontSize: 12,
-                                                fontWeight: 700,
+                                                fontWeight: 600,
                                                 cursor: 'pointer',
                                                 whiteSpace: 'nowrap',
                                               }}
                                             >
-                                              Confirm Dismiss
+                                              Dismiss
                                             </button>
                                             <button
                                               type="button"
@@ -9595,7 +9670,7 @@ function AIReviewModal({
                                               }}
                                               style={{
                                                 padding: '7px 12px',
-                                                borderRadius: 6,
+                                                borderRadius: 8,
                                                 background: 'transparent',
                                                 border: '1px solid #cbd5e1',
                                                 color: '#64748b',
@@ -9644,10 +9719,12 @@ function SOWDraftTab({
   isReadOnly = false,
   isDraftGenerating = false,
   sowDeadline = '2026-10-31',
+  headerActionsSlot = null,
 }: {
   isContributor?: boolean
   isReviewer?: boolean
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
+  headerActionsSlot?: HTMLElement | null
   onSendForReview?: () => void
   onOpenParticipantsModal?: () => void
   isReadOnly?: boolean
@@ -9684,7 +9761,6 @@ function SOWDraftTab({
   const [dragTocIdx, setDragTocIdx] = useState<number | null>(null)
   const [dragOverTocIdx, setDragOverTocIdx] = useState<number | null>(null)
   const [showDraftSectionInfoTooltip, setShowDraftSectionInfoTooltip] = useState(false)
-  const [showExportMenu, setShowExportMenu] = useState(false)
 
   // ── Inline document comments ────────────────────────────────────────────────
   type CommentReply = { id: string; author: string; text: string; timestamp: string }
@@ -9734,8 +9810,7 @@ function SOWDraftTab({
   const [editEmailError, setEditEmailError] = useState(false)
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
   const [editingReplyText, setEditingReplyText] = useState('')
-  const [showCommentsPanel, setShowCommentsPanel] = useState(true)
-  const [drawerTab, setDrawerTab] = useState<'comments' | 'history'>('comments')
+  const [drawerTab, setDrawerTab] = useState<'comments' | 'history' | 'trace' | 'impact'>('comments')
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
   const [showFab, setShowFab] = useState(true)
   const lastScrollTop = useRef(0)
@@ -9797,6 +9872,7 @@ function SOWDraftTab({
       const sectionTitle = traceEl.getAttribute('data-section') || 'Section'
       const sectionIdx = parseInt(traceEl.getAttribute('data-secidx') || '0', 10)
       setDraftTraceTarget({ sectionTitle, sectionIdx })
+      setDrawerTab('trace')
       return
     }
   }
@@ -9851,6 +9927,89 @@ function SOWDraftTab({
   // AI Review modal state (PMO & Reviewer)
   const [showAIReviewModal, setShowAIReviewModal] = useState(false)
   const [hasRunAICheck, setHasRunAICheck] = useState(false)
+  const [aiFindings, setAiFindings] = useState<AIReviewFinding[]>(INITIAL_AI_FINDINGS)
+  const [aiModalInitialStage, setAiModalInitialStage] = useState<'thinking' | 'summary'>('thinking')
+  const [aiSuggestion, setAiSuggestion] = useState<{ finding: AIReviewFinding; sectionIdx: number } | null>(null)
+  const [aiSuggestionPos, setAiSuggestionPos] = useState<{ top: number; left: number } | null>(null)
+  const [showSourceInfoTooltip, setShowSourceInfoTooltip] = useState(false)
+  const openAIReview = (stage: 'thinking' | 'summary') => {
+    setAiModalInitialStage(stage)
+    setShowAIReviewModal(true)
+  }
+  const AI_BASE_SCORES: Record<AIReviewFinding['criteria'], number> = {
+    Completeness: 82,
+    Consistency: 74,
+    Traceability: 81,
+    Clarity: 75,
+  }
+  const aiScores = (Object.keys(AI_BASE_SCORES) as AIReviewFinding['criteria'][]).map((name) => {
+    const related = aiFindings.filter((f) => f.criteria === name)
+    const open = related.filter((f) => !f.resolved).length
+    const value =
+      related.length === 0 ? 100 : Math.round(100 - (100 - AI_BASE_SCORES[name]) * (open / related.length))
+    return { name, value }
+  })
+  // ── Change impact ───────────────────────────────────────────────────────────
+  const [impacts, setImpacts] = useState<ImpactChange[]>([])
+  const impactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingImpactCount = impacts.reduce(
+    (n, c) => n + c.items.filter((i) => i.status === 'pending').length,
+    0
+  )
+  const latestPendingImpact = [...impacts].reverse().find((c) => c.items.some((i) => i.status === 'pending'))
+  const scheduleImpactCheck = () => {
+    const anchor = window.getSelection()?.anchorNode
+    const sectionEl = (anchor instanceof Element ? anchor : anchor?.parentElement)?.closest('.sow-section')
+    if (!sectionEl) return
+    const sourceSection = sectionEl.querySelector('h2')?.textContent?.trim() || ''
+    if (!sourceSection) return
+    if (impactTimerRef.current) clearTimeout(impactTimerRef.current)
+    impactTimerRef.current = setTimeout(() => {
+      setImpacts((prev) => {
+        if (prev.some((c) => c.sourceSection === sourceSection && c.items.some((i) => i.status === 'pending'))) {
+          return prev
+        }
+        const rules = (IMPACT_RULES[sourceSection] ?? IMPACT_DEFAULT_RULES).filter((r) => r.section !== sourceSection)
+        if (rules.length === 0) return prev
+        const id = `imp-${Date.now()}`
+        return [
+          ...prev,
+          {
+            id,
+            sourceSection,
+            items: rules.map((r, i) => ({ id: `${id}-${i}`, section: r.section, reason: r.reason, status: 'pending' as const })),
+          },
+        ]
+      })
+    }, 900)
+  }
+  const updateImpactItem = (changeId: string, itemId: string, status: ImpactItem['status']) => {
+    setImpacts((prev) =>
+      prev.map((c) =>
+        c.id === changeId ? { ...c, items: c.items.map((i) => (i.id === itemId ? { ...i, status } : i)) } : c
+      )
+    )
+  }
+  const scrollToDraftSection = (title: string) => {
+    const idx = SOW_DRAFT_SECTIONS.findIndex((sec) => sec.title === title)
+    if (idx === -1) return
+    setActiveSectionIdx(idx)
+    const el = document.getElementById(`sow-section-${idx}`)
+    const area = scrollAreaRef.current
+    if (el && area) {
+      area.scrollTo({
+        top: area.scrollTop + el.getBoundingClientRect().top - area.getBoundingClientRect().top - 24,
+        behavior: 'smooth',
+      })
+    }
+  }
+  const findSectionIdxForAffected = (affected: string) => {
+    const tokens = affected.split(/[·,]/).map((t) => t.trim().toLowerCase()).filter(Boolean)
+    return SOW_DRAFT_SECTIONS.findIndex((sec) => {
+      const title = sec.title.toLowerCase()
+      return tokens.some((t) => title.includes(t) || t.includes(title))
+    })
+  }
 
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 
@@ -9921,7 +10080,7 @@ function SOWDraftTab({
 
   const addComment = () => {
     if (!commentPopup || !newCommentText.trim()) return
-    setShowCommentsPanel(true)
+    setDrawerTab('comments')
     setComments((prev) => [
       ...prev,
       {
@@ -10604,8 +10763,259 @@ function SOWDraftTab({
   const scoreLabel = (s: number) =>
     s >= 90 ? 'High Confidence' : s >= 60 ? 'Medium Confidence' : 'Low Confidence'
 
+  // ── Header actions (rendered into the tab strip via portal) ──────────────────
+  const draftHeaderActions = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {!isContributor && !isReviewer && !isClient && (
+        <button
+          type="button"
+          onClick={() => onOpenParticipantsModal?.()}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 10px',
+            borderRadius: 8,
+            border: 'none',
+            background: 'transparent',
+            color: '#007a7a',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+          title="Reviewer & Participants"
+        >
+          <Users size={14} color="#00a0a0" />
+          Reviewer &amp; Participants
+        </button>
+      )}
+
+      {/* Export (secondary) */}
+      <button
+        type="button"
+        onClick={() => {
+          showToast('Exporting SOW as PDF...', 'info')
+          setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
+        }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '6px 14px',
+          borderRadius: 8,
+          border: '1.5px solid rgba(0,196,196,0.5)',
+          background: 'rgba(0,196,196,0.12)',
+          color: '#007a7a',
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          transition: 'all 0.15s ease',
+        }}
+        onMouseEnter={(e) => {
+          ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+        }}
+        onMouseLeave={(e) => {
+          ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)'
+        }}
+        title="Export"
+      >
+        <Download size={13} color="#007a7a" />
+        Export
+      </button>
+
+            {/* PMO Approve SOW / Withdraw Approval on right side */}
+            {isPMO && (
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {!isPMOApproved ? (
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    onClick={() => setShowApproveConfirmModal(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: isReadOnly ? '#94a3b8' : '#16a34a',
+                      color: '#ffffff',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap',
+                      boxShadow: isReadOnly ? 'none' : '0 2px 8px rgba(22,163,74,0.3)',
+                    }}
+                  >
+                    <Check size={13} strokeWidth={3} />
+                    Approve
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isReadOnly}
+                    onClick={() => {
+                      if (isReadOnly) return
+                      setIsPMOApproved(false)
+                      showToast('SOW approval withdrawn. Editing is unlocked.', 'info')
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      border: '1.5px solid #f59e0b',
+                      background: 'rgba(245,158,11,0.1)',
+                      color: '#b45309',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                    title="Click to withdraw PMO approval"
+                  >
+                    <RotateCcw size={13} />
+                    Withdraw Approval
+                  </button>
+                )}
+              </div>
+            )}
+    </div>
+  )
+
+  // ── AI suggestion overlay: highlight the section and anchor the popover ─────
+  useEffect(() => {
+    if (!aiSuggestion) {
+      setAiSuggestionPos(null)
+      return
+    }
+    const el = document.getElementById(`sow-section-${aiSuggestion.sectionIdx}`)
+    const area = scrollAreaRef.current
+    if (!el || !area) return
+    el.classList.add('sow-ai-suggest-highlight')
+    const saRect = area.getBoundingClientRect()
+    area.scrollTo({
+      top: area.scrollTop + el.getBoundingClientRect().top - saRect.top - 24,
+      behavior: 'smooth',
+    })
+    const place = () => {
+      const r = el.getBoundingClientRect()
+      const a = area.getBoundingClientRect()
+      setAiSuggestionPos({
+        top: Math.min(Math.max(r.top + 12, a.top + 12), a.bottom - 200),
+        left: Math.max(a.left + 12, Math.min(r.right - 316, a.right - 332)),
+      })
+    }
+    const t = setTimeout(place, 450)
+    area.addEventListener('scroll', place)
+    return () => {
+      clearTimeout(t)
+      area.removeEventListener('scroll', place)
+      el.classList.remove('sow-ai-suggest-highlight')
+    }
+  }, [aiSuggestion])
+
   return (
     <>
+      {headerActionsSlot && !isDraftGenerating && createPortal(draftHeaderActions, headerActionsSlot)}
+      {aiSuggestion && aiSuggestionPos && (
+        <div
+          style={{
+            position: 'fixed',
+            top: aiSuggestionPos.top,
+            left: aiSuggestionPos.left,
+            zIndex: 9999,
+            width: 300,
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 12,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
+            padding: 14,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 6,
+                background: 'rgba(0,196,196,0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Sparkles size={13} color="#00a0a0" />
+            </div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0d212c' }}>AI suggestion</div>
+          </div>
+          <div style={{ fontSize: 11.5, color: '#64748b', lineHeight: 1.45 }}>
+            {aiSuggestion.finding.suggestedFix ?? aiSuggestion.finding.description}
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+            <button
+              type="button"
+              onClick={() => {
+                const id = aiSuggestion.finding.id
+                setAiFindings((prev) =>
+                  prev.map((f) => (f.id === id ? { ...f, resolved: true, resolutionType: 'Accepted AI option' } : f))
+                )
+                setAiSuggestion(null)
+                showToast('AI suggestion accepted', 'success')
+              }}
+              style={{
+                flex: 1,
+                padding: '6px 0',
+                borderRadius: 8,
+                border: 'none',
+                background: '#16a34a',
+                color: '#ffffff',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+              }}
+            >
+              <Check size={12} strokeWidth={3} />
+              Accept
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAiSuggestion(null)
+                showToast('AI suggestion rejected', 'info')
+              }}
+              style={{
+                flex: 1,
+                padding: '6px 0',
+                borderRadius: 8,
+                border: '1px solid #e2e8f0',
+                background: '#f8fafc',
+                color: '#64748b',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+              }}
+            >
+              <X size={12} />
+              Reject
+            </button>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', height: '100%', minHeight: 0, overflow: 'hidden' }}>
         {/* ── Left TOC sidebar ──────────────────────────────────────────────── */}
@@ -10620,76 +11030,67 @@ function SOWDraftTab({
             background: 'rgba(248,252,252,0.6)',
           }}
         >
-          {/* Header: KPIs first */}
+          {/* AI Review & Summary (hidden for contributors and clients) */}
+          {!isContributor && !isClient && (
           <div
             style={{
-              padding: '12px 14px 10px',
-              borderBottom: '1px solid rgba(0,196,196,0.1)',
+              margin: '10px 10px 4px',
+              padding: '12px 14px',
+              background: '#ffffff',
+              border: '1px solid rgba(0,196,196,0.25)',
+              borderRadius: 10,
+              boxShadow: '0 1px 4px rgba(0,196,196,0.08)',
               display: 'flex',
               flexDirection: 'column',
               gap: 8,
             }}
           >
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => setShowCommentsPanel((v) => !v)}
-                style={{
-                  flex: 1,
-                  background: showCommentsPanel ? 'rgba(0,196,196,0.18)' : 'rgba(0,196,196,0.08)',
-                  border: showCommentsPanel
-                    ? '1px solid rgba(0,196,196,0.4)'
-                    : '1px solid transparent',
-                  borderRadius: 6,
-                  padding: '6px 10px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#00C4C4', lineHeight: 1 }}>
-                  {comments.length}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: '#64748b',
-                    marginTop: 3,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  Total Comments
-                </div>
-              </button>
-              <div
-                style={{
-                  flex: 1,
-                  background: 'rgba(245,158,11,0.08)',
-                  borderRadius: 6,
-                  padding: '6px 10px',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>
-                  {comments.filter((c) => !c.resolved).length}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: '#64748b',
-                    marginTop: 3,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  Open Comments
-                </div>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Sparkles size={13} color="#00C4C4" />
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#0d212c' }}>AI Review &amp; Summary</span>
             </div>
+            {hasRunAICheck ? (
+              <>
+                {aiScores.map((f) => (
+                  <div key={f.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>{f.name}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor(f.value) }}>{f.value}%</span>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => openAIReview('summary')}
+                  style={{
+                    alignSelf: 'flex-start',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#00a0a0',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                  onMouseEnter={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.color = '#007a7a'
+                  }}
+                  onMouseLeave={(e) => {
+                    ;(e.currentTarget as HTMLButtonElement).style.color = '#00a0a0'
+                  }}
+                >
+                  View detailed analysis
+                  <ArrowRight size={12} />
+                </button>
+              </>
+            ) : (
+              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
+                No AI review yet. Run the AI check to see how ready this document is.
+              </div>
+            )}
           </div>
+          )}
 
           {/* Sections subheader */}
           <div
@@ -10735,7 +11136,7 @@ function SOWDraftTab({
                     style={{
                       position: 'absolute',
                       top: 'calc(100% + 6px)',
-                      left: 0,
+                      left: -64,
                       zIndex: 9999,
                       background: '#0d212c',
                       color: '#ffffff',
@@ -11196,38 +11597,11 @@ function SOWDraftTab({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => onOpenParticipantsModal?.()}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 10px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: 'transparent',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#007a7a',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.color = '#0d212c'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLButtonElement).style.color = '#007a7a'
-                  }}
-                  title="Reviewer & Participants"
-                >
-                  Reviewer &amp; Participants
-                </button>
                 {/* AI Review & Summary for Reviewer */}
                 {isReviewer && (
                   <button
                     type="button"
-                    onClick={() => setShowAIReviewModal(true)}
+                    onClick={() => openAIReview('thinking')}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -11728,170 +12102,6 @@ function SOWDraftTab({
                 </svg>
               }
             />
-            <div style={{ flex: 1 }} />
-            {/* Reviewer & Participants button with icon, no hover animation */}
-            <button
-              type="button"
-              onClick={() => onOpenParticipantsModal?.()}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '5px 10px',
-                borderRadius: 6,
-                border: 'none',
-                background: 'transparent',
-                color: '#007a7a',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                marginRight: 8,
-              }}
-              title="Reviewer & Participants"
-            >
-              <Users size={14} color="#00a0a0" />
-              Reviewer &amp; Participants
-            </button>
-
-            {/* Export SOW Dropdown button in place of Approve button */}
-            <div style={{ position: 'relative', marginRight: 8 }}>
-              <button
-                type="button"
-                onClick={() => setShowExportMenu((prev) => !prev)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '5px 14px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: '#00C4C4',
-                  color: '#ffffff',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
-                }}
-                title="Export SOW"
-              >
-                <Download size={13} color="#ffffff" />
-                Export SOW
-                <ChevronDown size={12} color="#ffffff" />
-              </button>
-              {showExportMenu && (
-                <>
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-                    onClick={() => setShowExportMenu(false)}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 6px)',
-                      right: 0,
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 8,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                      zIndex: 100,
-                      minWidth: 190,
-                      overflow: 'hidden',
-                      padding: '4px 0',
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowExportMenu(false)
-                        showToast('Exporting SOW as PDF...', 'info')
-                        setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
-                      }}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 14px',
-                        background: 'transparent',
-                        border: 'none',
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: '#0f172a',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <FileText size={14} color="#ef4444" />
-                      Export as PDF
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowExportMenu(false)
-                        showToast('Exporting SOW as Word...', 'info')
-                        setTimeout(() => showToast('SOW exported as Word document successfully!', 'success'), 1200)
-                      }}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 14px',
-                        background: 'transparent',
-                        border: 'none',
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: '#0f172a',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <FileText size={14} color="#2563eb" />
-                      Export as Word (.docx)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowExportMenu(false)
-                        showToast('Exporting SOW as Markdown...', 'info')
-                        setTimeout(() => showToast('SOW exported as Markdown successfully!', 'success'), 1200)
-                      }}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 14px',
-                        background: 'transparent',
-                        border: 'none',
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: '#0f172a',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <FileText size={14} color="#64748b" />
-                      Export as Markdown (.md)
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
           )}
 
@@ -11912,22 +12122,49 @@ function SOWDraftTab({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span
                 style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#64748b',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: '#0d212c',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 5,
+                  gap: 6,
                   marginRight: 4,
                 }}
               >
                 <Sparkles size={13} color="#00C4C4" />
-                Provenance:
+                Source highlights
+                <span
+                  style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'help' }}
+                  onMouseEnter={() => setShowSourceInfoTooltip(true)}
+                  onMouseLeave={() => setShowSourceInfoTooltip(false)}
+                >
+                  <Info size={13} color="#94a3b8" />
+                  {showSourceInfoTooltip && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 6px)',
+                        left: -8,
+                        zIndex: 9999,
+                        background: '#0d212c',
+                        color: '#ffffff',
+                        fontSize: 11,
+                        fontWeight: 500,
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        width: 230,
+                        whiteSpace: 'normal',
+                        lineHeight: 1.35,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      Highlight the parts of the draft by where the content came from.
+                    </span>
+                  )}
+                </span>
               </span>
 
-              {/* Button 1: AI generated content */}
               <button
                 type="button"
                 onClick={() => setActiveHighlight((prev) => (prev === 'ai' ? 'none' : 'ai'))}
@@ -11942,31 +12179,27 @@ function SOWDraftTab({
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   border: activeHighlight === 'ai' ? '1.5px solid #0284c7' : '1px solid #bae6fd',
-                  background:
-                    activeHighlight === 'ai'
-                      ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)'
-                      : '#f0f9ff',
-                  color: activeHighlight === 'ai' ? '#ffffff' : '#0369a1',
-                  boxShadow: activeHighlight === 'ai' ? '0 2px 8px rgba(2,132,199,0.28)' : 'none',
+                  background: activeHighlight === 'ai' ? '#e0f2fe' : '#f0f9ff',
+                  color: '#0369a1',
+                  boxShadow: activeHighlight === 'ai' ? '0 0 0 2px #e0f2fe' : 'none',
                 }}
-                title="Highlight AI Generated Content"
+                title="Highlight AI generated content"
               >
-                <span>AI generated content</span>
+                <span>AI generated</span>
                 <span
                   style={{
                     fontSize: 10.5,
                     fontWeight: 700,
                     padding: '1px 6px',
                     borderRadius: 10,
-                    background: activeHighlight === 'ai' ? 'rgba(255,255,255,0.25)' : '#e0f2fe',
-                    color: activeHighlight === 'ai' ? '#ffffff' : '#0284c7',
+                    background: '#e0f2fe',
+                    color: '#0369a1',
                   }}
                 >
                   42%
                 </span>
               </button>
 
-              {/* Button 2: Directly from the questions */}
               <button
                 type="button"
                 onClick={() => setActiveHighlight((prev) => (prev === 'questions' ? 'none' : 'questions'))}
@@ -11981,31 +12214,27 @@ function SOWDraftTab({
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   border: activeHighlight === 'questions' ? '1.5px solid #6366f1' : '1px solid #c7d2fe',
-                  background:
-                    activeHighlight === 'questions'
-                      ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
-                      : '#eef2ff',
-                  color: activeHighlight === 'questions' ? '#ffffff' : '#4338ca',
-                  boxShadow: activeHighlight === 'questions' ? '0 2px 8px rgba(99,102,241,0.28)' : 'none',
+                  background: activeHighlight === 'questions' ? '#e0e7ff' : '#eef2ff',
+                  color: '#4338ca',
+                  boxShadow: activeHighlight === 'questions' ? '0 0 0 2px #e0e7ff' : 'none',
                 }}
-                title="Highlight content directly derived from questions and assumptions"
+                title="Highlight content derived directly from questions and assumptions"
               >
-                <span>Directly from the questions</span>
+                <span>From questions</span>
                 <span
                   style={{
                     fontSize: 10.5,
                     fontWeight: 700,
                     padding: '1px 6px',
                     borderRadius: 10,
-                    background: activeHighlight === 'questions' ? 'rgba(255,255,255,0.25)' : '#e0e7ff',
-                    color: activeHighlight === 'questions' ? '#ffffff' : '#4338ca',
+                    background: '#e0e7ff',
+                    color: '#4338ca',
                   }}
                 >
                   35%
                 </span>
               </button>
 
-              {/* Button 3: Content getting edited during the review */}
               <button
                 type="button"
                 onClick={() => setActiveHighlight((prev) => (prev === 'reviewed' ? 'none' : 'reviewed'))}
@@ -12020,24 +12249,21 @@ function SOWDraftTab({
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   border: activeHighlight === 'reviewed' ? '1.5px solid #d97706' : '1px solid #fde68a',
-                  background:
-                    activeHighlight === 'reviewed'
-                      ? 'linear-gradient(135deg, #d97706 0%, #b45309 100%)'
-                      : '#fffbeb',
-                  color: activeHighlight === 'reviewed' ? '#ffffff' : '#b45309',
-                  boxShadow: activeHighlight === 'reviewed' ? '0 2px 8px rgba(217,119,6,0.28)' : 'none',
+                  background: activeHighlight === 'reviewed' ? '#fef3c7' : '#fffbeb',
+                  color: '#b45309',
+                  boxShadow: activeHighlight === 'reviewed' ? '0 0 0 2px #fef3c7' : 'none',
                 }}
                 title="Highlight content edited during review cycles"
               >
-                <span>Content getting edited during the review</span>
+                <span>Edited during review</span>
                 <span
                   style={{
                     fontSize: 10.5,
                     fontWeight: 700,
                     padding: '1px 6px',
                     borderRadius: 10,
-                    background: activeHighlight === 'reviewed' ? 'rgba(255,255,255,0.25)' : '#fef3c7',
-                    color: activeHighlight === 'reviewed' ? '#ffffff' : '#b45309',
+                    background: '#fef3c7',
+                    color: '#b45309',
                   }}
                 >
                   23%
@@ -12070,105 +12296,68 @@ function SOWDraftTab({
               )}
             </div>
 
-            {activeHighlight !== 'none' && (
+
+          </div>
+
+          {/* Change impact notice */}
+          {latestPendingImpact && !isContributor && !isReviewer && (
+            <div
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                margin: '8px 20px 0',
+                padding: '8px 12px',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderLeft: '3px solid #f59e0b',
+                borderRadius: 10,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+              }}
+            >
               <div
                 style={{
-                  fontSize: 11.5,
-                  color:
-                    activeHighlight === 'ai'
-                      ? '#0369a1'
-                      : activeHighlight === 'questions'
-                      ? '#4338ca'
-                      : '#b45309',
+                  width: 26,
+                  height: 26,
+                  borderRadius: 8,
+                  background: 'rgba(245,158,11,0.12)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                  fontWeight: 600,
+                  justifyContent: 'center',
+                  flexShrink: 0,
                 }}
               >
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background:
-                      activeHighlight === 'ai'
-                        ? '#0284c7'
-                        : activeHighlight === 'questions'
-                        ? '#6366f1'
-                        : '#d97706',
-                  }}
-                />
-                Highlighting{' '}
-                {activeHighlight === 'ai'
-                  ? 'AI generated content (42%)'
-                  : activeHighlight === 'questions'
-                  ? 'direct question & assumption sources (35%)'
-                  : 'content edited during review (23%)'}{' '}
-                — all document text remains visible
+                <AlertTriangle size={14} color="#d97706" />
               </div>
-            )}
-
-            {/* PMO Approve SOW / Withdraw Approval on right side */}
-            {isPMO && (
-              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-                {!isPMOApproved ? (
-                  <button
-                    type="button"
-                    disabled={isReadOnly}
-                    onClick={() => setShowApproveConfirmModal(true)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '5px 14px',
-                      borderRadius: 6,
-                      border: 'none',
-                      background: isReadOnly ? '#94a3b8' : '#16a34a',
-                      color: '#ffffff',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: isReadOnly ? 'not-allowed' : 'pointer',
-                      whiteSpace: 'nowrap',
-                      boxShadow: isReadOnly ? 'none' : '0 2px 8px rgba(22,163,74,0.3)',
-                    }}
-                  >
-                    <Check size={13} strokeWidth={3} />
-                    Approve SOW
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={isReadOnly}
-                    onClick={() => {
-                      if (isReadOnly) return
-                      setIsPMOApproved(false)
-                      showToast('SOW approval withdrawn. Editing is unlocked.', 'info')
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '5px 14px',
-                      borderRadius: 6,
-                      border: '1.5px solid #f59e0b',
-                      background: 'rgba(245,158,11,0.1)',
-                      color: '#b45309',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: isReadOnly ? 'not-allowed' : 'pointer',
-                      whiteSpace: 'nowrap',
-                    }}
-                    title="Click to withdraw PMO approval"
-                  >
-                    <RotateCcw size={13} />
-                    Withdraw Approval
-                  </button>
-                )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
+                  Your edit may impact other sections
+                </div>
+                <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 1 }}>
+                  &ldquo;{latestPendingImpact.sourceSection}&rdquo; affects {pendingImpactCount} other{' '}
+                  {pendingImpactCount === 1 ? 'section' : 'sections'} that need review.
+                </div>
               </div>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={() => setDrawerTab('impact')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  border: '1.5px solid rgba(0,196,196,0.5)',
+                  background: 'rgba(0,196,196,0.12)',
+                  color: '#007a7a',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                View details
+              </button>
+            </div>
+          )}
 
           {/* Scroll area & Comments Panel Container (Below Header / Toolbar) */}
           <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden', position: 'relative' }}>
@@ -12186,6 +12375,11 @@ function SOWDraftTab({
               }}
             >
               <style>{`
+                .sow-section.sow-ai-suggest-highlight {
+                  background: rgba(0,196,196,0.08);
+                  box-shadow: 0 0 0 2px rgba(0,196,196,0.45);
+                  border-radius: 8px;
+                }
                 .sow-draft-citation-btn:hover, .sow-inline-citation:hover {
                   background: #f1f5f9 !important;
                   border-color: #94a3b8 !important;
@@ -12308,6 +12502,7 @@ function SOWDraftTab({
                   if (!isContributor && !isReviewer) {
                     updateFormats()
                     setHasUnsaved(true)
+                    scheduleImpactCheck()
                   }
                 }}
                 onKeyUp={updateFormats}
@@ -12414,8 +12609,8 @@ function SOWDraftTab({
                       width: '100%',
                       padding: '8px 10px',
                       fontSize: 12.5,
-                      borderRadius: 6,
-                      border: '1px solid #cbd5e1',
+                      borderRadius: 8,
+                      border: '1px solid #e2e8f0',
                       outline: 'none',
                       resize: 'none',
                       boxSizing: 'border-box',
@@ -12434,8 +12629,8 @@ function SOWDraftTab({
                           width: '100%',
                           padding: '7px 10px',
                           fontSize: 12,
-                          borderRadius: 6,
-                          border: '1px solid #cbd5e1',
+                          borderRadius: 8,
+                          border: '1px solid #e2e8f0',
                           outline: 'none',
                           color: newCommentAssignee ? '#0d212c' : '#64748b',
                           boxSizing: 'border-box',
@@ -12466,7 +12661,7 @@ function SOWDraftTab({
                       }}
                       style={{
                         padding: '6px 12px',
-                        borderRadius: 6,
+                        borderRadius: 8,
                         border: '1px solid rgba(0,196,196,0.25)',
                         background: 'transparent',
                         fontSize: 12,
@@ -12483,7 +12678,7 @@ function SOWDraftTab({
                       onClick={addComment}
                       style={{
                         padding: '6px 14px',
-                        borderRadius: 6,
+                        borderRadius: 8,
                         border: 'none',
                         background: newCommentText.trim() ? '#00C4C4' : 'rgba(148,163,184,0.25)',
                         fontSize: 12,
@@ -12501,10 +12696,10 @@ function SOWDraftTab({
           </div>
 
           {/* ── Right panel: 2-tab side drawer (Comments & Version History) ── */}
-          {showCommentsPanel ? (
+          {(
           <div
             style={{
-              width: 350,
+              width: 480,
               flexShrink: 0,
               borderLeft: '1px solid rgba(0,196,196,0.15)',
               display: 'flex',
@@ -12513,7 +12708,7 @@ function SOWDraftTab({
               background: '#f8fafc',
             }}
           >
-            {/* Header with 2 tabs */}
+            {/* Header with 3 tabs */}
             <div
               style={{
                 padding: '0 16px',
@@ -12545,8 +12740,7 @@ function SOWDraftTab({
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <MessageSquare size={14} color={drawerTab === 'comments' ? '#00a0a0' : '#64748b'} />
-                  <span>Comments ({comments.length})</span>
+                  <span>Comments</span>
                 </button>
 
                 <button
@@ -12568,28 +12762,92 @@ function SOWDraftTab({
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <Clock size={14} color={drawerTab === 'history' ? '#00a0a0' : '#64748b'} />
                   <span>Version History</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDrawerTab('trace')}
+                  style={{
+                    padding: '12px 2px 10px',
+                    border: 'none',
+                    borderBottom: drawerTab === 'trace' ? '2.5px solid #00C4C4' : '2.5px solid transparent',
+                    background: 'transparent',
+                    color: drawerTab === 'trace' ? '#00a0a0' : '#64748b',
+                    fontSize: 13,
+                    fontWeight: drawerTab === 'trace' ? 700 : 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginBottom: -1.5,
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <span>Trace</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDrawerTab('impact')}
+                  style={{
+                    padding: '12px 2px 10px',
+                    border: 'none',
+                    borderBottom: drawerTab === 'impact' ? '2.5px solid #00C4C4' : '2.5px solid transparent',
+                    background: 'transparent',
+                    color: drawerTab === 'impact' ? '#00a0a0' : '#64748b',
+                    fontSize: 13,
+                    fontWeight: drawerTab === 'impact' ? 700 : 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginBottom: -1.5,
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <span>Impact</span>
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowCommentsPanel(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#94a3b8',
-                  display: 'flex',
-                  padding: 4,
-                  borderRadius: 4,
-                }}
-                title="Close drawer"
-              >
-                <X size={15} />
-              </button>
             </div>
+
+            {drawerTab === 'comments' && (
+              <div style={{ display: 'flex', gap: 8, padding: '12px 12px 0', flexShrink: 0 }}>
+                <div
+                  style={{
+                    flex: 1,
+                    background: 'rgba(0,196,196,0.08)',
+                    borderRadius: 6,
+                    padding: '6px 10px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#00C4C4', lineHeight: 1 }}>
+                    {comments.length}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Total Comments
+                  </div>
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    background: 'rgba(245,158,11,0.08)',
+                    borderRadius: 6,
+                    padding: '6px 10px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b', lineHeight: 1 }}>
+                    {comments.filter((c) => !c.resolved).length}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Open Comments
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Drawer Body */}
             <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
@@ -12986,8 +13244,210 @@ function SOWDraftTab({
                     )
                   })
                 )
+              ) : drawerTab === 'impact' ? (
+                /* Change Impact Tab in Side Drawer */
+                impacts.length === 0 ? (
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      color: '#94a3b8',
+                      textAlign: 'center',
+                      padding: '36px 14px',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    No impact detected. When an edit affects other sections, it will show up here.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {[...impacts].reverse().map((change) => {
+                      const pending = change.items.filter((i) => i.status === 'pending').length
+                      return (
+                        <div
+                          key={change.id}
+                          style={{
+                            background: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: 10,
+                            padding: 12,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 10,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <div>
+                              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0d212c' }}>Change detected</div>
+                              <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
+                                Content edited in &ldquo;{change.sourceSection}&rdquo;
+                              </div>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                padding: '2px 8px',
+                                borderRadius: 10,
+                                whiteSpace: 'nowrap',
+                                background: pending > 0 ? 'rgba(245,158,11,0.12)' : '#dcfce7',
+                                color: pending > 0 ? '#b45309' : '#15803d',
+                              }}
+                            >
+                              {pending > 0 ? `${pending} to review` : 'All reviewed'}
+                            </span>
+                          </div>
+
+                          {change.items.map((item) => (
+                            <div
+                              key={item.id}
+                              style={{ borderTop: '1px solid #f1f5f9', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                                <div>
+                                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>{item.section}</div>
+                                  <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2, lineHeight: 1.4 }}>{item.reason}</div>
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap',
+                                    color:
+                                      item.status === 'pending' ? '#b45309' : item.status === 'applied' ? '#15803d' : '#64748b',
+                                  }}
+                                >
+                                  {item.status === 'pending' ? 'Needs review' : item.status === 'applied' ? 'Updated' : 'No change'}
+                                </span>
+                              </div>
+                              {item.status === 'pending' && (
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateImpactItem(change.id, item.id, 'applied')
+                                      showToast(`Update applied to ${item.section}`, 'success')
+                                    }}
+                                    style={{
+                                      padding: '5px 12px',
+                                      borderRadius: 8,
+                                      border: 'none',
+                                      background: '#00C4C4',
+                                      color: '#ffffff',
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Apply update
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateImpactItem(change.id, item.id, 'dismissed')}
+                                    style={{
+                                      padding: '5px 12px',
+                                      borderRadius: 8,
+                                      border: '1px solid #e2e8f0',
+                                      background: '#ffffff',
+                                      color: '#64748b',
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Reject
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => scrollToDraftSection(item.section)}
+                                    style={{
+                                      padding: '5px 8px',
+                                      borderRadius: 8,
+                                      border: 'none',
+                                      background: 'transparent',
+                                      color: '#00a0a0',
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Open
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              ) : drawerTab === 'trace' ? (
+                /* Section Trace Tab in Side Drawer */
+                draftTraceTarget ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+                        Section trace: {draftTraceTarget.sectionTitle}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
+                        Audit history of edits, AI generation, and reviewer modifications
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
+                      {DRAFT_SECTION_REVISIONS.map((rev) => (
+                        <div
+                          key={rev.version}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 10,
+                            border: rev.isCurrent ? '1.5px solid #00C4C4' : '1px solid #e2e8f0',
+                            background: rev.isCurrent ? 'rgba(0,196,196,0.04)' : '#ffffff',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 6,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0d212c' }}>{rev.tag}</span>
+                            <span style={{ fontSize: 11, color: '#94a3b8' }}>{rev.timestamp}</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                            by {rev.author} • {rev.role}
+                          </div>
+                          <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.45 }}>{rev.summary}</div>
+                          <div style={{ fontSize: 10.5, color: '#64748b' }}>• {rev.diffSummary}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      color: '#94a3b8',
+                      textAlign: 'center',
+                      padding: '36px 14px',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Click &ldquo;View trace&rdquo; on any section to see its history here.
+                  </div>
+                )
               ) : (
                 /* Version History Tab in Side Drawer */
+                draftVersions.length === 0 ? (
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      color: '#94a3b8',
+                      textAlign: 'center',
+                      padding: '36px 14px',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    No versions yet. Saved versions of the draft will appear here.
+                  </div>
+                ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {draftVersions.map((v) => (
                     <div
@@ -13059,56 +13519,21 @@ function SOWDraftTab({
                     </div>
                   ))}
                 </div>
+                )
               )}
             </div>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowCommentsPanel(true)}
-            style={{
-              position: 'absolute',
-              top: 16,
-              right: 18,
-              zIndex: 30,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px 14px',
-              borderRadius: 8,
-              border: '1.5px solid rgba(0,196,196,0.35)',
-              background: '#ffffff',
-              color: '#007a7a',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f0fdfa'
-              e.currentTarget.style.color = '#00a0a0'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#ffffff'
-              e.currentTarget.style.color = '#007a7a'
-            }}
-            title="Open Comments"
-          >
-            View comments
-          </button>
         )}
 
         {/* Center Floating FAB: AI Review & Summary */}
-        {!isAdmin && !isContributor && !isDraftGenerating && (
+        {!isAdmin && !isContributor && !isClient && !isDraftGenerating && (
           <button
             type="button"
-            onClick={() => setShowAIReviewModal(true)}
+            onClick={() => openAIReview('thinking')}
             style={{
               position: 'absolute',
               bottom: 24,
-              left: showCommentsPanel ? 'calc(50% - 190px)' : '50%',
+              left: 'calc(50% - 255px)',
               transform: `translateX(-50%) translateY(${showFab ? '0' : '80px'})`,
               opacity: showFab ? 1 : 0,
               pointerEvents: showFab ? 'auto' : 'none',
@@ -13527,13 +13952,19 @@ function SOWDraftTab({
             setHasRunAICheck(true)
           }}
           hasRunBefore={hasRunAICheck}
+          findings={aiFindings}
+          setFindings={setAiFindings}
+          initialStage={aiModalInitialStage}
+          onAcceptAiOption={(finding) => {
+            setShowAIReviewModal(false)
+            const idx = findSectionIdxForAffected(finding.affected)
+            const sectionIdx = idx !== -1 ? idx : activeSectionIdx
+            setActiveSectionIdx(sectionIdx)
+            setAiSuggestion({ finding, sectionIdx })
+          }}
           onResolveManually={(affected) => {
             setShowAIReviewModal(false)
-            const targetSection = SOW_DRAFT_SECTIONS.findIndex(
-              (s) =>
-                affected.toLowerCase().includes(s.title.toLowerCase()) ||
-                s.title.toLowerCase().includes(affected.toLowerCase())
-            )
+            const targetSection = findSectionIdxForAffected(affected)
             if (targetSection !== -1) {
               setActiveSectionIdx(targetSection)
             }
@@ -13797,17 +14228,6 @@ function SOWDraftTab({
       )}
 
       {/* ── Draft Section Trace Modal ── */}
-      {draftTraceTarget && (
-        <DraftSectionTraceModal
-          sectionTitle={draftTraceTarget.sectionTitle}
-          sectionIdx={draftTraceTarget.sectionIdx}
-          onClose={() => setDraftTraceTarget(null)}
-          onOpenCitation={(citation) => {
-            setDraftTraceTarget(null)
-            setDraftCitationTarget(citation)
-          }}
-        />
-      )}
     </>
   )
 }
@@ -14179,6 +14599,7 @@ export function SOWDetailScreen({
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
   const [draftGenState, setDraftGenState] = useState<DraftGenState>('idle')
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const [draftHeaderSlot, setDraftHeaderSlot] = useState<HTMLDivElement | null>(null)
   const [completionScore, setCompletionScore] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSentForReview, setIsSentForReview] = useState(false)
@@ -14317,21 +14738,16 @@ export function SOWDetailScreen({
           {/* Tokens consumed indicator */}
           <div
             style={{
-              fontSize: 12.5,
+              fontSize: 11.5,
               fontWeight: 500,
-              color: '#64748b',
+              color: '#94a3b8',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              padding: '4px 10px',
-              borderRadius: 8,
-              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
               flexShrink: 0,
             }}
           >
-            <span style={{ fontWeight: 600, color: '#0d212c' }}>200/3000</span>
+            <span style={{ fontWeight: 500, color: '#64748b' }}>200/3000</span>
             <span>Tokens</span>
           </div>
 
@@ -14415,7 +14831,8 @@ export function SOWDetailScreen({
               )
             })}
             {/* CTA pinned to the right of the tab strip */}
-            <div style={{ marginLeft: 'auto', paddingRight: 10 }}>
+            <div style={{ marginLeft: 'auto', paddingRight: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div ref={setDraftHeaderSlot} style={{ display: 'flex', alignItems: 'center' }} />
               {isReviewer ? (
                 activeTab === 'structure' ? (
                   draftGenState === 'generating' || draftGenState === 'shimmer' ? (
@@ -14900,6 +15317,7 @@ export function SOWDetailScreen({
                 <ShimmerDraft />
               ) : (
                 <SOWDraftTab
+                  headerActionsSlot={draftHeaderSlot}
                   isContributor={isContributor}
                   isReviewer={isReviewer}
                   viewerRole={effectiveViewerRole}
@@ -15199,9 +15617,9 @@ function DeleteConfirmModal({
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                borderRadius: 10,
-                border: '1.5px solid #cbd5e1',
-                fontSize: 14,
+                borderRadius: 8,
+                border: '1px solid #e2e8f0',
+                fontSize: 13,
                 marginBottom: 16,
                 outline: 'none',
                 color: '#0d212c',
@@ -15448,7 +15866,7 @@ function ClientQueueModal({
                         style={{
                           flex: 1,
                           padding: '7px 10px',
-                          borderRadius: 6,
+                          borderRadius: 8,
                           border: '1px solid ' + (newClientError ? '#ef4444' : '#cbd5e1'),
                           background: '#ffffff',
                           fontSize: 12,
@@ -15461,12 +15879,12 @@ function ClientQueueModal({
                         onClick={handleAddNewClientFromDropdown}
                         style={{
                           padding: '7px 12px',
-                          borderRadius: 6,
+                          borderRadius: 8,
                           background: '#00C4C4',
                           border: 'none',
                           color: '#ffffff',
                           fontSize: 12,
-                          fontWeight: 600,
+                          fontWeight: 700,
                           cursor: 'pointer',
                           whiteSpace: 'nowrap',
                         }}
@@ -15775,10 +16193,10 @@ function FeedbackModal({
           style={{
             width: '100%',
             padding: '10px 14px',
-            borderRadius: 10,
-            border: '1.5px solid #e2e8f0',
+            borderRadius: 8,
+            border: '1px solid #e2e8f0',
             background: '#ffffff',
-            fontSize: 14,
+            fontSize: 13,
             outline: 'none',
             color: '#0d212c',
             resize: 'vertical',
