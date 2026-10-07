@@ -73,6 +73,9 @@ export default function Home() {
   const [userEmail, setUserEmail] = useState('ashika.jain@company.com')
   const [view, setView] = useState<AppView>('dashboard')
   const [sowFiles, setSOWFiles] = useState<UploadedFile[]>([])
+  const [createdSowName, setCreatedSowName] = useState('Meridian Healthcare — Procurement Platform')
+  const [createdSowDeadline, setCreatedSowDeadline] = useState('2026-10-31')
+  const [createdTokenConsumption, setCreatedTokenConsumption] = useState(20000)
   const [pmoPreviewRole, setPmoPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer'>('PMO')
 
   if (!isLoggedIn) {
@@ -144,6 +147,9 @@ export default function Home() {
       contentOverride={
         view === 'sow-detail' ? (
           <SOWDetailScreen
+            sowName={createdSowName}
+            sowDeadline={createdSowDeadline}
+            tokenConsumption={createdTokenConsumption}
             uploadedFiles={sowFiles}
             showGenerateDraft={!isParag}
             viewerRole={isParag ? 'admin' : 'pmo'}
@@ -201,8 +207,11 @@ export default function Home() {
           />
         ) : undefined
       }
-      onProceedToSOW={(files: UploadedFile[]) => {
+      onProceedToSOW={(files: UploadedFile[], details) => {
         setSOWFiles(files)
+        if (details?.clientName) setCreatedSowName(details.clientName)
+        if (details?.sowDeadline) setCreatedSowDeadline(details.sowDeadline)
+        if (details?.tokenConsumption) setCreatedTokenConsumption(details.tokenConsumption)
         setView('sow-detail')
       }}
       onNavHome={() => setView('dashboard')}

@@ -1081,77 +1081,7 @@ function AllSOWsView({
   )
 }
 
-function NotificationsView({
-  notifications,
-  markRead,
-  notificationButton,
-  onBack,
-}: {
-  notifications: { id: string; title: string; description: string; time: string; unread: boolean }[]
-  markRead: (id: string) => void
-  notificationButton?: React.ReactNode
-  onBack?: () => void
-}) {
-  return (
-    <div style={{ padding: 0, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {onBack && (
-            <button
-              onClick={onBack}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.7)',
-                border: '1px solid rgba(255,255,255,0.9)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#0d212c',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                transition: 'all 0.15s',
-              }}
-              aria-label="Back"
-            >
-              <ArrowLeft size={18} strokeWidth={2} />
-            </button>
-          )}
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>Notifications</h1>
-        </div>
-        {notificationButton}
-      </div>
-      <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.85)', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,196,196,0.06)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {notifications.map((n) => (
-          <div
-            key={n.id}
-            onClick={() => n.unread && markRead(n.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: 16,
-              padding: '14px 18px',
-              background: n.unread ? 'rgba(0,196,196,0.06)' : 'rgba(255,255,255,0.8)',
-              borderRadius: 12,
-              border: '1px solid ' + (n.unread ? 'rgba(0,196,196,0.2)' : 'rgba(255,255,255,0.9)'),
-              cursor: n.unread ? 'pointer' : 'default',
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', marginBottom: 4 }}>{n.title}</div>
-              <div style={{ fontSize: 13, color: '#64748b' }}>{n.description}</div>
-            </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap', flexShrink: 0 }}>{n.time}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+
 
 interface AgentItem {
   id: string
@@ -1242,7 +1172,7 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
           {notificationButton}
         </div>
       </div>
-      <div style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.85)', borderRadius: 14, overflow: 'visible', boxShadow: '0 2px 12px rgba(0,196,196,0.06)', height: 'auto', marginBottom: 20, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.85)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,196,196,0.06)', height: 'auto', marginBottom: 20, display: 'flex', flexDirection: 'column' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(0,196,196,0.1)', background: '#ffffff' }}>
@@ -1773,7 +1703,6 @@ export function SectionTemplatesView({
 }) {
   const { showToast } = useToast()
 
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
   const [sectionSearch, setSectionSearch] = useState('')
   const [sectionFilter, setSectionFilter] = useState<'All' | 'Required' | 'Recommended' | 'Conditional'>('All')
   const [sectionTemplates, setSectionTemplates] = useState<SectionTemplateItem[]>([
@@ -1877,12 +1806,12 @@ export function SectionTemplatesView({
 
   const handleCreateSection = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newSecName.trim()) return
+    if (!newSecName.trim() || !newSecDesc.trim()) return
     const newSec: SectionTemplateItem = {
       id: 'sec-' + Date.now(),
       name: newSecName.trim(),
       requirement: newSecReq,
-      description: newSecDesc.trim() || 'Standard SOW template section.',
+      description: newSecDesc.trim(),
       status: 'Active',
     }
     setSectionTemplates((prev) => [newSec, ...prev])
@@ -1895,7 +1824,7 @@ export function SectionTemplatesView({
 
   const handleUpdateSection = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingSection || !editSecName.trim()) return
+    if (!editingSection || !editSecName.trim() || !editSecDesc.trim()) return
     setSectionTemplates((prev) =>
       prev.map((s) =>
         s.id === editingSection.id
@@ -2091,62 +2020,6 @@ export function SectionTemplatesView({
             />
           </div>
 
-          {/* View Mode Toggle: Table / Cards */}
-          <div
-            style={{
-              display: 'flex',
-              background: '#ffffff',
-              borderRadius: 10,
-              padding: 2,
-              border: '1px solid #e2e8f0',
-            }}
-          >
-            <button
-              onClick={() => setViewMode('table')}
-              title="Table View"
-              style={{
-                padding: '6px 9px',
-                borderRadius: 7,
-                border: 'none',
-                cursor: 'pointer',
-                background: viewMode === 'table' ? '#f1f5f9' : 'transparent',
-                color: viewMode === 'table' ? '#0d212c' : '#94a3b8',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.12s',
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setViewMode('cards')}
-              title="Card View"
-              style={{
-                padding: '6px 9px',
-                borderRadius: 7,
-                border: 'none',
-                cursor: 'pointer',
-                background: viewMode === 'cards' ? '#f1f5f9' : 'transparent',
-                color: viewMode === 'cards' ? '#0d212c' : '#94a3b8',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.12s',
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-              </svg>
-            </button>
-          </div>
 
           {/* Add Section Button */}
           <button
@@ -2185,9 +2058,8 @@ export function SectionTemplatesView({
         </div>
       </div>
 
-      {/* ─── Main Content: Table View or Card View ───────────────────────── */}
-      {viewMode === 'table' ? (
-        <div
+      {/* ─── Main Content: Table View ───────────────────────── */}
+      <div
           style={{
             background: 'rgba(255,255,255,0.7)',
             backdropFilter: 'blur(20px)',
@@ -2220,7 +2092,7 @@ export function SectionTemplatesView({
                     Requirement
                   </th>
                   <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '42%' }}>
-                    Description & Guidance
+                    Description
                   </th>
                   <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '10%' }}>
                     Status
@@ -2480,210 +2352,6 @@ export function SectionTemplatesView({
             </div>
           </div>
         </div>
-      ) : (
-        /* Card View */
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 16,
-            marginBottom: 20,
-          }}
-        >
-          {paginatedSections.map((sec) => {
-            const isMenuOpen = menuOpenId === sec.id
-            return (
-              <div
-                key={sec.id}
-                style={{
-                  background: 'rgba(255,255,255,0.75)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255,255,255,0.9)',
-                  borderRadius: 14,
-                  padding: '16px 18px',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                  position: 'relative',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  {renderRequirementBadge(sec.requirement)}
-
-                  <div style={{ position: 'relative' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setMenuOpenId(isMenuOpen ? null : sec.id)
-                      }}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 6,
-                        border: 'none',
-                        background: 'transparent',
-                        color: '#64748b',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        padding: 0,
-                      }}
-                    >
-                      <MoreVertical size={16} />
-                    </button>
-
-                    {isMenuOpen && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          position: 'absolute',
-                          right: 0,
-                          top: 'calc(100% + 4px)',
-                          background: '#ffffff',
-                          borderRadius: 10,
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                          border: '1px solid #e2e8f0',
-                          padding: 4,
-                          minWidth: 140,
-                          zIndex: 100,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 2,
-                        }}
-                      >
-                        <button
-                          onClick={() => {
-                            setEditingSection(sec)
-                            setEditSecName(sec.name)
-                            setEditSecReq(sec.requirement)
-                            setEditSecDesc(sec.description)
-                            setMenuOpenId(null)
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            width: '100%',
-                            padding: '7px 10px',
-                            border: 'none',
-                            background: 'transparent',
-                            borderRadius: 6,
-                            fontSize: 12.5,
-                            fontWeight: 500,
-                            color: '#0d212c',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                          }}
-                        >
-                          <Pencil size={13} strokeWidth={2} />
-                          Edit
-                        </button>
-                        {sec.status === 'Active' ? (
-                          <button
-                            onClick={() => {
-                              setDeactivateSectionModal(sec)
-                              setMenuOpenId(null)
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              width: '100%',
-                              padding: '7px 10px',
-                              border: 'none',
-                              background: 'transparent',
-                              borderRadius: 6,
-                              fontSize: 12.5,
-                              fontWeight: 500,
-                              color: '#dc2626',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                            }}
-                          >
-                            <Trash2 size={13} strokeWidth={2} />
-                            Deactivate
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setReactivateSectionModal(sec)
-                              setMenuOpenId(null)
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              width: '100%',
-                              padding: '7px 10px',
-                              border: 'none',
-                              background: 'transparent',
-                              borderRadius: 6,
-                              fontSize: 12.5,
-                              fontWeight: 500,
-                              color: '#008a8a',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                            }}
-                          >
-                            <CheckCircle2 size={13} strokeWidth={2} />
-                            Reactivate
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', margin: '0 0 6px', lineHeight: 1.3 }}>
-                    {sec.name}
-                  </h3>
-                  <p style={{ fontSize: 12.5, color: '#64748b', margin: 0, lineHeight: 1.45, minHeight: 52 }}>
-                    {sec.description}
-                  </p>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: sec.status === 'Active' ? '#16a34a' : '#64748b',
-                    }}
-                  >
-                    ● {sec.status}
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      setEditingSection(sec)
-                      setEditSecName(sec.name)
-                      setEditSecReq(sec.requirement)
-                      setEditSecDesc(sec.description)
-                    }}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 6,
-                      background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: '#0d212c',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Edit
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
 
       {/* ─── MODAL: Add Section ────────────────────────────────────────────── */}
       {isAddSectionOpen && (
@@ -2795,10 +2463,11 @@ export function SectionTemplatesView({
 
               <div>
                 <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
-                  Description & Guidance
+                  Description <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <textarea
                   rows={3}
+                  required
                   placeholder="Outline expected sub-clauses, criteria, or agent drafting rules..."
                   value={newSecDesc}
                   onChange={(e) => setNewSecDesc(e.target.value)}
@@ -2966,10 +2635,11 @@ export function SectionTemplatesView({
 
               <div>
                 <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
-                  Description & Guidance
+                  Description <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <textarea
                   rows={3}
+                  required
                   value={editSecDesc}
                   onChange={(e) => setEditSecDesc(e.target.value)}
                   style={{
@@ -5341,7 +5011,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const isPMO = !isContributor && !isClient && !isReviewer && !isAdmin
   const { showToast } = useToast()
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log' | 'agents' | 'notifications' | 'user-directory' | 'section-templates'>('home')
+  const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log' | 'agents' | 'user-directory' | 'section-templates'>('home')
   const [activeTab, setActiveTab] = useState<ActiveTab>('my')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
@@ -5364,80 +5034,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [dueTimeframe, setDueTimeframe] = useState('Next Week')
   const [dueDropdownOpen, setDueDropdownOpen] = useState(false)
-  const [notifications, setNotifications] = useState([
-    { id: '1', title: 'Meridian SOW generated', description: 'Drafting agent has successfully generated Meridian SOW.', time: '10 mins ago', unread: true },
-    { id: '2', title: 'Vendor MSA updated', description: 'Rohan Mehta has uploaded a new version of Vendor MSA.', time: '2 hours ago', unread: true },
-    { id: '3', title: 'Assignment added', description: 'You have been assigned to 2 questions in Meridian RFP.', time: '1 day ago', unread: false },
-  ])
-  const unreadCount = notifications.filter(n => n.unread).length
-  const markNotificationRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n))
-  }
-
-  const renderNotificationButton = () => (
-    <div
-      style={{
-        position: 'relative',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'visible',
-        flexShrink: 0,
-      }}
-    >
-      <button
-        onClick={() => setHomeView('notifications')}
-        style={{
-          position: 'relative',
-          overflow: 'visible',
-          width: 36,
-          height: 36,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.7)',
-          border: '1px solid rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          boxShadow: homeView === 'notifications' ? '0 0 0 2px rgba(0,196,196,0.3)' : '0 2px 8px rgba(0,0,0,0.06)',
-          transition: 'all 0.15s',
-          color: homeView === 'notifications' ? '#00C4C4' : '#0d212c',
-          flexShrink: 0,
-        }}
-        aria-label="Notifications"
-      >
-        <Bell size={18} strokeWidth={2} />
-        {unreadCount > 0 && (
-          <span
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              minWidth: 15,
-              height: 15,
-              padding: '0 3.5px',
-              background: '#e60000',
-              borderRadius: '9999px',
-              color: '#ffffff',
-              fontSize: 9.5,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          >
-            {unreadCount}
-          </span>
-        )}
-      </button>
-    </div>
-  )
+  const renderNotificationButton = () => null
 
   const rppRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -5880,15 +5477,6 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <AgentsView notificationButton={renderNotificationButton()} />
             </div>
-          ) : homeView === 'notifications' ? (
-            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <NotificationsView
-                notifications={notifications}
-                markRead={markNotificationRead}
-                notificationButton={renderNotificationButton()}
-                onBack={() => setHomeView('home')}
-              />
-            </div>
           ) : homeView === 'audit-log' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <AuditLogView
@@ -6039,7 +5627,6 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {renderNotificationButton()}
                   {!isContributor && !isClient && !isReviewer && (
                     <button
                       onClick={() => {
@@ -7484,7 +7071,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       flex: 1,
-                      minHeight: 250,
+                      minHeight: 315,
                     }}
                   >
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -7498,7 +7085,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           <th
                             style={{
                               width: '50%',
-                              padding: '11px 14px',
+                              padding: '12px 14px',
                               textAlign: 'left',
                               fontSize: 10,
                               fontWeight: 500,
@@ -7512,7 +7099,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           <th
                             style={{
                               width: '25%',
-                              padding: '11px 14px',
+                              padding: '12px 14px',
                               textAlign: 'left',
                               fontSize: 10,
                               fontWeight: 500,
@@ -7526,7 +7113,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           <th
                             style={{
                               width: '25%',
-                              padding: '11px 14px',
+                              padding: '12px 14px',
                               textAlign: 'left',
                               fontSize: 10,
                               fontWeight: 500,
@@ -7580,7 +7167,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             <tr
                               key={idx}
                               style={{
-                                height: 46,
+                                height: 58,
                                 borderBottom:
                                   idx < arr.length - 1
                                     ? '1px solid #f1f5f9'
@@ -7596,7 +7183,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 ;(e.currentTarget as HTMLTableRowElement).style.background = ''
                               }}
                             >
-                              <td style={{ padding: '8px 14px' }}>
+                              <td style={{ padding: '12px 14px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                                   <div
                                     style={{
@@ -7707,19 +7294,19 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       borderRadius: 14,
                       overflow: 'hidden',
                       boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
-                      padding: '14px 18px',
+                      padding: '16px 20px',
                       flex: 1,
-                      minHeight: 250,
+                      minHeight: 315,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 16,
+                      gap: 18,
                     }}
                   >
                     {/* SVG Donut Chart */}
                     <div
                       style={{
-                        width: 170,
-                        height: 170,
+                        width: 195,
+                        height: 195,
                         flexShrink: 0,
                         display: 'flex',
                         alignItems: 'center',
@@ -7727,7 +7314,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         position: 'relative',
                       }}
                     >
-                      <svg width="170" height="170" viewBox="0 0 170 170">
+                      <svg width="195" height="195" viewBox="0 0 195 195">
                         {(() => {
                           const stages = [
                             { label: 'Context', count: 7, pct: 29, color: 'rgba(0, 196, 196, 0.65)', textColor: '#0f766e' },
@@ -7737,10 +7324,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                             { label: 'Review', count: 3, pct: 12, color: 'rgba(250, 204, 21, 0.65)', textColor: '#854d0e' },
                             { label: 'Approval', count: 2, pct: 8, color: 'rgba(248, 113, 113, 0.65)', textColor: '#991b1b' },
                           ]
-                          const cx = 85
-                          const cy = 85
-                          const rIn = 45
-                          const rOut = 77
+                          const cx = 97.5
+                          const cy = 97.5
+                          const rIn = 52
+                          const rOut = 88
                           const rMid = (rIn + rOut) / 2
                           const toRad = (deg: number) => (deg * Math.PI) / 180
 
@@ -7832,7 +7419,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         justifyContent: 'space-between',
                         flex: 1,
                         minWidth: 0,
-                        height: 195,
+                        height: 220,
                         padding: '2px 0',
                       }}
                     >
@@ -7900,10 +7487,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
         <CreateSOWModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
-          onProceed={(uploadedFiles: UploadedFile[]) => {
+          onProceed={(uploadedFiles: UploadedFile[], details) => {
             setShowCreateModal(false)
             showToast('New SOW initiated with uploaded documents', 'success')
-            onProceedToSOW?.(uploadedFiles)
+            onProceedToSOW?.(uploadedFiles, details)
           }}
         />
       )}

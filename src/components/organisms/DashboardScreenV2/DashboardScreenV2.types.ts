@@ -48,7 +48,6 @@ export type ActiveNav =
   | 'audit-log'
   | 'templates'
   | 'analytics'
-  | 'notifications'
   | 'agents'
   | 'user-directory'
   | 'section-templates'
@@ -61,7 +60,10 @@ export interface DashboardScreenV2Props {
   initialSOWs?: SOWItem[]
   onSignOut?: () => void
   onCreateSOW?: () => void
-  onProceedToSOW?: (files: UploadedFile[]) => void
+  onProceedToSOW?: (
+    files: UploadedFile[],
+    details?: { clientName: string; sowDeadline: string; tokenConsumption: number }
+  ) => void
   activeNav?: ActiveNav
   contentOverride?: React.ReactNode
   className?: string

@@ -16,6 +16,9 @@ export interface UploadedFile {
 export interface CreateSOWModalProps {
   isOpen: boolean
   onClose: () => void
-  /** Called with the uploaded files when user clicks the proceed CTA */
-  onProceed: (files: UploadedFile[]) => void
+  /** Called with the uploaded files and metadata when user clicks the proceed CTA */
+  onProceed: (
+    files: UploadedFile[],
+    details?: { clientName: string; sowDeadline: string; tokenConsumption: number }
+  ) => void
 }

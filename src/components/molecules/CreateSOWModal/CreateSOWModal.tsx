@@ -404,7 +404,11 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
 
   const handleProceed = () => {
     if (!allUploaded) return
-    onProceed(files)
+    onProceed(files, {
+      clientName: clientName.trim(),
+      sowDeadline: sowDeadline || '',
+      tokenConsumption: typeof tokenConsumption === 'number' ? tokenConsumption : 20000,
+    })
   }
 
   // Dropzone is "active" when dragging over OR mouse hovering

@@ -79,6 +79,7 @@ export interface SOWDetailScreenProps {
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
   currentMemberId?: string
   sowDeadline?: string
+  tokenConsumption?: number
   onReactivateSOW?: () => void
   initialActiveRole?: 'pmo' | 'contributor' | 'reviewer'
   onActiveViewerRoleChange?: (role: 'pmo' | 'contributor' | 'reviewer') => void

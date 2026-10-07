@@ -384,13 +384,243 @@ function SOWWorkflowStepper({ isDraftGenerated = false }: { isDraftGenerated?: b
   )
 }
 
-function OverviewTab({ files, isDraftGenerated }: { files: UploadedFile[]; isDraftGenerated?: boolean }) {
+function OverviewTab({
+  files,
+  isDraftGenerated,
+  sowName,
+  onSowNameChange,
+  sowDeadline,
+  onSowDeadlineChange,
+  tokenConsumption,
+  onTokenConsumptionChange,
+  isPMO = false,
+}: {
+  files: UploadedFile[]
+  isDraftGenerated?: boolean
+  sowName?: string
+  onSowNameChange?: (val: string) => void
+  sowDeadline?: string
+  onSowDeadlineChange?: (val: string) => void
+  tokenConsumption?: number
+  onTokenConsumptionChange?: (val: number) => void
+  isPMO?: boolean
+}) {
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
   return (
     <div style={{ padding: '20px 16px' }}>
       {/* ── SOW Workflow Stepper (Above Uploaded Documents) ── */}
       <div style={{ marginBottom: 24 }}>
         <SOWWorkflowStepper isDraftGenerated={isDraftGenerated} />
+      </div>
+
+      {/* ── SOW Details Card (SOW Name, Deadline, Tokens) ── */}
+      <div
+        style={{
+          marginBottom: 24,
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 14,
+          padding: '18px 22px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>
+              SOW Details
+            </div>
+            <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 2 }}>
+              {isPMO ? 'Project metadata and parameters (editable by PMO).' : 'Project metadata and parameters (view only).'}
+            </div>
+          </div>
+          {isPMO ? (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#008a8a',
+                background: 'rgba(0,196,196,0.1)',
+                padding: '3px 9px',
+                borderRadius: 6,
+                border: '1px solid rgba(0,196,196,0.25)',
+              }}
+            >
+              Editable
+            </span>
+          ) : (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#64748b',
+                background: '#f1f5f9',
+                padding: '3px 9px',
+                borderRadius: 6,
+              }}
+            >
+              Read Only
+            </span>
+          )}
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: 16,
+          }}
+        >
+          {/* SOW Name */}
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              padding: '12px 14px',
+            }}
+          >
+            <label
+              style={{
+                display: 'block',
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: '#64748b',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 6,
+              }}
+            >
+              SOW Name
+            </label>
+            {isPMO ? (
+              <input
+                type="text"
+                value={sowName || ''}
+                onChange={(e) => onSowNameChange?.(e.target.value)}
+                placeholder="Enter SOW Name"
+                style={{
+                  width: '100%',
+                  padding: '7px 10px',
+                  borderRadius: 6,
+                  border: '1.5px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  color: '#0d212c',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            ) : (
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', minHeight: 28, display: 'flex', alignItems: 'center' }}>
+                {sowName || '—'}
+              </div>
+            )}
+          </div>
+
+          {/* Deadline */}
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              padding: '12px 14px',
+            }}
+          >
+            <label
+              style={{
+                display: 'block',
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: '#64748b',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 6,
+              }}
+            >
+              Deadline
+            </label>
+            {isPMO ? (
+              <input
+                type="date"
+                value={sowDeadline || ''}
+                onChange={(e) => onSowDeadlineChange?.(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '7px 10px',
+                  borderRadius: 6,
+                  border: '1.5px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  color: '#0d212c',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            ) : (
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', minHeight: 28, display: 'flex', alignItems: 'center' }}>
+                {sowDeadline || '—'}
+              </div>
+            )}
+          </div>
+
+          {/* Tokens */}
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              padding: '12px 14px',
+            }}
+          >
+            <label
+              style={{
+                display: 'block',
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: '#64748b',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 6,
+              }}
+            >
+              Tokens
+            </label>
+            {isPMO ? (
+              <input
+                type="number"
+                min={0}
+                value={tokenConsumption ?? 1200}
+                onChange={(e) => onTokenConsumptionChange?.(Number(e.target.value) || 0)}
+                placeholder="Tokens allocated"
+                style={{
+                  width: '100%',
+                  padding: '7px 10px',
+                  borderRadius: 6,
+                  border: '1.5px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  color: '#0d212c',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            ) : (
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', minHeight: 28, display: 'flex', alignItems: 'center' }}>
+                {(tokenConsumption ?? 1200).toLocaleString()} tokens
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
@@ -1513,7 +1743,7 @@ export function ItemTraceModal({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>
-                  Statement Traceability
+                  View Trace
                 </span>
                 <span
                   style={{
@@ -1527,28 +1757,13 @@ export function ItemTraceModal({
                 >
                   {label}
                 </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: '#64748b',
-                    background: '#f1f5f9',
-                    padding: '2px 8px',
-                    borderRadius: 12,
-                  }}
-                >
-                  Changed {totalModifications} {totalModifications === 1 ? 'time' : 'times'} ({revisions.length} versions)
-                </span>
-              </div>
-              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-                Full provenance audit log, modification history and editor timestamps
               </div>
             </div>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: '#f1f5f9',
+              background: 'transparent',
               border: 'none',
               borderRadius: 8,
               width: 30,
@@ -1558,9 +1773,10 @@ export function ItemTraceModal({
               justifyContent: 'center',
               cursor: 'pointer',
               color: '#64748b',
+              padding: 0,
             }}
           >
-            <X size={15} />
+            <X size={18} />
           </button>
         </div>
 
@@ -1723,12 +1939,9 @@ export function ItemTraceModal({
             background: '#fafafa',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
           }}
         >
-          <div style={{ fontSize: 12, color: '#64748b' }}>
-            Statement UID: <code style={{ fontSize: 11, background: '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>{item.id}</code>
-          </div>
           <button
             onClick={onClose}
             style={{
@@ -4019,6 +4232,17 @@ function FormTab({
 
 /* ── Add Section modal ───────────────────────────────────────────────────── */
 
+const ADMIN_SECTION_TEMPLATES = [
+  { name: 'Executive Summary & Background', description: 'High-level business context, engagement purpose, strategic alignment, and project objectives.' },
+  { name: 'Scope of Work & Requirements', description: 'Granular technical & functional requirements, boundary conditions, inclusions and out-of-scope items.' },
+  { name: 'Deliverables & Milestones', description: 'Formal deliverable specifications, expected acceptance criteria, milestone timelines, and review stages.' },
+  { name: 'Governance, RACI & Staffing', description: 'Stakeholder matrices, assigned key roles, escalation hierarchies, and weekly cadence governance.' },
+  { name: 'Commercials, Pricing & Payment Terms', description: 'Fee structures (T&M or Fixed), billing milestone schedules, out-of-pocket policies, and payment terms.' },
+  { name: 'Security, Compliance & Data Privacy', description: 'DOH, ADHICS, HIPAA compliance mandates, data residency requirements, and security clearance checks.' },
+  { name: 'Service Level Agreements (SLAs)', description: 'System uptime guarantees, incident response time thresholds, SLA penalties, and credit calculations.' },
+  { name: 'Change Control & Variation Procedure', description: 'Formal process for scope amendments, impact evaluation, change request approvals, and budget adjustments.' },
+]
+
 function AddSectionModal({
   onClose,
   onAdd,
@@ -4026,7 +4250,8 @@ function AddSectionModal({
   onClose: () => void
   onAdd: (title: string, description: string) => void
 }) {
-  const [title, setTitle] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [customTitle, setCustomTitle] = useState('')
   const [description, setDescription] = useState('')
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string}[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -4039,9 +4264,11 @@ function AddSectionModal({
     return () => document.removeEventListener('keydown', h)
   }, [onClose])
 
+  const effectiveTitle = selectedTemplate === '__custom__' ? customTitle.trim() : selectedTemplate
+
   const handleAdd = () => {
-    if (!title.trim()) return
-    onAdd(title.trim(), description.trim())
+    if (!effectiveTitle) return
+    onAdd(effectiveTitle, description.trim())
     onClose()
   }
 
@@ -4112,34 +4339,70 @@ function AddSectionModal({
           >
             Section Title <span style={{ color: '#ef4444' }}>*</span>
           </label>
-          <input
+          <select
             autoFocus
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAdd()
+            value={selectedTemplate}
+            onChange={(e) => {
+              const val = e.target.value
+              setSelectedTemplate(val)
+              if (val !== '__custom__') {
+                const found = ADMIN_SECTION_TEMPLATES.find((t) => t.name === val)
+                if (found && !description) {
+                  setDescription(found.description)
+                }
+              }
             }}
-            placeholder="e.g. Executive Summary"
             style={{
               width: '100%',
               padding: '10px 12px',
               fontSize: 14,
-              color: '#0d212c',
+              color: selectedTemplate ? '#0d212c' : '#94a3b8',
               background: '#f8fafc',
               border: '1.5px solid #e2e8f0',
               borderRadius: 8,
               outline: 'none',
               fontFamily: 'inherit',
               boxSizing: 'border-box',
-              transition: 'border-color 0.15s',
+              cursor: 'pointer',
             }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#cbd5e1'
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#e2e8f0'
-            }}
-          />
+          >
+            <option value="" disabled>-- Select a Section Template --</option>
+            <optgroup label="Admin Section Templates">
+              {ADMIN_SECTION_TEMPLATES.map((tmpl) => (
+                <option key={tmpl.name} value={tmpl.name} style={{ color: '#0d212c' }}>
+                  {tmpl.name}
+                </option>
+              ))}
+            </optgroup>
+            <option value="__custom__" style={{ color: '#00a0a0', fontWeight: 600 }}>
+              + Add Custom / New Section
+            </option>
+          </select>
+          {selectedTemplate === '__custom__' && (
+            <div style={{ marginTop: 10 }}>
+              <input
+                autoFocus
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAdd()
+                }}
+                placeholder="Enter custom section title..."
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  fontSize: 14,
+                  color: '#0d212c',
+                  background: '#f8fafc',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: 8,
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          )}
         </div>
 
         <div style={{ marginBottom: 24 }}>
@@ -4305,23 +4568,23 @@ function AddSectionModal({
           </button>
           <button
             onClick={handleAdd}
-            disabled={!title.trim() || uploadedFiles.length === 0}
+            disabled={!effectiveTitle || uploadedFiles.length === 0}
             style={{
               padding: '9px 20px',
-              background: (title.trim() && uploadedFiles.length > 0) ? '#00C4C4' : '#cbd5e1',
+              background: (effectiveTitle && uploadedFiles.length > 0) ? '#00C4C4' : '#cbd5e1',
               color: '#fff',
               border: 'none',
               borderRadius: 8,
               fontSize: 13,
               fontWeight: 700,
-              cursor: (title.trim() && uploadedFiles.length > 0) ? 'pointer' : 'not-allowed',
+              cursor: (effectiveTitle && uploadedFiles.length > 0) ? 'pointer' : 'not-allowed',
               transition: 'background 0.15s',
             }}
             onMouseEnter={(e) => {
-              if (title.trim() && uploadedFiles.length > 0) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
+              if (effectiveTitle && uploadedFiles.length > 0) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
             }}
             onMouseLeave={(e) => {
-              if (title.trim() && uploadedFiles.length > 0) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
+              if (effectiveTitle && uploadedFiles.length > 0) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
             }}
           >
             Add Section
@@ -7564,6 +7827,7 @@ function ItemRow({
   const [isAiGenerated, setIsAiGenerated] = useState(item.isAiGenerated ?? false)
   const [isEditedAi, setIsEditedAi] = useState(false)
   const [hasAttachedDoc, setHasAttachedDoc] = useState(false)
+  const [traceConfirmDoc, setTraceConfirmDoc] = useState<{ file: File; docName: string } | null>(null)
   const [attachedDoc, setAttachedDoc] = useState<{
     name: string
     page: number
@@ -8070,16 +8334,8 @@ function ItemRow({
                           return
                         }
                         const docName = file.name || 'Clinical Safety Case & Hazard Log Attachment A.pdf'
-                        setAttachedDoc({
-                          name: docName,
-                          page: 2,
-                          section: 'Attachment A: Clinical Safety Case (Page 2 • Section 5)',
-                        })
-                        setHasAttachedDoc(true)
-                        const extracted = `Document "${docName}" attached. The requirement is confirmed per Clinical Safety Case standards.`
-                        setDraft(draft ? draft + '\n' + extracted : extracted)
-                        setIsAiGenerated(true)
-                        setIsEditedAi(false)
+                        setTraceConfirmDoc({ file, docName })
+                        e.target.value = ''
                       }
                     }}
                   />
@@ -8341,6 +8597,134 @@ function ItemRow({
           </button>
         )}
       </div>
+
+      {traceConfirmDoc && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setTraceConfirmDoc(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setTraceConfirmDoc(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            {/* Icon Circle */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <FileText size={28} color="#00C4C4" />
+            </div>
+
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 12 }}>
+              Trace Document Confirmation
+            </div>
+            <div style={{ fontSize: 13.5, color: '#64748b', marginBottom: 26, lineHeight: 1.55 }}>
+              Answering a question/assumption using this document or basically document tracing will take 15 tokens are you sure you want to trace the document to answer the question?
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setTraceConfirmDoc(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const docName = traceConfirmDoc.docName
+                  setAttachedDoc({
+                    name: docName,
+                    page: 2,
+                    section: 'Attachment A: Clinical Safety Case (Page 2 • Section 5)',
+                  })
+                  setHasAttachedDoc(true)
+                  const extracted = `Document "${docName}" attached. The requirement is confirmed per Clinical Safety Case standards.`
+                  setDraft(draft ? draft + '\n' + extracted : extracted)
+                  setIsAiGenerated(true)
+                  setIsEditedAi(false)
+                  setTraceConfirmDoc(null)
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#00C4C4',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+              >
+                Confirm & Trace
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -13736,6 +14120,7 @@ export function SOWDetailScreen({
   sowDeadline = '2026-10-31',
   initialActiveRole,
   onActiveViewerRoleChange,
+  tokenConsumption = 1200,
 }: SOWDetailScreenProps) {
   const [activeSOWStatus, setActiveSOWStatus] = useState(sowStatus)
   const isDeactivated = isDeactivatedProp || activeSOWStatus === 'Deactivated' || sowStatus === 'Deactivated'
@@ -13743,6 +14128,21 @@ export function SOWDetailScreen({
     initialActiveRole ?? (viewerRole === 'contributor' ? 'contributor' : viewerRole === 'reviewer' ? 'reviewer' : 'pmo')
   )
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
+  const [currentSowName, setCurrentSowName] = useState(sowName)
+  const [currentSowDeadline, setCurrentSowDeadline] = useState(sowDeadline || '2026-10-31')
+  const [currentTokenConsumption, setCurrentTokenConsumption] = useState(tokenConsumption ?? 1200)
+
+  useEffect(() => {
+    if (sowName) setCurrentSowName(sowName)
+  }, [sowName])
+
+  useEffect(() => {
+    if (sowDeadline) setCurrentSowDeadline(sowDeadline)
+  }, [sowDeadline])
+
+  useEffect(() => {
+    if (tokenConsumption !== undefined) setCurrentTokenConsumption(tokenConsumption)
+  }, [tokenConsumption])
 
   useEffect(() => {
     if (initialActiveRole) {
@@ -13897,7 +14297,7 @@ export function SOWDetailScreen({
               whiteSpace: 'nowrap',
             }}
           >
-            {sowName}
+            {currentSowName}
           </h1>
           {/* Status badge — right after title */}
           <span
@@ -13914,120 +14314,6 @@ export function SOWDetailScreen({
             {sowStatus}
           </span>
           <div style={{ flex: 1 }} />
-          {/* PMO Profile View Role Switcher — only shown when viewerRole === 'pmo' */}
-          {viewerRole === 'pmo' && (
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <button
-                onClick={() => setRoleSwitcherOpen((v) => !v)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  padding: '5px 12px',
-                  borderRadius: 8,
-                  border: '1.5px solid rgba(0,196,196,0.4)',
-                  background: activeViewerRole !== 'pmo' ? 'rgba(0,196,196,0.1)' : 'rgba(255,255,255,0.8)',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: activeViewerRole !== 'pmo' ? '#007a7a' : '#475569',
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(6px)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M20 21a8 8 0 10-16 0" />
-                </svg>
-                {activeViewerRole === 'contributor' ? 'Contributor View — Ashika Jain' : activeViewerRole === 'reviewer' ? 'Reviewer View — Ashika Jain' : 'PMO View'}
-                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
-              {roleSwitcherOpen && (
-                <>
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 998 }}
-                    onClick={() => setRoleSwitcherOpen(false)}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 6px)',
-                      right: 0,
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 10,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.13)',
-                      padding: 5,
-                      zIndex: 999,
-                      minWidth: 220,
-                    }}
-                  >
-                    <div style={{ padding: '5px 10px 3px', fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>View As</div>
-                    {([
-                      { role: 'pmo' as const, label: 'PMO View', sub: 'Full access' },
-                      { role: 'contributor' as const, label: 'Contributor View', sub: 'Ashika Jain' },
-                      { role: 'reviewer' as const, label: 'Reviewer View', sub: 'Ashika Jain' },
-                    ]).map((opt) => (
-                      <button
-                        key={opt.role}
-                        type="button"
-                        onClick={() => {
-                          setActiveViewerRole(opt.role)
-                          onActiveViewerRoleChange?.(opt.role)
-                          setRoleSwitcherOpen(false)
-                        }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '7px 10px',
-                          borderRadius: 7,
-                          background: activeViewerRole === opt.role ? 'rgba(0,196,196,0.08)' : 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                        }}
-                        onMouseEnter={(e) => { if (activeViewerRole !== opt.role) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc' }}
-                        onMouseLeave={(e) => { if (activeViewerRole !== opt.role) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                      >
-                        <div
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: '50%',
-                            background: activeViewerRole === opt.role ? 'rgba(0,196,196,0.15)' : '#f1f5f9',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <svg width="13" height="13" fill="none" stroke={activeViewerRole === opt.role ? '#00C4C4' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                            <circle cx="12" cy="8" r="4" />
-                            <path d="M20 21a8 8 0 10-16 0" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 12, fontWeight: activeViewerRole === opt.role ? 700 : 500, color: activeViewerRole === opt.role ? '#007a7a' : '#0d212c' }}>{opt.label}</div>
-                          <div style={{ fontSize: 10.5, color: '#64748b' }}>{opt.sub}</div>
-                        </div>
-                        {activeViewerRole === opt.role && (
-                          <div style={{ marginLeft: 'auto' }}>
-                            <svg width="12" height="12" fill="none" stroke="#00C4C4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                              <path d="M20 6L9 17l-5-5" />
-                            </svg>
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
           {/* Tokens consumed indicator */}
           <div
             style={{
@@ -14559,6 +14845,13 @@ export function SOWDetailScreen({
             <OverviewTab
               files={effectiveFiles}
               isDraftGenerated={isDraftUnlocked || draftGenState === 'ready'}
+              sowName={currentSowName}
+              onSowNameChange={setCurrentSowName}
+              sowDeadline={currentSowDeadline}
+              onSowDeadlineChange={setCurrentSowDeadline}
+              tokenConsumption={currentTokenConsumption}
+              onTokenConsumptionChange={setCurrentTokenConsumption}
+              isPMO={effectiveViewerRole === 'pmo' && !isDeactivated}
             />
           )}
           {activeTab === 'form' && (
