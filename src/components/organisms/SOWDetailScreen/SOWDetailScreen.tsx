@@ -466,11 +466,11 @@ function OverviewTab({
                 marginBottom: 6,
               }}
             >
-              SOW name
+              SOW Name
             </label>
-            {isPMO ? (
-              <input
+                          <input
                 type="text"
+                readOnly={!isPMO}
                 value={sowName || ''}
                 onChange={(e) => onSowNameChange?.(e.target.value)}
                 placeholder="Enter SOW Name"
@@ -485,13 +485,10 @@ function OverviewTab({
                   color: '#0d212c',
                   outline: 'none',
                   boxSizing: 'border-box',
+                  cursor: isPMO ? undefined : 'default',
+                  WebkitTextFillColor: '#0d212c',
                 }}
               />
-            ) : (
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', minHeight: 28, display: 'flex', alignItems: 'center' }}>
-                {sowName || '—'}
-              </div>
-            )}
           </div>
 
           {/* Deadline */}
@@ -505,11 +502,11 @@ function OverviewTab({
                 marginBottom: 6,
               }}
             >
-              Deadline
+              SOW Deadline
             </label>
-            {isPMO ? (
-              <input
+                          <input
                 type="date"
+                disabled={!isPMO}
                 value={sowDeadline || ''}
                 onChange={(e) => onSowDeadlineChange?.(e.target.value)}
                 style={{
@@ -523,13 +520,10 @@ function OverviewTab({
                   color: '#0d212c',
                   outline: 'none',
                   boxSizing: 'border-box',
+                  cursor: isPMO ? undefined : 'default',
+                  WebkitTextFillColor: '#0d212c',
                 }}
               />
-            ) : (
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', minHeight: 28, display: 'flex', alignItems: 'center' }}>
-                {sowDeadline || '—'}
-              </div>
-            )}
           </div>
 
           {/* Tokens */}
@@ -543,11 +537,11 @@ function OverviewTab({
                 marginBottom: 6,
               }}
             >
-              Tokens
+              Token Consumption
             </label>
-            {isPMO ? (
-              <input
+                          <input
                 type="number"
+                readOnly={!isPMO}
                 min={0}
                 value={tokenConsumption ?? 1200}
                 onChange={(e) => onTokenConsumptionChange?.(Number(e.target.value) || 0)}
@@ -563,13 +557,10 @@ function OverviewTab({
                   color: '#0d212c',
                   outline: 'none',
                   boxSizing: 'border-box',
+                  cursor: isPMO ? undefined : 'default',
+                  WebkitTextFillColor: '#0d212c',
                 }}
               />
-            ) : (
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', minHeight: 28, display: 'flex', alignItems: 'center' }}>
-                {(tokenConsumption ?? 1200).toLocaleString()} tokens
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -2765,8 +2756,10 @@ function ContextFieldHeader({
   isManuallyEdited = false,
   onOpenCitation,
   onOpenTrace,
+  required = false,
 }: {
   label: string
+  required?: boolean
   citation?: {
     sourceDoc: string
     page: number
@@ -2797,6 +2790,7 @@ function ContextFieldHeader({
           }}
         >
           {label}
+          {required && <span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>}
         </label>
 
         {/* Source Citation or Manually Edited Chip */}
@@ -2903,8 +2897,10 @@ function ContextRichTextField({
   onOpenCitation,
   onOpenTrace,
   rows = 3,
+  required = false,
 }: {
   label: string
+  required?: boolean
   value: string
   onChange: (v: string) => void
   fieldKey: string
@@ -2924,6 +2920,7 @@ function ContextRichTextField({
     <div style={{ marginBottom: 18 }}>
       <ContextFieldHeader
         label={label}
+        required={required}
         citation={citation}
         isManuallyEdited={isManuallyEdited}
         onOpenCitation={() =>
@@ -3607,7 +3604,7 @@ function FormTab({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <div>
               <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
-                Commitments
+                Commitments<span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>
               </span>
               <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
                 Deliverables &amp; safety requirements (each with dedicated citation).
@@ -3888,6 +3885,7 @@ function FormTab({
         <div style={{ marginBottom: 18 }}>
           <ContextFieldHeader
             label="Client Name"
+            required
             citation={{
               sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
               page: 1,
@@ -3935,6 +3933,7 @@ function FormTab({
         {/* Description */}
         <ContextRichTextField
           label="Description"
+          required
           fieldKey="description"
           value={formData.description}
           onChange={(v) => handleFieldChange('description', v)}
@@ -3953,6 +3952,7 @@ function FormTab({
         {/* Business Outcome */}
         <ContextRichTextField
           label="Business Outcome"
+          required
           fieldKey="businessOutcome"
           value={formData.businessOutcome}
           onChange={(v) => handleFieldChange('businessOutcome', v)}
@@ -3971,6 +3971,7 @@ function FormTab({
         {/* Importance & Value of Solution */}
         <ContextRichTextField
           label="Importance & Value of Solution"
+          required
           fieldKey="importanceValue"
           value={formData.importanceValue}
           onChange={(v) => handleFieldChange('importanceValue', v)}
@@ -3989,6 +3990,7 @@ function FormTab({
         {/* In Scope */}
         <ContextRichTextField
           label="In Scope"
+          required
           fieldKey="inScope"
           value={formData.inScope}
           onChange={(v) => handleFieldChange('inScope', v)}
@@ -4007,6 +4009,7 @@ function FormTab({
         {/* Out of Scope */}
         <ContextRichTextField
           label="Out of Scope"
+          required
           fieldKey="outOfScope"
           value={formData.outOfScope}
           onChange={(v) => handleFieldChange('outOfScope', v)}
@@ -4033,7 +4036,7 @@ function FormTab({
               marginBottom: 8,
             }}
           >
-            Context Tags{' '}
+            Context Tags<span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>{' '}
             <span style={{ fontWeight: 400, color: '#94a3b8' }}>
               (AI-extracted tags — add or remove as needed)
             </span>
@@ -4238,10 +4241,13 @@ const ADMIN_SECTION_TEMPLATES = [
 function AddSectionModal({
   onClose,
   onAdd,
+  onConsumeTokens,
 }: {
   onClose: () => void
   onAdd: (title: string, description: string) => void
+  onConsumeTokens?: (tokens: number) => void
 }) {
+  const [pendingUpload, setPendingUpload] = useState<{ name: string; type: string }[] | null>(null)
   const [sectionTitle, setSectionTitle] = useState('')
   const [isTitleListOpen, setIsTitleListOpen] = useState(false)
   const titleComboRef = useRef<HTMLDivElement>(null)
@@ -4511,7 +4517,8 @@ function AddSectionModal({
                   name: f.name,
                   type: f.name.endsWith('.pdf') ? 'PDF' : f.name.endsWith('.docx') ? 'DOCX' : 'TXT'
                 }))
-                setUploadedFiles(prev => [...prev, ...newFiles])
+                if (newFiles.length > 0) setPendingUpload(newFiles)
+                e.target.value = ''
               }
             }}
           />
@@ -4532,7 +4539,7 @@ function AddSectionModal({
               <span style={{ color: '#00a0a0', fontWeight: 600 }}>Click to browse</span> or drag & drop documents here
             </div>
             <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-              Supports PDF, DOCX, XLSX (Max 1 document) • <span style={{ color: '#0ea5e9', fontWeight: 600 }}>15 Tokens/upload</span>
+              Supports PDF, DOCX, XLSX (Max 1 document)
             </div>
           </div>
           {uploadedFiles.length > 0 && (
@@ -4633,6 +4640,123 @@ function AddSectionModal({
           </button>
         </div>
       </div>
+
+      {pendingUpload && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(3px)',
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (e.target === e.currentTarget) setPendingUpload(null)
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 28px',
+              width: 440,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+          >
+            <button
+              onClick={() => setPendingUpload(null)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                padding: 4,
+                display: 'flex',
+              }}
+            >
+              <X size={20} />
+            </button>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'rgba(0,196,196,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+              }}
+            >
+              <FileText size={28} color="#00C4C4" />
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 12 }}>
+              Upload Document Confirmation
+            </div>
+            <div style={{ fontSize: 13.5, color: '#64748b', marginBottom: 26, lineHeight: 1.55 }}>
+              Uploading {pendingUpload.length === 1 ? 'this document' : 'these documents'} to the knowledge base will use{' '}
+              {pendingUpload.length * 15} tokens. Do you want to continue?
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setPendingUpload(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#ffffff',
+                  border: '1.5px solid #e2e8f0',
+                  color: '#0d212c',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadedFiles((prev) => [...prev, ...pendingUpload])
+                  onConsumeTokens?.(pendingUpload.length * 15)
+                  setPendingUpload(null)
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  background: '#00C4C4',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0,196,196,0.3)',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+              >
+                Confirm &amp; Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -6496,6 +6620,8 @@ function StructureTab({
   onResolveChanges,
   onOpenParticipantsModal,
   sowDeadline = '2026-10-31',
+  onConsumeTokens,
+  readOnly = false,
 }: {
   initialSections?: SOWSection[]
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
@@ -6506,6 +6632,8 @@ function StructureTab({
   onResolveChanges?: (accept: boolean) => void
   onOpenParticipantsModal?: () => void
   sowDeadline?: string
+  onConsumeTokens?: (tokens: number) => void
+  readOnly?: boolean
 }) {
   const { showToast } = useToast()
   const isContributor = viewerRole === 'contributor'
@@ -7012,7 +7140,7 @@ function StructureTab({
                   style={{ position: 'relative', marginBottom: 6, opacity: isDragging ? 0.4 : 1, transition: 'opacity 0.15s' }}
                   onMouseEnter={() => setHoveredSection(sec.id)}
                   onMouseLeave={() => setHoveredSection(null)}
-                  draggable={!isContributor && !isReviewer}
+                  draggable={!isContributor && !isReviewer && !readOnly}
                   onDragStart={() => setDragSectionId(sec.id)}
                   onDragEnd={() => { setDragSectionId(null); setDragOverSectionId(null) }}
                   onDragOver={(e) => { e.preventDefault(); if (sec.id !== dragSectionId) setDragOverSectionId(sec.id) }}
@@ -7059,7 +7187,7 @@ function StructureTab({
                     }}
                   >
                     {/* Drag handle — PMO only, only appears on hover */}
-                    {!isContributor && !isReviewer && isHovered && (
+                    {!isContributor && !isReviewer && !readOnly && isHovered && (
                       <svg
                         width="10" height="14" viewBox="0 0 10 14" fill="none"
                         style={{ flexShrink: 0, opacity: 0.6, cursor: 'grab', transition: 'opacity 0.15s' }}
@@ -7136,7 +7264,7 @@ function StructureTab({
                     )}
                   </button>
                   {/* Three-dot menu — visible on hover/active, PMO only */}
-                  {!isContributor && !isReviewer && (isHovered || isActive) && (
+                  {!isContributor && !isReviewer && !readOnly && (isHovered || isActive) && (
                     <div
                       style={{
                         position: 'absolute',
@@ -7227,6 +7355,7 @@ function StructureTab({
           {!isReviewer && (
             <div style={{ padding: '8px 28px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
               
+              {!readOnly && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <label
                   style={{
@@ -7495,10 +7624,11 @@ function StructureTab({
                   </>
                 )}
               </div>
+              )}
 
               {/* Client Queue button on right — hidden for contributors */}
               {!isContributor && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
                   <button
                     onClick={() => setClientQueueModalOpen(true)}
                     style={{
@@ -7632,12 +7762,12 @@ function StructureTab({
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                       {assumptions.map((item, ai) => {
-                        const canEditSec = !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
+                        const canEditSec = !readOnly && !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
                         return (
                           <ItemRow
                             key={item.id}
                             item={item}
-                            pendingStatus={hasPendingChanges ? (ai === 0 ? 'modified' : ai === 1 ? 'removed' : undefined) : undefined}
+                            pendingStatus={hasPendingChanges && !readOnly ? (ai === 0 ? 'modified' : ai === 1 ? 'removed' : undefined) : undefined}
                             label={`Assumption ${ai + 1}`}
                             isSelected={selected.has(item.id)}
                             hasAnySelected={hasSelection}
@@ -7645,6 +7775,7 @@ function StructureTab({
                             isContributor={isContributor}
                             isReviewer={isReviewer}
                             canEdit={canEditSec}
+                            onConsumeTokens={onConsumeTokens}
                             onReassign={(newMemberIds) => reassignItem(item.id, newMemberIds)}
                             disableAnswer={disableAnswer || isReviewer}
                             onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
@@ -7661,13 +7792,13 @@ function StructureTab({
                         )
                       })}
                       {questions.map((item, qi) => {
-                        const canEditSec = !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
+                        const canEditSec = !readOnly && !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
                         const isDepTarget = (sec.id === 's3' || idx === 2) && qi === 0
                         return (
                           <ItemRow
                             key={item.id}
                             item={item}
-                            pendingStatus={hasPendingChanges ? (qi === 0 ? 'modified' : qi === 1 ? 'removed' : undefined) : undefined}
+                            pendingStatus={hasPendingChanges && !readOnly ? (qi === 0 ? 'modified' : qi === 1 ? 'removed' : undefined) : undefined}
                             label={`Question ${qi + 1}`}
                             isSelected={selected.has(item.id)}
                             hasAnySelected={hasSelection}
@@ -7675,13 +7806,14 @@ function StructureTab({
                             isContributor={isContributor}
                             isReviewer={isReviewer}
                             canEdit={canEditSec}
+                            onConsumeTokens={onConsumeTokens}
                             onReassign={(newMemberIds) => reassignItem(item.id, newMemberIds)}
                             disableAnswer={disableAnswer || isReviewer}
                             onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
                             onToggleQueue={() => toggleClientQueue(item.id)}
                             onOpenCitation={setCitationModalTarget}
                             onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
-                            hasDependentPrompt={!isReviewer && isDepTarget && dependentPromptVisible && !hasCreatedDependentQuestion}
+                            hasDependentPrompt={!isReviewer && !readOnly && isDepTarget && dependentPromptVisible && !hasCreatedDependentQuestion}
                             onDismissDependentPrompt={() => setDependentPromptVisible(false)}
                             onCreateDependentQuestion={() => {
                               const newDepQuestion: SectionItem = {
@@ -7746,6 +7878,7 @@ function StructureTab({
         <AddSectionModal
           onClose={() => setShowAddSectionModal(false)}
           onAdd={(t, _d) => addSection(t)}
+          onConsumeTokens={onConsumeTokens}
         />
       )}
 
@@ -7839,7 +7972,9 @@ function ItemRow({
   hasDependentPrompt = false,
   onDismissDependentPrompt,
   onCreateDependentQuestion,
+  onConsumeTokens,
 }: {
+  onConsumeTokens?: (tokens: number) => void
   item: SectionItem
   label: string
   isSelected: boolean
@@ -8410,6 +8545,7 @@ function ItemRow({
                     )
                     setIsAiGenerated(true)
                     setIsEditedAi(false)
+                    onConsumeTokens?.(10)
                   }}
                   style={{
                     display: 'flex',
@@ -8743,6 +8879,7 @@ function ItemRow({
                   setDraft(draft ? draft + '\n' + extracted : extracted)
                   setIsAiGenerated(true)
                   setIsEditedAi(false)
+                  onConsumeTokens?.(15)
                   setTraceConfirmDoc(null)
                 }}
                 style={{
@@ -8798,36 +8935,6 @@ const SOW_DRAFT_SECTIONS = [
 
 type DraftComment = { id: string; sectionId: string; text: string; assignee: string }
 
-/* ── Change impact (Draft tab) ───────────────────────────────────────────── */
-
-type ImpactItem = { id: string; section: string; reason: string; status: 'pending' | 'applied' | 'dismissed' }
-type ImpactChange = { id: string; sourceSection: string; items: ImpactItem[] }
-
-const IMPACT_RULES: Record<string, { section: string; reason: string }[]> = {
-  'Timeline & Milestones': [
-    { section: 'Deliverables', reason: 'Milestone wording references this timeline' },
-    { section: 'Roles & Responsibilities', reason: 'Staffing assumptions may change with duration' },
-    { section: 'Assumptions', reason: 'Current assumption states the delivery duration' },
-  ],
-  'Scope of Work': [
-    { section: 'Deliverables', reason: 'Deliverables are derived from the agreed scope' },
-    { section: 'Out of Scope', reason: 'Exclusions may overlap with the updated scope' },
-    { section: 'Commercials', reason: 'Pricing depends on the scope of work' },
-  ],
-  Deliverables: [
-    { section: 'Timeline & Milestones', reason: 'Milestones are tied to deliverables' },
-    { section: 'Acceptance Criteria', reason: 'Acceptance criteria reference each deliverable' },
-    { section: 'Commercials', reason: 'Payment milestones follow deliverables' },
-  ],
-  Commercials: [
-    { section: 'Assumptions', reason: 'Commercial assumptions may need to be updated' },
-    { section: 'Timeline & Milestones', reason: 'Payment schedule follows the milestones' },
-  ],
-}
-const IMPACT_DEFAULT_RULES: { section: string; reason: string }[] = [
-  { section: 'Executive Summary', reason: 'Summary may need to reflect this change' },
-  { section: 'Assumptions', reason: 'Related assumptions may need review' },
-]
 
 /* ── AI Review and Summary Modal (PMO & Reviewer) ────────────────────────── */
 
@@ -9810,7 +9917,7 @@ function SOWDraftTab({
   const [editEmailError, setEditEmailError] = useState(false)
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
   const [editingReplyText, setEditingReplyText] = useState('')
-  const [drawerTab, setDrawerTab] = useState<'comments' | 'history' | 'trace' | 'impact'>('comments')
+  const [drawerTab, setDrawerTab] = useState<'comments' | 'history' | 'trace'>('comments')
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
   const [showFab, setShowFab] = useState(true)
   const lastScrollTop = useRef(0)
@@ -9949,60 +10056,8 @@ function SOWDraftTab({
       related.length === 0 ? 100 : Math.round(100 - (100 - AI_BASE_SCORES[name]) * (open / related.length))
     return { name, value }
   })
-  // ── Change impact ───────────────────────────────────────────────────────────
-  const [impacts, setImpacts] = useState<ImpactChange[]>([])
-  const impactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pendingImpactCount = impacts.reduce(
-    (n, c) => n + c.items.filter((i) => i.status === 'pending').length,
-    0
-  )
-  const latestPendingImpact = [...impacts].reverse().find((c) => c.items.some((i) => i.status === 'pending'))
-  const scheduleImpactCheck = () => {
-    const anchor = window.getSelection()?.anchorNode
-    const sectionEl = (anchor instanceof Element ? anchor : anchor?.parentElement)?.closest('.sow-section')
-    if (!sectionEl) return
-    const sourceSection = sectionEl.querySelector('h2')?.textContent?.trim() || ''
-    if (!sourceSection) return
-    if (impactTimerRef.current) clearTimeout(impactTimerRef.current)
-    impactTimerRef.current = setTimeout(() => {
-      setImpacts((prev) => {
-        if (prev.some((c) => c.sourceSection === sourceSection && c.items.some((i) => i.status === 'pending'))) {
-          return prev
-        }
-        const rules = (IMPACT_RULES[sourceSection] ?? IMPACT_DEFAULT_RULES).filter((r) => r.section !== sourceSection)
-        if (rules.length === 0) return prev
-        const id = `imp-${Date.now()}`
-        return [
-          ...prev,
-          {
-            id,
-            sourceSection,
-            items: rules.map((r, i) => ({ id: `${id}-${i}`, section: r.section, reason: r.reason, status: 'pending' as const })),
-          },
-        ]
-      })
-    }, 900)
-  }
-  const updateImpactItem = (changeId: string, itemId: string, status: ImpactItem['status']) => {
-    setImpacts((prev) =>
-      prev.map((c) =>
-        c.id === changeId ? { ...c, items: c.items.map((i) => (i.id === itemId ? { ...i, status } : i)) } : c
-      )
-    )
-  }
-  const scrollToDraftSection = (title: string) => {
-    const idx = SOW_DRAFT_SECTIONS.findIndex((sec) => sec.title === title)
-    if (idx === -1) return
-    setActiveSectionIdx(idx)
-    const el = document.getElementById(`sow-section-${idx}`)
-    const area = scrollAreaRef.current
-    if (el && area) {
-      area.scrollTo({
-        top: area.scrollTop + el.getBoundingClientRect().top - area.getBoundingClientRect().top - 24,
-        behavior: 'smooth',
-      })
-    }
-  }
+  // ── Unreviewed edits (prompts the user to rerun the AI summary check) ──────
+  const [hasUnreviewedEdits, setHasUnreviewedEdits] = useState(false)
   const findSectionIdxForAffected = (affected: string) => {
     const tokens = affected.split(/[·,]/).map((t) => t.trim().toLowerCase()).filter(Boolean)
     return SOW_DRAFT_SECTIONS.findIndex((sec) => {
@@ -10766,7 +10821,7 @@ function SOWDraftTab({
   // ── Header actions (rendered into the tab strip via portal) ──────────────────
   const draftHeaderActions = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {!isContributor && !isReviewer && !isClient && (
+      {!isContributor && !isReviewer && !isClient && !isReadOnly && (
         <button
           type="button"
           onClick={() => onOpenParticipantsModal?.()}
@@ -10784,10 +10839,10 @@ function SOWDraftTab({
             cursor: 'pointer',
             whiteSpace: 'nowrap',
           }}
-          title="Reviewer & Participants"
+          title="Participants"
         >
           <Users size={14} color="#00a0a0" />
-          Reviewer &amp; Participants
+          Participants
         </button>
       )}
 
@@ -11057,6 +11112,7 @@ function SOWDraftTab({
                     <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor(f.value) }}>{f.value}%</span>
                   </div>
                 ))}
+                {!isReadOnly && (
                 <button
                   type="button"
                   onClick={() => openAIReview('summary')}
@@ -11083,10 +11139,11 @@ function SOWDraftTab({
                   View detailed analysis
                   <ArrowRight size={12} />
                 </button>
+                )}
               </>
             ) : (
               <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
-                No AI review yet. Run the AI check to see how ready this document is.
+                {isReadOnly ? 'No AI review has been run for this document.' : 'No AI review yet. Run the AI check to see how ready this document is.'}
               </div>
             )}
           </div>
@@ -11174,7 +11231,7 @@ function SOWDraftTab({
                   key={idx}
                   onMouseEnter={() => setHoveredTocIdx(idx)}
                   onMouseLeave={() => setHoveredTocIdx(null)}
-                  draggable={!isContributor && !isReviewer}
+                  draggable={!isContributor && !isReviewer && !isReadOnly}
                   onDragStart={() => setDragTocIdx(idx)}
                   onDragEnd={() => {
                     setDragTocIdx(null)
@@ -11231,7 +11288,7 @@ function SOWDraftTab({
                       style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}
                     >
                       {/* Drag handle — PMO only, only appears on hover */}
-                      {!isContributor && !isReviewer && hoveredTocIdx === idx && (
+                      {!isContributor && !isReviewer && !isReadOnly && hoveredTocIdx === idx && (
                         <svg
                           width="10" height="14" viewBox="0 0 10 14" fill="none"
                           style={{ flexShrink: 0, opacity: 0.6, cursor: 'grab', transition: 'opacity 0.15s' }}
@@ -11364,7 +11421,7 @@ function SOWDraftTab({
                     )}
 
                     {/* ⋯ menu */}
-                    {!isContributor && !isReviewer && (hoveredTocIdx === idx || openMenuIdx === idx) && (
+                    {!isContributor && !isReviewer && !isReadOnly && (hoveredTocIdx === idx || openMenuIdx === idx) && (
                       <div style={{ position: 'relative' }}>
                         <button
                           onClick={(e) => {
@@ -11598,7 +11655,7 @@ function SOWDraftTab({
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {/* AI Review & Summary for Reviewer */}
-                {isReviewer && (
+                {isReviewer && !isReadOnly && (
                   <button
                     type="button"
                     onClick={() => openAIReview('thinking')}
@@ -11645,6 +11702,8 @@ function SOWDraftTab({
               backdropFilter: 'blur(6px)',
               overflowX: 'auto',
               flexWrap: 'nowrap',
+              pointerEvents: isReadOnly ? 'none' : undefined,
+              opacity: isReadOnly ? 0.5 : 1,
             }}
           >
             {/* Undo / Redo */}
@@ -12255,7 +12314,7 @@ function SOWDraftTab({
                 }}
                 title="Highlight content edited during review cycles"
               >
-                <span>Edited during review</span>
+                <span>Reviewer Edits</span>
                 <span
                   style={{
                     fontSize: 10.5,
@@ -12299,8 +12358,8 @@ function SOWDraftTab({
 
           </div>
 
-          {/* Change impact notice */}
-          {latestPendingImpact && !isContributor && !isReviewer && (
+          {/* Unreviewed edits notice */}
+          {hasUnreviewedEdits && !isContributor && !isReviewer && !isClient && !isReadOnly && (
             <div
               style={{
                 flexShrink: 0,
@@ -12332,30 +12391,12 @@ function SOWDraftTab({
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
-                  Your edit may impact other sections
+                  Your edits may affect other sections
                 </div>
                 <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 1 }}>
-                  &ldquo;{latestPendingImpact.sourceSection}&rdquo; affects {pendingImpactCount} other{' '}
-                  {pendingImpactCount === 1 ? 'section' : 'sections'} that need review.
+                  Rerun the AI summary check to see the impact of these edits on the rest of the document.
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setDrawerTab('impact')}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  border: '1.5px solid rgba(0,196,196,0.5)',
-                  background: 'rgba(0,196,196,0.12)',
-                  color: '#007a7a',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                View details
-              </button>
             </div>
           )}
 
@@ -12452,7 +12493,7 @@ function SOWDraftTab({
               ref={docCardRef}
               onClick={handleDocCardClick}
               onMouseMove={(e) => {
-                if (commentPopup) return
+                if (commentPopup || isReadOnly) return
                 // Hovering the comment pill itself — keep the current block, just cancel the hide.
                 if ((e.target as HTMLElement).closest('[data-comment-ui]')) {
                   cancelHoverHide()
@@ -12502,7 +12543,7 @@ function SOWDraftTab({
                   if (!isContributor && !isReviewer) {
                     updateFormats()
                     setHasUnsaved(true)
-                    scheduleImpactCheck()
+                    setHasUnreviewedEdits(true)
                   }
                 }}
                 onKeyUp={updateFormats}
@@ -12786,28 +12827,6 @@ function SOWDraftTab({
                 >
                   <span>Trace</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDrawerTab('impact')}
-                  style={{
-                    padding: '12px 2px 10px',
-                    border: 'none',
-                    borderBottom: drawerTab === 'impact' ? '2.5px solid #00C4C4' : '2.5px solid transparent',
-                    background: 'transparent',
-                    color: drawerTab === 'impact' ? '#00a0a0' : '#64748b',
-                    fontSize: 13,
-                    fontWeight: drawerTab === 'impact' ? 700 : 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    marginBottom: -1.5,
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <span>Impact</span>
-                </button>
               </div>
 
             </div>
@@ -12867,7 +12886,7 @@ function SOWDraftTab({
                   </div>
                 ) : (
                   comments.map((c) => {
-                    const canResolve = (isPMO || isReviewer) && (c.assignee && c.assignee !== 'Unassigned')
+                    const canResolve = !isReadOnly && (isPMO || isReviewer) && (c.assignee && c.assignee !== 'Unassigned')
                     const isEditing = editingCommentId === c.id
 
                     return (
@@ -12930,7 +12949,7 @@ function SOWDraftTab({
                               </button>
                             )}
 
-                            {!isEditing && (
+                            {!isEditing && !isReadOnly && (
                               <button
                                 type="button"
                                 onClick={() => startEditComment(c)}
@@ -13093,7 +13112,7 @@ function SOWDraftTab({
                                     <span style={{ fontSize: 10, color: '#94a3b8' }}>{r.timestamp}</span>
                                   </div>
 
-                                  {!isEditingThisReply && (
+                                  {!isEditingThisReply && !isReadOnly && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                       <button
                                         type="button"
@@ -13198,6 +13217,7 @@ function SOWDraftTab({
                           )
                         })}
 
+                        {!isReadOnly && (
                         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                           <input
                             type="text"
@@ -13240,146 +13260,10 @@ function SOWDraftTab({
                             Reply
                           </button>
                         </div>
+                        )}
                       </div>
                     )
                   })
-                )
-              ) : drawerTab === 'impact' ? (
-                /* Change Impact Tab in Side Drawer */
-                impacts.length === 0 ? (
-                  <div
-                    style={{
-                      fontSize: 12.5,
-                      color: '#94a3b8',
-                      textAlign: 'center',
-                      padding: '36px 14px',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    No impact detected. When an edit affects other sections, it will show up here.
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {[...impacts].reverse().map((change) => {
-                      const pending = change.items.filter((i) => i.status === 'pending').length
-                      return (
-                        <div
-                          key={change.id}
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: 10,
-                            padding: 12,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 10,
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                            <div>
-                              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#0d212c' }}>Change detected</div>
-                              <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
-                                Content edited in &ldquo;{change.sourceSection}&rdquo;
-                              </div>
-                            </div>
-                            <span
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                padding: '2px 8px',
-                                borderRadius: 10,
-                                whiteSpace: 'nowrap',
-                                background: pending > 0 ? 'rgba(245,158,11,0.12)' : '#dcfce7',
-                                color: pending > 0 ? '#b45309' : '#15803d',
-                              }}
-                            >
-                              {pending > 0 ? `${pending} to review` : 'All reviewed'}
-                            </span>
-                          </div>
-
-                          {change.items.map((item) => (
-                            <div
-                              key={item.id}
-                              style={{ borderTop: '1px solid #f1f5f9', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                                <div>
-                                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>{item.section}</div>
-                                  <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2, lineHeight: 1.4 }}>{item.reason}</div>
-                                </div>
-                                <span
-                                  style={{
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    whiteSpace: 'nowrap',
-                                    color:
-                                      item.status === 'pending' ? '#b45309' : item.status === 'applied' ? '#15803d' : '#64748b',
-                                  }}
-                                >
-                                  {item.status === 'pending' ? 'Needs review' : item.status === 'applied' ? 'Updated' : 'No change'}
-                                </span>
-                              </div>
-                              {item.status === 'pending' && (
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      updateImpactItem(change.id, item.id, 'applied')
-                                      showToast(`Update applied to ${item.section}`, 'success')
-                                    }}
-                                    style={{
-                                      padding: '5px 12px',
-                                      borderRadius: 8,
-                                      border: 'none',
-                                      background: '#00C4C4',
-                                      color: '#ffffff',
-                                      fontSize: 12,
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    Apply update
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => updateImpactItem(change.id, item.id, 'dismissed')}
-                                    style={{
-                                      padding: '5px 12px',
-                                      borderRadius: 8,
-                                      border: '1px solid #e2e8f0',
-                                      background: '#ffffff',
-                                      color: '#64748b',
-                                      fontSize: 12,
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    Reject
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => scrollToDraftSection(item.section)}
-                                    style={{
-                                      padding: '5px 8px',
-                                      borderRadius: 8,
-                                      border: 'none',
-                                      background: 'transparent',
-                                      color: '#00a0a0',
-                                      fontSize: 12,
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    Open
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    })}
-                  </div>
                 )
               ) : drawerTab === 'trace' ? (
                 /* Section Trace Tab in Side Drawer */
@@ -13483,7 +13367,7 @@ function SOWDraftTab({
                             </span>
                           )}
                         </div>
-                        {!v.isCurrent && (
+                        {!v.isCurrent && !isReadOnly && (
                           <button
                             type="button"
                             onClick={() => {
@@ -13526,7 +13410,7 @@ function SOWDraftTab({
         )}
 
         {/* Center Floating FAB: AI Review & Summary */}
-        {!isAdmin && !isContributor && !isClient && !isDraftGenerating && (
+        {!isAdmin && !isContributor && !isClient && !isReadOnly && !isDraftGenerating && (
           <button
             type="button"
             onClick={() => openAIReview('thinking')}
@@ -13950,6 +13834,7 @@ function SOWDraftTab({
           onClose={() => setShowAIReviewModal(false)}
           onAcknowledge={() => {
             setHasRunAICheck(true)
+            setHasUnreviewedEdits(false)
           }}
           hasRunBefore={hasRunAICheck}
           findings={aiFindings}
@@ -14544,6 +14429,8 @@ export function SOWDetailScreen({
 }: SOWDetailScreenProps) {
   const [activeSOWStatus, setActiveSOWStatus] = useState(sowStatus)
   const isDeactivated = isDeactivatedProp || activeSOWStatus === 'Deactivated' || sowStatus === 'Deactivated'
+  // Deactivated SOWs and the Admin profile are view-only everywhere
+  const isViewOnly = isDeactivated || viewerRole === 'admin'
   const [activeViewerRole, setActiveViewerRole] = useState<'pmo' | 'contributor' | 'reviewer'>(
     initialActiveRole ?? (viewerRole === 'contributor' ? 'contributor' : viewerRole === 'reviewer' ? 'reviewer' : 'pmo')
   )
@@ -14551,6 +14438,7 @@ export function SOWDetailScreen({
   const [currentSowName, setCurrentSowName] = useState(sowName)
   const [currentSowDeadline, setCurrentSowDeadline] = useState(sowDeadline || '2026-10-31')
   const [currentTokenConsumption, setCurrentTokenConsumption] = useState(tokenConsumption ?? 1200)
+  const [consumedTokens, setConsumedTokens] = useState(200)
 
   useEffect(() => {
     if (sowName) setCurrentSowName(sowName)
@@ -14747,7 +14635,9 @@ export function SOWDetailScreen({
               flexShrink: 0,
             }}
           >
-            <span style={{ fontWeight: 500, color: '#64748b' }}>200/3000</span>
+            <span style={{ fontWeight: 500, color: '#64748b' }}>
+              {consumedTokens.toLocaleString()}/{currentTokenConsumption.toLocaleString()}
+            </span>
             <span>Tokens</span>
           </div>
 
@@ -14861,8 +14751,8 @@ export function SOWDetailScreen({
                   ) : draftGenState === 'ready' ? null : (
                     <button
                       onClick={handleGenerateDraft}
-                      disabled={isDeactivated || completionScore < 80}
-                      title={isDeactivated ? 'Document is deactivated' : completionScore < 80 ? 'Completion must be at least 80% to generate draft' : 'Generate Draft'}
+                      disabled={isViewOnly || completionScore < 80}
+                      title={isViewOnly ? 'Document is deactivated' : completionScore < 80 ? 'Completion must be at least 80% to generate draft' : 'Generate Draft'}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -14870,13 +14760,13 @@ export function SOWDetailScreen({
                         padding: '6px 14px',
                         borderRadius: 8,
                         border: 'none',
-                        background: (isDeactivated || completionScore < 80) ? '#cbd5e1' : '#00C4C4',
+                        background: (isViewOnly || completionScore < 80) ? '#cbd5e1' : '#00C4C4',
                         fontSize: 12,
                         fontWeight: 700,
-                        color: (isDeactivated || completionScore < 80) ? '#64748b' : '#ffffff',
-                        cursor: (isDeactivated || completionScore < 80) ? 'not-allowed' : 'pointer',
+                        color: (isViewOnly || completionScore < 80) ? '#64748b' : '#ffffff',
+                        cursor: (isViewOnly || completionScore < 80) ? 'not-allowed' : 'pointer',
                         whiteSpace: 'nowrap',
-                        boxShadow: (isDeactivated || completionScore < 80) ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
+                        boxShadow: (isViewOnly || completionScore < 80) ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
                         transition: 'all 0.15s ease',
                       }}
                       onMouseEnter={(e) => { if (completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8' }}
@@ -14936,7 +14826,7 @@ export function SOWDetailScreen({
                       {/* Send for Review / Send for Approval (Secondary) */}
                       <button
                         onClick={() => {
-                          if (isDeactivated) return
+                          if (isViewOnly) return
                           if (isContributor || isReviewer || isClient) {
                             setShowSendForApprovalConfirm(true)
                           } else {
@@ -14945,7 +14835,7 @@ export function SOWDetailScreen({
                             showToast('SOW sent for review successfully!', 'success')
                           }
                         }}
-                        disabled={isDeactivated || completionScore === 0}
+                        disabled={isViewOnly || completionScore === 0}
                         title={
                           completionScore === 0
                             ? 'At least one question must be answered before sending'
@@ -15002,8 +14892,8 @@ export function SOWDetailScreen({
                       {/* Generate Draft (Primary) */}
                       <button
                         onClick={handleGenerateDraft}
-                        disabled={isDeactivated || completionScore < 80}
-                        title={isDeactivated ? "Document is deactivated" : completionScore < 80 ? "Completion must be at least 80% to generate draft" : "Generate Draft"}
+                        disabled={isViewOnly || completionScore < 80}
+                        title={isViewOnly ? "Document is deactivated" : completionScore < 80 ? "Completion must be at least 80% to generate draft" : "Generate Draft"}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -15011,13 +14901,13 @@ export function SOWDetailScreen({
                           padding: '6px 14px',
                           borderRadius: 8,
                           border: 'none',
-                          background: (isDeactivated || completionScore < 80) ? '#cbd5e1' : '#00C4C4',
+                          background: (isViewOnly || completionScore < 80) ? '#cbd5e1' : '#00C4C4',
                           fontSize: 12,
                           fontWeight: 700,
-                          color: (isDeactivated || completionScore < 80) ? '#64748b' : '#ffffff',
-                          cursor: (isDeactivated || completionScore < 80) ? 'not-allowed' : 'pointer',
+                          color: (isViewOnly || completionScore < 80) ? '#64748b' : '#ffffff',
+                          cursor: (isViewOnly || completionScore < 80) ? 'not-allowed' : 'pointer',
                           whiteSpace: 'nowrap',
-                          boxShadow: (isDeactivated || completionScore < 80) ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
+                          boxShadow: (isViewOnly || completionScore < 80) ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
                           transition: 'all 0.15s ease',
                         }}
                         onMouseEnter={(e) => {
@@ -15076,8 +14966,8 @@ export function SOWDetailScreen({
                   )}
                   {isStructureUnlocked && !isFormEditable ? (
                     <button
-                      disabled={isDeactivated}
-                      onClick={() => !isDeactivated && setIsFormEditable(true)}
+                      disabled={isViewOnly}
+                      onClick={() => !isViewOnly && setIsFormEditable(true)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -15085,8 +14975,8 @@ export function SOWDetailScreen({
                         border: 'none',
                         fontSize: 13,
                         fontWeight: 600,
-                        color: isDeactivated ? '#94a3b8' : '#00a0a0',
-                        cursor: isDeactivated ? 'not-allowed' : 'pointer',
+                        color: isViewOnly ? '#94a3b8' : '#00a0a0',
+                        cursor: isViewOnly ? 'not-allowed' : 'pointer',
                         padding: '6px 14px',
                       }}
                     >
@@ -15094,27 +14984,27 @@ export function SOWDetailScreen({
                     </button>
                   ) : (
                     <button
-                      disabled={isDeactivated || (isStructureUnlocked && !isFormDirty)}
-                      onClick={isDeactivated ? undefined : handleFormSubmit}
+                      disabled={isViewOnly || (isStructureUnlocked && !isFormDirty)}
+                      onClick={isViewOnly ? undefined : handleFormSubmit}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 6,
                         padding: '6px 14px',
                         borderRadius: 8,
-                        border: (!isDeactivated && (!isStructureUnlocked || isFormDirty)) ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid #cbd5e1',
-                        background: (!isDeactivated && (!isStructureUnlocked || isFormDirty)) ? 'rgba(0,196,196,0.07)' : '#f1f5f9',
+                        border: (!isViewOnly && (!isStructureUnlocked || isFormDirty)) ? '1.5px solid rgba(0,196,196,0.35)' : '1.5px solid #cbd5e1',
+                        background: (!isViewOnly && (!isStructureUnlocked || isFormDirty)) ? 'rgba(0,196,196,0.07)' : '#f1f5f9',
                         fontSize: 12,
                         fontWeight: 600,
-                        color: (!isDeactivated && (!isStructureUnlocked || isFormDirty)) ? '#00a0a0' : '#94a3b8',
-                        cursor: (!isDeactivated && (!isStructureUnlocked || isFormDirty)) ? 'pointer' : 'not-allowed',
+                        color: (!isViewOnly && (!isStructureUnlocked || isFormDirty)) ? '#00a0a0' : '#94a3b8',
+                        cursor: (!isViewOnly && (!isStructureUnlocked || isFormDirty)) ? 'pointer' : 'not-allowed',
                         whiteSpace: 'nowrap',
                       }}
                       onMouseEnter={(e) => {
-                        if (!isDeactivated && (!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+                        if (!isViewOnly && (!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
                       }}
                       onMouseLeave={(e) => {
-                        if (!isDeactivated && (!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
+                        if (!isViewOnly && (!isStructureUnlocked || isFormDirty)) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.07)'
                       }}
                     >
                       {isStructureUnlocked ? 'Resubmit' : 'Submit Form'}
@@ -15175,8 +15065,8 @@ export function SOWDetailScreen({
                 ) : activeTab !== 'structure' ? null : (
                   <button
                     onClick={handleGenerateDraft}
-                    disabled={isDeactivated || completionScore < 80}
-                    title={isDeactivated ? "Document is deactivated" : completionScore >= 80 ? "Generate Draft" : "Complete at least 80% to generate draft"}
+                    disabled={isViewOnly || completionScore < 80}
+                    title={isViewOnly ? "Document is deactivated" : completionScore >= 80 ? "Generate Draft" : "Complete at least 80% to generate draft"}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -15184,12 +15074,12 @@ export function SOWDetailScreen({
                       padding: '6px 14px',
                       borderRadius: 8,
                       border: 'none',
-                      background: (!isDeactivated && completionScore >= 80) ? '#00C4C4' : '#cbd5e1',
+                      background: (!isViewOnly && completionScore >= 80) ? '#00C4C4' : '#cbd5e1',
                       fontSize: 12,
                       fontWeight: 700,
-                      color: (!isDeactivated && completionScore >= 80) ? '#ffffff' : '#94a3b8',
-                      cursor: (!isDeactivated && completionScore >= 80) ? 'pointer' : 'not-allowed',
-                      boxShadow: (!isDeactivated && completionScore >= 80) ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
+                      color: (!isViewOnly && completionScore >= 80) ? '#ffffff' : '#94a3b8',
+                      cursor: (!isViewOnly && completionScore >= 80) ? 'pointer' : 'not-allowed',
+                      boxShadow: (!isViewOnly && completionScore >= 80) ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
                       whiteSpace: 'nowrap',
                       transition: 'all 0.15s ease',
                     }}
@@ -15268,7 +15158,7 @@ export function SOWDetailScreen({
               onSowDeadlineChange={setCurrentSowDeadline}
               tokenConsumption={currentTokenConsumption}
               onTokenConsumptionChange={setCurrentTokenConsumption}
-              isPMO={effectiveViewerRole === 'pmo' && !isDeactivated}
+              isPMO={effectiveViewerRole === 'pmo' && !isViewOnly}
             />
           )}
           {activeTab === 'form' && (
@@ -15280,7 +15170,7 @@ export function SOWDetailScreen({
               skipLoading={isContributor || isStructureUnlocked}
               onDirtyChange={(dirty) => setIsFormDirty(dirty)}
               formVersions={formVersions}
-              isEditable={!isDeactivated && (isStructureUnlocked ? isFormEditable : !isContributor)}
+              isEditable={!isViewOnly && (isStructureUnlocked ? isFormEditable : !isContributor)}
             />
           )}
           {activeTab === 'structure' &&
@@ -15296,8 +15186,10 @@ export function SOWDetailScreen({
                 viewerRole={effectiveViewerRole}
                 currentMemberId={effectiveMemberId}
                 onScoreChange={setCompletionScore}
+                readOnly={isViewOnly}
+                onConsumeTokens={(n) => setConsumedTokens((prev) => prev + n)}
                 disableAnswer={
-                  isDeactivated ||
+                  isViewOnly ||
                   (isContributor && isSentForReview)
                 }
                 hasPendingChanges={hasPendingStructureChanges}
@@ -15321,7 +15213,7 @@ export function SOWDetailScreen({
                   isContributor={isContributor}
                   isReviewer={isReviewer}
                   viewerRole={effectiveViewerRole}
-                  isReadOnly={isDeactivated}
+                  isReadOnly={isViewOnly}
                   isDraftGenerating={draftGenState === 'generating'}
                   sowDeadline={sowDeadline || '2026-10-31'}
                   onOpenParticipantsModal={() => setShowParticipantsModal(true)}
