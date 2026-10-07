@@ -73,6 +73,7 @@ export default function Home() {
   const [userEmail, setUserEmail] = useState('ashika.jain@company.com')
   const [view, setView] = useState<AppView>('dashboard')
   const [sowFiles, setSOWFiles] = useState<UploadedFile[]>([])
+  const [pmoPreviewRole, setPmoPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer'>('PMO')
 
   if (!isLoggedIn) {
     return (
@@ -108,13 +109,36 @@ export default function Home() {
   const isSOWDetail =
     view === 'sow-detail' || view === 'sow-detail-v2' || view === 'sow-detail-meridian' || view === 'sow-detail-deactivated'
 
+  const activePMORoleForSOW =
+    userRole === 'PMO'
+      ? pmoPreviewRole === 'Contributor'
+        ? ('contributor' as const)
+        : pmoPreviewRole === 'Reviewer'
+        ? ('reviewer' as const)
+        : ('pmo' as const)
+      : undefined
+
+  const handleActiveViewerRoleChange = (r: 'pmo' | 'contributor' | 'reviewer') => {
+    if (userRole === 'PMO') {
+      setPmoPreviewRole(r === 'contributor' ? 'Contributor' : r === 'reviewer' ? 'Reviewer' : 'PMO')
+    }
+  }
+
   return (
     <DashboardScreenV2
       userName={displayName}
       userRole={userRole}
       userInitials={userInitials}
       userImage={userImage}
-      initialSOWs={isClientOrContributor || isIshita ? CONTRIBUTOR_SOWS : undefined}
+      initialSOWs={
+        isClientOrContributor || isIshita || (userRole === 'PMO' && pmoPreviewRole !== 'PMO')
+          ? CONTRIBUTOR_SOWS
+          : undefined
+      }
+      previewRole={userRole === 'PMO' ? pmoPreviewRole : undefined}
+      onPreviewRoleChange={(r) => {
+        if (userRole === 'PMO') setPmoPreviewRole(r)
+      }}
       onSignOut={() => setIsLoggedIn(false)}
       activeNav={isSOWDetail ? 'my-sows' : 'dashboard'}
       contentOverride={
@@ -123,6 +147,8 @@ export default function Home() {
             uploadedFiles={sowFiles}
             showGenerateDraft={!isParag}
             viewerRole={isParag ? 'admin' : 'pmo'}
+            initialActiveRole={activePMORoleForSOW}
+            onActiveViewerRoleChange={handleActiveViewerRoleChange}
             onBack={() => setView('dashboard')}
           />
         ) : view === 'sow-detail-v2' ? (
@@ -132,6 +158,8 @@ export default function Home() {
             showGenerateDraft={!isParag}
             sowVariant="v2"
             viewerRole={isParag ? 'admin' : 'pmo'}
+            initialActiveRole={activePMORoleForSOW}
+            onActiveViewerRoleChange={handleActiveViewerRoleChange}
             uploadedFiles={[
               { id: '1', name: 'Digital_Transformation_RFP.pdf', size: '2.8 MB', type: 'application/pdf', status: 'complete', progress: 100 },
               { id: '2', name: 'Enterprise_Architecture_Specs.pdf', size: '1.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
@@ -145,8 +173,10 @@ export default function Home() {
             sowStatus="In Progress"
             sowVariant="meridian"
             viewerRole={isParag ? 'admin' : isIshita ? 'reviewer' : isNarendra ? 'contributor' : 'pmo'}
+            initialActiveRole={activePMORoleForSOW}
+            onActiveViewerRoleChange={handleActiveViewerRoleChange}
             currentMemberId={isIshita ? 'm4' : isNarendra ? 'm5' : 'm1'}
-            showGenerateDraft={!isParag && !isIshita && !isNarendra}
+            showGenerateDraft={!isParag && !isNarendra}
             uploadedFiles={[
               { id: '1', name: 'Meridian_RFP.pdf', size: '2.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
               { id: '2', name: 'Vendor_MSA_Template.docx', size: '1.2 MB', type: 'application/msword', status: 'complete', progress: 100 },
@@ -161,6 +191,8 @@ export default function Home() {
             showGenerateDraft={false}
             sowVariant="v1"
             viewerRole={isParag ? 'admin' : isIshita ? 'reviewer' : isNarendra ? 'contributor' : 'pmo'}
+            initialActiveRole={activePMORoleForSOW}
+            onActiveViewerRoleChange={handleActiveViewerRoleChange}
             uploadedFiles={[
               { id: '1', name: 'TechSphere_Cloud_Spec.pdf', size: '3.1 MB', type: 'application/pdf', status: 'complete', progress: 100 },
               { id: '2', name: 'Security_Compliance_Review.docx', size: '1.1 MB', type: 'application/msword', status: 'complete', progress: 100 }

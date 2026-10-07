@@ -5315,6 +5315,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   userInitials = 'AJ',
   userImage = '/profile-user.png',
   initialSOWs = DEFAULT_SOWS,
+  previewRole: controlledPreviewRole,
+  onPreviewRoleChange,
   onSignOut,
   onCreateSOW,
   onProceedToSOW,
@@ -5328,7 +5330,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   onOpenSOWContributor,
   onOpenSOWDeactivated,
 }) => {
-  const [previewRole, setPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer' | null>(null)
+  const [internalPreviewRole, setInternalPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer' | null>(null)
+  const previewRole = controlledPreviewRole !== undefined ? controlledPreviewRole : internalPreviewRole
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
   const effectiveRole = previewRole || userRole
   const isAdmin = effectiveRole === 'Admin'
@@ -5353,6 +5356,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const [deactivateModalSOW, setDeactivateModalSOW] = useState<SOWItem | null>(null)
   const [reactivateModalSOW, setReactivateModalSOW] = useState<SOWItem | null>(null)
   const [displayedRows, setDisplayedRows] = useState<SOWItem[]>(initialSOWs)
+
+  useEffect(() => {
+    setSowList(initialSOWs)
+  }, [initialSOWs])
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [dueTimeframe, setDueTimeframe] = useState('Next Week')
@@ -5789,7 +5796,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
                       {userName}
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{userRole}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{effectiveRole}</div>
                   </div>
                   {/* Logout option */}
                   <button
@@ -5923,7 +5930,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     }}
                   >
                     <span>Hi {userName} 👋</span>
-                    {userRole === 'PMO' && !isContributor && !isReviewer && !isClient && (
+                    {userRole === 'PMO' && (
                       <button
                         type="button"
                         onClick={() => setRoleDropdownOpen((prev) => !prev)}
@@ -5964,7 +5971,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                     )}
                   </h1>
 
-                  {roleDropdownOpen && userRole === 'PMO' && !isContributor && !isReviewer && !isClient && (
+                  {roleDropdownOpen && userRole === 'PMO' && (
                     <>
                       <div
                         style={{ position: 'fixed', inset: 0, zIndex: 999 }}
@@ -5997,7 +6004,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                               key={r}
                               type="button"
                               onClick={() => {
-                                setPreviewRole(r)
+                                setInternalPreviewRole(r)
+                                onPreviewRoleChange?.(r)
                                 setRoleDropdownOpen(false)
                               }}
                               style={{

@@ -5310,7 +5310,7 @@ function AssigneesDisplay({
 }: {
   assignedTo?: string | string[]
   inClientQueue?: boolean
-  onReassign?: (newMemberId: string) => void
+  onReassign?: (newMemberIds: string[]) => void
 }) {
   const [hovered, setHovered] = useState(false)
   const [clickedOpen, setClickedOpen] = useState(false)
@@ -5395,7 +5395,7 @@ function AssigneesDisplay({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    onReassign(m.id)
+                    onReassign([m.id])
                     setMenuOpen(false)
                   }}
                   style={{
@@ -5587,7 +5587,7 @@ function AssigneesDisplay({
                 letterSpacing: '0.04em',
               }}
             >
-              Reassign to
+              Assign contributors
             </div>
             {SECTION_MEMBERS.map((m) => {
               const isCurrent = ids.includes(m.id)
@@ -5597,8 +5597,11 @@ function AssigneesDisplay({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    onReassign(m.id)
-                    setMenuOpen(false)
+                    // Toggle: remove if already assigned, add if not
+                    const newIds = isCurrent
+                      ? ids.filter((id) => id !== m.id)
+                      : [...ids, m.id]
+                    onReassign(newIds)
                   }}
                   style={{
                     width: '100%',
@@ -6451,14 +6454,17 @@ function StructureTab({
     showToast('Deleted item successfully.', 'info')
   }
 
-  const reassignItem = (itemId: string, newMemberId: string) => {
+  const reassignItem = (itemId: string, newMemberIds: string[]) => {
     setSections((prev) =>
       prev.map((s) => ({
         ...s,
-        items: s.items.map((it) => (it.id === itemId ? { ...it, assignedTo: newMemberId } : it)),
+        items: s.items.map((it) =>
+          it.id === itemId
+            ? { ...it, assignedTo: newMemberIds.length === 1 ? newMemberIds[0] : newMemberIds }
+            : it
+        ),
       }))
     )
-    const targetMember = memberById(newMemberId)
   }
 
   const kpiQuestions = (() => {
@@ -7185,39 +7191,41 @@ function StructureTab({
                 )}
               </div>
 
-              {/* Client Queue button on right */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  onClick={() => setClientQueueModalOpen(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    background: 'none',
-                    border: 'none',
-                    color: '#0d212c',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    padding: '6px 10px',
-                    borderRadius: 6,
-                  }}
-                  title="Client Queue"
-                >
-                  <div style={{ position: 'relative' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2 }}>
-                      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
-                      <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
-                    </svg>
-                    {queuedCount > 0 && (
-                      <div style={{ position: 'absolute', top: -8, left: -10, background: '#ef4444', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 12, padding: '1px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {queuedCount}
-                      </div>
-                    )}
-                  </div>
-                  {queuedCount} in Client Queue
-                </button>
-              </div>
+              {/* Client Queue button on right — hidden for contributors */}
+              {!isContributor && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    onClick={() => setClientQueueModalOpen(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'none',
+                      border: 'none',
+                      color: '#0d212c',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                    }}
+                    title="Client Queue"
+                  >
+                    <div style={{ position: 'relative' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2 }}>
+                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                      </svg>
+                      {queuedCount > 0 && (
+                        <div style={{ position: 'absolute', top: -8, left: -10, background: '#ef4444', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 12, padding: '1px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {queuedCount}
+                        </div>
+                      )}
+                    </div>
+                    {queuedCount} in Client Queue
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -7332,7 +7340,7 @@ function StructureTab({
                             isContributor={isContributor}
                             isReviewer={isReviewer}
                             canEdit={canEditSec}
-                            onReassign={(newMemberId) => reassignItem(item.id, newMemberId)}
+                            onReassign={(newMemberIds) => reassignItem(item.id, newMemberIds)}
                             disableAnswer={disableAnswer || isReviewer}
                             onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
                             onToggleQueue={() => toggleClientQueue(item.id)}
@@ -7362,13 +7370,13 @@ function StructureTab({
                             isContributor={isContributor}
                             isReviewer={isReviewer}
                             canEdit={canEditSec}
-                            onReassign={(newMemberId) => reassignItem(item.id, newMemberId)}
+                            onReassign={(newMemberIds) => reassignItem(item.id, newMemberIds)}
                             disableAnswer={disableAnswer || isReviewer}
                             onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
                             onToggleQueue={() => toggleClientQueue(item.id)}
                             onOpenCitation={setCitationModalTarget}
                             onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
-                            hasDependentPrompt={isDepTarget && dependentPromptVisible && !hasCreatedDependentQuestion}
+                            hasDependentPrompt={!isReviewer && isDepTarget && dependentPromptVisible && !hasCreatedDependentQuestion}
                             onDismissDependentPrompt={() => setDependentPromptVisible(false)}
                             onCreateDependentQuestion={() => {
                               const newDepQuestion: SectionItem = {
@@ -7544,7 +7552,7 @@ function ItemRow({
   onOpenTrace?: (item: SectionItem, label: string) => void
   canEdit?: boolean
   showCheckboxAlways?: boolean
-  onReassign?: (newMemberId: string) => void
+  onReassign?: (newMemberIds: string[]) => void
   hasDependentPrompt?: boolean
   onDismissDependentPrompt?: () => void
   onCreateDependentQuestion?: () => void
@@ -8203,8 +8211,8 @@ function ItemRow({
           </div>
         )}
 
-        {/* Dependent Question Callout under Question/Assumption Answer */}
-        {hasDependentPrompt && (
+        {/* Dependent Question Callout under Question/Assumption Answer — hidden for reviewers */}
+        {hasDependentPrompt && !isReviewer && (
           <div
             style={{
               marginTop: 10,
@@ -8272,7 +8280,7 @@ function ItemRow({
             onReassign={canEdit ? onReassign : undefined}
           />
         )}
-        {canEdit && !hideAssigneesAndQueue && (
+        {canEdit && !hideAssigneesAndQueue && !isContributor && (
           <button
             onClick={() => onToggleQueue?.()}
             style={{
@@ -13726,19 +13734,27 @@ export function SOWDetailScreen({
   isDeactivated: isDeactivatedProp = false,
   onReactivateSOW,
   sowDeadline = '2026-10-31',
+  initialActiveRole,
+  onActiveViewerRoleChange,
 }: SOWDetailScreenProps) {
   const [activeSOWStatus, setActiveSOWStatus] = useState(sowStatus)
   const isDeactivated = isDeactivatedProp || activeSOWStatus === 'Deactivated' || sowStatus === 'Deactivated'
   const [activeViewerRole, setActiveViewerRole] = useState<'pmo' | 'contributor' | 'reviewer'>(
-    viewerRole === 'contributor' ? 'contributor' : viewerRole === 'reviewer' ? 'reviewer' : 'pmo'
+    initialActiveRole ?? (viewerRole === 'contributor' ? 'contributor' : viewerRole === 'reviewer' ? 'reviewer' : 'pmo')
   )
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
+
+  useEffect(() => {
+    if (initialActiveRole) {
+      setActiveViewerRole(initialActiveRole)
+    }
+  }, [initialActiveRole])
 
   const effectiveViewerRole = viewerRole === 'pmo' ? activeViewerRole : viewerRole
   const isContributor = effectiveViewerRole === 'contributor'
   const isReviewer = effectiveViewerRole === 'reviewer'
   const effectiveMemberId =
-    viewerRole === 'pmo' && activeViewerRole === 'contributor' ? 'm1' : currentMemberId
+    viewerRole === 'pmo' && (activeViewerRole === 'contributor' || activeViewerRole === 'reviewer') ? 'm1' : currentMemberId
 
   const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const { showToast } = useToast()
@@ -13898,6 +13914,120 @@ export function SOWDetailScreen({
             {sowStatus}
           </span>
           <div style={{ flex: 1 }} />
+          {/* PMO Profile View Role Switcher — only shown when viewerRole === 'pmo' */}
+          {viewerRole === 'pmo' && (
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                onClick={() => setRoleSwitcherOpen((v) => !v)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  padding: '5px 12px',
+                  borderRadius: 8,
+                  border: '1.5px solid rgba(0,196,196,0.4)',
+                  background: activeViewerRole !== 'pmo' ? 'rgba(0,196,196,0.1)' : 'rgba(255,255,255,0.8)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: activeViewerRole !== 'pmo' ? '#007a7a' : '#475569',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(6px)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M20 21a8 8 0 10-16 0" />
+                </svg>
+                {activeViewerRole === 'contributor' ? 'Contributor View — Ashika Jain' : activeViewerRole === 'reviewer' ? 'Reviewer View — Ashika Jain' : 'PMO View'}
+                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+              {roleSwitcherOpen && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+                    onClick={() => setRoleSwitcherOpen(false)}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 10,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.13)',
+                      padding: 5,
+                      zIndex: 999,
+                      minWidth: 220,
+                    }}
+                  >
+                    <div style={{ padding: '5px 10px 3px', fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>View As</div>
+                    {([
+                      { role: 'pmo' as const, label: 'PMO View', sub: 'Full access' },
+                      { role: 'contributor' as const, label: 'Contributor View', sub: 'Ashika Jain' },
+                      { role: 'reviewer' as const, label: 'Reviewer View', sub: 'Ashika Jain' },
+                    ]).map((opt) => (
+                      <button
+                        key={opt.role}
+                        type="button"
+                        onClick={() => {
+                          setActiveViewerRole(opt.role)
+                          onActiveViewerRoleChange?.(opt.role)
+                          setRoleSwitcherOpen(false)
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '7px 10px',
+                          borderRadius: 7,
+                          background: activeViewerRole === opt.role ? 'rgba(0,196,196,0.08)' : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                        onMouseEnter={(e) => { if (activeViewerRole !== opt.role) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc' }}
+                        onMouseLeave={(e) => { if (activeViewerRole !== opt.role) (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                      >
+                        <div
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: '50%',
+                            background: activeViewerRole === opt.role ? 'rgba(0,196,196,0.15)' : '#f1f5f9',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <svg width="13" height="13" fill="none" stroke={activeViewerRole === opt.role ? '#00C4C4' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M20 21a8 8 0 10-16 0" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: activeViewerRole === opt.role ? 700 : 500, color: activeViewerRole === opt.role ? '#007a7a' : '#0d212c' }}>{opt.label}</div>
+                          <div style={{ fontSize: 10.5, color: '#64748b' }}>{opt.sub}</div>
+                        </div>
+                        {activeViewerRole === opt.role && (
+                          <div style={{ marginLeft: 'auto' }}>
+                            <svg width="12" height="12" fill="none" stroke="#00C4C4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           {/* Tokens consumed indicator */}
           <div
             style={{
@@ -14000,7 +14130,66 @@ export function SOWDetailScreen({
             })}
             {/* CTA pinned to the right of the tab strip */}
             <div style={{ marginLeft: 'auto', paddingRight: 10 }}>
-              {isReviewer ? null : isContributor ? (
+              {isReviewer ? (
+                activeTab === 'structure' ? (
+                  draftGenState === 'generating' || draftGenState === 'shimmer' ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        border: '1.5px solid rgba(0,196,196,0.2)',
+                        background: 'rgba(0,196,196,0.05)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: '#94a3b8',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="#00C4C4" strokeWidth="2" strokeDasharray="40 20">
+                          <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                        </circle>
+                      </svg>
+                      Generating…
+                    </div>
+                  ) : draftGenState === 'ready' ? null : (
+                    <button
+                      onClick={handleGenerateDraft}
+                      disabled={isDeactivated || completionScore < 80}
+                      title={isDeactivated ? 'Document is deactivated' : completionScore < 80 ? 'Completion must be at least 80% to generate draft' : 'Generate Draft'}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: (isDeactivated || completionScore < 80) ? '#cbd5e1' : '#00C4C4',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: (isDeactivated || completionScore < 80) ? '#64748b' : '#ffffff',
+                        cursor: (isDeactivated || completionScore < 80) ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                        boxShadow: (isDeactivated || completionScore < 80) ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => { if (completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8' }}
+                      onMouseLeave={(e) => { if (completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4' }}
+                    >
+                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                      </svg>
+                      Generate Draft
+                    </button>
+                  )
+                ) : null
+              ) : isContributor ? (
                 activeTab === 'structure' ? (
                   draftGenState === 'generating' || draftGenState === 'shimmer' ? (
                     <div

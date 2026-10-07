@@ -80,4 +80,6 @@ export interface SOWDetailScreenProps {
   currentMemberId?: string
   sowDeadline?: string
   onReactivateSOW?: () => void
+  initialActiveRole?: 'pmo' | 'contributor' | 'reviewer'
+  onActiveViewerRoleChange?: (role: 'pmo' | 'contributor' | 'reviewer') => void
 }
