@@ -12699,7 +12699,7 @@ function SOWDraftTab({
           {(
           <div
             style={{
-              width: 480,
+              width: 400,
               flexShrink: 0,
               borderLeft: '1px solid rgba(0,196,196,0.15)',
               display: 'flex',
@@ -13533,7 +13533,7 @@ function SOWDraftTab({
             style={{
               position: 'absolute',
               bottom: 24,
-              left: 'calc(50% - 255px)',
+              left: 'calc(50% - 215px)',
               transform: `translateX(-50%) translateY(${showFab ? '0' : '80px'})`,
               opacity: showFab ? 1 : 0,
               pointerEvents: showFab ? 'auto' : 'none',
