@@ -10450,7 +10450,7 @@ function SOWDraftTab({
     setEmailInputError(false)
   }
 
-  // A comment or reply can be edited or deleted only by the person who wrote it (Admin can delete any)
+  // A comment or reply can be edited or deleted only by the person who wrote it (Admin is view-only)
   const myAuthorName = isReviewer
     ? 'Ishita (Reviewer)'
     : isContributor
@@ -10462,7 +10462,7 @@ function SOWDraftTab({
     : 'Ashika Jain'
   const isMyAuthor = (author: string) => author === myAuthorName || (isPMO && author === 'Ashika Jain (PMO)')
   const canEditComment = (author: string) => !isReadOnly && isMyAuthor(author)
-  const canDeleteComment = (author: string) => isAdmin || (!isReadOnly && isMyAuthor(author))
+  const canDeleteComment = (author: string) => !isReadOnly && isMyAuthor(author)
 
   const startEditComment = (c: DocComment) => {
     setEditingCommentId(c.id)
