@@ -6766,7 +6766,7 @@ function SectionDotMenu({
             overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '8px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ padding: '8px 14px', borderBottom: viewOnly ? 'none' : '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Section Deadline</span>
             {viewOnly ? (
               <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
@@ -7054,7 +7054,13 @@ function StructureTab({
     )
   }
 
+  const myQueueLabel = isContributor ? 'Narendra Patel (Contributor)' : 'Ashika Jain (PMO)'
   const toggleClientQueue = (itemId: string) => {
+    const current = sections.flatMap((sec) => sec.items).find((i) => i.id === itemId)
+    if (isContributor && current?.inClientQueue && current.queuedBy !== myQueueLabel) {
+      showToast('You can only remove questions that you added to the client queue.', 'info')
+      return
+    }
     setSections((prev) =>
       prev.map((s) => ({
         ...s,
@@ -8093,6 +8099,7 @@ function StructureTab({
                             onOpenCitation={setCitationModalTarget}
                             onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
                             hasDependentPrompt={!isReviewer && !readOnly && depSourceId === item.id && dependentPromptVisible && !hasCreatedDependentQuestion}
+                            dependentSections={[sec.title]}
                             onDismissDependentPrompt={() => setDependentPromptVisible(false)}
                             onCreateDependentQuestion={() => {
                               const newDepQuestion: SectionItem = {
@@ -8158,6 +8165,7 @@ function StructureTab({
         <ClientQueueModal
           readOnly={isReviewer || readOnly}
           removeOnly={isContributor}
+          currentUserLabel={myQueueLabel}
           sections={sections}
           onRemoveFromQueue={(id) => {
              setSections(prev => prev.map(sec => ({
@@ -8225,7 +8233,9 @@ function ItemRow({
   onConsumeTokens,
   hideTrace = false,
   queuedByLabel,
+  dependentSections = [],
 }: {
+  dependentSections?: string[]
   onConsumeTokens?: (tokens: number) => void
   hideTrace?: boolean
   queuedByLabel?: string
@@ -8929,6 +8939,27 @@ function ItemRow({
             <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5 }}>
               Your answer introduces &ldquo;delivered in phases&rdquo;. The SOW needs the phase sequence and scope to define the timeline accurately.
             </div>
+            {dependentSections.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 12, color: '#475569' }}>
+                <span style={{ fontWeight: 600 }}>{dependentSections.length === 1 ? 'Section:' : 'Sections:'}</span>
+                {dependentSections.map((name) => (
+                  <span
+                    key={name}
+                    style={{
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      color: '#007a7a',
+                      background: 'rgba(0,196,196,0.1)',
+                      border: '1px solid rgba(0,196,196,0.25)',
+                      borderRadius: 20,
+                      padding: '2px 10px',
+                    }}
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
               <button
                 type="button"
@@ -10419,6 +10450,20 @@ function SOWDraftTab({
     setEmailInputError(false)
   }
 
+  // A comment or reply can be edited or deleted only by the person who wrote it (Admin can delete any)
+  const myAuthorName = isReviewer
+    ? 'Ishita (Reviewer)'
+    : isContributor
+    ? 'Narendra (Contributor)'
+    : isClient
+    ? 'Riza (Client)'
+    : isAdmin
+    ? 'Parag (Admin)'
+    : 'Ashika Jain'
+  const isMyAuthor = (author: string) => author === myAuthorName || (isPMO && author === 'Ashika Jain (PMO)')
+  const canEditComment = (author: string) => !isReadOnly && isMyAuthor(author)
+  const canDeleteComment = (author: string) => isAdmin || (!isReadOnly && isMyAuthor(author))
+
   const startEditComment = (c: DocComment) => {
     setEditingCommentId(c.id)
     setEditingCommentText(c.text)
@@ -10462,7 +10507,7 @@ function SOWDraftTab({
                 ...c.replies,
                 {
                   id: `${commentId}r${Date.now()}`,
-                  author: 'Ashika Jain',
+                  author: myAuthorName,
                   text,
                   timestamp: 'Just now',
                 },
@@ -11997,7 +12042,7 @@ function SOWDraftTab({
                                 padding: 6,
                               }}
                             >
-                              <div style={{ padding: '8px 12px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              <div style={{ padding: '8px 12px', borderBottom: canManageSections ? '1px solid #e2e8f0' : 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Section Deadline</span>
                                 {isPMO && !isReadOnly ? (
                                 <input
@@ -13552,7 +13597,7 @@ function SOWDraftTab({
                               </button>
                             )}
 
-                            {!isEditing && !isReadOnly && (
+                            {!isEditing && canEditComment(c.author) && (
                               <button
                                 type="button"
                                 onClick={() => startEditComment(c)}
@@ -13572,6 +13617,7 @@ function SOWDraftTab({
                               </button>
                             )}
 
+                            {canDeleteComment(c.author) && (
                             <button
                               type="button"
                               onClick={() => deleteComment(c.id)}
@@ -13589,6 +13635,7 @@ function SOWDraftTab({
                             >
                               <Trash2 size={12} />
                             </button>
+                            )}
                           </div>
                         </div>
 
@@ -13715,8 +13762,9 @@ function SOWDraftTab({
                                     <span style={{ fontSize: 10, color: '#94a3b8' }}>{r.timestamp}</span>
                                   </div>
 
-                                  {!isEditingThisReply && !isReadOnly && (
+                                  {!isEditingThisReply && (canEditComment(r.author) || canDeleteComment(r.author)) && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      {canEditComment(r.author) && (
                                       <button
                                         type="button"
                                         onClick={() => startEditReply(r)}
@@ -13734,6 +13782,8 @@ function SOWDraftTab({
                                       >
                                         <Edit2 size={11} />
                                       </button>
+                                      )}
+                                      {canDeleteComment(r.author) && (
                                       <button
                                         type="button"
                                         onClick={() => deleteReply(c.id, r.id)}
@@ -13751,6 +13801,7 @@ function SOWDraftTab({
                                       >
                                         <Trash2 size={11} />
                                       </button>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -15471,6 +15522,7 @@ export function SOWDetailScreen({
               )}
               {/* Planning tab — generate the draft */}
               {activeTab === 'structure' && canGenerateDraft && (draftGenState === 'generating' || draftGenState === 'shimmer') && (
+                <div style={{ order: 2, display: 'flex' }}>
                 <div
                   style={{
                     display: 'flex',
@@ -15493,8 +15545,10 @@ export function SOWDetailScreen({
                   </svg>
                   Generating…
                 </div>
+                </div>
               )}
               {activeTab === 'structure' && canGenerateDraft && draftGenState === 'idle' && !isDraftUnlocked && (
+                <div style={{ order: 2, display: 'flex' }}>
                 <button
                   onClick={handleGenerateDraft}
                   disabled={isViewOnly || completionScore < 80}
@@ -15526,11 +15580,12 @@ export function SOWDetailScreen({
                   </svg>
                   Generate Draft
                 </button>
+                </div>
               )}
               {/* Send for approval — Contributor, Reviewer and Client */}
               {!isViewOnly && showSendForApproval && draftGenState !== 'generating' && draftGenState !== 'shimmer' && (
                 <div
-                  style={{ position: 'relative', display: 'inline-flex' }}
+                  style={{ position: 'relative', display: 'inline-flex', order: 1 }}
                   onMouseEnter={(e) => {
                     const r = e.currentTarget.getBoundingClientRect()
                     setSendApprovalTipPos({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) })
@@ -16113,12 +16168,14 @@ function ClientQueueModal({
   onClose,
   readOnly = false,
   removeOnly = false,
+  currentUserLabel = '',
 }: {
   sections: SOWSection[]
   onRemoveFromQueue: (id: string) => void
   onClose: () => void
   readOnly?: boolean
   removeOnly?: boolean
+  currentUserLabel?: string
 }) {
   const canAssign = !readOnly && !removeOnly
   const { showToast } = useToast()
@@ -16202,7 +16259,7 @@ function ClientQueueModal({
           {readOnly
             ? 'Questions and assumptions currently in the client queue.'
             : removeOnly
-            ? 'Questions and assumptions currently in the client queue. You can remove items from it.'
+            ? 'Questions and assumptions currently in the client queue. You can remove only the items you added.'
             : 'Select questions and assumptions with the checkboxes to assign them to designated clients.'}
         </div>
         
@@ -16496,7 +16553,7 @@ function ClientQueueModal({
                        onToggle={() => toggleSelectItem(it.id)}
                        disableAnswer={true}
                        hideAssigneesAndQueue={true}
-                       canEdit={!readOnly}
+                       canEdit={!readOnly && (canAssign || (it.queuedBy ?? '') === currentUserLabel)}
                        hideTrace
                        queuedByLabel={it.queuedBy ?? 'Ashika Jain (PMO)'}
                        onDelete={() => onRemoveFromQueue(it.id)}
