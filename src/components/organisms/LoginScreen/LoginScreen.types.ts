@@ -3,7 +3,7 @@
  * Interface definitions for LoginScreen organism.
  */
 
-export type LoginStep = 'email' | 'otp' | 'loader' | 'success'
+export type LoginStep = 'choose' | 'email' | 'otp' | 'loader' | 'success'
 
 export interface LoginScreenProps {
   /**
@@ -12,7 +12,7 @@ export interface LoginScreenProps {
   onLoginSuccess?: (email: string) => void
   /**
    * Initial step for testing or storybook demo purposes.
-   * @default 'email'
+   * @default 'choose'
    */
   initialStep?: LoginStep
   /**

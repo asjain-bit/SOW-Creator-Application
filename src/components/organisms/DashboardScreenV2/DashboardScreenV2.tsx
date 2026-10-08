@@ -2975,7 +2975,6 @@ export function UserDirectoryView({
     { id: 'u-4', name: 'Cleveland Clinic Abu Dhabi', email: 'procurement@ccad.ae', roles: ['Client'], assignedSOWs: 3, status: 'Active', lastActive: '3 hours ago' },
     { id: 'u-5', name: 'Tariq Mansoor', email: 'tmansoor@m42.ae', roles: ['PMO'], assignedSOWs: 8, status: 'Active', lastActive: 'Yesterday' },
     { id: 'u-6', name: 'Sarah Jenkins', email: 'sjenkins@m42.ae', roles: ['Contributor', 'Reviewer'], assignedSOWs: 5, status: 'Active', lastActive: '2 days ago' },
-    { id: 'u-7', name: 'Danat Al Emarat Health', email: 'vendor.contracts@danat.ae', roles: ['Client'], assignedSOWs: 2, status: 'Inactive', lastActive: '5 days ago' },
     { id: 'u-8', name: 'Marcus Vance', email: 'mvance@m42.ae', roles: ['Reviewer'], assignedSOWs: 4, status: 'Active', lastActive: '3 days ago' },
     { id: 'u-9', name: 'Ishita Sharma', email: 'ishitawork@gmail.com', roles: ['Reviewer', 'Contributor'], assignedSOWs: 7, status: 'Active', lastActive: '2 hours ago' },
     { id: 'u-10', name: 'Riza Khan', email: 'riza@gmail.com', roles: ['Client'], assignedSOWs: 2, status: 'Active', lastActive: 'Yesterday' },
@@ -2989,7 +2988,6 @@ export function UserDirectoryView({
     { id: 'u-18', name: 'Elena Rostova', email: 'erostova@biomed.com', roles: ['Contributor'], assignedSOWs: 4, status: 'Active', lastActive: '3 days ago' },
     { id: 'u-19', name: 'Mubadala Health Contracts', email: 'contracts@mubadalahealth.ae', roles: ['Client'], assignedSOWs: 5, status: 'Active', lastActive: '12 hours ago' },
     { id: 'u-20', name: 'Priya Sharma', email: 'psharma@m42.ae', roles: ['Contributor', 'PMO'], assignedSOWs: 7, status: 'Active', lastActive: 'Just now' },
-    { id: 'u-21', name: 'Arthur Pendelton', email: 'apendelton@m42.ae', roles: ['Reviewer'], assignedSOWs: 3, status: 'Inactive', lastActive: '1 week ago' },
     { id: 'u-22', name: 'National Reference Laboratory', email: 'admin@nrl.ae', roles: ['Client'], assignedSOWs: 1, status: 'Active', lastActive: '4 days ago' },
     { id: 'u-23', name: 'Kareem Mansour', email: 'kmansour@techcloud.ae', roles: ['Contributor'], assignedSOWs: 5, status: 'Active', lastActive: 'Yesterday' },
     { id: 'u-24', name: 'Sophia Sterling', email: 'ssterling@m42.ae', roles: ['Reviewer', 'Contributor'], assignedSOWs: 6, status: 'Active', lastActive: '2 hours ago' },
@@ -3318,38 +3316,7 @@ export function UserDirectoryView({
                   </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>
-                    Status
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {['All', 'Active', 'Inactive'].map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => {
-                          setStatusFilter(s === 'All' ? null : s)
-                          setPage(1)
-                          setFilterDropdownOpen(false)
-                        }}
-                        style={{
-                          padding: '6px 8px',
-                          borderRadius: 8,
-                          border: 'none',
-                          background: (s === 'All' && !statusFilter) || statusFilter === s ? 'rgba(0,196,196,0.1)' : 'transparent',
-                          color: (s === 'All' && !statusFilter) || statusFilter === s ? '#008a8a' : '#0d212c',
-                          fontSize: 12.5,
-                          fontWeight: (s === 'All' && !statusFilter) || statusFilter === s ? 600 : 500,
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {(roleFilter || statusFilter) && (
+                {roleFilter && (
                   <button
                     onClick={() => {
                       setRoleFilter(null)
@@ -4609,7 +4576,7 @@ function AdminHomeView({
           <div style={{ fontSize: 36, fontWeight: 600, color: '#0d212c', lineHeight: 1 }}>16</div>
           <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>5 In Progress • 4 On Track • 3 Pending</span>
+            <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>11 On Track • 5 At Risk</span>
           </div>
         </div>
       </div>
@@ -5000,7 +4967,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   onOpenSOWContributor,
   onOpenSOWDeactivated,
 }) => {
-  const [internalPreviewRole, setInternalPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer' | null>(null)
+  const [internalPreviewRole, setInternalPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer' | 'Client' | null>(null)
   const previewRole = controlledPreviewRole !== undefined ? controlledPreviewRole : internalPreviewRole
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
   const effectiveRole = previewRole || userRole

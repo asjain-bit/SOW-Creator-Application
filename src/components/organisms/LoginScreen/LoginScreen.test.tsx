@@ -17,8 +17,16 @@ vi.mock('next/image', () => ({
 }))
 
 describe('LoginScreen Organism', () => {
-  it('renders initial welcome screen with email input and Send OTP button', () => {
+  it('renders the sign-in options first and the Microsoft option leads to the email step', () => {
     render(<LoginScreen showDevControls={false} />)
+
+    expect(screen.getByText('Sign in with SSO')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Sign in with Microsoft/i }))
+    expect(screen.getByLabelText('Email address')).toBeInTheDocument()
+  })
+
+  it('renders initial welcome screen with email input and Send OTP button', () => {
+    render(<LoginScreen showDevControls={false} initialStep="email" />)
 
     expect(screen.getByText('SOW Creator')).toBeInTheDocument()
     expect(screen.getByText('From ideas to approved SOWs')).toBeInTheDocument()
@@ -28,7 +36,7 @@ describe('LoginScreen Organism', () => {
   })
 
   it('shows error when invalid email format is entered', () => {
-    render(<LoginScreen showDevControls={false} initialEmail="invalid-email" />)
+    render(<LoginScreen showDevControls={false} initialStep="email" initialEmail="invalid-email" />)
 
     const sendBtn = screen.getByRole('button', { name: /Send OTP/i })
     fireEvent.click(sendBtn)
@@ -37,7 +45,7 @@ describe('LoginScreen Organism', () => {
   })
 
   it('advances to OTP step when valid registered email is submitted', () => {
-    render(<LoginScreen showDevControls={false} initialEmail="ashika.jain@company.com" />)
+    render(<LoginScreen showDevControls={false} initialStep="email" initialEmail="ashika.jain@company.com" />)
 
     const sendBtn = screen.getByRole('button', { name: /Send OTP/i })
     fireEvent.click(sendBtn)
@@ -60,11 +68,15 @@ describe('LoginScreen Organism', () => {
     const otp1 = screen.getByTestId('otp-input-1')
     const otp2 = screen.getByTestId('otp-input-2')
     const otp3 = screen.getByTestId('otp-input-3')
+    const otp4 = screen.getByTestId('otp-input-4')
+    const otp5 = screen.getByTestId('otp-input-5')
 
     fireEvent.change(otp0, { target: { value: '9' } })
     fireEvent.change(otp1, { target: { value: '9' } })
     fireEvent.change(otp2, { target: { value: '9' } })
     fireEvent.change(otp3, { target: { value: '9' } })
+    fireEvent.change(otp4, { target: { value: '9' } })
+    fireEvent.change(otp5, { target: { value: '9' } })
 
     const verifyBtn = screen.getByRole('button', { name: /Verify & Sign In/i })
     fireEvent.click(verifyBtn)
@@ -87,11 +99,15 @@ describe('LoginScreen Organism', () => {
     const otp1 = screen.getByTestId('otp-input-1')
     const otp2 = screen.getByTestId('otp-input-2')
     const otp3 = screen.getByTestId('otp-input-3')
+    const otp4 = screen.getByTestId('otp-input-4')
+    const otp5 = screen.getByTestId('otp-input-5')
 
     fireEvent.change(otp0, { target: { value: '1' } })
     fireEvent.change(otp1, { target: { value: '2' } })
     fireEvent.change(otp2, { target: { value: '3' } })
     fireEvent.change(otp3, { target: { value: '4' } })
+    fireEvent.change(otp4, { target: { value: '5' } })
+    fireEvent.change(otp5, { target: { value: '6' } })
 
     const verifyBtn = screen.getByRole('button', { name: /Verify & Sign In/i })
     fireEvent.click(verifyBtn)

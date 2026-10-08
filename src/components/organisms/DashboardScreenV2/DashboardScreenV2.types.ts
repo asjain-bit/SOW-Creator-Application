@@ -73,6 +73,6 @@ export interface DashboardScreenV2Props {
   onOpenSOWV2?: () => void
   onOpenSOWContributor?: () => void
   onOpenSOWDeactivated?: () => void
-  previewRole?: 'PMO' | 'Contributor' | 'Reviewer' | null
-  onPreviewRoleChange?: (role: 'PMO' | 'Contributor' | 'Reviewer') => void
+  previewRole?: 'PMO' | 'Contributor' | 'Reviewer' | 'Client' | null
+  onPreviewRoleChange?: (role: 'PMO' | 'Contributor' | 'Reviewer' | 'Client') => void
 }

@@ -17,6 +17,7 @@ export interface SectionItem {
   answered: boolean
   response?: string // answer text shown as thread below the item
   inClientQueue?: boolean // flag for client queue
+  queuedBy?: string // who added this item to the client queue
   isAiGenerated?: boolean
   isEdited?: boolean
 }
@@ -81,6 +82,6 @@ export interface SOWDetailScreenProps {
   sowDeadline?: string
   tokenConsumption?: number
   onReactivateSOW?: () => void
-  initialActiveRole?: 'pmo' | 'contributor' | 'reviewer'
-  onActiveViewerRoleChange?: (role: 'pmo' | 'contributor' | 'reviewer') => void
+  initialActiveRole?: 'pmo' | 'contributor' | 'reviewer' | 'client'
+  onActiveViewerRoleChange?: (role: 'pmo' | 'contributor' | 'reviewer' | 'client') => void
 }

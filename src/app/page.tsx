@@ -76,13 +76,17 @@ export default function Home() {
   const [createdSowName, setCreatedSowName] = useState('Meridian Healthcare — Procurement Platform')
   const [createdSowDeadline, setCreatedSowDeadline] = useState('2026-10-31')
   const [createdTokenConsumption, setCreatedTokenConsumption] = useState(20000)
-  const [pmoPreviewRole, setPmoPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer'>('PMO')
+  const [hasLoggedOut, setHasLoggedOut] = useState(false)
+  const [pmoPreviewRole, setPmoPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer' | 'Client'>('PMO')
 
   if (!isLoggedIn) {
     return (
       <LoginScreen
+        initialStep={hasLoggedOut ? 'email' : 'choose'}
         onLoginSuccess={(email) => {
           if (email) setUserEmail(email)
+          setPmoPreviewRole('PMO')
+          setView('dashboard')
           setIsLoggedIn(true)
         }}
       />
@@ -112,18 +116,31 @@ export default function Home() {
   const isSOWDetail =
     view === 'sow-detail' || view === 'sow-detail-v2' || view === 'sow-detail-meridian' || view === 'sow-detail-deactivated'
 
+  // One role mapping for every entry point (direct login and the PMO role preview)
+  const detailViewerRole = isParag
+    ? ('admin' as const)
+    : isIshita
+    ? ('reviewer' as const)
+    : isNarendra
+    ? ('contributor' as const)
+    : isRiza
+    ? ('client' as const)
+    : ('pmo' as const)
+
   const activePMORoleForSOW =
     userRole === 'PMO'
       ? pmoPreviewRole === 'Contributor'
         ? ('contributor' as const)
         : pmoPreviewRole === 'Reviewer'
         ? ('reviewer' as const)
+        : pmoPreviewRole === 'Client'
+        ? ('client' as const)
         : ('pmo' as const)
       : undefined
 
-  const handleActiveViewerRoleChange = (r: 'pmo' | 'contributor' | 'reviewer') => {
+  const handleActiveViewerRoleChange = (r: 'pmo' | 'contributor' | 'reviewer' | 'client') => {
     if (userRole === 'PMO') {
-      setPmoPreviewRole(r === 'contributor' ? 'Contributor' : r === 'reviewer' ? 'Reviewer' : 'PMO')
+      setPmoPreviewRole(r === 'contributor' ? 'Contributor' : r === 'reviewer' ? 'Reviewer' : r === 'client' ? 'Client' : 'PMO')
     }
   }
 
@@ -142,7 +159,12 @@ export default function Home() {
       onPreviewRoleChange={(r) => {
         if (userRole === 'PMO') setPmoPreviewRole(r)
       }}
-      onSignOut={() => setIsLoggedIn(false)}
+      onSignOut={() => {
+        setIsLoggedIn(false)
+        setHasLoggedOut(true)
+        setPmoPreviewRole('PMO')
+        setView('dashboard')
+      }}
       activeNav={isSOWDetail ? 'my-sows' : 'dashboard'}
       contentOverride={
         view === 'sow-detail' ? (
@@ -152,7 +174,7 @@ export default function Home() {
             tokenConsumption={createdTokenConsumption}
             uploadedFiles={sowFiles}
             showGenerateDraft={!isParag}
-            viewerRole={isParag ? 'admin' : 'pmo'}
+            viewerRole={detailViewerRole}
             initialActiveRole={activePMORoleForSOW}
             onActiveViewerRoleChange={handleActiveViewerRoleChange}
             onBack={() => setView('dashboard')}
@@ -163,7 +185,7 @@ export default function Home() {
             sowStatus="In Progress"
             showGenerateDraft={!isParag}
             sowVariant="v2"
-            viewerRole={isParag ? 'admin' : 'pmo'}
+            viewerRole={detailViewerRole}
             initialActiveRole={activePMORoleForSOW}
             onActiveViewerRoleChange={handleActiveViewerRoleChange}
             uploadedFiles={[
@@ -178,7 +200,7 @@ export default function Home() {
             sowName="Meridian Healthcare — Procurement Platform Modernization"
             sowStatus="In Progress"
             sowVariant="meridian"
-            viewerRole={isParag ? 'admin' : isIshita ? 'reviewer' : isNarendra ? 'contributor' : 'pmo'}
+            viewerRole={detailViewerRole}
             initialActiveRole={activePMORoleForSOW}
             onActiveViewerRoleChange={handleActiveViewerRoleChange}
             currentMemberId={isIshita ? 'm4' : isNarendra ? 'm5' : 'm1'}
@@ -196,7 +218,7 @@ export default function Home() {
             sowStatus="Deactivated"
             showGenerateDraft={false}
             sowVariant="v1"
-            viewerRole={isParag ? 'admin' : isIshita ? 'reviewer' : isNarendra ? 'contributor' : 'pmo'}
+            viewerRole={detailViewerRole}
             initialActiveRole={activePMORoleForSOW}
             onActiveViewerRoleChange={handleActiveViewerRoleChange}
             uploadedFiles={[

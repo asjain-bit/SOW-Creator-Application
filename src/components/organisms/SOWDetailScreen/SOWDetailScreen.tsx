@@ -1575,8 +1575,8 @@ export function ItemTraceModal({
       version: 3,
       isCurrent: true,
       tag: 'Latest Revision',
-      author: item.response ? 'Ashika Jain' : 'Narendra',
-      role: item.response ? 'PMO Lead' : 'Contributor',
+      author: item.response ? 'Ashika Jain' : 'Narendra Patel',
+      role: item.response ? 'PMO' : 'Contributor',
       avatarColor: item.response ? '#00C4C4' : '#10b981',
       initials: item.response ? 'AJ' : 'NA',
       timestamp: 'Today, 15:42',
@@ -1590,10 +1590,10 @@ export function ItemTraceModal({
       version: 2,
       isCurrent: false,
       tag: 'Revision 2',
-      author: 'Marcus Brody',
-      role: 'Compliance Lead',
-      avatarColor: '#ec4899',
-      initials: 'MB',
+      author: 'Dr. Sultan Al Hashimi',
+      role: 'Client',
+      avatarColor: '#0ea5e9',
+      initials: 'SH',
       timestamp: 'Yesterday, 11:20',
       changeReason: 'Refined compliance requirements and verified HL7/FHIR cross-reference',
       content: item.text.includes('?')
@@ -2195,12 +2195,14 @@ export function ReviewerAndParticipantsModal({
   onClose,
   initialTab = 'reviewers',
   onConfirmReviewers,
+  canManage = true,
 }: {
   onClose: () => void
   initialTab?: 'reviewers' | 'participants'
   onConfirmReviewers?: (count: number) => void
+  canManage?: boolean
 }) {
-  const [modalTab, setModalTab] = useState<'reviewers' | 'participants'>(initialTab)
+  const [modalTab, setModalTab] = useState<'reviewers' | 'participants'>(canManage ? initialTab : 'participants')
   const [activeCategory, setActiveCategory] = useState<'all' | 'reviewers' | 'contributors' | 'clients' | 'pmo'>('all')
   const [reviewers, setReviewers] = useState(REVIEWERS_DEFAULT)
   const [selectedIds, setSelectedIds] = useState<string[]>(REVIEWERS_DEFAULT.map((r) => r.id))
@@ -2221,7 +2223,7 @@ export function ReviewerAndParticipantsModal({
     }
   }, [onClose])
 
-  const PARTICIPANTS = [
+  const INITIAL_PARTICIPANTS = [
     { id: '1', name: 'Sarah Khan', role: 'Clinical Safety Lead', type: 'reviewers', email: 'sarah.khan@m42.ae', initials: 'SK', color: '#8b5cf6', status: 'Active' },
     { id: '2', name: 'Marcus Brody', role: 'Compliance Officer', type: 'reviewers', email: 'marcus.brody@m42.ae', initials: 'MB', color: '#ec4899', status: 'Active' },
     { id: '3', name: 'Priya Nair', role: 'Legal & Risk Lead', type: 'reviewers', email: 'priya.nair@m42.ae', initials: 'PN', color: '#3b82f6', status: 'Pending Review' },
@@ -2232,6 +2234,24 @@ export function ReviewerAndParticipantsModal({
     { id: '8', name: 'Fatima Al Mansoori', role: 'Head of Procurement', type: 'clients', email: 'fatima.mansoori@m42.ae', initials: 'FM', color: '#14b8a6', status: 'Client Stakeholder' },
     { id: '9', name: 'Ashika Jain', role: 'Lead PMO Manager', type: 'pmo', email: 'ashika.jain@organization.com', initials: 'AJ', color: '#00C4C4', status: 'Owner / PMO' },
   ]
+  type ParticipantAccess = 'edit' | 'view'
+  const [participants, setParticipants] = useState(() =>
+    INITIAL_PARTICIPANTS.map((p) => ({ ...p, access: (p.type === 'reviewers' ? 'view' : 'edit') as ParticipantAccess }))
+  )
+  const PARTICIPANTS = participants
+  const [openAccessId, setOpenAccessId] = useState<string | null>(null)
+  const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null)
+  const handleAccessChange = (id: string, value: 'edit' | 'view' | 'revoke') => {
+    const person = participants.find((p) => p.id === id)
+    if (!person) return
+    if (value === 'revoke') {
+      setParticipants((prev) => prev.filter((p) => p.id !== id))
+      showToast(`Access revoked for ${person.name}`, 'info')
+      return
+    }
+    setParticipants((prev) => prev.map((p) => (p.id === id ? { ...p, access: value } : p)))
+    showToast(`${person.name} now has ${value === 'edit' ? 'edit' : 'view'} access`, 'success')
+  }
 
   const filtered = activeCategory === 'all' ? PARTICIPANTS : PARTICIPANTS.filter((p) => p.type === activeCategory)
 
@@ -2340,7 +2360,7 @@ export function ReviewerAndParticipantsModal({
           </button>
         </div>
 
-        {/* Top Navigation Tabs: Assign Reviewers (1st) | Participants (2nd) */}
+        {canManage && (
         <div
           style={{
             display: 'flex',
@@ -2385,8 +2405,9 @@ export function ReviewerAndParticipantsModal({
             Participants
           </button>
         </div>
+        )}
 
-        {modalTab === 'reviewers' ? (
+        {modalTab === 'reviewers' && canManage ? (
           /* ── Assign Reviewers Tab (1st Tab) ── */
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '20px 24px' }}>
             <div style={{ fontSize: 13, color: '#64748b', marginBottom: 14 }}>
@@ -2587,10 +2608,10 @@ export function ReviewerAndParticipantsModal({
             >
               {[
                 { id: 'all', label: `All (${PARTICIPANTS.length})` },
-                { id: 'reviewers', label: `Reviewers (3)` },
-                { id: 'contributors', label: `Contributors (3)` },
-                { id: 'clients', label: `Clients (2)` },
-                { id: 'pmo', label: `PMO (1)` },
+                { id: 'reviewers', label: `Reviewers (${PARTICIPANTS.filter((p) => p.type === 'reviewers').length})` },
+                { id: 'contributors', label: `Contributors (${PARTICIPANTS.filter((p) => p.type === 'contributors').length})` },
+                { id: 'clients', label: `Clients (${PARTICIPANTS.filter((p) => p.type === 'clients').length})` },
+                { id: 'pmo', label: `PMO (${PARTICIPANTS.filter((p) => p.type === 'pmo').length})` },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -2624,8 +2645,6 @@ export function ReviewerAndParticipantsModal({
                     : user.type === 'clients'
                     ? 'Client'
                     : 'PMO'
-
-                const hasEditAccess = user.type !== 'reviewers'
 
                 return (
                   <div
@@ -2693,23 +2712,153 @@ export function ReviewerAndParticipantsModal({
                       </div>
                     </div>
 
-                    {/* Right side: Simple text access indicator */}
+                    {/* Right side: access indicator / dropdown */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 500,
-                          color: hasEditAccess ? '#047857' : '#64748b',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {hasEditAccess ? 'Edit Access' : 'View Access'}
-                      </span>
+                      {canManage && user.type !== 'pmo' ? (
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            type="button"
+                            onClick={() => setOpenAccessId(openAccessId === user.id ? null : user.id)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '6px 12px 6px 12px',
+                              borderRadius: 8,
+                              border: '1px solid #e2e8f0',
+                              background: '#ffffff',
+                              fontSize: 12,
+                              fontWeight: 500,
+                              color: user.access === 'edit' ? '#047857' : '#475569',
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                              minWidth: 128,
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <span>{user.access === 'edit' ? 'Edit access' : 'View access'}</span>
+                            <ChevronDown size={14} color="#94a3b8" />
+                          </button>
+                          {openAccessId === user.id && (
+                            <>
+                              <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setOpenAccessId(null)} />
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: 'calc(100% + 4px)',
+                                  right: 0,
+                                  zIndex: 41,
+                                  minWidth: 160,
+                                  background: '#ffffff',
+                                  border: '1px solid #e2e8f0',
+                                  borderRadius: 10,
+                                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                  padding: 4,
+                                }}
+                              >
+                                {([
+                                  { key: 'edit', label: 'Edit access', color: '#0d212c' },
+                                  { key: 'view', label: 'View access', color: '#0d212c' },
+                                  { key: 'revoke', label: 'Revoke access', color: '#ef4444' },
+                                ] as const).map((opt) => (
+                                  <button
+                                    key={opt.key}
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenAccessId(null)
+                                      if (opt.key === 'revoke') setRevokeTarget({ id: user.id, name: user.name })
+                                      else handleAccessChange(user.id, opt.key)
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '8px 10px',
+                                      borderRadius: 6,
+                                      border: 'none',
+                                      background: user.access === opt.key ? 'rgba(0,196,196,0.08)' : 'transparent',
+                                      color: opt.color,
+                                      fontSize: 12.5,
+                                      fontWeight: user.access === opt.key ? 600 : 500,
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (user.access !== opt.key) e.currentTarget.style.background = opt.key === 'revoke' ? 'rgba(239,68,68,0.06)' : '#f8fafc'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (user.access !== opt.key) e.currentTarget.style.background = 'transparent'
+                                    }}
+                                  >
+                                    <span>{opt.label}</span>
+                                    {user.access === opt.key && <Check size={13} color="#00C4C4" strokeWidth={2.5} />}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: user.access === 'edit' ? '#047857' : '#64748b',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {user.access === 'edit' ? 'Edit Access' : 'View Access'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )
               })}
             </div>
+
+            {revokeTarget && (
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (e.target === e.currentTarget) setRevokeTarget(null)
+                }}
+              >
+                <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 440, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+                  <button
+                    onClick={() => setRevokeTarget(null)}
+                    style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+                  >
+                    <X size={20} />
+                  </button>
+                  <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                    <Users size={28} color="#ef4444" />
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Revoke access?</div>
+                  <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
+                    Revoking access will remove {revokeTarget.name} from the participants list.
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button
+                      onClick={() => setRevokeTarget(null)}
+                      style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleAccessChange(revokeTarget.id, 'revoke')
+                        setRevokeTarget(null)
+                      }}
+                      style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#E60000', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Footer */}
             <div
@@ -3050,11 +3199,17 @@ function DocumentUploaderCard({
           onDrop={handleFileDrop}
           onClick={() => fileInputRef.current?.click()}
           style={{
-            border: isDragging ? '2px dashed #00C4C4' : '2px dashed #cbd5e1',
-            borderRadius: 12,
-            padding: '22px 16px',
+            border: '2px dashed',
+            borderColor: isDragging ? 'var(--brand-cyan-500)' : 'var(--border-default)',
+            borderRadius: 16,
+            padding: '44px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
             textAlign: 'center',
-            background: isDragging ? 'rgba(0,196,196,0.04)' : '#f8fafc',
+            background: isDragging ? '#f8fafc' : 'var(--bg-surface-1)',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
             marginBottom: files.length > 0 ? 16 : 0,
@@ -3065,15 +3220,39 @@ function DocumentUploaderCard({
             ref={fileInputRef}
             onChange={handleFileInputChange}
             multiple
-            accept=".pdf,.docx,.xlsx,.txt"
+            accept=".pdf,.docx,.ppt,.pptx"
             style={{ display: 'none' }}
           />
-          <UploadCloud size={28} color={isDragging ? '#00C4C4' : '#94a3b8'} style={{ margin: '0 auto 8px' }} />
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-            Click or drag &amp; drop files here
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: isDragging ? 'var(--brand-cyan-100)' : 'var(--bg-surface-2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg
+              width="24"
+              height="24"
+              fill="none"
+              stroke={isDragging ? 'var(--brand-cyan-500)' : 'var(--text-tertiary)'}
+              viewBox="0 0 24 24"
+              strokeWidth="1.8"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
           </div>
-          <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 2 }}>
-            Supported formats: PDF, DOCX, XLSX, TXT (up to 25MB each)
+          <div>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Drop your document here</p>
+            <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-tertiary)' }}>
+              or <span style={{ color: 'var(--brand-cyan-500)', fontWeight: 500 }}>click to browse files</span>
+            </p>
+            <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-tertiary)' }}>
+              Supports PDF, DOCX and PPT · Max 10 documents · Max 10 MB
+            </p>
           </div>
         </div>
       )}
@@ -3814,7 +3993,19 @@ function FormTab({
                     onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
                   />
                 ) : (
-                  <div style={{ fontSize: 14, color: '#0d212c', lineHeight: 1.5, padding: '4px 0' }}>
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      fontSize: 13,
+                      color: '#0d212c',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      lineHeight: 1.6,
+                      boxSizing: 'border-box',
+                    }}
+                  >
                     {c.text}
                   </div>
                 )}
@@ -4763,6 +4954,18 @@ function AddSectionModal({
 
 /* ── Structure Tab ───────────────────────────────────────────────────────── */
 
+const MEMBER_EMAILS: Record<string, string> = {
+  'Ashika Jain': 'ashika.jain@company.com',
+  'Rohan Mehta': 'rohan.mehta@m42.ae',
+  'Priya Sharma': 'priya.sharma@m42.ae',
+  'Karan Bose': 'karan.bose@m42.ae',
+  'Narendra Patel': 'npatel@gmail.com',
+  'Vikram Singh': 'vikram.singh@m42.ae',
+  'Sneha Rao': 'sneha.rao@m42.ae',
+}
+const memberEmailByName = (name: string) =>
+  MEMBER_EMAILS[name] ?? `${name.toLowerCase().replace(/[^a-z]+/g, '.')}@m42.ae`
+
 const SECTION_MEMBERS: SectionMember[] = [
   { id: 'm1', name: 'Ashika Jain', initials: 'AJ', color: '#00C4C4' },
   { id: 'm2', name: 'Rohan Mehta', initials: 'RM', color: '#8b5cf6' },
@@ -5207,9 +5410,7 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
         type: 'question',
         text: 'Has the client formally documented the current-state pain points and shared them with the delivery team?',
         assignedTo: 'm2',
-        answered: true,
-        response:
-          'Yes — AS-IS process maps shared via SharePoint on 5 Sept. 12 critical pain points identified and prioritised.',
+        answered: false,
       },
     ],
     assumptions: [],
@@ -5242,9 +5443,7 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
         type: 'question',
         text: 'Has the executive sponsor formally signed off on the transformation roadmap and budget allocation?',
         assignedTo: 'm3',
-        answered: true,
-        response:
-          'Yes — CFO and CPO co-signed the roadmap on 18 Sept 2026. Budget of $4.2M allocated in FY2027 capex plan.',
+        answered: false,
       },
     ],
     assumptions: [],
@@ -5260,9 +5459,7 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
         type: 'question',
         text: "Are the stated objectives SMART and aligned to the client's FY26 OKRs?",
         assignedTo: 'm1',
-        answered: true,
-        response:
-          'Objectives reviewed against OKR framework. All 4 primary objectives are SMART. Aligned to 3 of 5 FY26 OKRs.',
+        answered: false,
       },
       {
         id: 's3b',
@@ -5551,6 +5748,8 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
         text: 'Is penetration testing required pre-UAT, and who is responsible for scheduling and cost?',
         assignedTo: 'm3',
         answered: false,
+        inClientQueue: true,
+        queuedBy: 'Ashika Jain (PMO)',
       },
     ],
     assumptions: [],
@@ -5619,6 +5818,8 @@ const INITIAL_SECTIONS_V2: SOWSection[] = [
         text: 'What is the agreed SLA for processing a change request through the CCB?',
         assignedTo: 'm2',
         answered: false,
+        inClientQueue: true,
+        queuedBy: 'Narendra Patel (Contributor)',
       },
     ],
     assumptions: [],
@@ -5661,6 +5862,26 @@ const MERIDIAN_OVERRIDES: Record<
 > = {
   s1a: { assignedTo: 'm5', answered: true, response: 'Confirmed.' },
   s1b: { assignedTo: 'm5', answered: false },
+  s6b: {
+    assignedTo: 'm5',
+    answered: true,
+    response: 'Confirmed with the client architecture board on 18 Sept.',
+  },
+  s9b: {
+    assignedTo: 'm5',
+    answered: true,
+    response: 'Yes — API reference documentation is in scope for the client developer team.',
+  },
+  s11c: {
+    assignedTo: 'm5',
+    answered: true,
+    response: 'Milestone payments are tied to phase acceptance only; no calendar-date trigger.',
+  },
+  s12b: {
+    assignedTo: 'm5',
+    answered: true,
+    response: 'Stakeholder availability confirmed within 5 business days of request.',
+  },
   s4a: {
     assignedTo: 'm5',
     answered: true,
@@ -5697,6 +5918,15 @@ const MERIDIAN_OVERRIDES: Record<
       'Yes — UAT acceptance criteria defined in Annex B with client sign-off threshold set at 95% pass rate.',
   },
 }
+
+// Globex (v2) SOW: same answered questions as Meridian, assignments untouched
+const V2_SECTIONS: SOWSection[] = INITIAL_SECTIONS_V2.map((sec) => ({
+  ...sec,
+  items: sec.items.map((it) => {
+    const o = MERIDIAN_OVERRIDES[it.id]
+    return o ? { ...it, answered: o.answered, response: o.response } : it
+  }),
+}))
 
 const MERIDIAN_SECTIONS: SOWSection[] = INITIAL_SECTIONS_V2.map((sec) => ({
   ...sec,
@@ -5741,27 +5971,38 @@ function AssigneesDisplay({
   inClientQueue?: boolean
   onReassign?: (newMemberIds: string[]) => void
 }) {
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      {inClientQueue && (
+        <span
+          style={{
+            fontSize: 11,
+            color: '#10b981',
+            fontWeight: 600,
+            background: 'rgba(16, 185, 129, 0.1)',
+            padding: '2px 8px',
+            borderRadius: 4,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Client Queue
+        </span>
+      )}
+      <AssigneesList assignedTo={assignedTo} onReassign={onReassign} />
+    </div>
+  )
+}
+
+function AssigneesList({
+  assignedTo,
+  onReassign,
+}: {
+  assignedTo?: string | string[]
+  onReassign?: (newMemberIds: string[]) => void
+}) {
   const [hovered, setHovered] = useState(false)
   const [clickedOpen, setClickedOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-
-  if (inClientQueue) {
-    return (
-      <span
-        style={{
-          fontSize: 11,
-          color: '#10b981',
-          fontWeight: 600,
-          background: 'rgba(16, 185, 129, 0.1)',
-          padding: '2px 8px',
-          borderRadius: 4,
-          whiteSpace: 'nowrap',
-        }}
-      >
-        Client Queue
-      </span>
-    )
-  }
 
   const ids = Array.isArray(assignedTo)
     ? assignedTo
@@ -6461,6 +6702,7 @@ function SectionDotMenu({
   sowDeadline = '2026-10-31',
   idx,
   total,
+  viewOnly = false,
 }: {
   onRename: () => void
   onDelete: () => void
@@ -6469,6 +6711,7 @@ function SectionDotMenu({
   sowDeadline?: string
   idx?: number
   total?: number
+  viewOnly?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -6525,6 +6768,11 @@ function SectionDotMenu({
         >
           <div style={{ padding: '8px 14px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Section Deadline</span>
+            {viewOnly ? (
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
+                {new Date(currentDeadline || sowDeadline || '2026-10-31').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </span>
+            ) : (
             <input
               type="date"
               min={new Date().toISOString().split('T')[0]}
@@ -6545,8 +6793,9 @@ function SectionDotMenu({
                 outline: 'none',
               }}
             />
+            )}
           </div>
-          {[
+          {(viewOnly ? [] : [
             {
               label: 'Rename',
               icon: 'M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7',
@@ -6564,7 +6813,7 @@ function SectionDotMenu({
               },
               danger: true,
             },
-          ].map(({ label, icon, action, danger }) => (
+          ]).map(({ label, icon, action, danger }: { label: string; icon: string; action: () => void; danger?: boolean }) => (
             <button
               key={label}
               onClick={action}
@@ -6622,7 +6871,9 @@ function StructureTab({
   sowDeadline = '2026-10-31',
   onConsumeTokens,
   readOnly = false,
+  onSectionsChange,
 }: {
+  onSectionsChange?: (sections: SOWSection[]) => void
   initialSections?: SOWSection[]
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
   currentMemberId?: string
@@ -6638,7 +6889,13 @@ function StructureTab({
   const { showToast } = useToast()
   const isContributor = viewerRole === 'contributor'
   const isReviewer = viewerRole === 'reviewer'
+  const isClient = viewerRole === 'client'
+  const isAdmin = viewerRole === 'admin'
   const [sections, setSections] = useState<SOWSection[]>(initialSections)
+  useEffect(() => {
+    onSectionsChange?.(sections)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections])
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
   const [editingSectionTitle, setEditingSectionTitle] = useState('')
   const [sectionDeadlines, setSectionDeadlines] = useState<Record<string, string>>(() => {
@@ -6654,7 +6911,9 @@ function StructureTab({
     })
     return init
   })
-  const [dependentPromptVisible, setDependentPromptVisible] = useState(true)
+  const [dependentPromptVisible, setDependentPromptVisible] = useState(false)
+  const [depSourceId, setDepSourceId] = useState<string | null>(null)
+  const [depTriggered, setDepTriggered] = useState(false)
   const [hasCreatedDependentQuestion, setHasCreatedDependentQuestion] = useState(false)
   const [citationModalTarget, setCitationModalTarget] = useState<ContextCitationTarget | null>(null)
   const [activeId, setActiveId] = useState<string>(initialSections[0].id)
@@ -6676,7 +6935,6 @@ function StructureTab({
   } | null>(null)
   const [clientQueueModalOpen, setClientQueueModalOpen] = useState(false)
   const [activeTraceItem, setActiveTraceItem] = useState<{ item: SectionItem; label: string } | null>(null)
-  const [feedbackModalOpen, setFeedbackModalOpen] = useState<{ sectionId: string; type: 'positive' | 'negative' } | null>(null)
   const [showSectionInfoTooltip, setShowSectionInfoTooltip] = useState(false)
   const assignDropdownRef = useRef<HTMLDivElement>(null)
   const rightPaneRef = useRef<HTMLDivElement>(null)
@@ -6763,7 +7021,6 @@ function StructureTab({
 
   const toggleSelect = (itemId: string) => {
     const item = sections.flatMap(s => s.items).find(i => i.id === itemId)
-    if (item?.inClientQueue) return
     setSelected((prev) => {
       const next = new Set(prev)
       next.has(itemId) ? next.delete(itemId) : next.add(itemId)
@@ -6778,7 +7035,7 @@ function StructureTab({
       prev.map((s) => ({
         ...s,
         items: s.items.map((it) => {
-          if (!selected.has(it.id) || it.inClientQueue) return it
+          if (!selected.has(it.id)) return it
           const currentAssignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
           let newAssignees = currentAssignees
           if (forceAssign !== undefined) {
@@ -6803,7 +7060,11 @@ function StructureTab({
         ...s,
         items: s.items.map((it) => {
           if (it.id === itemId) {
-            return { ...it, inClientQueue: !it.inClientQueue, assignedTo: [] }
+            return {
+              ...it,
+              inClientQueue: !it.inClientQueue,
+              queuedBy: !it.inClientQueue ? (isContributor ? 'Narendra Patel (Contributor)' : 'Ashika Jain (PMO)') : undefined,
+            }
           }
           return it
         }),
@@ -6852,7 +7113,7 @@ function StructureTab({
     : sections
 
   // All item ids across visible sections (for "select all" within multi-select bar)
-  const allItemIds = visibleSections.flatMap((s) => s.items.filter(i => !i.inClientQueue).map((i) => i.id))
+  const allItemIds = visibleSections.flatMap((s) => s.items.map((i) => i.id))
   const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
   const answerItem = (itemId: string, response: string, isAiGenerated: boolean, isEdited: boolean) => {
@@ -6869,6 +7130,20 @@ function StructureTab({
         }),
       }))
     )
+    // Dependent-question check (PMO, Contributor and Client): runs on the first answered question
+    if (!isReviewer && !hasCreatedDependentQuestion && !depTriggered) {
+      const sec = sections.find((s) => s.items.some((i) => i.id === itemId))
+      const target = sec?.items.find((i) => i.id === itemId)
+      if (sec && target && target.type === 'question' && !target.answered) {
+        setDepTriggered(true)
+        showToast('Agent is checking for dependent questions…', 'info')
+        setTimeout(() => {
+          setDepSourceId(itemId)
+          setDependentPromptVisible(true)
+          showToast('A dependent question has been identified.', 'info')
+        }, 1800)
+      }
+    }
     if (itemName) {
       const action = isAiGenerated
         ? (isEdited ? 'Edited AI-Generated Answer' : 'Answer Generated using AI')
@@ -7073,6 +7348,7 @@ function StructureTab({
               >
                 Sections
               </span>
+              {!isReviewer && !isClient && !readOnly && (
               <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                 <button
                   type="button"
@@ -7115,6 +7391,7 @@ function StructureTab({
                   </div>
                 )}
               </div>
+              )}
             </div>
           </div>
 
@@ -7140,7 +7417,7 @@ function StructureTab({
                   style={{ position: 'relative', marginBottom: 6, opacity: isDragging ? 0.4 : 1, transition: 'opacity 0.15s' }}
                   onMouseEnter={() => setHoveredSection(sec.id)}
                   onMouseLeave={() => setHoveredSection(null)}
-                  draggable={!isContributor && !isReviewer && !readOnly}
+                  draggable={!isReviewer && !isClient && !readOnly}
                   onDragStart={() => setDragSectionId(sec.id)}
                   onDragEnd={() => { setDragSectionId(null); setDragOverSectionId(null) }}
                   onDragOver={(e) => { e.preventDefault(); if (sec.id !== dragSectionId) setDragOverSectionId(sec.id) }}
@@ -7187,7 +7464,7 @@ function StructureTab({
                     }}
                   >
                     {/* Drag handle — PMO only, only appears on hover */}
-                    {!isContributor && !isReviewer && !readOnly && isHovered && (
+                    {!isReviewer && !isClient && !readOnly && isHovered && (
                       <svg
                         width="10" height="14" viewBox="0 0 10 14" fill="none"
                         style={{ flexShrink: 0, opacity: 0.6, cursor: 'grab', transition: 'opacity 0.15s' }}
@@ -7263,8 +7540,8 @@ function StructureTab({
                       }}>Overdue</span>
                     )}
                   </button>
-                  {/* Three-dot menu — visible on hover/active, PMO only */}
-                  {!isContributor && !isReviewer && !readOnly && (isHovered || isActive) && (
+                  {/* Three-dot menu — PMO can edit; every other role sees the deadline only */}
+                  {(isHovered || isActive) && (
                     <div
                       style={{
                         position: 'absolute',
@@ -7275,6 +7552,7 @@ function StructureTab({
                       }}
                     >
                       <SectionDotMenu
+                        viewOnly={readOnly || isContributor || isReviewer || isClient}
                         idx={idx}
                         total={sections.length}
                         currentDeadline={deadline}
@@ -7305,7 +7583,7 @@ function StructureTab({
           </div>
 
           {/* Add section — centered at bottom */}
-          {!isContributor && !isReviewer && !disableAnswer && (
+          {!isContributor && !isReviewer && !isClient && !disableAnswer && (
             <div style={{ padding: '10px 10px 14px', borderTop: '1px solid rgba(0,196,196,0.1)' }}>
               <button
                 onClick={() => setShowAddSectionModal(true)}
@@ -7352,10 +7630,10 @@ function StructureTab({
         {/* ── Right pane ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           {/* Top Actions & Bulk-action bar combined */}
-          {!isReviewer && (
+          {!isClient && (
             <div style={{ padding: '8px 28px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
               
-              {!readOnly && (
+              {!readOnly && !isReviewer && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <label
                   style={{
@@ -7456,7 +7734,7 @@ function StructureTab({
                         const allItemIdsArray = Array.from(selected)
                         const validSelectedIds = allItemIdsArray.filter(id => {
                           const it = sections.flatMap(s => s.items).find(x => x.id === id)
-                          return it && !it.inClientQueue
+                          return !!it
                         })
                         const isAssigned = validSelectedIds.length > 0 && validSelectedIds.every(id => {
                           const it = sections.flatMap(s => s.items).find(x => x.id === id)
@@ -7626,8 +7904,9 @@ function StructureTab({
               </div>
               )}
 
-              {/* Client Queue button on right — hidden for contributors */}
-              {!isContributor && (
+              {/* Client Queue button on right (not for Admin) */}
+              {!isAdmin && (
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
                   <button
                     onClick={() => setClientQueueModalOpen(true)}
@@ -7717,7 +7996,7 @@ function StructureTab({
                           )}
                         </span>
                         {/* Add item CTA - contributors can add new questions in their assigned sections */}
-                        {!disableAnswer && !isReviewer && (!isContributor || isSectionAssignedToContributor(sec)) && (
+                        {!disableAnswer && !isReviewer && !isClient && (!isContributor || isSectionAssignedToContributor(sec)) && (
                           <button
                             onClick={() => setAddItemFor(sec.id)}
                             style={{
@@ -7762,7 +8041,7 @@ function StructureTab({
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                       {assumptions.map((item, ai) => {
-                        const canEditSec = !readOnly && !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
+                        const canEditSec = !readOnly && !isReviewer && !isClient && (!isContributor || isSectionAssignedToContributor(sec))
                         return (
                           <ItemRow
                             key={item.id}
@@ -7792,7 +8071,7 @@ function StructureTab({
                         )
                       })}
                       {questions.map((item, qi) => {
-                        const canEditSec = !readOnly && !isReviewer && (!isContributor || isSectionAssignedToContributor(sec))
+                        const canEditSec = !readOnly && !isReviewer && !isClient && (!isContributor || isSectionAssignedToContributor(sec))
                         const isDepTarget = (sec.id === 's3' || idx === 2) && qi === 0
                         return (
                           <ItemRow
@@ -7813,7 +8092,7 @@ function StructureTab({
                             onToggleQueue={() => toggleClientQueue(item.id)}
                             onOpenCitation={setCitationModalTarget}
                             onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
-                            hasDependentPrompt={!isReviewer && !readOnly && isDepTarget && dependentPromptVisible && !hasCreatedDependentQuestion}
+                            hasDependentPrompt={!isReviewer && !readOnly && depSourceId === item.id && dependentPromptVisible && !hasCreatedDependentQuestion}
                             onDismissDependentPrompt={() => setDependentPromptVisible(false)}
                             onCreateDependentQuestion={() => {
                               const newDepQuestion: SectionItem = {
@@ -7832,6 +8111,7 @@ function StructureTab({
                               )
                               setHasCreatedDependentQuestion(true)
                               setDependentPromptVisible(false)
+                              showToast('Dependent question(s) have been generated.', 'success')
                             }}
                             onDelete={() => setDeleteConfirm({
                               isOpen: true,
@@ -7842,28 +8122,6 @@ function StructureTab({
                           />
                         )
                       })}
-                    </div>
-                  )}
-                  {!isContributor && !isReviewer && (
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-start', marginTop: 12 }}>
-                      <button
-                        title="Helpful"
-                        onClick={() => setFeedbackModalOpen({ sectionId: sec.id, type: 'positive' })}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: '#64748b' }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-                        </svg>
-                      </button>
-                      <button
-                        title="Not Helpful"
-                        onClick={() => setFeedbackModalOpen({ sectionId: sec.id, type: 'negative' })}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: '#64748b' }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
-                        </svg>
-                      </button>
                     </div>
                   )}
                 </div>
@@ -7898,6 +8156,8 @@ function StructureTab({
 
       {clientQueueModalOpen && (
         <ClientQueueModal
+          readOnly={isReviewer || readOnly}
+          removeOnly={isContributor}
           sections={sections}
           onRemoveFromQueue={(id) => {
              setSections(prev => prev.map(sec => ({
@@ -7906,16 +8166,6 @@ function StructureTab({
              })))
           }}
           onClose={() => setClientQueueModalOpen(false)}
-        />
-      )}
-      {feedbackModalOpen && (
-        <FeedbackModal
-          type={feedbackModalOpen.type}
-          onClose={() => setFeedbackModalOpen(null)}
-          onSubmit={(text) => {
-             // In a real app this would send the feedback to backend
-             setFeedbackModalOpen(null)
-          }}
         />
       )}
       {addItemFor &&
@@ -7973,8 +8223,12 @@ function ItemRow({
   onDismissDependentPrompt,
   onCreateDependentQuestion,
   onConsumeTokens,
+  hideTrace = false,
+  queuedByLabel,
 }: {
   onConsumeTokens?: (tokens: number) => void
+  hideTrace?: boolean
+  queuedByLabel?: string
   item: SectionItem
   label: string
   isSelected: boolean
@@ -8274,6 +8528,11 @@ function ItemRow({
             </span>
           )}
         </div>
+        {queuedByLabel && (
+          <div style={{ marginTop: 4, fontSize: 11, color: '#64748b' }}>
+            Added to client queue by <span style={{ fontWeight: 600, color: '#0d212c' }}>{queuedByLabel}</span>
+          </div>
+        )}
         {item.response && !editing && (
           <div
             style={{
@@ -8343,6 +8602,7 @@ function ItemRow({
                 Edit
               </button>
             )}
+            {!hideTrace && (
             <button
               type="button"
               onClick={(e) => {
@@ -8370,6 +8630,7 @@ function ItemRow({
               <Clock size={10} />
               View trace
             </button>
+            )}
           </div>
         )}
         {item.response && !editing && attachedDoc && (
@@ -8614,6 +8875,7 @@ function ItemRow({
               </div>
 
               {/* View trace button on the same line as input field */}
+              {!hideTrace && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -8641,6 +8903,7 @@ function ItemRow({
                 <Clock size={11} />
                 View trace
               </button>
+              )}
             </div>
           </div>
         )}
@@ -8714,7 +8977,7 @@ function ItemRow({
             onReassign={canEdit ? onReassign : undefined}
           />
         )}
-        {canEdit && !hideAssigneesAndQueue && !isContributor && (
+        {canEdit && !hideAssigneesAndQueue && (
           <button
             onClick={() => onToggleQueue?.()}
             style={{
@@ -9036,10 +9299,10 @@ function AIReviewModal({
 }) {
   const [stage, setStage] = useState<'thinking' | 'summary'>(initialStage)
   const [expandedCriteria, setExpandedCriteria] = useState<Record<string, boolean>>({
-    Completeness: false,
-    Consistency: false,
-    Traceability: false,
-    Clarity: false,
+    Completeness: true,
+    Consistency: true,
+    Traceability: true,
+    Clarity: true,
   })
 
   // Action inline states for Assign & Dismiss
@@ -9188,7 +9451,7 @@ function AIReviewModal({
         style={{
           width: '100%',
           maxWidth: 720,
-          maxHeight: '90vh',
+          maxHeight: '72vh',
           background: '#ffffff',
           borderRadius: 16,
           boxShadow: '0 20px 60px rgba(0,0,0,0.22)',
@@ -9252,10 +9515,10 @@ function AIReviewModal({
                     ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
                   }
                 }}
-                title={hasActionTaken ? "Rerun AI analysis across all sections" : "Take action on each of the 4 factors before rerunning"}
+                title={hasActionTaken ? "Run the AI analysis across all sections" : "Take action on each of the 4 factors before running the check again"}
               >
                 <Sparkles size={13} color={hasActionTaken ? "#ffffff" : "#64748b"} />
-                Rerun AI Check
+                Run AI check
               </button>
             )}
 
@@ -9476,18 +9739,6 @@ function AIReviewModal({
                                     </div>
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                      <span
-                                        style={{
-                                          fontSize: 11,
-                                          fontWeight: 600,
-                                          color: finding.severity === 'Critical' ? '#dc2626' : '#d97706',
-                                          background: finding.severity === 'Critical' ? '#fee2e2' : '#fef3c7',
-                                          padding: '2px 8px',
-                                          borderRadius: 6,
-                                        }}
-                                      >
-                                        {finding.severity}
-                                      </span>
                                       {finding.resolved && finding.resolutionType && finding.resolutionType !== 'Passed AI Re-check' && (
                                         <span
                                           style={{
@@ -9827,7 +10078,9 @@ function SOWDraftTab({
   isDraftGenerating = false,
   sowDeadline = '2026-10-31',
   headerActionsSlot = null,
+  assignedSectionTitles = [],
 }: {
+  assignedSectionTitles?: string[]
   isContributor?: boolean
   isReviewer?: boolean
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
@@ -9843,6 +10096,12 @@ function SOWDraftTab({
   const isPMO = viewerRole === 'pmo' || (!isContributor && !isReviewer && viewerRole !== 'admin' && viewerRole !== 'client')
   const isAdmin = viewerRole === 'admin'
   const isClient = viewerRole === 'client'
+  // Who can edit what in the draft
+  const canEditAll = (isPMO || isReviewer) && !isReadOnly
+  const canEditAssigned = isContributor && !isReadOnly && assignedSectionTitles.length > 0
+  const canEditAny = canEditAll || canEditAssigned
+  const canManageSections = (isPMO || isReviewer) && !isReadOnly
+  const showFormattingToolbar = !isClient && !(isContributor && !canEditAssigned)
 
   const [activeSectionIdx, setActiveSectionIdx] = useState(0)
   const [hasUnsaved, setHasUnsaved] = useState(false)
@@ -10033,7 +10292,7 @@ function SOWDraftTab({
 
   // AI Review modal state (PMO & Reviewer)
   const [showAIReviewModal, setShowAIReviewModal] = useState(false)
-  const [hasRunAICheck, setHasRunAICheck] = useState(false)
+  const [hasRunAICheck, setHasRunAICheck] = useState(true)
   const [aiFindings, setAiFindings] = useState<AIReviewFinding[]>(INITIAL_AI_FINDINGS)
   const [aiModalInitialStage, setAiModalInitialStage] = useState<'thinking' | 'summary'>('thinking')
   const [aiSuggestion, setAiSuggestion] = useState<{ finding: AIReviewFinding; sectionIdx: number } | null>(null)
@@ -10143,9 +10402,9 @@ function SOWDraftTab({
         sectionTitle: commentPopup.sectionTitle,
         anchorText: commentPopup.anchorText,
         text: newCommentText.trim(),
-        assignee: isContributor || isReviewer ? 'Ashika Jain (PMO)' : (newCommentAssignee || 'Unassigned'),
+        assignee: isContributor || isReviewer || isClient ? 'Ashika Jain (PMO)' : (newCommentAssignee || 'Unassigned'),
         taggedEmails: newCommentTaggedEmails,
-        author: isReviewer ? 'Ishita (Reviewer)' : isContributor ? 'Narendra (Contributor)' : 'Ashika Jain',
+        author: isReviewer ? 'Ishita (Reviewer)' : isContributor ? 'Narendra (Contributor)' : isClient ? 'Riza (Client)' : 'Ashika Jain',
         timestamp: 'Just now',
         resolved: false,
         replies: [],
@@ -10646,10 +10905,16 @@ function SOWDraftTab({
           default:
             body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated content for the <strong>${item.title}</strong> section based on extracted requirements from your RFP document. ${citationTag} Please review and modify as needed to ensure it meets your exact specifications.</p>`
         }
-        return `<div id="sow-section-${idx}" class="sow-section" style="margin-bottom:0;">
-        <h2 style="font-size:22px;font-weight:700;color:#0d212c;margin-bottom:16px;">${item.title}</h2>
+        const contribEditable = isContributor && !isReadOnly && assignedSectionTitles.includes(item.title)
+        const contribViewOnly = isContributor && !assignedSectionTitles.includes(item.title)
+        const titleHtml = `<h2 contenteditable="false" style="font-size:22px;font-weight:700;color:#0d212c;margin-bottom:${contribViewOnly ? 0 : 16}px;">${item.title}</h2>`
+        const titleBlock = contribViewOnly
+          ? `<div contenteditable="false" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">${titleHtml}<span class="sow-viewonly-chip" contenteditable="false" data-tip="These are view only sections. You cannot edit them, but you can add comments on them.">View only</span></div>`
+          : titleHtml
+        return `<div id="sow-section-${idx}" class="sow-section"${contribEditable ? ' contenteditable="true"' : ''} style="margin-bottom:0;">
+        ${titleBlock}
         ${body}
-        <div style="margin-top:20px;padding-top:12px;border-top:1px dashed #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div contenteditable="false" style="margin-top:20px;padding-top:12px;border-top:1px dashed #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <button type="button" class="sow-draft-citation-btn" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:6px;padding:3.5px 10px;font-size:12px;font-weight:500;color:#475569;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;transition:all 0.15s ease;" title="Click to view citation in ${item.fileName}">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -10679,6 +10944,140 @@ function SOWDraftTab({
     })
     setActiveSectionIdx(to)
   }
+
+  // ── Rename / delete a section from the left panel ──────────────────────────
+  const [renameTarget, setRenameTarget] = useState<{ idx: number; value: string } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
+  const [showEmptySectionWarning, setShowEmptySectionWarning] = useState(false)
+
+  const applyRename = () => {
+    if (!renameTarget) return
+    const value = renameTarget.value.trim()
+    if (!value) return
+    const { idx } = renameTarget
+    const oldTitle = tocItems[idx]?.title
+    setTocItems((prev) => prev.map((t, i) => (i === idx ? { ...t, title: value } : t)))
+    const el = document.getElementById(`sow-section-${idx}`)
+    if (el) {
+      const h = el.querySelector('h2')
+      if (h) h.textContent = value
+      el.querySelectorAll('[data-section]').forEach((n) => n.setAttribute('data-section', value))
+    }
+    setComments((prev) => prev.map((c) => (c.sectionTitle === oldTitle ? { ...c, sectionTitle: value } : c)))
+    setRenameTarget(null)
+    showToast('Section renamed', 'success')
+  }
+
+  const applyDelete = () => {
+    if (deleteTarget === null) return
+    const idx = deleteTarget
+    const el = document.getElementById(`sow-section-${idx}`)
+    if (el) {
+      const sibling =
+        el.nextElementSibling?.tagName === 'HR'
+          ? el.nextElementSibling
+          : el.previousElementSibling?.tagName === 'HR'
+          ? el.previousElementSibling
+          : null
+      sibling?.remove()
+      el.remove()
+    }
+    editorRef.current?.querySelectorAll('.sow-section').forEach((n, i) => {
+      n.id = `sow-section-${i}`
+      n.querySelectorAll('.sow-draft-trace-btn').forEach((b) => b.setAttribute('data-secidx', String(i)))
+    })
+    setTocItems((prev) => prev.filter((_, i) => i !== idx))
+    setSectionDeadlines((prev) => {
+      const next: Record<number, string> = {}
+      Object.entries(prev).forEach(([k, v]) => {
+        const n = Number(k)
+        if (n < idx) next[n] = v
+        else if (n > idx) next[n - 1] = v
+      })
+      return next
+    })
+    setActiveSectionIdx((cur) => Math.max(0, Math.min(cur > idx ? cur - 1 : cur, tocItems.length - 2)))
+    setDeleteTarget(null)
+    showToast('Section deleted', 'success')
+  }
+
+  // Keep every section's body editable and warn when a section has been emptied
+  const ensureSectionBodies = () => {
+    const root = editorRef.current
+    if (!root) return
+    let emptied = false
+    root.querySelectorAll('.sow-section').forEach((sec) => {
+      const blocks = Array.from(sec.children).filter(
+        (c) => c.tagName !== 'H2' && c.getAttribute('contenteditable') !== 'false' && c.tagName !== 'HR'
+      )
+      const hasContent = blocks.some(
+        (b) => (b.textContent ?? '').trim().length > 0 || b.querySelector('img, table, li')
+      )
+      if (!hasContent) {
+        emptied = true
+        if (blocks.length === 0) {
+          const footer = Array.from(sec.children).find((c) => c.getAttribute('contenteditable') === 'false' && c.tagName !== 'H2')
+          const p = document.createElement('p')
+          p.style.cssText = 'margin-bottom:12px;line-height:1.7;color:#374151;'
+          p.appendChild(document.createElement('br'))
+          if (footer) sec.insertBefore(p, footer)
+          else sec.appendChild(p)
+        }
+      }
+    })
+    if (emptied) setShowEmptySectionWarning(true)
+  }
+
+  // Block deletions that would remove a section title or its trace (including select-all + delete)
+  useEffect(() => {
+    const root = editorRef.current
+    if (!root) return
+    const handler = (ev: Event) => {
+      const e = ev as InputEvent
+      if (isReadOnly) {
+        e.preventDefault()
+        return
+      }
+      if (!e.inputType || !e.inputType.startsWith('delete')) return
+      const sel = window.getSelection()
+      if (!sel || sel.rangeCount === 0) return
+      const range = sel.getRangeAt(0)
+      if (!range.collapsed) {
+        const frag = range.cloneContents()
+        if (frag.querySelector('h2, .sow-draft-trace-btn, .sow-section')) {
+          e.preventDefault()
+          setShowEmptySectionWarning(true)
+        }
+        return
+      }
+      const anchor = sel.anchorNode
+      const el = anchor instanceof Element ? anchor : anchor?.parentElement
+      let block: Element | null = el ?? null
+      while (block && block.parentElement && !block.parentElement.classList.contains('sow-section')) {
+        block = block.parentElement
+      }
+      if (!block || !block.parentElement) return
+      const backward = e.inputType.includes('Backward')
+      if (backward && sel.anchorOffset === 0) {
+        const prev = block.previousElementSibling
+        if (prev && (prev.tagName === 'H2' || prev.getAttribute('contenteditable') === 'false')) e.preventDefault()
+      }
+      if (!backward && sel.anchorOffset >= (anchor?.textContent?.length ?? 0)) {
+        const next = block.nextElementSibling
+        if (next && next.getAttribute('contenteditable') === 'false') e.preventDefault()
+      }
+    }
+    root.addEventListener('beforeinput', handler)
+    return () => root.removeEventListener('beforeinput', handler)
+  }, [isReadOnly])
+
+  // Contributors can only edit sections assigned to them, and nothing once the SOW is locked
+  useEffect(() => {
+    if (!isContributor) return
+    editorRef.current?.querySelectorAll('.sow-section[contenteditable]').forEach((n) => {
+      n.setAttribute('contenteditable', isReadOnly ? 'false' : 'true')
+    })
+  }, [isReadOnly, isContributor])
 
   // ── Set initial editor content ──────────────────────────────────────────────
   useEffect(() => {
@@ -10818,10 +11217,34 @@ function SOWDraftTab({
   const scoreLabel = (s: number) =>
     s >= 90 ? 'High Confidence' : s >= 60 ? 'Medium Confidence' : 'Low Confidence'
 
+  // ── Export the draft as a Word document ────────────────────────────────────
+  const exportAsWord = () => {
+    const source = editorRef.current
+    if (!source) return
+    const clone = source.cloneNode(true) as HTMLElement
+    clone.querySelectorAll('.sow-draft-trace-btn, .sow-draft-citation-btn, .sow-inline-citation').forEach((n) => n.remove())
+    clone.querySelectorAll('[contenteditable]').forEach((n) => n.removeAttribute('contenteditable'))
+    const html =
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+      '<head><meta charset="utf-8"><title>SOW Draft</title></head><body style="font-family:Calibri,Arial,sans-serif;">' +
+      clone.innerHTML +
+      '</body></html>'
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'SOW_Draft.doc'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    showToast('SOW exported as a Word document', 'success')
+  }
+
   // ── Header actions (rendered into the tab strip via portal) ──────────────────
   const draftHeaderActions = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {!isContributor && !isReviewer && !isClient && !isReadOnly && (
+      {!isClient && (
         <button
           type="button"
           onClick={() => onOpenParticipantsModal?.()}
@@ -10849,34 +11272,32 @@ function SOWDraftTab({
       {/* Export (secondary) */}
       <button
         type="button"
-        onClick={() => {
-          showToast('Exporting SOW as PDF...', 'info')
-          setTimeout(() => showToast('SOW exported as PDF successfully!', 'success'), 1200)
-        }}
+        onClick={exportAsWord}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 6,
           padding: '6px 14px',
           borderRadius: 8,
-          border: '1.5px solid rgba(0,196,196,0.5)',
-          background: 'rgba(0,196,196,0.12)',
-          color: '#007a7a',
+          border: isClient ? 'none' : '1.5px solid rgba(0,196,196,0.5)',
+          background: isClient ? '#00C4C4' : 'rgba(0,196,196,0.12)',
+          color: isClient ? '#ffffff' : '#007a7a',
           fontSize: 12,
-          fontWeight: 600,
+          fontWeight: isClient ? 700 : 600,
           cursor: 'pointer',
           whiteSpace: 'nowrap',
+          boxShadow: isClient ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
           transition: 'all 0.15s ease',
         }}
         onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
+          ;(e.currentTarget as HTMLButtonElement).style.background = isClient ? '#00a8a8' : '#f1f5f9'
         }}
         onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)'
+          ;(e.currentTarget as HTMLButtonElement).style.background = isClient ? '#00C4C4' : 'rgba(0,196,196,0.12)'
         }}
-        title="Export"
+        title="Export as Word document"
       >
-        <Download size={13} color="#007a7a" />
+        <Download size={13} color={isClient ? '#ffffff' : '#007a7a'} />
         Export
       </button>
 
@@ -10976,6 +11397,114 @@ function SOWDraftTab({
   return (
     <>
       {headerActionsSlot && !isDraftGenerating && createPortal(draftHeaderActions, headerActionsSlot)}
+      {renameTarget && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setRenameTarget(null)
+          }}
+        >
+          <div style={{ background: '#ffffff', borderRadius: 24, padding: '28px 24px', width: 420, maxWidth: '90vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Rename Section</div>
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Update the title of this section in the draft.</div>
+            <input
+              autoFocus
+              value={renameTarget.value}
+              onChange={(e) => setRenameTarget({ ...renameTarget, value: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') applyRename()
+                if (e.key === 'Escape') setRenameTarget(null)
+              }}
+              style={{ width: '100%', padding: '10px 12px', fontSize: 13, color: '#0d212c', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 20 }}
+            />
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setRenameTarget(null)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1.5px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyRename}
+                disabled={!renameTarget.value.trim()}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: renameTarget.value.trim() ? '#00C4C4' : '#cbd5e1', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: renameTarget.value.trim() ? 'pointer' : 'not-allowed' }}
+              >
+                Rename
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget !== null && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteTarget(null)
+          }}
+        >
+          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 550, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <button
+              onClick={() => setDeleteTarget(null)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Trash2 size={28} color="#ef4444" />
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Delete Section</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24 }}>
+              &ldquo;{tocItems[deleteTarget]?.title}&rdquo; and all of its content and trace will be removed from the draft.
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyDelete}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#E60000', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEmptySectionWarning && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowEmptySectionWarning(false)
+          }}
+        >
+          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 28px', width: 440, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <button
+              onClick={() => setShowEmptySectionWarning(false)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <AlertTriangle size={28} color="#d97706" />
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 10 }}>Section can&apos;t be removed here</div>
+            <div style={{ fontSize: 13.5, color: '#64748b', marginBottom: 24, lineHeight: 1.55 }}>
+              Section titles and their trace stay in the document even when the content is cleared. To remove a section completely, delete it from the left panel.
+            </div>
+            <button
+              onClick={() => setShowEmptySectionWarning(false)}
+              style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#00C4C4', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
       {aiSuggestion && aiSuggestionPos && (
         <div
           style={{
@@ -11085,8 +11614,8 @@ function SOWDraftTab({
             background: 'rgba(248,252,252,0.6)',
           }}
         >
-          {/* AI Review & Summary (hidden for contributors and clients) */}
-          {!isContributor && !isClient && (
+          {/* AI Review & Summary */}
+          {(
           <div
             style={{
               margin: '10px 10px 4px',
@@ -11112,7 +11641,7 @@ function SOWDraftTab({
                     <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor(f.value) }}>{f.value}%</span>
                   </div>
                 ))}
-                {!isReadOnly && (
+                {(isPMO || isReviewer || isContributor) && !isReadOnly && (
                 <button
                   type="button"
                   onClick={() => openAIReview('summary')}
@@ -11170,6 +11699,7 @@ function SOWDraftTab({
               >
                 Sections
               </span>
+              {canManageSections && (
               <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                 <button
                   type="button"
@@ -11212,6 +11742,7 @@ function SOWDraftTab({
                   </div>
                 )}
               </div>
+              )}
             </div>
           </div>
 
@@ -11231,7 +11762,7 @@ function SOWDraftTab({
                   key={idx}
                   onMouseEnter={() => setHoveredTocIdx(idx)}
                   onMouseLeave={() => setHoveredTocIdx(null)}
-                  draggable={!isContributor && !isReviewer && !isReadOnly}
+                  draggable={canManageSections}
                   onDragStart={() => setDragTocIdx(idx)}
                   onDragEnd={() => {
                     setDragTocIdx(null)
@@ -11288,7 +11819,7 @@ function SOWDraftTab({
                       style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}
                     >
                       {/* Drag handle — PMO only, only appears on hover */}
-                      {!isContributor && !isReviewer && !isReadOnly && hoveredTocIdx === idx && (
+                      {canManageSections && hoveredTocIdx === idx && (
                         <svg
                           width="10" height="14" viewBox="0 0 10 14" fill="none"
                           style={{ flexShrink: 0, opacity: 0.6, cursor: 'grab', transition: 'opacity 0.15s' }}
@@ -11421,7 +11952,7 @@ function SOWDraftTab({
                     )}
 
                     {/* ⋯ menu */}
-                    {!isContributor && !isReviewer && !isReadOnly && (hoveredTocIdx === idx || openMenuIdx === idx) && (
+                    {!isReadOnly && (hoveredTocIdx === idx || openMenuIdx === idx) && (
                       <div style={{ position: 'relative' }}>
                         <button
                           onClick={(e) => {
@@ -11468,6 +11999,7 @@ function SOWDraftTab({
                             >
                               <div style={{ padding: '8px 12px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Section Deadline</span>
+                                {isPMO ? (
                                 <input
                                   type="date"
                                   min={new Date().toISOString().split('T')[0]}
@@ -11488,8 +12020,45 @@ function SOWDraftTab({
                                     outline: 'none',
                                   }}
                                 />
+                                ) : (
+                                  <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
+                                    {secDeadline
+                                      ? new Date(secDeadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                      : 'Not set'}
+                                  </span>
+                                )}
                               </div>
-                              {!isApproved && (
+                              {canManageSections && (
+                                <>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setRenameTarget({ idx, value: item.title })
+                                      setOpenMenuIdx(null)
+                                    }}
+                                  style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '9px 12px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    cursor: 'pointer',
+                                    fontSize: 13,
+                                    color: '#374151',
+                                    textAlign: 'left',
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                  >
+                                    <Edit2 size={16} color="#00a0a0" />
+                                    Rename Section
+                                  </button>
+                                </>
+                              )}
+                              {!isApproved && canManageSections && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -11521,7 +12090,7 @@ function SOWDraftTab({
                                   Assign Contributors
                                 </button>
                               )}
-                              {!isApproved && (
+                              {!isApproved && canManageSections && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -11564,7 +12133,7 @@ function SOWDraftTab({
                                   Approve
                                 </button>
                               )}
-                              {!isRejected && (
+                              {!isRejected && canManageSections && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -11608,6 +12177,34 @@ function SOWDraftTab({
                                   Rework Required
                                 </button>
                               )}
+                              {canManageSections && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setDeleteTarget(idx)
+                                      setOpenMenuIdx(null)
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 10,
+                                      padding: '9px 12px',
+                                      background: 'transparent',
+                                      border: 'none',
+                                      borderRadius: 4,
+                                      cursor: 'pointer',
+                                      fontSize: 13,
+                                      color: '#ef4444',
+                                      textAlign: 'left',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                  >
+                                    <Trash2 size={16} color="#ef4444" />
+                                    Delete Section
+                                  </button>
+                              )}
                             </div>
                           </>
                         )}
@@ -11632,7 +12229,7 @@ function SOWDraftTab({
           }}
         >
           {/* Toolbar */}
-          {isContributor || isReviewer ? (
+          {!showFormattingToolbar ? (
             <div
               style={{
                 flexShrink: 0,
@@ -11650,43 +12247,10 @@ function SOWDraftTab({
                   SOW Draft {isReviewer ? 'Review' : ''}
                 </span>
                 <span style={{ fontSize: 12, color: '#64748b' }}>
-                  • You can add comments to the draft for PMO review
+                  • {canEditAssigned ? 'You can edit the sections assigned to you and add comments' : 'You can add comments to the draft'}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {/* AI Review & Summary for Reviewer */}
-                {isReviewer && !isReadOnly && (
-                  <button
-                    type="button"
-                    onClick={() => openAIReview('thinking')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 14px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: '#00C4C4',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#ffffff',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 2px 8px rgba(0,196,196,0.3)',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
-                    }}
-                    onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
-                    }}
-                    title="AI Document Review & Verdict"
-                  >
-                    <Sparkles size={13} color="#ffffff" />
-                    {hasRunAICheck ? 'Rerun AI Check' : 'AI Review & Summary'}
-                  </button>
-                )}
               </div>
             </div>
           ) : (
@@ -12359,7 +12923,7 @@ function SOWDraftTab({
           </div>
 
           {/* Unreviewed edits notice */}
-          {hasUnreviewedEdits && !isContributor && !isReviewer && !isClient && !isReadOnly && (
+          {hasUnreviewedEdits && (isPMO || isReviewer || isContributor) && !isReadOnly && (
             <div
               style={{
                 flexShrink: 0,
@@ -12394,7 +12958,7 @@ function SOWDraftTab({
                   Your edits may affect other sections
                 </div>
                 <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 1 }}>
-                  Rerun the AI summary check to see the impact of these edits on the rest of the document.
+                  Run the AI summary check to see the impact of these edits on the rest of the document.
                 </div>
               </div>
             </div>
@@ -12416,6 +12980,44 @@ function SOWDraftTab({
               }}
             >
               <style>{`
+                .sow-viewonly-chip {
+                  position: relative;
+                  display: inline-flex;
+                  align-items: center;
+                  font-size: 11px;
+                  font-weight: 600;
+                  color: #64748b;
+                  background: #f1f5f9;
+                  border: 1px solid #e2e8f0;
+                  border-radius: 20px;
+                  padding: 2px 10px;
+                  cursor: help;
+                  user-select: none;
+                  white-space: nowrap;
+                  flex-shrink: 0;
+                }
+                .sow-viewonly-chip:hover::after {
+                  content: attr(data-tip);
+                  position: absolute;
+                  top: calc(100% + 8px);
+                  left: 0;
+                  z-index: 50;
+                  width: 250px;
+                  background: #0d212c;
+                  color: #ffffff;
+                  font-size: 11.5px;
+                  font-weight: 500;
+                  line-height: 1.5;
+                  padding: 8px 12px;
+                  border-radius: 8px;
+                  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+                  white-space: normal;
+                  pointer-events: none;
+                }
+                .sow-editor-scroll-area [contenteditable]:focus,
+                .sow-editor-scroll-area [contenteditable]:focus-visible {
+                  outline: none !important;
+                }
                 .sow-section.sow-ai-suggest-highlight {
                   background: rgba(0,196,196,0.08);
                   box-shadow: 0 0 0 2px rgba(0,196,196,0.45);
@@ -12537,13 +13139,14 @@ function SOWDraftTab({
             >
               <div
                 ref={editorRef}
-                contentEditable={!isContributor && !isReviewer && !isReadOnly}
+                contentEditable={canEditAll}
                 suppressContentEditableWarning
                 onInput={() => {
-                  if (!isContributor && !isReviewer) {
+                  if (canEditAny) {
                     updateFormats()
                     setHasUnsaved(true)
-                    setHasUnreviewedEdits(true)
+                    if (isPMO || isReviewer || isContributor) setHasUnreviewedEdits(true)
+                    ensureSectionBodies()
                   }
                 }}
                 onKeyUp={updateFormats}
@@ -12661,7 +13264,7 @@ function SOWDraftTab({
                     }}
                   />
 
-                  {!isContributor && !isReviewer && (
+                  {isPMO && (
                     <div style={{ marginBottom: 10 }}>
                       <select
                         value={newCommentAssignee}
@@ -13410,7 +14013,7 @@ function SOWDraftTab({
         )}
 
         {/* Center Floating FAB: AI Review & Summary */}
-        {!isAdmin && !isContributor && !isClient && !isReadOnly && !isDraftGenerating && (
+        {(isPMO || isReviewer || isContributor) && !isReadOnly && !isDraftGenerating && (
           <button
             type="button"
             onClick={() => openAIReview('thinking')}
@@ -13449,7 +14052,7 @@ function SOWDraftTab({
             title="AI Document Review & Verdict"
           >
             <Sparkles size={16} color="#ffffff" />
-            <span>{hasRunAICheck ? 'Rerun AI Check' : 'AI Review & Summary'}</span>
+            <span>Run AI review &amp; summary</span>
           </button>
         )}
           </div>
@@ -13577,107 +14180,99 @@ function SOWDraftTab({
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(13,33,44,0.4)',
-            backdropFilter: 'blur(4px)',
+            zIndex: 99999,
+            background: 'rgba(0,0,0,0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000,
           }}
-          onClick={() => setRejectPopupIdx(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setRejectPopupIdx(null)
+              setApprovalComment('')
+            }
+          }}
         >
           <div
             style={{
-              background: '#fff',
-              borderRadius: 14,
-              width: 400,
-              boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-              overflow: 'hidden',
+              background: '#ffffff',
+              borderRadius: 24,
+              padding: '32px 24px',
+              width: 550,
+              maxWidth: '90vw',
+              position: 'relative',
+              textAlign: 'center',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
             }}
-            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              style={{ padding: '22px 28px 18px', borderBottom: '1px solid rgba(239,68,68,0.15)' }}
+            <button
+              onClick={() => {
+                setRejectPopupIdx(null)
+                setApprovalComment('')
+              }}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
             >
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Rework Required</div>
-              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
-                &quot;{tocItems[rejectPopupIdx]?.title}&quot;
-              </div>
-            </div>
-            <div style={{ padding: '18px 28px' }}>
-              <label
-                style={{
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  color: '#374151',
-                  display: 'block',
-                  marginBottom: 6,
-                }}
-              >
-                Feedback for rework
-              </label>
-              <textarea
-                value={approvalComment}
-                onChange={(e) => setApprovalComment(e.target.value)}
-                placeholder="Please clarify the scope boundaries and update…"
-                style={{
-                  width: '100%',
-                  minHeight: 80,
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  border: '1px solid rgba(239,68,68,0.25)',
-                  fontSize: 13,
-                  resize: 'none',
-                  outline: 'none',
-                  fontFamily: 'inherit',
-                }}
-              />
-            </div>
+              <X size={20} />
+            </button>
             <div
               style={{
-                padding: '12px 28px 20px',
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: '#fef2f2',
                 display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 10,
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
               }}
             >
+              <RotateCcw size={28} color="#ef4444" />
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Rework Required</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24 }}>
+              &quot;{tocItems[rejectPopupIdx]?.title}&quot;
+            </div>
+            <div style={{ textAlign: 'left', marginBottom: 6, fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+              Feedback for rework
+            </div>
+            <textarea
+              value={approvalComment}
+              onChange={(e) => setApprovalComment(e.target.value)}
+              placeholder="Please clarify the scope boundaries and update..."
+              rows={3}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: '1px solid #e2e8f0',
+                fontSize: 13,
+                marginBottom: 24,
+                outline: 'none',
+                color: '#0d212c',
+                resize: 'none',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 12 }}>
               <button
                 onClick={() => {
                   setRejectPopupIdx(null)
                   setApprovalComment('')
                 }}
-                style={{
-                  padding: '8px 18px',
-                  background: 'transparent',
-                  border: '1px solid rgba(0,196,196,0.25)',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 500,
-                }}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 Cancel
               </button>
               <button
                 onClick={() => {
                   setTocItems((prev) =>
-                    prev.map((t, i) =>
-                      i === rejectPopupIdx ? { ...t, status: 'Rejected' as const } : t
-                    )
+                    prev.map((t, i) => (i === rejectPopupIdx ? { ...t, status: 'Rejected' as const } : t))
                   )
                   setRejectPopupIdx(null)
                   setApprovalComment('')
                 }}
-                style={{
-                  padding: '8px 18px',
-                  background: '#ef4444',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: '#fff',
-                }}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#E60000', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 Send for Rework
               </button>
@@ -13715,8 +14310,18 @@ function SOWDraftTab({
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              style={{ padding: '22px 28px 16px', borderBottom: '1px solid rgba(0,196,196,0.12)' }}
+              style={{ padding: '22px 28px 16px', borderBottom: '1px solid rgba(0,196,196,0.12)', position: 'relative' }}
             >
+              <button
+                onClick={() => {
+                  setAddReviewerIdx(null)
+                  setReviewerSearch('')
+                }}
+                style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}
+                title="Close"
+              >
+                <X size={18} />
+              </button>
               <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Assign Contributors</div>
               <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
                 &quot;{tocItems[addReviewerIdx]?.title}&quot;
@@ -13775,7 +14380,10 @@ function SOWDraftTab({
                     >
                       {isChecked && <Check size={12} color="#ffffff" strokeWidth={3} />}
                     </div>
-                    <span>{name}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                      <span style={{ fontWeight: 600, color: '#0d212c' }}>{name}</span>
+                      <span style={{ fontSize: 11.5, color: '#64748b' }}>{memberEmailByName(name)}</span>
+                    </div>
                   </div>
                 )
               })}
@@ -14431,8 +15039,15 @@ export function SOWDetailScreen({
   const isDeactivated = isDeactivatedProp || activeSOWStatus === 'Deactivated' || sowStatus === 'Deactivated'
   // Deactivated SOWs and the Admin profile are view-only everywhere
   const isViewOnly = isDeactivated || viewerRole === 'admin'
-  const [activeViewerRole, setActiveViewerRole] = useState<'pmo' | 'contributor' | 'reviewer'>(
-    initialActiveRole ?? (viewerRole === 'contributor' ? 'contributor' : viewerRole === 'reviewer' ? 'reviewer' : 'pmo')
+  const [activeViewerRole, setActiveViewerRole] = useState<'pmo' | 'contributor' | 'reviewer' | 'client'>(
+    initialActiveRole ??
+      (viewerRole === 'contributor'
+        ? 'contributor'
+        : viewerRole === 'reviewer'
+        ? 'reviewer'
+        : viewerRole === 'client'
+        ? 'client'
+        : 'pmo')
   )
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false)
   const [currentSowName, setCurrentSowName] = useState(sowName)
@@ -14462,7 +15077,13 @@ export function SOWDetailScreen({
   const isContributor = effectiveViewerRole === 'contributor'
   const isReviewer = effectiveViewerRole === 'reviewer'
   const effectiveMemberId =
-    viewerRole === 'pmo' && (activeViewerRole === 'contributor' || activeViewerRole === 'reviewer') ? 'm1' : currentMemberId
+    viewerRole === 'pmo'
+      ? activeViewerRole === 'contributor'
+        ? 'm5'
+        : activeViewerRole === 'reviewer'
+        ? 'm4'
+        : currentMemberId
+      : currentMemberId
 
   const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const { showToast } = useToast()
@@ -14492,7 +15113,42 @@ export function SOWDetailScreen({
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSentForReview, setIsSentForReview] = useState(false)
   const [showSendForApprovalConfirm, setShowSendForApprovalConfirm] = useState(false)
-  const isClient = viewerRole === 'client'
+  const isClient = effectiveViewerRole === 'client'
+  const isPMORole = effectiveViewerRole === 'pmo'
+  const isAdminRole = effectiveViewerRole === 'admin'
+  const [sendApprovalTipPos, setSendApprovalTipPos] = useState<{ top: number; right: number } | null>(null)
+  // Once the draft has been generated, Context and Planning become view-only for everyone
+  const contentFrozen = isViewOnly || isDraftUnlocked
+  // After a non-PMO role sends the SOW for approval, nothing is editable for them any more
+  const sentLock = isSentForReview && !isPMORole
+  const baseSections =
+    sowVariant === 'meridian' ? MERIDIAN_SECTIONS : sowVariant === 'v2' ? V2_SECTIONS : INITIAL_SECTIONS
+  // Contributors always get their sections, whichever SOW they open
+  const sourceSectionsForRole = React.useMemo(
+    () =>
+      isContributor
+        ? baseSections.map((sec) => ({
+            ...sec,
+            assignedMembers: Array.from(new Set([...sec.assignedMembers, effectiveMemberId])),
+          }))
+        : baseSections,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isContributor, effectiveMemberId, sowVariant]
+  )
+  // Keep Planning answers when switching tabs
+  const [savedSections, setSavedSections] = useState<SOWSection[] | null>(null)
+  // Contributors can edit only the first two sections of the draft
+  const assignedSectionTitles = isContributor ? ['Background', 'Executive Summary'] : []
+  const canGenerateDraft = (isPMORole && showGenerateDraft) || isReviewer || isContributor || isClient
+  const showSendForApproval =
+    (isContributor && (activeTab === 'structure' || (activeTab === 'sow-draft' && assignedSectionTitles.length > 0))) ||
+    (isReviewer && activeTab === 'sow-draft') ||
+    (isClient && activeTab === 'structure')
+  const sendDisabled =
+    isSentForReview ||
+    (activeTab === 'structure' && (completionScore === 0 || isDraftUnlocked))
+  // Secondary while the draft is still to be generated, primary afterwards
+  const sendIsPrimary = isDraftUnlocked || activeTab === 'sow-draft'
 
   const showInviteToast = () => {
     showToast('Participants invited successfully!', 'success')
@@ -14517,7 +15173,7 @@ export function SOWDetailScreen({
     showToast('SOW sent for review successfully!', 'success')
   }
 
-  const tabs = buildTabs(isStructureUnlocked || isDeactivated, isDraftUnlocked || isDeactivated)
+  const tabs = buildTabs(isStructureUnlocked || isDeactivated, isDraftUnlocked || isDeactivated || isAdminRole)
 
   const [isFormDirty, setIsFormDirty] = useState(false)
   const [showOverrideConfirm, setShowOverrideConfirm] = useState(false)
@@ -14717,231 +15373,19 @@ export function SOWDetailScreen({
                 >
                   {tab.label}
                   {tab.locked && <LockIcon />}
+                  {!tab.locked && isDraftUnlocked && (tab.id === 'form' || tab.id === 'structure') && (
+                    <span title="Locked after the draft was generated — view only" style={{ display: 'inline-flex' }}>
+                      <LockIcon />
+                    </span>
+                  )}
                 </button>
               )
             })}
             {/* CTA pinned to the right of the tab strip */}
             <div style={{ marginLeft: 'auto', paddingRight: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
               <div ref={setDraftHeaderSlot} style={{ display: 'flex', alignItems: 'center' }} />
-              {isReviewer ? (
-                activeTab === 'structure' ? (
-                  draftGenState === 'generating' || draftGenState === 'shimmer' ? (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '6px 14px',
-                        borderRadius: 8,
-                        border: '1.5px solid rgba(0,196,196,0.2)',
-                        background: 'rgba(0,196,196,0.05)',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: '#94a3b8',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="9" stroke="#00C4C4" strokeWidth="2" strokeDasharray="40 20">
-                          <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
-                        </circle>
-                      </svg>
-                      Generating…
-                    </div>
-                  ) : draftGenState === 'ready' ? null : (
-                    <button
-                      onClick={handleGenerateDraft}
-                      disabled={isViewOnly || completionScore < 80}
-                      title={isViewOnly ? 'Document is deactivated' : completionScore < 80 ? 'Completion must be at least 80% to generate draft' : 'Generate Draft'}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '6px 14px',
-                        borderRadius: 8,
-                        border: 'none',
-                        background: (isViewOnly || completionScore < 80) ? '#cbd5e1' : '#00C4C4',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: (isViewOnly || completionScore < 80) ? '#64748b' : '#ffffff',
-                        cursor: (isViewOnly || completionScore < 80) ? 'not-allowed' : 'pointer',
-                        whiteSpace: 'nowrap',
-                        boxShadow: (isViewOnly || completionScore < 80) ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
-                        transition: 'all 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => { if (completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8' }}
-                      onMouseLeave={(e) => { if (completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4' }}
-                    >
-                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <line x1="16" y1="13" x2="8" y2="13" />
-                        <line x1="16" y1="17" x2="8" y2="17" />
-                      </svg>
-                      Generate Draft
-                    </button>
-                  )
-                ) : null
-              ) : isContributor ? (
-                activeTab === 'structure' ? (
-                  draftGenState === 'generating' || draftGenState === 'shimmer' ? (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '6px 14px',
-                        borderRadius: 8,
-                        border: '1.5px solid rgba(0,196,196,0.2)',
-                        background: 'rgba(0,196,196,0.05)',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: '#94a3b8',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="9"
-                          stroke="#00C4C4"
-                          strokeWidth="2"
-                          strokeDasharray="40 20"
-                        >
-                          <animateTransform
-                            attributeName="transform"
-                            type="rotate"
-                            from="0 12 12"
-                            to="360 12 12"
-                            dur="1s"
-                            repeatCount="indefinite"
-                          />
-                        </circle>
-                      </svg>
-                      Generating…
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {/* Send for Review / Send for Approval (Secondary) */}
-                      <button
-                        onClick={() => {
-                          if (isViewOnly) return
-                          if (isContributor || isReviewer || isClient) {
-                            setShowSendForApprovalConfirm(true)
-                          } else {
-                            setIsSentForReview(true)
-                            setIsDraftUnlocked(true)
-                            showToast('SOW sent for review successfully!', 'success')
-                          }
-                        }}
-                        disabled={isViewOnly || completionScore === 0}
-                        title={
-                          completionScore === 0
-                            ? 'At least one question must be answered before sending'
-                            : isContributor || isReviewer || isClient
-                            ? 'Send for Approval'
-                            : 'Send for review'
-                        }
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '6px 14px',
-                          borderRadius: 8,
-                          border:
-                            completionScore === 0
-                              ? '1.5px solid #e2e8f0'
-                              : '1.5px solid rgba(0,196,196,0.5)',
-                          background: completionScore === 0 ? '#f8fafc' : 'rgba(0,196,196,0.12)',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: completionScore === 0 ? '#94a3b8' : '#007a7a',
-                          cursor: completionScore === 0 ? 'not-allowed' : 'pointer',
-                          opacity: completionScore === 0 ? 0.6 : 1,
-                          whiteSpace: 'nowrap',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (completionScore > 0) {
-                            ;(e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (completionScore > 0) {
-                            ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)'
-                          }
-                        }}
-                      >
-                        <svg
-                          width="13"
-                          height="13"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M22 2L11 13" />
-                          <path d="M22 2L15 22 11 13 2 9l20-7z" />
-                        </svg>
-                        {isContributor || isReviewer || isClient ? 'Send for Approval' : 'Send for Review'}
-                      </button>
-
-                      {/* Generate Draft (Primary) */}
-                      <button
-                        onClick={handleGenerateDraft}
-                        disabled={isViewOnly || completionScore < 80}
-                        title={isViewOnly ? "Document is deactivated" : completionScore < 80 ? "Completion must be at least 80% to generate draft" : "Generate Draft"}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '6px 14px',
-                          borderRadius: 8,
-                          border: 'none',
-                          background: (isViewOnly || completionScore < 80) ? '#cbd5e1' : '#00C4C4',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: (isViewOnly || completionScore < 80) ? '#64748b' : '#ffffff',
-                          cursor: (isViewOnly || completionScore < 80) ? 'not-allowed' : 'pointer',
-                          whiteSpace: 'nowrap',
-                          boxShadow: (isViewOnly || completionScore < 80) ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (completionScore >= 80) {
-                            ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (completionScore >= 80) {
-                            ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
-                          }
-                        }}
-                      >
-                        <svg
-                          width="13"
-                          height="13"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                          <line x1="16" y1="13" x2="8" y2="13" />
-                          <line x1="16" y1="17" x2="8" y2="17" />
-                        </svg>
-                        Generate Draft
-                      </button>
-                    </div>
-                  )
-                ) : null
-              ) : activeTab === 'form' && isFormReady ? (
+              {/* Context tab actions — PMO only, until the draft is generated */}
+              {activeTab === 'form' && isFormReady && isPMORole && !contentFrozen && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {formVersions.length > 1 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -15024,95 +15468,130 @@ export function SOWDetailScreen({
                     </button>
                   )}
                 </div>
-              ) : showGenerateDraft ? (
-                draftGenState === 'ready' ? null : draftGenState === 'generating' || draftGenState === 'shimmer' ? (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 14px',
-                      borderRadius: 8,
-                      border: '1.5px solid rgba(0,196,196,0.2)',
-                      background: 'rgba(0,196,196,0.05)',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#94a3b8',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="9"
-                        stroke="#00C4C4"
-                        strokeWidth="2"
-                        strokeDasharray="40 20"
-                      >
-                        <animateTransform
-                          attributeName="transform"
-                          type="rotate"
-                          from="0 12 12"
-                          to="360 12 12"
-                          dur="1s"
-                          repeatCount="indefinite"
-                        />
-                      </circle>
-                    </svg>
-                    Generating…
-                  </div>
-                ) : activeTab !== 'structure' ? null : (
+              )}
+              {/* Planning tab — generate the draft */}
+              {activeTab === 'structure' && canGenerateDraft && (draftGenState === 'generating' || draftGenState === 'shimmer') && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    border: '1.5px solid rgba(0,196,196,0.2)',
+                    background: 'rgba(0,196,196,0.05)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: '#94a3b8',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="9" stroke="#00C4C4" strokeWidth="2" strokeDasharray="40 20">
+                      <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                    </circle>
+                  </svg>
+                  Generating…
+                </div>
+              )}
+              {activeTab === 'structure' && canGenerateDraft && draftGenState === 'idle' && !isDraftUnlocked && (
+                <button
+                  onClick={handleGenerateDraft}
+                  disabled={isViewOnly || completionScore < 80}
+                  title={isViewOnly ? 'This SOW is view only' : completionScore < 80 ? 'Completion must be at least 80% to generate draft' : 'Generate Draft'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: isViewOnly || completionScore < 80 ? '#cbd5e1' : '#00C4C4',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: isViewOnly || completionScore < 80 ? '#64748b' : '#ffffff',
+                    cursor: isViewOnly || completionScore < 80 ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap',
+                    boxShadow: isViewOnly || completionScore < 80 ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => { if (!isViewOnly && completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8' }}
+                  onMouseLeave={(e) => { if (!isViewOnly && completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4' }}
+                >
+                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                  Generate Draft
+                </button>
+              )}
+              {/* Send for approval — Contributor, Reviewer and Client */}
+              {!isViewOnly && showSendForApproval && draftGenState !== 'generating' && draftGenState !== 'shimmer' && (
+                <div
+                  style={{ position: 'relative', display: 'inline-flex' }}
+                  onMouseEnter={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect()
+                    setSendApprovalTipPos({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) })
+                  }}
+                  onMouseLeave={() => setSendApprovalTipPos(null)}
+                  title={activeTab === 'structure' && isDraftUnlocked && !isSentForReview ? 'Planning is locked after the draft is generated' : undefined}
+                >
                   <button
-                    onClick={handleGenerateDraft}
-                    disabled={isViewOnly || completionScore < 80}
-                    title={isViewOnly ? "Document is deactivated" : completionScore >= 80 ? "Generate Draft" : "Complete at least 80% to generate draft"}
+                    onClick={() => {
+                      if (sendDisabled) return
+                      setShowSendForApprovalConfirm(true)
+                    }}
+                    disabled={sendDisabled}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
                       padding: '6px 14px',
                       borderRadius: 8,
-                      border: 'none',
-                      background: (!isViewOnly && completionScore >= 80) ? '#00C4C4' : '#cbd5e1',
+                      border: sendIsPrimary || sendDisabled ? 'none' : '1.5px solid rgba(0,196,196,0.5)',
+                      background: sendDisabled ? '#cbd5e1' : sendIsPrimary ? '#00C4C4' : 'rgba(0,196,196,0.12)',
                       fontSize: 12,
-                      fontWeight: 700,
-                      color: (!isViewOnly && completionScore >= 80) ? '#ffffff' : '#94a3b8',
-                      cursor: (!isViewOnly && completionScore >= 80) ? 'pointer' : 'not-allowed',
-                      boxShadow: (!isViewOnly && completionScore >= 80) ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
+                      fontWeight: sendIsPrimary ? 700 : 600,
+                      color: sendDisabled ? '#64748b' : sendIsPrimary ? '#ffffff' : '#007a7a',
+                      cursor: sendDisabled ? 'not-allowed' : 'pointer',
+                      boxShadow: sendDisabled || !sendIsPrimary ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
                       whiteSpace: 'nowrap',
                       transition: 'all 0.15s ease',
                     }}
-                    onMouseEnter={(e) => {
-                      if (completionScore >= 80) {
-                        ;(e.currentTarget as HTMLButtonElement).style.background = '#00a8a8'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (completionScore >= 80) {
-                        ;(e.currentTarget as HTMLButtonElement).style.background = '#00C4C4'
-                      }
-                    }}
                   >
-                    <svg
-                      width="13"
-                      height="13"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
+                    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <path d="M22 2L11 13" />
+                      <path d="M22 2L15 22 11 13 2 9l20-7z" />
                     </svg>
-                    Generate Draft
+                    {isSentForReview ? 'Sent for Approval' : 'Send for Approval'}
                   </button>
-                )
-              ) : null}
+                  {isContributor && sendApprovalTipPos && createPortal(
+                    <div
+                      style={{
+                        position: 'fixed',
+                        top: sendApprovalTipPos.top,
+                        right: sendApprovalTipPos.right,
+                        zIndex: 100000,
+                        background: '#0d212c',
+                        color: '#ffffff',
+                        fontSize: 11.5,
+                        fontWeight: 500,
+                        padding: '9px 12px',
+                        borderRadius: 8,
+                        width: 270,
+                        lineHeight: 1.5,
+                        boxShadow: '0 6px 18px rgba(0,0,0,0.25)',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      This button is enabled when the PMO or a reviewer has assigned a section to you. Edit your assigned sections in the draft, then use it to send your changes for approval.
+                    </div>,
+                    document.body
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -15158,7 +15637,7 @@ export function SOWDetailScreen({
               onSowDeadlineChange={setCurrentSowDeadline}
               tokenConsumption={currentTokenConsumption}
               onTokenConsumptionChange={setCurrentTokenConsumption}
-              isPMO={effectiveViewerRole === 'pmo' && !isViewOnly}
+              isPMO={isPMORole && !contentFrozen}
             />
           )}
           {activeTab === 'form' && (
@@ -15170,28 +15649,20 @@ export function SOWDetailScreen({
               skipLoading={isContributor || isStructureUnlocked}
               onDirtyChange={(dirty) => setIsFormDirty(dirty)}
               formVersions={formVersions}
-              isEditable={!isViewOnly && (isStructureUnlocked ? isFormEditable : !isContributor)}
+              isEditable={isPMORole && !contentFrozen && (isStructureUnlocked ? isFormEditable : true)}
             />
           )}
           {activeTab === 'structure' &&
             (isStructureUnlocked ? (
               <StructureTab
-                initialSections={
-                  sowVariant === 'meridian'
-                    ? MERIDIAN_SECTIONS
-                    : sowVariant === 'v2'
-                      ? INITIAL_SECTIONS_V2
-                      : INITIAL_SECTIONS
-                }
+                initialSections={savedSections ?? sourceSectionsForRole}
+                onSectionsChange={setSavedSections}
                 viewerRole={effectiveViewerRole}
                 currentMemberId={effectiveMemberId}
                 onScoreChange={setCompletionScore}
-                readOnly={isViewOnly}
+                readOnly={contentFrozen || sentLock}
                 onConsumeTokens={(n) => setConsumedTokens((prev) => prev + n)}
-                disableAnswer={
-                  isViewOnly ||
-                  (isContributor && isSentForReview)
-                }
+                disableAnswer={contentFrozen || sentLock}
                 hasPendingChanges={hasPendingStructureChanges}
                 onResolveChanges={(accept) => setHasPendingStructureChanges(false)}
                 onOpenParticipantsModal={() => setShowParticipantsModal(true)}
@@ -15204,7 +15675,7 @@ export function SOWDetailScreen({
               />
             ))}
           {activeTab === 'sow-draft' &&
-            (isDraftUnlocked ? (
+            (isDraftUnlocked || isAdminRole ? (
               draftGenState === 'shimmer' ? (
                 <ShimmerDraft />
               ) : (
@@ -15213,7 +15684,8 @@ export function SOWDetailScreen({
                   isContributor={isContributor}
                   isReviewer={isReviewer}
                   viewerRole={effectiveViewerRole}
-                  isReadOnly={isViewOnly}
+                  isReadOnly={isViewOnly || sentLock}
+                  assignedSectionTitles={assignedSectionTitles}
                   isDraftGenerating={draftGenState === 'generating'}
                   sowDeadline={sowDeadline || '2026-10-31'}
                   onOpenParticipantsModal={() => setShowParticipantsModal(true)}
@@ -15263,7 +15735,8 @@ export function SOWDetailScreen({
       {/* Reviewer & Participants Modal */}
       {(showReviewModal || showParticipantsModal) && (
         <ReviewerAndParticipantsModal
-          initialTab="reviewers"
+          canManage={isPMORole && !isViewOnly}
+          initialTab={isPMORole ? 'reviewers' : 'participants'}
           onClose={() => {
             setShowReviewModal(false)
             setShowParticipantsModal(false)
@@ -15350,7 +15823,9 @@ export function SOWDetailScreen({
               Send for Approval?
             </div>
             <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
-              Are you sure you want to send this for approval? After this you will not be able to make any edits.
+              {isReviewer
+                ? 'Sending this for approval confirms that you have completed all your changes. Once sent, nothing will be editable for you.'
+                : 'Are you sure you want to send this for approval? After this you will not be able to make any edits.'}
             </div>
 
             <div style={{ display: 'flex', gap: 12 }}>
@@ -15376,7 +15851,6 @@ export function SOWDetailScreen({
               <button
                 onClick={() => {
                   setIsSentForReview(true)
-                  setIsDraftUnlocked(true)
                   setShowSendForApprovalConfirm(false)
                   showToast('SOW sent for approval successfully!', 'success')
                 }}
@@ -15594,15 +16068,59 @@ function DeleteConfirmModal({
   )
 }
 
+function downloadClientQueueExcel(sections: SOWSection[]) {
+  const esc = (v: string) =>
+    v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const memberName = (id: string) => SECTION_MEMBERS.find((m) => m.id === id)?.name ?? id
+  const headers = ['Section', 'Type', 'Question / Assumption', 'Added to queue by', 'Assigned to', 'Response']
+  const rows = sections.flatMap((sec) =>
+    sec.items
+      .filter((it) => it.inClientQueue)
+      .map((it) => {
+        const ids = Array.isArray(it.assignedTo) ? it.assignedTo : it.assignedTo ? [it.assignedTo] : []
+        return [
+          sec.title,
+          it.type === 'question' ? 'Question' : 'Assumption',
+          it.text,
+          it.queuedBy ?? 'Ashika Jain (PMO)',
+          ids.map(memberName).join(', ') || 'Unassigned',
+          it.response ?? '',
+        ]
+      })
+  )
+  const cell = (v: string) => `<Cell><Data ss:Type="String">${esc(v)}</Data></Cell>`
+  const xml =
+    `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>` +
+    `<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">` +
+    `<Worksheet ss:Name="Client Queue"><Table>` +
+    `<Row>${headers.map(cell).join('')}</Row>` +
+    rows.map((r) => `<Row>${r.map(cell).join('')}</Row>`).join('') +
+    `</Table></Worksheet></Workbook>`
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'Client_Queue.xls'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 function ClientQueueModal({
   sections,
   onRemoveFromQueue,
   onClose,
+  readOnly = false,
+  removeOnly = false,
 }: {
   sections: SOWSection[]
   onRemoveFromQueue: (id: string) => void
   onClose: () => void
+  readOnly?: boolean
+  removeOnly?: boolean
 }) {
+  const canAssign = !readOnly && !removeOnly
   const { showToast } = useToast()
   const defaultClients = [
     'client.reviewer@m42.ae',
@@ -15680,11 +16198,19 @@ function ClientQueueModal({
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
         </button>
         <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue</div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Select questions and assumptions with the checkboxes to assign them to designated clients.</div>
+        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+          {readOnly
+            ? 'Questions and assumptions currently in the client queue.'
+            : removeOnly
+            ? 'Questions and assumptions currently in the client queue. You can remove items from it.'
+            : 'Select questions and assumptions with the checkboxes to assign them to designated clients.'}
+        </div>
         
         {/* Horizontal Line Separator below title & subtitle */}
         <div style={{ height: 1, background: '#f1f5f9', marginBottom: 18 }} />
 
+        {canAssign && (
+        <>
         {/* Custom Dropdown: Assign To Client (Light Theme + Add Client Inside) */}
         <div style={{ marginBottom: 18 }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
@@ -15872,9 +16398,11 @@ function ClientQueueModal({
             </div>
           )}
         </div>
+        </>
+        )}
 
         {/* Selection Subheader */}
-        {allQueueItems.length > 0 && (
+        {canAssign && allQueueItems.length > 0 && (
           <div
             style={{
               display: 'flex',
@@ -15885,52 +16413,63 @@ function ClientQueueModal({
               marginBottom: 10,
             }}
           >
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                cursor: 'pointer',
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: '#334155',
-                userSelect: 'none',
-              }}
-              onClick={() => {
-                if (allQueueSelected) setSelectedQueueItemIds(new Set())
-                else setSelectedQueueItemIds(new Set(allQueueItems.map((i) => i.id)))
-              }}
-            >
-              <div
+            {canAssign ? (
+              <label
                 style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: 4,
-                  border: allQueueSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
-                  background: allQueueSelected ? '#00C4C4' : '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  gap: 8,
                   cursor: 'pointer',
-                  transition: 'all 0.12s ease',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: '#334155',
+                  userSelect: 'none',
+                }}
+                onClick={() => {
+                  if (allQueueSelected) setSelectedQueueItemIds(new Set())
+                  else setSelectedQueueItemIds(new Set(allQueueItems.map((i) => i.id)))
                 }}
               >
-                {allQueueSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
-              </div>
-              Select all items to assign
-            </label>
-            <span
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 4,
+                    border: allQueueSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                    background: allQueueSelected ? '#00C4C4' : '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.12s ease',
+                  }}
+                >
+                  {allQueueSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
+                </div>
+                Select all items to assign
+              </label>
+            ) : (
+              <span />
+            )}
+            <button
+              type="button"
+              onClick={() => downloadClientQueueExcel(sections)}
               style={{
-                fontSize: 11.5,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                fontSize: 12.5,
                 fontWeight: 600,
-                color: '#00a0a0',
-                background: 'rgba(0,196,196,0.1)',
-                padding: '2px 8px',
-                borderRadius: 12,
+                color: '#00C4C4',
+                cursor: 'pointer',
               }}
             >
-              {selectedQueueItemIds.size} of {allQueueItems.length} selected
-            </span>
+              <Download size={14} color="#00C4C4" />
+              Download Excel
+            </button>
           </div>
         )}
 
@@ -15953,11 +16492,13 @@ function ClientQueueModal({
                        label={it.type === 'question' ? 'Question' : 'Assumption'}
                        isSelected={selectedQueueItemIds.has(it.id)}
                        hasAnySelected={selectedQueueItemIds.size > 0}
-                       showCheckboxAlways={true}
+                       showCheckboxAlways={canAssign}
                        onToggle={() => toggleSelectItem(it.id)}
                        disableAnswer={true}
                        hideAssigneesAndQueue={true}
-                       canEdit={true}
+                       canEdit={!readOnly}
+                       hideTrace
+                       queuedByLabel={it.queuedBy ?? 'Ashika Jain (PMO)'}
                        onDelete={() => onRemoveFromQueue(it.id)}
                      />
                    ))}
@@ -15969,40 +16510,68 @@ function ClientQueueModal({
         {(() => {
           const isAssignDisabled = allQueueItems.length === 0 || selectedQueueItemIds.size === 0
           return (
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button
-                onClick={onClose}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: 12,
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  color: '#0d212c',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendInvite}
-                disabled={isAssignDisabled}
-                style={{
-                  padding: '12px 28px',
-                  borderRadius: 12,
-                  background: isAssignDisabled ? '#cbd5e1' : '#00C4C4',
-                  border: 'none',
-                  color: isAssignDisabled ? '#64748b' : '#fff',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: isAssignDisabled ? 'not-allowed' : 'pointer',
-                  boxShadow: isAssignDisabled ? 'none' : '0 8px 20px rgba(0,196,196,0.25)',
-                  opacity: isAssignDisabled ? 0.65 : 1,
-                }}
-              >
-                Assign
-              </button>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={onClose}
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: 12,
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    color: '#0d212c',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {canAssign ? 'Cancel' : 'Close'}
+                </button>
+                {!canAssign && (
+                  <button
+                    type="button"
+                    disabled={allQueueItems.length === 0}
+                    onClick={() => downloadClientQueueExcel(sections)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '12px 24px',
+                      borderRadius: 12,
+                      background: allQueueItems.length === 0 ? '#cbd5e1' : '#00C4C4',
+                      border: 'none',
+                      color: allQueueItems.length === 0 ? '#64748b' : '#ffffff',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: allQueueItems.length === 0 ? 'not-allowed' : 'pointer',
+                      boxShadow: allQueueItems.length === 0 ? 'none' : '0 8px 20px rgba(0,196,196,0.25)',
+                    }}
+                  >
+                    <Download size={15} color={allQueueItems.length === 0 ? '#64748b' : '#ffffff'} />
+                    Download Excel
+                  </button>
+                )}
+                {canAssign && (
+                  <button
+                    onClick={handleSendInvite}
+                    disabled={isAssignDisabled}
+                    style={{
+                      padding: '12px 28px',
+                      borderRadius: 12,
+                      background: isAssignDisabled ? '#cbd5e1' : '#00C4C4',
+                      border: 'none',
+                      color: isAssignDisabled ? '#64748b' : '#fff',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: isAssignDisabled ? 'not-allowed' : 'pointer',
+                      boxShadow: isAssignDisabled ? 'none' : '0 8px 20px rgba(0,196,196,0.25)',
+                      opacity: isAssignDisabled ? 0.65 : 1,
+                    }}
+                  >
+                    Assign
+                  </button>
+                )}
+              </div>
             </div>
           )
         })()}
@@ -16011,119 +16580,3 @@ function ClientQueueModal({
   )
 }
 
-function FeedbackModal({
-  type = 'positive',
-  onClose,
-  onSubmit
-}: {
-  type?: 'positive' | 'negative'
-  onClose: () => void
-  onSubmit: (text: string) => void
-}) {
-  const [feedback, setFeedback] = useState('')
-  const isPositive = type === 'positive'
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 99999,
-        background: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 24,
-          padding: '32px 24px',
-          width: 420,
-          maxWidth: '90vw',
-          position: 'relative',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: 16,
-            right: 16,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#94a3b8',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>
-          Provide Feedback
-        </div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-          {isPositive
-            ? 'What went well with these generated items?'
-            : 'How can we improve these generated items?'}
-        </div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span>Feedback</span>
-          {!isPositive && <span style={{ color: '#ef4444', fontWeight: 700 }}>*</span>}
-        </div>
-        <textarea
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          placeholder={isPositive ? 'Share your feedback...' : 'Tell us what went wrong...'}
-          rows={4}
-          style={{
-            width: '100%',
-            padding: '10px 14px',
-            borderRadius: 8,
-            border: '1px solid #e2e8f0',
-            background: '#ffffff',
-            fontSize: 13,
-            outline: 'none',
-            color: '#0d212c',
-            resize: 'vertical',
-            marginBottom: 20,
-            transition: 'background-color 0.15s, border-color 0.15s',
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.backgroundColor = '#f8fafc'
-            e.currentTarget.style.borderColor = '#cbd5e1'
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.backgroundColor = '#ffffff'
-            e.currentTarget.style.borderColor = '#e2e8f0'
-          }}
-        />
-        <button
-          onClick={() => onSubmit(feedback)}
-          disabled={!isPositive && !feedback.trim()}
-          style={{
-            width: '100%',
-            padding: '12px',
-            borderRadius: 10,
-            background: (isPositive || feedback.trim()) ? '#00C4C4' : '#f1f5f9',
-            color: (isPositive || feedback.trim()) ? '#fff' : '#94a3b8',
-            border: 'none',
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: (isPositive || feedback.trim()) ? 'pointer' : 'not-allowed',
-            transition: 'all 0.15s',
-            boxShadow: (isPositive || feedback.trim()) ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
-          }}
-        >
-          Submit Feedback
-        </button>
-      </div>
-    </div>
-  )
-}

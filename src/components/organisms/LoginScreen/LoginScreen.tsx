@@ -13,6 +13,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { Fingerprint, Lock } from 'lucide-react'
 import { LoginScreenProps, LoginStep } from './LoginScreen.types'
 
 const REGISTERED_EMAILS = [
@@ -27,18 +28,18 @@ const REGISTERED_EMAILS = [
   'ajain@m42.ae',
 ]
 
-const VALID_OTP = '1234'
+const VALID_OTP = '123456'
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onLoginSuccess,
-  initialStep = 'email',
+  initialStep = 'choose',
   initialEmail = 'ashika.jain@company.com',
 }) => {
   const [step, setStep] = useState<LoginStep>(initialStep)
   const [email, setEmail] = useState<string>(initialEmail)
   const [emailError, setEmailError] = useState<string>('')
   
-  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', ''])
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', ''])
   const [otpError, setOtpError] = useState<string>('')
   
   const [timerSeconds, setTimerSeconds] = useState<number>(30)
@@ -76,11 +77,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     return true
   }
 
+  const handleSsoLogin = () => {
+    const ssoEmail = 'ashika.jain@company.com'
+    setEmail(ssoEmail)
+    setStep('loader')
+    setTimeout(() => {
+      setStep('success')
+      if (onLoginSuccess) {
+        onLoginSuccess(ssoEmail)
+      }
+    }, 1000)
+  }
+
   const handleSendOtp = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (validateEmail(email)) {
       setStep('otp')
-      setOtpDigits(['', '', '', ''])
+      setOtpDigits(['', '', '', '', '', ''])
       setOtpError('')
       setTimerSeconds(30)
       setTimerActive(true)
@@ -93,13 +106,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     
     if (digitsOnly.length > 1) {
       const newDigits = [...otpDigits]
-      const pasted = digitsOnly.slice(0, 4).split('')
+      const pasted = digitsOnly.slice(0, 6).split('')
       pasted.forEach((char, idx) => {
-        if (idx < 4) newDigits[idx] = char
+        if (idx < 6) newDigits[idx] = char
       })
       setOtpDigits(newDigits)
       if (otpError) setOtpError('')
-      const nextFocus = Math.min(pasted.length, 3)
+      const nextFocus = Math.min(pasted.length, 5)
       otpRefs.current[nextFocus]?.focus()
       return
     }
@@ -110,7 +123,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setOtpDigits(newDigits)
     if (otpError) setOtpError('')
 
-    if (char && index < 3) {
+    if (char && index < 5) {
       otpRefs.current[index + 1]?.focus()
     }
   }
@@ -124,12 +137,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const handleVerifyOtp = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     const enteredCode = otpDigits.join('')
-    if (enteredCode.length < 4) {
-      setOtpError('Please enter all 4 digits of the OTP.')
+    if (enteredCode.length < 6) {
+      setOtpError('Please enter all 6 digits of the OTP.')
       return
     }
-    if (enteredCode !== VALID_OTP && enteredCode !== '0000') {
-      setOtpError('Incorrect OTP code. Please enter 1234.')
+    if (enteredCode !== VALID_OTP && enteredCode !== '000000') {
+      setOtpError('Incorrect OTP code. Please enter 123456.')
       return
     }
 
@@ -146,11 +159,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   const handleResendOtp = () => {
     if (timerActive) return
-    setOtpDigits(['', '', '', ''])
+    setOtpDigits(['', '', '', '', '', ''])
     setOtpError('')
     setTimerSeconds(30)
     setTimerActive(true)
-    setResendNotification(`A new 4-digit OTP code (1234) has been sent to ${email}`)
+    setResendNotification(`A new 6-digit OTP code (123456) has been sent to ${email}`)
     setTimeout(() => {
       otpRefs.current[0]?.focus()
     }, 100)
@@ -167,10 +180,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       data-testid="login-screen-container"
     >
       {/* Outer App Window Frame Card with enlarged dimensions */}
-      <div className="w-full max-w-[1180px] bg-white/90 backdrop-blur-md rounded-[32px] border border-[#e2e8f0] shadow-2xl p-4 sm:p-5 flex flex-col lg:flex-row gap-5 min-h-[640px]">
+      <div className="w-full max-w-[1400px] bg-white/90 backdrop-blur-md rounded-[32px] border border-[#e2e8f0] shadow-2xl p-4 sm:p-6 flex flex-col lg:flex-row gap-6 min-h-[760px]">
         
         {/* ─── LEFT PANEL: GRADIENT & ILLUSTRATION (Middle aligned with reduced gaps) ─── */}
-        <div className="flex-1 rounded-[28px] bg-gradient-to-br from-[#e0f2fe]/80 via-[#f0f9ff]/90 to-[#e6f9fa] border border-[#bae6fd]/50 p-8 sm:p-10 flex flex-col justify-center gap-5 sm:gap-6 relative overflow-hidden min-h-[500px]">
+        <div className="flex-1 rounded-[28px] bg-gradient-to-br from-[#e0f2fe]/80 via-[#f0f9ff]/90 to-[#e6f9fa] border border-[#bae6fd]/50 p-8 sm:p-10 flex flex-col justify-center gap-5 sm:gap-6 relative overflow-hidden min-h-[600px]">
           
           {/* Top Header Brand Logo without background pill */}
           <div className="flex items-center gap-3 self-start relative z-10">
@@ -254,15 +267,82 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         </div>
 
         {/* ─── RIGHT PANEL: FORM CONTAINER ──── */}
-        <div className="w-full lg:w-[470px] shrink-0 bg-white rounded-[28px] p-8 sm:p-10 shadow-lg border border-gray-100 flex flex-col justify-between min-h-[500px]">
+        <div className="w-full lg:w-[540px] shrink-0 bg-white rounded-[28px] p-8 sm:p-12 shadow-lg border border-gray-100 flex flex-col justify-between min-h-[600px]">
           
           <div className="my-auto flex flex-col w-full">
             
+            {/* ─── STEP 0: CHOOSE SIGN-IN METHOD ─── */}
+            {step === 'choose' && (
+              <div className="flex flex-col gap-8">
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold text-[#0d212c] tracking-tight">
+                    Welcome
+                  </h2>
+                  <p className="mt-1.5 text-sm text-[#64748b] font-normal">
+                    Sign in with your organisational account
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  <button
+                    type="button"
+                    onClick={handleSsoLogin}
+                    className="w-full flex items-center gap-4 text-left bg-white border border-[#e2e8f0] hover:border-[#cbd5e1] hover:shadow-md rounded-2xl px-5 py-4 transition cursor-pointer"
+                  >
+                    <span className="w-10 h-10 rounded-xl bg-[#f8fafc] text-[#64748b] flex items-center justify-center shrink-0">
+                      <Fingerprint size={22} strokeWidth={1.6} />
+                    </span>
+                    <span className="flex flex-col">
+                      <span className="text-sm font-semibold text-[#0d212c]">Sign in with SSO</span>
+                      <span className="text-xs text-[#64748b] font-normal">Authenticate via your enterprise network</span>
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStep('email')}
+                    className="w-full flex items-center gap-4 text-left bg-white border border-[#e2e8f0] hover:border-[#cbd5e1] hover:shadow-md rounded-2xl px-5 py-4 transition cursor-pointer"
+                  >
+                    <span className="w-10 h-10 rounded-xl bg-[#f8fafc] flex items-center justify-center shrink-0">
+                      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="2" y="2" width="9.5" height="9.5" fill="#f25022" />
+                        <rect x="12.5" y="2" width="9.5" height="9.5" fill="#7fba00" />
+                        <rect x="2" y="12.5" width="9.5" height="9.5" fill="#00a4ef" />
+                        <rect x="12.5" y="12.5" width="9.5" height="9.5" fill="#ffb900" />
+                      </svg>
+                    </span>
+                    <span className="flex flex-col">
+                      <span className="text-sm font-semibold text-[#0d212c]">Sign in with Microsoft</span>
+                      <span className="text-xs text-[#64748b] font-normal">Use your Microsoft work account</span>
+                    </span>
+                  </button>
+                </div>
+
+                <p className="flex items-start justify-center gap-2 text-xs text-[#64748b] text-center leading-relaxed">
+                  <Lock size={14} className="mt-0.5 shrink-0 text-[#94a3b8]" />
+                  <span>
+                    Protected by your organization&apos;s Single Sign-On. Need help?{' '}
+                    <span className="font-semibold text-[#2f7f6f]">Contact your administrator.</span>
+                  </span>
+                </p>
+              </div>
+            )}
+
             {/* ─── STEP 1: WELCOME & EMAIL INPUT ─── */}
             {step === 'email' && (
               <form onSubmit={handleSendOtp} className="flex flex-col gap-5" noValidate>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('choose')
+                    setEmailError('')
+                  }}
+                  className="self-start text-xs font-medium text-[#64748b] hover:text-[#0d212c] flex items-center gap-1 transition cursor-pointer bg-transparent border-0 -mt-2"
+                >
+                  <span>‹ Back</span>
+                </button>
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-semibold text-[#0d212c] tracking-tight">
+                  <h2 className="text-2xl font-semibold text-[#0d212c] tracking-tight">
                     Welcome
                   </h2>
                   <p className="mt-1 text-sm text-[#64748b] font-normal">
@@ -351,7 +431,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <button
                   type="submit"
                   id="send-otp-btn"
-                  className="w-full bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white font-bold text-base py-3.5 rounded-xl transition duration-150 shadow-md cursor-pointer border-0 mt-1"
+                  className="w-full bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white font-semibold text-sm py-3 rounded-xl transition duration-150 shadow-md cursor-pointer border-0 mt-1"
                 >
                   Send OTP
                 </button>
@@ -374,11 +454,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </button>
 
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-[#0d212c] tracking-tight">
+                  <h2 className="text-2xl font-bold text-[#0d212c] tracking-tight">
                     Verify Your Email
                   </h2>
                   <p className="mt-1.5 text-sm text-[#64748b] font-normal leading-relaxed">
-                    We&apos;ve sent a 4-digit OTP code to{' '}
+                    We&apos;ve sent a 6-digit OTP code to{' '}
                     <span className="text-[#0d212c] font-semibold">{email}</span>
                   </p>
                 </div>
@@ -394,7 +474,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
                 {/* 4-Digit OTP Box Grid (Subtle very light grey on clicked/focused state, no placeholder dots) */}
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center justify-center gap-2.5">
                     {otpDigits.map((digit, index) => (
                       <input
                         key={index}
@@ -407,7 +487,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className={`w-14 h-14 text-center font-bold text-2xl text-[#0d212c] border rounded-xl outline-none transition-all ${
+                        className={`w-12 h-12 text-center font-bold text-xl text-[#0d212c] border rounded-xl outline-none transition-all ${
                           otpError
                             ? 'border-red-500 bg-red-50/20'
                             : digit
@@ -448,14 +528,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 </div>
 
                 <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', marginTop: -4, marginBottom: 8 }}>
-                  Test OTP: <b>1234</b>
+                  Test OTP: <b>123456</b>
                 </div>
 
                 {/* Submit OTP CTA */}
                 <button
                   type="submit"
                   id="verify-otp-btn"
-                  className="w-full bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white font-bold text-base py-3.5 rounded-xl transition duration-150 shadow-md cursor-pointer border-0 mt-2"
+                  className="w-full bg-[#00C4C4] hover:bg-[#00a8a8] active:bg-[#008f8f] text-white font-semibold text-sm py-3 rounded-xl transition duration-150 shadow-md cursor-pointer border-0 mt-2"
                 >
                   Verify &amp; Sign In
                 </button>
