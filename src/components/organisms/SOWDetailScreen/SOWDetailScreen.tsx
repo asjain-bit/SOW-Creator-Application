@@ -11952,7 +11952,7 @@ function SOWDraftTab({
                     )}
 
                     {/* ⋯ menu */}
-                    {!isReadOnly && (hoveredTocIdx === idx || openMenuIdx === idx) && (
+                    {(hoveredTocIdx === idx || openMenuIdx === idx) && (
                       <div style={{ position: 'relative' }}>
                         <button
                           onClick={(e) => {
@@ -11999,7 +11999,7 @@ function SOWDraftTab({
                             >
                               <div style={{ padding: '8px 12px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Section Deadline</span>
-                                {isPMO ? (
+                                {isPMO && !isReadOnly ? (
                                 <input
                                   type="date"
                                   min={new Date().toISOString().split('T')[0]}
