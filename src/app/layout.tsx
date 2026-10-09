@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Poppins } from 'next/font/google'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
@@ -16,13 +16,23 @@ export const metadata: Metadata = {
   description: 'From ideas to approved SOWs — Create, collaborate, and track Statements of Work.',
 }
 
+export const viewport: Viewport = {
+  colorScheme: 'light',
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={poppins.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="light"
+      style={{ colorScheme: 'light' }}
+      className={poppins.variable}
+      suppressHydrationWarning
+    >
       <body className="font-sans antialiased text-[#0d212c] bg-[#edf4f7]">
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>

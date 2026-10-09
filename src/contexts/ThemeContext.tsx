@@ -14,67 +14,34 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system')
+  const [theme, setThemeState] = useState<Theme>('light')
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light')
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // Strictly enforce custom light theme across the entire application
     try {
-      if (typeof window !== 'undefined' && window.localStorage && typeof window.localStorage.getItem === 'function') {
-        const stored = window.localStorage.getItem('theme') as Theme | null
-        if (stored && ['light', 'dark', 'system'].includes(stored)) {
-          setThemeState(stored)
-        }
+      if (typeof window !== 'undefined' && window.localStorage && typeof window.localStorage.setItem === 'function') {
+        window.localStorage.setItem('theme', 'light')
       }
     } catch {
       // Safe fallback if localStorage is disabled or restricted
     }
-    setMounted(true)
+
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', 'light')
+      document.documentElement.style.colorScheme = 'light'
+    }
   }, [])
 
-  useEffect(() => {
-    if (!mounted) return
-
-    const getSystemTheme = (): ResolvedTheme => {
-      if (typeof window !== 'undefined' && window.matchMedia) {
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      }
-      return 'light'
-    }
-
-    const activeTheme = theme === 'system' ? getSystemTheme() : theme
-    setResolvedTheme(activeTheme)
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', activeTheme)
-    }
-
-    try {
-      if (typeof window !== 'undefined' && window.localStorage && typeof window.localStorage.setItem === 'function') {
-        window.localStorage.setItem('theme', theme)
-      }
-    } catch {
-      // Safe fallback
-    }
-  }, [theme, mounted])
-
-  useEffect(() => {
-    if (theme !== 'system' || typeof window === 'undefined' || !window.matchMedia) return
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = (e: MediaQueryListEvent) => {
-      const activeTheme: ResolvedTheme = e.matches ? 'dark' : 'light'
-      setResolvedTheme(activeTheme)
-      if (typeof document !== 'undefined') {
-        document.documentElement.setAttribute('data-theme', activeTheme)
-      }
-    }
-
-    mediaQuery.addEventListener?.('change', handleChange)
-    return () => mediaQuery.removeEventListener?.('change', handleChange)
-  }, [theme])
-
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme)
+    // Application is strictly locked to custom light theme only
+    const target = newTheme === 'light' ? 'light' : 'light'
+    setThemeState(target)
+    setResolvedTheme(target)
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', target)
+      document.documentElement.style.colorScheme = target
+    }
   }
 
   return (
