@@ -15622,7 +15622,7 @@ export function SOWDetailScreen({
                     </svg>
                     {isSentForReview ? 'Sent for Approval' : 'Send for Approval'}
                   </button>
-                  {isContributor && sendApprovalTipPos && createPortal(
+                  {isContributor && activeTab === 'sow-draft' && sendApprovalTipPos && createPortal(
                     <div
                       style={{
                         position: 'fixed',
