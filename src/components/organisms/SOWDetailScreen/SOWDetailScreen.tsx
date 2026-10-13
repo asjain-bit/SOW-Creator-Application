@@ -9,6 +9,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { ConflictResolver, applyContextUpdates, buildDocumentQuestions } from '@/components/molecules/ConflictResolver'
+import type { ContextUpdate, DocumentQuestion } from '@/components/molecules/ConflictResolver'
 import {
   Check,
   X,
@@ -3587,7 +3589,14 @@ function FormTab({
   onDirtyChange,
   formVersions = [],
   isEditable = true,
+  startupDone = false,
+  startupUpdates,
+  onStartupResolved,
 }: {
+  /** The first-visit questions were already answered (or dismissed) for this SOW */
+  startupDone?: boolean
+  startupUpdates?: ContextUpdate[]
+  onStartupResolved?: (updates: ContextUpdate[]) => void
   files: UploadedFile[]
   showUploadedDocs?: boolean
   onReady?: () => void
@@ -3606,6 +3615,27 @@ function FormTab({
   const [loadingState, setLoadingState] = useState<'generating' | 'shimmer' | 'ready'>(
     skipLoading ? 'ready' : 'generating'
   )
+  // Apply the changes decided while answering questions about the documents
+  const withContextUpdates = (data: SOWFormData, updates?: ContextUpdate[]): SOWFormData => {
+    if (!updates || updates.length === 0) return data
+    const merged = applyContextUpdates(data, updates)
+    const edited = { ...(data.manuallyEditedFields || {}) }
+    updates.forEach((u) => {
+      if (merged[u.field] !== data[u.field]) edited[u.field] = true
+    })
+    return { ...merged, manuallyEditedFields: edited }
+  }
+  // When the Context opens for a new SOW with several documents, ask the questions first
+  // (before the form is generated). Later uploads ask them too.
+  const [resolver, setResolver] = useState<{ questions: DocumentQuestion[]; names: string[] } | null>(() => {
+    if (skipLoading || startupDone || !isEditable) return null
+    const names = (initialFiles || []).map((f) => f.name)
+    const questions = buildDocumentQuestions(names)
+    return questions.length > 0 ? { questions, names } : null
+  })
+  const [startupPending, setStartupPending] = useState(() => resolver !== null)
+  const startupUpdatesRef = useRef<ContextUpdate[]>(startupUpdates ?? [])
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
   const [formData, setFormData] = useState<SOWFormData>(
     skipLoading
       ? MOCK_FORM_DATA
@@ -3630,10 +3660,11 @@ function FormTab({
       onReady?.()
       return
     }
+    if (startupPending) return
     timer1Ref.current = setTimeout(() => {
       setLoadingState('shimmer')
       timer2Ref.current = setTimeout(() => {
-        setFormData(MOCK_FORM_DATA)
+        setFormData(withContextUpdates(MOCK_FORM_DATA, startupUpdatesRef.current))
         setLoadingState('ready')
         onReady?.()
       }, 1500)
@@ -3642,7 +3673,7 @@ function FormTab({
       if (timer1Ref.current) clearTimeout(timer1Ref.current)
       if (timer2Ref.current) clearTimeout(timer2Ref.current)
     }
-  }, [])
+  }, [startupPending])
 
   const initialDataRef = useRef<SOWFormData | null>(null)
 
@@ -3762,6 +3793,30 @@ function FormTab({
       manualEditBy: 'Ashika Jain (PMO)',
       manualEditTimestamp: 'Just now',
     })
+  }
+
+  // Questions about the documents come first, before the form is generated
+  if (startupPending && resolver) {
+    return (
+      <div style={{ flex: 1 }}>
+        <ConflictResolver
+          isOpen
+          questions={resolver.questions}
+          fileNames={resolver.names}
+          onComplete={(updates) => {
+            startupUpdatesRef.current = updates
+            onStartupResolved?.(updates)
+            setStartupPending(false)
+            setResolver(null)
+          }}
+          onClose={() => {
+            onStartupResolved?.([])
+            setStartupPending(false)
+            setResolver(null)
+          }}
+        />
+      </div>
+    )
   }
 
   if (loadingState === 'generating') {
@@ -4348,12 +4403,96 @@ function FormTab({
       {/* ── Document Uploader at Bottom of Context Tab ── */}
       <DocumentUploaderCard
         files={extraFiles}
-        onAddFiles={(newDocs) => setExtraFiles((prev) => [...prev, ...newDocs])}
-        onRemoveFile={(id) => setExtraFiles((prev) => prev.filter((d) => d.id !== id))}
+        onAddFiles={(newDocs) => {
+          setExtraFiles((prev) => [...prev, ...newDocs])
+          // Compare what is already on the SOW with the new documents
+          const existingName = initialFiles?.[0]?.name ?? 'Clinical_Safety_Case_Hazard_Log.pdf'
+          const names = [existingName, ...newDocs.map((d) => d.name)]
+          const questions = buildDocumentQuestions(names, {
+            clientName: formData.clientName,
+          })
+          if (questions.length > 0) setResolver({ questions, names })
+        }}
+        onRemoveFile={(id) => {
+          const doc = extraFiles.find((d) => d.id === id)
+          if (doc) setRemoveTarget({ id: doc.id, name: doc.name })
+        }}
         isEditable={isEditable}
       />
 
       </div>
+
+      {/* Questions about the newly uploaded documents */}
+      {resolver && (
+        <ConflictResolver
+          isOpen
+          questions={resolver.questions}
+          fileNames={resolver.names}
+          onComplete={(updates) => {
+            if (startupPending) {
+              startupUpdatesRef.current = updates
+              onStartupResolved?.(updates)
+              setStartupPending(false)
+            } else {
+              setFormData((prev) => withContextUpdates(prev, updates))
+            }
+            setResolver(null)
+          }}
+          onClose={() => {
+            if (startupPending) onStartupResolved?.([])
+            setStartupPending(false)
+            setResolver(null)
+          }}
+        />
+      )}
+
+      {/* Confirm before a document is removed from the Context */}
+      {removeTarget && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setRemoveTarget(null)
+          }}
+        >
+          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <button
+              onClick={() => setRemoveTarget(null)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Trash2 size={28} color="#ef4444" />
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Delete document?</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
+              Are you sure you want to delete &ldquo;{removeTarget.name}&rdquo;? This will have an impact on the context.
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setRemoveTarget(null)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const remaining = extraFiles.filter((d) => d.id !== removeTarget.id)
+                  setExtraFiles(remaining)
+                  setRemoveTarget(null)
+                  // Re-check what is left: the remaining documents may now disagree
+                  const names = remaining.map((d) => d.name)
+                  const questions = buildDocumentQuestions(names, { clientName: formData.clientName })
+                  if (questions.length > 0) setResolver({ questions, names })
+                }}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#E60000', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Citation Preview Modal */}
       {citationModalTarget && (
@@ -15167,6 +15306,8 @@ export function SOWDetailScreen({
   const isClient = effectiveViewerRole === 'client'
   const isPMORole = effectiveViewerRole === 'pmo'
   const isAdminRole = effectiveViewerRole === 'admin'
+  // First-visit Context questions: answered once, kept across tab switches
+  const [contextStartup, setContextStartup] = useState<{ done: boolean; updates: ContextUpdate[] }>({ done: false, updates: [] })
   const [sendApprovalTipPos, setSendApprovalTipPos] = useState<{ top: number; right: number } | null>(null)
   // Once the draft has been generated, Context and Planning become view-only for everyone
   const contentFrozen = isViewOnly || isDraftUnlocked
@@ -15704,6 +15845,9 @@ export function SOWDetailScreen({
               skipLoading={isContributor || isStructureUnlocked}
               onDirtyChange={(dirty) => setIsFormDirty(dirty)}
               formVersions={formVersions}
+              startupDone={contextStartup.done}
+              startupUpdates={contextStartup.updates}
+              onStartupResolved={(updates) => setContextStartup({ done: true, updates })}
               isEditable={isPMORole && !contentFrozen && (isStructureUnlocked ? isFormEditable : true)}
             />
           )}
