@@ -53,14 +53,14 @@ function SourceChip({ name }: { name: string }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 10,
-        fontSize: 13,
+        gap: 8,
+        fontSize: 12,
         color: '#64748b',
         marginTop: 6,
         wordBreak: 'break-all',
       }}
     >
-      <FileText size={16} color="#94a3b8" style={{ flexShrink: 0 }} />
+      <FileText size={14} color="#94a3b8" style={{ flexShrink: 0 }} />
       {name}
     </span>
   )
@@ -191,7 +191,7 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
     border: 'none',
     padding: '10px 14px',
     color: '#64748b',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: 700,
     cursor: 'pointer',
     fontFamily: 'inherit',
@@ -202,7 +202,7 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
     border: '1px solid #E60000',
     background: '#ffffff',
     color: '#E60000',
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: 700,
     cursor: 'pointer',
     fontFamily: 'inherit',
@@ -315,21 +315,21 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
         {question && meta && (
           <>
             <div style={{ padding: '24px 28px 8px', overflowY: 'auto', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: '#475569' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>
                     Question {step + 1} of {total}
                   </span>
                   <span style={{ width: 1, height: 22, background: '#e2e8f0' }} />
                   <span
                     style={{
                       display: 'inline-block',
-                      padding: '4px 14px',
+                      padding: '4px 12px',
                       borderRadius: 20,
                       background: meta.bg,
                       color: meta.fg,
                       border: `1px solid ${meta.border}`,
-                      fontSize: 13,
+                      fontSize: 12.5,
                       fontWeight: 700,
                     }}
                   >
@@ -342,14 +342,14 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
                   onClick={handleClose}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}
                 >
-                  <X size={22} />
+                  <X size={20} />
                 </button>
               </div>
 
-              <div style={{ fontSize: 30, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>
                 {question.fieldLabel}
               </div>
-              <div style={{ fontSize: 15, color: '#64748b', lineHeight: 1.5, marginBottom: 22 }}>{meta.hint}</div>
+              <div style={{ fontSize: 14, color: '#64748b', lineHeight: 1.5, marginBottom: 18 }}>{meta.hint}</div>
 
               {/* conflict / discrepancy */}
               {isPick && (
@@ -437,7 +437,7 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
                       onClick={() => setEditing(true)}
                       style={{ position: 'absolute', top: 12, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}
                     >
-                      <Pencil size={20} />
+                      <Pencil size={18} />
                     </button>
                   )}
                   </div>
