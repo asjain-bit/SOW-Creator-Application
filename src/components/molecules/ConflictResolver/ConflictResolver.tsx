@@ -9,7 +9,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Circle, CircleDot, Eye, FileText, Pencil, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Circle, Eye, FileText, Pencil, X } from 'lucide-react'
 import type {
   ConflictResolverProps,
   DocumentQuestion,
@@ -181,7 +181,9 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
 
   const radio = (selected: boolean) => (
     <span style={{ display: 'flex', flexShrink: 0, marginTop: 1 }}>
-      {selected ? <CircleDot size={22} strokeWidth={2.75} color={PRIMARY} /> : <Circle size={22} strokeWidth={2} color="#cbd5e1" />}
+      {selected ? <Circle size={22} strokeWidth={2.25} color={PRIMARY}>
+          <circle cx="12" cy="12" r="6" fill={PRIMARY} stroke="none" />
+        </Circle> : <Circle size={22} strokeWidth={2} color="#cbd5e1" />}
     </span>
   )
 
