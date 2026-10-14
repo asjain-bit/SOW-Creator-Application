@@ -3125,11 +3125,14 @@ function DocumentUploaderCard({
   onAddFiles,
   onRemoveFile,
   isEditable = true,
+  onRequestUpload,
 }: {
   files: UploadedFile[]
   onAddFiles: (files: UploadedFile[]) => void
   onRemoveFile: (id: string) => void
   isEditable?: boolean
+  /** When set, uploading first asks the caller to confirm (it calls proceed once confirmed) */
+  onRequestUpload?: (proceed: () => void) => void
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -3149,7 +3152,8 @@ function DocumentUploaderCard({
         status: 'complete',
         progress: 100,
       }))
-      onAddFiles(newFiles)
+      if (onRequestUpload) onRequestUpload(() => onAddFiles(newFiles))
+      else onAddFiles(newFiles)
     }
   }
 
@@ -3199,7 +3203,10 @@ function DocumentUploaderCard({
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleFileDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            if (onRequestUpload) onRequestUpload(() => fileInputRef.current?.click())
+            else fileInputRef.current?.click()
+          }}
           style={{
             border: '2px dashed',
             borderColor: isDragging ? 'var(--brand-cyan-500)' : 'var(--border-default)',
@@ -3592,7 +3599,10 @@ function FormTab({
   startupDone = false,
   startupUpdates,
   onStartupResolved,
+  isSubmitted = false,
 }: {
+  /** The context was already submitted, so new uploads change it and need confirmation */
+  isSubmitted?: boolean
   /** The first-visit questions were already answered (or dismissed) for this SOW */
   startupDone?: boolean
   startupUpdates?: ContextUpdate[]
@@ -3636,6 +3646,7 @@ function FormTab({
   const [startupPending, setStartupPending] = useState(() => resolver !== null)
   const startupUpdatesRef = useRef<ContextUpdate[]>(startupUpdates ?? [])
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
+  const [uploadConfirm, setUploadConfirm] = useState<{ proceed: () => void } | null>(null)
   const [formData, setFormData] = useState<SOWFormData>(
     skipLoading
       ? MOCK_FORM_DATA
@@ -4418,6 +4429,7 @@ function FormTab({
           if (doc) setRemoveTarget({ id: doc.id, name: doc.name })
         }}
         isEditable={isEditable}
+        onRequestUpload={isSubmitted ? (proceed) => setUploadConfirm({ proceed }) : undefined}
       />
 
       </div>
@@ -4444,6 +4456,47 @@ function FormTab({
             setResolver(null)
           }}
         />
+      )}
+
+      {/* Confirm before more documents are uploaded to a submitted Context */}
+      {uploadConfirm && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setUploadConfirm(null)
+          }}
+        >
+          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <button
+              onClick={() => setUploadConfirm(null)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Upload more documents?</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
+              If you upload more documents, your context will change based on the document sources. Are you sure you want to continue?
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setUploadConfirm(null)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const go = uploadConfirm.proceed
+                  setUploadConfirm(null)
+                  go()
+                }}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#00C4C4', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Yes, upload
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Confirm before a document is removed from the Context */}
@@ -15848,6 +15901,7 @@ export function SOWDetailScreen({
               startupDone={contextStartup.done}
               startupUpdates={contextStartup.updates}
               onStartupResolved={(updates) => setContextStartup({ done: true, updates })}
+              isSubmitted={isStructureUnlocked}
               isEditable={isPMORole && !contentFrozen && (isStructureUnlocked ? isFormEditable : true)}
             />
           )}

@@ -9,7 +9,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Circle, Eye, FileText, Pencil, X } from 'lucide-react'
+import { AlertTriangle, Circle, X } from 'lucide-react'
 import type {
   ConflictResolverProps,
   DocumentQuestion,
@@ -20,7 +20,7 @@ import { answersToUpdates } from './ConflictResolver.utils'
 
 const KIND_META: Record<
   QuestionKind,
-  { label: string; hint: string; bg: string; fg: string; border: string; Icon: typeof AlertTriangle }
+  { label: string; hint: string; bg: string; fg: string; border: string }
 > = {
   conflict: {
     label: 'Conflict',
@@ -28,7 +28,6 @@ const KIND_META: Record<
     bg: '#fffbeb',
     fg: '#92400e',
     border: '#fde68a',
-    Icon: AlertTriangle,
   },
   discrepancy: {
     label: 'Discrepancy',
@@ -36,7 +35,6 @@ const KIND_META: Record<
     bg: '#fffbeb',
     fg: '#92400e',
     border: '#fde68a',
-    Icon: AlertTriangle,
   },
   'needs-review': {
     label: 'Needs review',
@@ -44,7 +42,6 @@ const KIND_META: Record<
     bg: '#f8fafc',
     fg: '#475569',
     border: '#e2e8f0',
-    Icon: Eye,
   },
 }
 
@@ -62,7 +59,6 @@ function SourceChip({ name }: { name: string }) {
         marginTop: 6,
       }}
     >
-      <FileText size={13} color="#94a3b8" />
       {name}
     </span>
   )
@@ -278,9 +274,7 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
               Your documents don&apos;t fully agree
             </div>
             <div style={{ fontSize: 14, color: '#64748b', lineHeight: 1.55, marginBottom: 24 }}>
-              {total} {total === 1 ? 'thing needs' : 'things need'} your input after reading{' '}
-              {fileNames.length > 0 ? fileNames.slice(0, 2).join(' and ') : 'your documents'}
-              {fileNames.length > 2 ? ` and ${fileNames.length - 2} more` : ''}. It only takes a minute.
+              {total} {total === 1 ? 'thing needs' : 'things need'} your input after reading your documents. It only takes a minute.
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
               <button type="button" onClick={onClose} style={secondaryBtn}>
@@ -288,7 +282,6 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
               </button>
               <button type="button" onClick={() => setStep(0)} style={primaryBtn(true)}>
                 Answer {total} {total === 1 ? 'question' : 'questions'}
-                <ArrowRight size={16} />
               </button>
             </div>
           </div>
@@ -298,24 +291,7 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
         {question && meta && (
           <>
             <div style={{ padding: '24px 28px 8px', overflowY: 'auto', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '4px 12px',
-                    borderRadius: 20,
-                    background: meta.bg,
-                    color: meta.fg,
-                    border: `1px solid ${meta.border}`,
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                  }}
-                >
-                  <meta.Icon size={14} />
-                  {meta.label}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 14 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>
                     Question {step + 1} of {total}
@@ -334,6 +310,21 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
               <div style={{ fontSize: 22, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
                 {question.fieldLabel}
               </div>
+              <span
+                style={{
+                  display: 'inline-block',
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  background: meta.bg,
+                  color: meta.fg,
+                  border: `1px solid ${meta.border}`,
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  marginBottom: 10,
+                }}
+              >
+                {meta.label}
+              </span>
               <div style={{ fontSize: 14, color: '#64748b', lineHeight: 1.5, marginBottom: 18 }}>{meta.hint}</div>
 
               {/* conflict / discrepancy */}
@@ -447,14 +438,12 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
                 {step > 0 && !editing && (
                   <button type="button" onClick={() => setStep(step - 1)} style={secondaryBtn}>
-                    <ArrowLeft size={15} />
                     Back
                   </button>
                 )}
 
                 {isPick && (
                   <button type="button" onClick={useValue} disabled={!canUse} style={primaryBtn(canUse)}>
-                    <Check size={15} />
                     {useLabel}
                   </button>
                 )}
@@ -465,11 +454,9 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
                       Reject
                     </button>
                     <button type="button" onClick={() => setEditing(true)} style={secondaryBtn}>
-                      <Pencil size={14} />
                       Edit
                     </button>
                     <button type="button" onClick={() => commit({ kind: 'accept' })} style={primaryBtn(true)}>
-                      <Check size={15} />
                       Accept
                     </button>
                   </>
@@ -486,7 +473,6 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
                       onClick={() => commit({ kind: 'edit', value: editText.trim() })}
                       style={primaryBtn(!!editText.trim())}
                     >
-                      <Check size={15} />
                       Save claim
                     </button>
                   </>
