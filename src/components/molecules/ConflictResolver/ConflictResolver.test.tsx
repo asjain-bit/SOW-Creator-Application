@@ -33,10 +33,11 @@ describe('ConflictResolver', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Answer 4 questions/i }))
     expect(screen.getByText('Question 1 of 4')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Back/i })).not.toBeInTheDocument()
 
     // 1 conflict → pick, 2 discrepancy → both, 3 conflict → skip, 4 needs review → accept
     fireEvent.click(screen.getByText(qs[0].candidates[0].value))
-    fireEvent.click(screen.getByRole('button', { name: /Use this value/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^Next$/i }))
     fireEvent.click(screen.getByText('Both are correct'))
     fireEvent.click(screen.getByRole('button', { name: /Keep both/i }))
     fireEvent.click(screen.getByText('Skip for now'))

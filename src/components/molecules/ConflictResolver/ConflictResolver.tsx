@@ -9,7 +9,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { AlertTriangle, Circle, X } from 'lucide-react'
+import { AlertTriangle, Circle, FileText, Pencil, X } from 'lucide-react'
 import type {
   ConflictResolverProps,
   DocumentQuestion,
@@ -53,12 +53,14 @@ function SourceChip({ name }: { name: string }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 6,
-        fontSize: 12,
+        gap: 10,
+        fontSize: 13,
         color: '#64748b',
         marginTop: 6,
+        wordBreak: 'break-all',
       }}
     >
+      <FileText size={16} color="#94a3b8" style={{ flexShrink: 0 }} />
       {name}
     </span>
   )
@@ -183,6 +185,28 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
     </span>
   )
 
+  const isLast = step >= total - 1
+  const backBtn: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    padding: '10px 14px',
+    color: '#64748b',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  }
+  const rejectBtn: React.CSSProperties = {
+    padding: '10px 20px',
+    borderRadius: 10,
+    border: '1px solid #E60000',
+    background: '#ffffff',
+    color: '#E60000',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  }
   const secondaryBtn: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -291,41 +315,41 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
         {question && meta && (
           <>
             <div style={{ padding: '24px 28px 8px', overflowY: 'auto', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#475569' }}>
                     Question {step + 1} of {total}
                   </span>
-                  <button
-                    type="button"
-                    aria-label="Close"
-                    onClick={handleClose}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}
+                  <span style={{ width: 1, height: 22, background: '#e2e8f0' }} />
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '4px 14px',
+                      borderRadius: 20,
+                      background: meta.bg,
+                      color: meta.fg,
+                      border: `1px solid ${meta.border}`,
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
                   >
-                    <X size={20} />
-                  </button>
+                    {meta.label}
+                  </span>
                 </span>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onClick={handleClose}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}
+                >
+                  <X size={22} />
+                </button>
               </div>
 
-              <div style={{ fontSize: 22, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+              <div style={{ fontSize: 30, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
                 {question.fieldLabel}
               </div>
-              <span
-                style={{
-                  display: 'inline-block',
-                  padding: '4px 12px',
-                  borderRadius: 20,
-                  background: meta.bg,
-                  color: meta.fg,
-                  border: `1px solid ${meta.border}`,
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  marginBottom: 10,
-                }}
-              >
-                {meta.label}
-              </span>
-              <div style={{ fontSize: 14, color: '#64748b', lineHeight: 1.5, marginBottom: 18 }}>{meta.hint}</div>
+              <div style={{ fontSize: 15, color: '#64748b', lineHeight: 1.5, marginBottom: 22 }}>{meta.hint}</div>
 
               {/* conflict / discrepancy */}
               {isPick && (
@@ -380,13 +404,14 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
               {/* needs review */}
               {question.kind === 'needs-review' && (
                 <div style={{ paddingBottom: 12 }}>
+                  <div style={{ position: 'relative' }}>
                   <textarea
                     key={editing ? 'edit' : 'view'}
                     readOnly={!editing}
                     autoFocus={editing}
                     value={editing ? editText : question.candidates[0].value}
                     onChange={(e) => setEditText(e.target.value)}
-                    rows={3}
+                    rows={4}
                     style={{
                       width: '100%',
                       padding: '12px 14px',
@@ -402,8 +427,20 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
                       fontFamily: 'inherit',
                       boxSizing: 'border-box',
                       cursor: editing ? 'text' : 'default',
+                      paddingRight: 44,
                     }}
                   />
+                  {!editing && (
+                    <button
+                      type="button"
+                      aria-label="Edit"
+                      onClick={() => setEditing(true)}
+                      style={{ position: 'absolute', top: 12, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}
+                    >
+                      <Pencil size={20} />
+                    </button>
+                  )}
+                  </div>
                   <SourceChip name={question.candidates[0].source} />
                 </div>
               )}
@@ -437,27 +474,24 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
 
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
                 {step > 0 && !editing && (
-                  <button type="button" onClick={() => setStep(step - 1)} style={secondaryBtn}>
+                  <button type="button" onClick={() => setStep(step - 1)} style={backBtn}>
                     Back
                   </button>
                 )}
 
                 {isPick && (
                   <button type="button" onClick={useValue} disabled={!canUse} style={primaryBtn(canUse)}>
-                    {useLabel}
+                    {choice === 'skip' || choice === 'both' ? useLabel : isLast ? 'Submit' : 'Next'}
                   </button>
                 )}
 
                 {question.kind === 'needs-review' && !editing && (
                   <>
-                    <button type="button" onClick={() => commit({ kind: 'reject' })} style={secondaryBtn}>
+                    <button type="button" onClick={() => commit({ kind: 'reject' })} style={rejectBtn}>
                       Reject
                     </button>
-                    <button type="button" onClick={() => setEditing(true)} style={secondaryBtn}>
-                      Edit
-                    </button>
                     <button type="button" onClick={() => commit({ kind: 'accept' })} style={primaryBtn(true)}>
-                      Accept
+                      {isLast ? 'Accept & Submit' : 'Accept'}
                     </button>
                   </>
                 )}
