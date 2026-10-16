@@ -97,7 +97,7 @@ function KpiCard({
   valueColor?: string
 }) {
   return (
-    <div style={{ ...cardStyle, padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ ...cardStyle, padding: '18px 18px 26px', display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           {label}
@@ -106,7 +106,7 @@ function KpiCard({
           {icon}
         </div>
       </div>
-      <div style={{ fontSize: 34, fontWeight: 600, color: valueColor, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 32, fontWeight: 600, color: valueColor, lineHeight: 1 }}>{value}</div>
       {sub && (
         <>
           <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
