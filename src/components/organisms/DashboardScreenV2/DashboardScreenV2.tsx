@@ -45,9 +45,11 @@ import {
   CheckSquare,
   Building2,
   ArrowRight,
+  BarChart3,
 } from 'lucide-react'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
 import { AuditLogView } from '../AuditLogView'
+import { UsageInsightsView } from '../UsageInsightsView'
 import { useToast } from '@/contexts/ToastContext'
 
 /* ─── Static Data ─────────────────────────────────────────────────────────── */
@@ -4978,7 +4980,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   const isPMO = !isContributor && !isClient && !isReviewer && !isAdmin
   const { showToast } = useToast()
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log' | 'agents' | 'user-directory' | 'section-templates'>('home')
+  const [homeView, setHomeView] = useState<'home' | 'all-sows' | 'audit-log' | 'agents' | 'user-directory' | 'section-templates' | 'usage'>('home')
   const [activeTab, setActiveTab] = useState<ActiveTab>('my')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
@@ -5211,6 +5213,11 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         label: 'Agents',
                         icon: <Bot size={20} />,
                       },
+                      {
+                        id: 'usage' as ActiveNav,
+                        label: 'Usage',
+                        icon: <BarChart3 size={20} />,
+                      },
                     ]
                   : []),
               ] as { id: ActiveNav; label: string; icon: React.ReactNode; badge?: number }[]
@@ -5227,7 +5234,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         ? homeView === 'section-templates'
                         : id === 'agents'
                           ? homeView === 'agents'
-                          : activeNav === id
+                          : id === 'usage'
+                            ? homeView === 'usage'
+                            : activeNav === id
               return (
                 <button
                   key={id}
@@ -5243,6 +5252,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       setHomeView('section-templates')
                     } else if (id === 'agents') {
                       setHomeView('agents')
+                    } else if (id === 'usage') {
+                      setHomeView('usage')
                     }
                   }}
                   className="flex flex-col items-center justify-center w-full py-2.5 px-1 rounded-xl cursor-pointer transition-all gap-1.5 relative border-0"
@@ -5443,6 +5454,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
           ) : homeView === 'agents' && (isPMO || isAdmin) ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <AgentsView notificationButton={renderNotificationButton()} />
+            </div>
+          ) : homeView === 'usage' && isPMO && !isAdmin ? (
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+              <UsageInsightsView sows={sowList} notificationButton={renderNotificationButton()} />
             </div>
           ) : homeView === 'audit-log' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">

@@ -51,6 +51,7 @@ export type ActiveNav =
   | 'agents'
   | 'user-directory'
   | 'section-templates'
+  | 'usage'
 
 export interface DashboardScreenV2Props {
   userName?: string
