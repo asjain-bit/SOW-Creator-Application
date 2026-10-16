@@ -106,7 +106,7 @@ function KpiCard({
           {icon}
         </div>
       </div>
-      <div style={{ fontSize: 36, fontWeight: 600, color: valueColor, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 34, fontWeight: 600, color: valueColor, lineHeight: 1 }}>{value}</div>
       {sub && (
         <>
           <div style={{ height: 1, background: 'rgba(0,196,196,0.12)', width: '100%', margin: '4px 0 2px 0' }} />
@@ -395,14 +395,14 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
             </div>
           ))}
         </div>
-        {hasMore && (
+        {(hasMore || visible > PAGE_SIZE) && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
             <button
               type="button"
-              onClick={() => setVisible((v) => v + PAGE_SIZE)}
+              onClick={() => setVisible((v) => (hasMore ? v + PAGE_SIZE : PAGE_SIZE))}
               style={{ background: 'none', border: 'none', color: PRIMARY, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '6px 12px' }}
             >
-              See more
+              {hasMore ? 'See more' : 'See less'}
             </button>
           </div>
         )}
