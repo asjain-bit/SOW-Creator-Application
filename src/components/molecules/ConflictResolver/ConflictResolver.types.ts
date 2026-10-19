@@ -48,8 +48,10 @@ export interface ConflictResolverProps {
   questions: DocumentQuestion[]
   /** Names of the documents that were read, shown in the intro */
   fileNames: string[]
+  /** Start straight at the first question (no intro screen) */
+  skipIntro?: boolean
   /** Called with the Context changes when the user finishes (or closes after answering some) */
-  onComplete: (updates: ContextUpdate[]) => void
+  onComplete: (updates: ContextUpdate[], answers: Record<string, QuestionAnswer>) => void
   /** Called when the user dismisses without answering anything */
   onClose: () => void
 }

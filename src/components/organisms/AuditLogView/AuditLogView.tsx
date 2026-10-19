@@ -3,14 +3,45 @@
 import React from 'react'
 import {
   FileText,
+  FileSearch,
   Clock,
   User,
-  CheckCircle2,
-  Layers,
+  CircleCheck,
+  GitBranch,
   Sparkles,
+  TriangleAlert,
   Users,
   UploadCloud,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
+/** Event category used to colour the event icon and its container */
+export type AuditCategory = 'critical' | 'dependency' | 'key-action' | 'approval' | 'information' | 'general'
+
+/** Category → icon colour, container background and border (add a row to support a new category) */
+export const AUDIT_CATEGORY_STYLES: Record<
+  AuditCategory,
+  { label: string; icon: LucideIcon; color: string; background: string; border: string }
+> = {
+  critical: { label: 'Critical / Risk', icon: TriangleAlert, color: '#DC2626', background: '#FEF2F2', border: '#FECACA' },
+  dependency: { label: 'Dependency', icon: GitBranch, color: '#7C3AED', background: '#F5F3FF', border: '#DDD6FE' },
+  'key-action': { label: 'Key Action', icon: FileText, color: '#D97706', background: '#FFFBEB', border: '#FDE68A' },
+  approval: { label: 'Approval / Sign-off', icon: CircleCheck, color: '#16A34A', background: '#F0FDF4', border: '#BBF7D0' },
+  information: { label: 'Information', icon: FileSearch, color: '#00C4CB', background: 'rgba(0,196,203,0.08)', border: 'rgba(0,196,203,0.3)' },
+  general: { label: 'General', icon: FileText, color: '#00a0a0', background: 'rgba(0,196,196,0.10)', border: 'rgba(0,196,196,0.3)' },
+}
+
+const LEGEND_CATEGORIES: AuditCategory[] = ['critical', 'dependency', 'key-action', 'approval', 'information']
+
+/** Category used for each existing event type */
+const CATEGORY_BY_ICON: Record<AuditEvent['icon'], AuditCategory> = {
+  draft: 'key-action',
+  form: 'approval',
+  structure: 'information',
+  upload: 'information',
+  analysis: 'dependency',
+  reviewers: 'general',
+}
 
 export interface AuditEvent {
   id: string
@@ -19,6 +50,8 @@ export interface AuditEvent {
   description: string
   actor: string
   icon: 'upload' | 'analysis' | 'form' | 'structure' | 'reviewers' | 'draft'
+  /** Optional; defaults from the icon type */
+  category?: AuditCategory
 }
 
 export let MOCK_AUDIT_LOGS: AuditEvent[] = [
@@ -105,24 +138,19 @@ export interface AuditLogViewProps {
 }
 
 export function AuditLogView({ onBackToDashboard: _onBack, notificationButton }: AuditLogViewProps) {
-  const renderIcon = (icon: AuditEvent['icon']) => {
-    const iconProps = { size: 16, color: '#00a0a0', strokeWidth: 2 }
-    switch (icon) {
-      case 'upload':
-        return <UploadCloud {...iconProps} />
-      case 'analysis':
-        return <Sparkles {...iconProps} />
-      case 'form':
-        return <CheckCircle2 {...iconProps} />
-      case 'structure':
-        return <Layers {...iconProps} />
-      case 'reviewers':
-        return <Users {...iconProps} />
-      case 'draft':
-      default:
-        return <FileText {...iconProps} />
+  const renderIcon = (item: AuditEvent) => {
+    const category = item.category ?? CATEGORY_BY_ICON[item.icon] ?? 'general'
+    const style = AUDIT_CATEGORY_STYLES[category]
+    const iconProps = { size: 16, color: style.color, strokeWidth: 2 }
+    // Keep the existing icon for general / upload / analysis events, otherwise use the category icon
+    if (category === 'general' || item.icon === 'upload' || item.icon === 'analysis') {
+      const Existing = item.icon === 'upload' ? UploadCloud : item.icon === 'analysis' ? Sparkles : item.icon === 'reviewers' ? Users : FileText
+      return <Existing {...iconProps} />
     }
+    const Icon = style.icon
+    return <Icon {...iconProps} />
   }
+  const containerFor = (item: AuditEvent) => AUDIT_CATEGORY_STYLES[item.category ?? CATEGORY_BY_ICON[item.icon] ?? 'general']
 
   return (
     <div className="flex flex-col h-full overflow-y-auto" style={{ padding: 0 }}>
@@ -136,10 +164,32 @@ export function AuditLogView({ onBackToDashboard: _onBack, notificationButton }:
           marginBottom: 16,
         }}
       >
-        <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>
           Audit Log
         </h1>
-        {notificationButton}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8, marginLeft: 16 }}>
+          {LEGEND_CATEGORIES.map((c) => (
+            <span
+              key={c}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                borderRadius: 8,
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                fontSize: 12,
+                color: '#475569',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: AUDIT_CATEGORY_STYLES[c].color }} />
+              {AUDIT_CATEGORY_STYLES[c].label}
+            </span>
+          ))}
+          {notificationButton}
+        </div>
       </div>
 
       {/* ── Main Timeline List View (Directly rendered without white section wrapper) ── */}
@@ -177,8 +227,8 @@ export function AuditLogView({ onBackToDashboard: _onBack, notificationButton }:
                   width: 36,
                   height: 36,
                   borderRadius: '50%',
-                  background: 'rgba(0,196,196,0.10)',
-                  border: '1.5px solid rgba(0,196,196,0.3)',
+                  background: containerFor(item).background,
+                  border: `1.5px solid ${containerFor(item).border}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -186,7 +236,7 @@ export function AuditLogView({ onBackToDashboard: _onBack, notificationButton }:
                   zIndex: 1,
                 }}
               >
-                {renderIcon(item.icon)}
+                {renderIcon(item)}
               </div>
 
               {/* Body Content */}

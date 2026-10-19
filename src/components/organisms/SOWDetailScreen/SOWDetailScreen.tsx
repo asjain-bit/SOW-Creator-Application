@@ -10,7 +10,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { ConflictResolver, applyContextUpdates, buildDocumentQuestions } from '@/components/molecules/ConflictResolver'
-import type { ContextUpdate, DocumentQuestion } from '@/components/molecules/ConflictResolver'
+import type { ContextUpdate, DocumentQuestion, QuestionAnswer, QuestionKind } from '@/components/molecules/ConflictResolver'
+
+/** Conflicts / clarifications from the uploaded documents, kept while the Context tab is remounted */
+interface ContextIssueState {
+  init: boolean
+  questions: DocumentQuestion[]
+  updates: ContextUpdate[]
+  scopeSignedOff: boolean
+}
 import {
   Check,
   X,
@@ -2908,6 +2916,9 @@ function ContextFieldHeader({
   onOpenCitation,
   onOpenTrace,
   required = false,
+  issueKind,
+  onResolve,
+  signOff,
 }: {
   label: string
   required?: boolean
@@ -2920,7 +2931,25 @@ function ContextFieldHeader({
   isManuallyEdited?: boolean
   onOpenCitation?: () => void
   onOpenTrace?: () => void
+  /** PMO: this field has an open conflict / clarification from the uploaded documents */
+  issueKind?: QuestionKind
+  onResolve?: () => void
+  /** PMO: sign-off control for the field (In Scope) */
+  signOff?: { signedOff: boolean; onSignOff: () => void }
 }) {
+  const outlineBtn: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#0d212c',
+    background: '#ffffff',
+    border: '1px solid #cbd5e1',
+    padding: '5px 14px',
+    borderRadius: 8,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  }
   return (
     <div
       style={{
@@ -2943,6 +2972,43 @@ function ContextFieldHeader({
           {label}
           {required && <span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>}
         </label>
+
+        {issueKind && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontSize: 11.5,
+              fontWeight: 700,
+              padding: '3px 12px',
+              borderRadius: 8,
+              whiteSpace: 'nowrap',
+              ...(issueKind === 'conflict'
+                ? { color: '#dc2626', background: '#fee2e2' }
+                : { color: '#b45309', background: '#fef3c7' }),
+            }}
+          >
+            {issueKind === 'conflict' ? 'Conflict' : 'Clarification needed'}
+          </span>
+        )}
+        {signOff?.signedOff && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontSize: 11.5,
+              fontWeight: 700,
+              padding: '3px 12px',
+              borderRadius: 8,
+              whiteSpace: 'nowrap',
+              color: '#166534',
+              background: '#dcfce7',
+              border: '1px solid #bbf7d0',
+            }}
+          >
+            Signed off
+          </span>
+        )}
 
         {/* Source Citation or Manually Edited Chip */}
         {isManuallyEdited ? (
@@ -3030,6 +3096,16 @@ function ContextFieldHeader({
           <Clock size={12} />
           View trace
         </button>
+        {issueKind && onResolve && (
+          <button type="button" onClick={onResolve} style={outlineBtn}>
+            Resolve
+          </button>
+        )}
+        {signOff && !signOff.signedOff && (
+          <button type="button" onClick={signOff.onSignOff} style={outlineBtn}>
+            Sign off
+          </button>
+        )}
       </div>
     </div>
   )
@@ -3049,7 +3125,13 @@ function ContextRichTextField({
   onOpenTrace,
   rows = 3,
   required = false,
+  issueKind,
+  onResolve,
+  signOff,
 }: {
+  issueKind?: QuestionKind
+  onResolve?: () => void
+  signOff?: { signedOff: boolean; onSignOff: () => void }
   label: string
   required?: boolean
   value: string
@@ -3085,6 +3167,9 @@ function ContextRichTextField({
           })
         }
         onOpenTrace={() => onOpenTrace(fieldKey)}
+        issueKind={issueKind}
+        onResolve={onResolve}
+        signOff={signOff}
       />
       <textarea
         value={value}
@@ -3596,17 +3681,15 @@ function FormTab({
   onDirtyChange,
   formVersions = [],
   isEditable = true,
-  startupDone = false,
-  startupUpdates,
-  onStartupResolved,
+  ctx,
+  onCtxChange,
   isSubmitted = false,
 }: {
   /** The context was already submitted, so new uploads change it and need confirmation */
   isSubmitted?: boolean
   /** The first-visit questions were already answered (or dismissed) for this SOW */
-  startupDone?: boolean
-  startupUpdates?: ContextUpdate[]
-  onStartupResolved?: (updates: ContextUpdate[]) => void
+  ctx: ContextIssueState
+  onCtxChange: (update: (prev: ContextIssueState) => ContextIssueState) => void
   files: UploadedFile[]
   showUploadedDocs?: boolean
   onReady?: () => void
@@ -3635,21 +3718,27 @@ function FormTab({
     })
     return { ...merged, manuallyEditedFields: edited }
   }
-  // When the Context opens for a new SOW with several documents, ask the questions first
-  // (before the form is generated). Later uploads ask them too.
-  const [resolver, setResolver] = useState<{ questions: DocumentQuestion[]; names: string[] } | null>(() => {
-    if (skipLoading || startupDone || !isEditable) return null
+  // Conflicts / clarifications raised by the uploaded documents (PMO). They are listed in the
+  // Context and resolved one by one with the Resolve button.
+  const issues = ctx.init ? ctx.questions : []
+  const [activeIssue, setActiveIssue] = useState<DocumentQuestion | null>(null)
+  const [signOffOpen, setSignOffOpen] = useState(false)
+  const generatedUpdatesRef = useRef<ContextUpdate[]>(ctx.updates)
+  useEffect(() => {
+    if (ctx.init) return
     const names = (initialFiles || []).map((f) => f.name)
-    const questions = buildDocumentQuestions(names)
-    return questions.length > 0 ? { questions, names } : null
-  })
-  const [startupPending, setStartupPending] = useState(() => resolver !== null)
-  const startupUpdatesRef = useRef<ContextUpdate[]>(startupUpdates ?? [])
+    onCtxChange((p) => ({
+      ...p,
+      init: true,
+      questions: skipLoading || !isEditable ? [] : buildDocumentQuestions(names),
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
   const [uploadConfirm, setUploadConfirm] = useState<{ proceed: () => void } | null>(null)
   const [formData, setFormData] = useState<SOWFormData>(
     skipLoading
-      ? MOCK_FORM_DATA
+      ? withContextUpdates(MOCK_FORM_DATA, ctx.updates)
       : {
           commitments: [],
           clientName: '',
@@ -3671,11 +3760,10 @@ function FormTab({
       onReady?.()
       return
     }
-    if (startupPending) return
     timer1Ref.current = setTimeout(() => {
       setLoadingState('shimmer')
       timer2Ref.current = setTimeout(() => {
-        setFormData(withContextUpdates(MOCK_FORM_DATA, startupUpdatesRef.current))
+        setFormData(withContextUpdates(MOCK_FORM_DATA, generatedUpdatesRef.current))
         setLoadingState('ready')
         onReady?.()
       }, 1500)
@@ -3684,7 +3772,8 @@ function FormTab({
       if (timer1Ref.current) clearTimeout(timer1Ref.current)
       if (timer2Ref.current) clearTimeout(timer2Ref.current)
     }
-  }, [startupPending])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const initialDataRef = useRef<SOWFormData | null>(null)
 
@@ -3806,29 +3895,25 @@ function FormTab({
     })
   }
 
-  // Questions about the documents come first, before the form is generated
-  if (startupPending && resolver) {
-    return (
-      <div style={{ flex: 1 }}>
-        <ConflictResolver
-          isOpen
-          questions={resolver.questions}
-          fileNames={resolver.names}
-          onComplete={(updates) => {
-            startupUpdatesRef.current = updates
-            onStartupResolved?.(updates)
-            setStartupPending(false)
-            setResolver(null)
-          }}
-          onClose={() => {
-            onStartupResolved?.([])
-            setStartupPending(false)
-            setResolver(null)
-          }}
-        />
-      </div>
-    )
+  const resolveIssue = (updates: ContextUpdate[], answers: Record<string, QuestionAnswer>) => {
+    const q = activeIssue
+    setActiveIssue(null)
+    if (!q) return
+    const resolved = !!answers[q.id] && answers[q.id].kind !== 'skip'
+    if (updates.length > 0) setFormData((prev) => withContextUpdates(prev, updates))
+    onCtxChange((p) => ({
+      ...p,
+      updates: [...p.updates, ...updates],
+      questions: resolved ? p.questions.filter((x) => x.id !== q.id) : p.questions,
+    }))
   }
+  const issueFor = (key: string) => (isEditable ? issues.find((q) => q.fieldKey === key) : undefined)
+  const issueProps = (key: string) => {
+    const q = issueFor(key)
+    return q ? { issueKind: q.kind, onResolve: () => setActiveIssue(q) } : {}
+  }
+  const conflictCount = issues.filter((q) => q.kind === 'conflict').length
+  const clarifyCount = issues.length - conflictCount
 
   if (loadingState === 'generating') {
     return <FormGeneratingAnimation />
@@ -3842,6 +3927,32 @@ function FormTab({
     <div style={{ display: 'flex', width: '100%', minHeight: '100%', position: 'relative', overflow: 'hidden' }}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', width: '100%' }}>
         {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+
+        {isEditable && issues.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '14px 18px',
+              marginBottom: 16,
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: 12,
+            }}
+          >
+            <AlertTriangle size={22} color="#dc2626" style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+                {issues.length} {issues.length === 1 ? 'item needs' : 'items need'} your attention
+              </div>
+              <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 2 }}>
+                We found {conflictCount} {conflictCount === 1 ? 'conflict' : 'conflicts'} and {clarifyCount}{' '}
+                {clarifyCount === 1 ? 'item that needs' : 'items that need'} clarification in the extracted context.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Commitments card ── */}
       <SectionCard
@@ -4160,6 +4271,7 @@ function FormTab({
               })
             }
             onOpenTrace={() => openTraceForField('clientName')}
+            {...issueProps('clientName')}
           />
           <input
             value={formData.clientName}
@@ -4204,6 +4316,7 @@ function FormTab({
           isEditable={isEditable}
           onOpenCitation={setCitationModalTarget}
           onOpenTrace={openTraceForField}
+          {...issueProps('description')}
         />
 
         {/* Business Outcome */}
@@ -4223,6 +4336,7 @@ function FormTab({
           isEditable={isEditable}
           onOpenCitation={setCitationModalTarget}
           onOpenTrace={openTraceForField}
+          {...issueProps('businessOutcome')}
         />
 
         {/* Importance & Value of Solution */}
@@ -4242,6 +4356,7 @@ function FormTab({
           isEditable={isEditable}
           onOpenCitation={setCitationModalTarget}
           onOpenTrace={openTraceForField}
+          {...issueProps('importanceValue')}
         />
 
         {/* In Scope */}
@@ -4250,7 +4365,10 @@ function FormTab({
           required
           fieldKey="inScope"
           value={formData.inScope}
-          onChange={(v) => handleFieldChange('inScope', v)}
+          onChange={(v) => {
+            handleFieldChange('inScope', v)
+            if (ctx.scopeSignedOff) onCtxChange((p) => ({ ...p, scopeSignedOff: false }))
+          }}
           citation={{
             sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
             page: 1,
@@ -4261,6 +4379,7 @@ function FormTab({
           isEditable={isEditable}
           onOpenCitation={setCitationModalTarget}
           onOpenTrace={openTraceForField}
+          signOff={isEditable ? { signedOff: ctx.scopeSignedOff, onSignOff: () => setSignOffOpen(true) } : undefined}
         />
 
         {/* Out of Scope */}
@@ -4422,7 +4541,7 @@ function FormTab({
           const questions = buildDocumentQuestions(names, {
             clientName: formData.clientName,
           })
-          if (questions.length > 0) setResolver({ questions, names })
+          onCtxChange((p) => ({ ...p, init: true, questions }))
         }}
         onRemoveFile={(id) => {
           const doc = extraFiles.find((d) => d.id === id)
@@ -4434,28 +4553,56 @@ function FormTab({
 
       </div>
 
-      {/* Questions about the newly uploaded documents */}
-      {resolver && (
+      {/* Resolve a conflict / clarification */}
+      {activeIssue && (
         <ConflictResolver
           isOpen
-          questions={resolver.questions}
-          fileNames={resolver.names}
-          onComplete={(updates) => {
-            if (startupPending) {
-              startupUpdatesRef.current = updates
-              onStartupResolved?.(updates)
-              setStartupPending(false)
-            } else {
-              setFormData((prev) => withContextUpdates(prev, updates))
-            }
-            setResolver(null)
-          }}
-          onClose={() => {
-            if (startupPending) onStartupResolved?.([])
-            setStartupPending(false)
-            setResolver(null)
-          }}
+          skipIntro
+          questions={[activeIssue]}
+          fileNames={[]}
+          onComplete={resolveIssue}
+          onClose={() => setActiveIssue(null)}
         />
+      )}
+
+      {/* Sign off the In Scope items */}
+      {signOffOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSignOffOpen(false)
+          }}
+        >
+          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <button
+              onClick={() => setSignOffOpen(false)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Sign off scope?</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
+              By signing off, you confirm that you have read and validated the documents and finalised the In Scope items. These items will be treated as the approved scope when the SOW is generated.
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setSignOffOpen(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setSignOffOpen(false)
+                  onCtxChange((p) => ({ ...p, scopeSignedOff: true }))
+                }}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#00C4C4', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Sign off
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Confirm before more documents are uploaded to a submitted Context */}
@@ -4536,7 +4683,7 @@ function FormTab({
                   // Re-check what is left: the remaining documents may now disagree
                   const names = remaining.map((d) => d.name)
                   const questions = buildDocumentQuestions(names, { clientName: formData.clientName })
-                  if (questions.length > 0) setResolver({ questions, names })
+                  onCtxChange((p) => ({ ...p, init: true, questions }))
                 }}
                 style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#E60000', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
@@ -9036,7 +9183,7 @@ function ItemRow({
                   >
                     <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
                   </svg>
-                  Answer with AI <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(10 Tokens)</span>
+                  Check internal sources <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(10 Tokens)</span>
                 </button>
                 <button
                   type="button"
@@ -15360,7 +15507,7 @@ export function SOWDetailScreen({
   const isPMORole = effectiveViewerRole === 'pmo'
   const isAdminRole = effectiveViewerRole === 'admin'
   // First-visit Context questions: answered once, kept across tab switches
-  const [contextStartup, setContextStartup] = useState<{ done: boolean; updates: ContextUpdate[] }>({ done: false, updates: [] })
+  const [contextIssueState, setContextIssueState] = useState<ContextIssueState>({ init: false, questions: [], updates: [], scopeSignedOff: false })
   const [sendApprovalTipPos, setSendApprovalTipPos] = useState<{ top: number; right: number } | null>(null)
   // Once the draft has been generated, Context and Planning become view-only for everyone
   const contentFrozen = isViewOnly || isDraftUnlocked
@@ -15898,9 +16045,8 @@ export function SOWDetailScreen({
               skipLoading={isContributor || isStructureUnlocked}
               onDirtyChange={(dirty) => setIsFormDirty(dirty)}
               formVersions={formVersions}
-              startupDone={contextStartup.done}
-              startupUpdates={contextStartup.updates}
-              onStartupResolved={(updates) => setContextStartup({ done: true, updates })}
+              ctx={contextIssueState}
+              onCtxChange={setContextIssueState}
               isSubmitted={isStructureUnlocked}
               isEditable={isPMORole && !contentFrozen && (isStructureUnlocked ? isFormEditable : true)}
             />

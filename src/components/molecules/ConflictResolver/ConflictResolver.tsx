@@ -70,11 +70,12 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
   isOpen,
   questions,
   fileNames,
+  skipIntro = false,
   onComplete,
   onClose,
 }) => {
   // -1 = intro, 0..n-1 = questions
-  const [step, setStep] = useState(-1)
+  const [step, setStep] = useState(skipIntro ? 0 : -1)
   const [answers, setAnswers] = useState<Record<string, QuestionAnswer>>({})
   const [choice, setChoice] = useState<string | null>(null)
   const [customText, setCustomText] = useState('')
@@ -83,7 +84,7 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setStep(-1)
+      setStep(skipIntro ? 0 : -1)
       setAnswers({})
       setChoice(null)
       setCustomText('')
@@ -130,12 +131,12 @@ export const ConflictResolver: React.FC<ConflictResolverProps> = ({
   const total = questions.length
 
   const finish = (finalAnswers: Record<string, QuestionAnswer>) => {
-    onComplete(answersToUpdates(questions, finalAnswers))
+    onComplete(answersToUpdates(questions, finalAnswers), finalAnswers)
   }
 
   const handleClose = () => {
     const updates = answersToUpdates(questions, answers)
-    if (updates.length > 0) onComplete(updates)
+    if (updates.length > 0) onComplete(updates, answers)
     else onClose()
   }
 
