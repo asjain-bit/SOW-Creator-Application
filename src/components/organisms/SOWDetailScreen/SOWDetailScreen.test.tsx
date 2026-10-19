@@ -35,7 +35,7 @@ describe('SOWDetailScreen', () => {
 
   it('Overview tab is active by default', () => {
     render(<SOWDetailScreen uploadedFiles={mockFiles} />)
-    expect(screen.getByText('Uploaded Documents')).toBeTruthy()
+    expect(screen.getByText('Documents')).toBeTruthy()
   })
 
   it('shows uploaded file name in Overview tab', () => {

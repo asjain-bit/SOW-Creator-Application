@@ -17,7 +17,9 @@ interface ContextIssueState {
   init: boolean
   questions: DocumentQuestion[]
   updates: ContextUpdate[]
-  scopeSignedOff: boolean
+  /** In Scope items that have been signed off */
+  signedOffIds: string[]
+  clientName?: string
 }
 import {
   Check,
@@ -47,13 +49,19 @@ import {
   Download,
   RotateCcw,
   History,
+  Globe,
+  FileWarning,
+  CircleHelp,
+  Gauge,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { AuditLogView, addGlobalAuditLog } from '../AuditLogView'
 import type {
   SOWDetailScreenProps,
   SOWTab,
   SOWFormData,
   CommitmentItem,
+  ScopeItem,
   SOWSection,
   SectionItem,
   SectionMember,
@@ -134,6 +142,15 @@ function LockIcon() {
         strokeLinecap="round"
       />
     </svg>
+  )
+}
+
+/** Icon with a soft filled square behind it, used in Context section titles */
+function SectionTitleIcon({ icon }: { icon: React.ReactNode }) {
+  return (
+    <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(0,196,196,0.12)', color: '#00a0a0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 8, flexShrink: 0 }}>
+      {icon}
+    </span>
   )
 }
 
@@ -315,14 +332,13 @@ function SOWWorkflowStepper({ isDraftGenerated = false }: { isDraftGenerated?: b
                       width: 32,
                       height: 32,
                       borderRadius: '50%',
-                      background: '#00C4C4',
+                      background: STATUS_BG['In Progress'],
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#ffffff',
+                      color: STATUS_TEXT['In Progress'],
                       fontSize: 13,
                       fontWeight: 700,
-                      boxShadow: '0 2px 8px rgba(0,196,196,0.35)',
                     }}
                   >
                     {s.stepIndex}
@@ -352,7 +368,7 @@ function SOWWorkflowStepper({ isDraftGenerated = false }: { isDraftGenerated?: b
                     style={{
                       fontSize: 12,
                       fontWeight: 700,
-                      color: isDone ? '#16a34a' : isActive ? '#00a0a0' : '#475569',
+                      color: isDone ? '#16a34a' : isActive ? STATUS_TEXT['In Progress'] : '#475569',
                       textAlign: 'center',
                       whiteSpace: 'nowrap',
                     }}
@@ -363,7 +379,7 @@ function SOWWorkflowStepper({ isDraftGenerated = false }: { isDraftGenerated?: b
                     style={{
                       fontSize: 10.5,
                       fontWeight: 500,
-                      color: isActive ? '#00a0a0' : '#94a3b8',
+                      color: isActive ? STATUS_TEXT['In Progress'] : '#94a3b8',
                       textAlign: 'center',
                       whiteSpace: 'nowrap',
                     }}
@@ -394,6 +410,207 @@ function SOWWorkflowStepper({ isDraftGenerated = false }: { isDraftGenerated?: b
   )
 }
 
+/** Centered confirmation dialog used on the Overview tab */
+function OverviewConfirmModal({
+  title,
+  body,
+  confirmLabel,
+  destructive = false,
+  warning = false,
+  onConfirm,
+  onCancel,
+}: {
+  title: string
+  body: React.ReactNode
+  confirmLabel: string
+  destructive?: boolean
+  /** Orange warning style with an alert icon */
+  warning?: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel()
+      }}
+    >
+      <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+        <button
+          onClick={onCancel}
+          style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+        >
+          <X size={20} />
+        </button>
+        {destructive && (
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <Trash2 size={28} color="#ef4444" />
+          </div>
+        )}
+        {warning && (
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <AlertTriangle size={28} color="#f97316" />
+          </div>
+        )}
+        <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>{title}</div>
+        <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>{body}</div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{ flex: 1, padding: '12px', borderRadius: 12, background: destructive ? '#E60000' : warning ? '#f97316' : '#00C4C4', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Popup to edit the SOW details (name, deadline, token consumption); changes apply only on Save */
+function EditSOWDetailsModal({
+  sowName,
+  sowDeadline,
+  tokenConsumption,
+  onSave,
+  onClose,
+}: {
+  sowName: string
+  sowDeadline: string
+  tokenConsumption: number
+  onSave: (v: { name: string; deadline: string; tokens: number }) => void
+  onClose: () => void
+}) {
+  const [name, setName] = useState(sowName)
+  const [deadline, setDeadline] = useState(sowDeadline)
+  const [tokens, setTokens] = useState(String(tokenConsumption))
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    borderRadius: 10,
+    border: '1px solid #e2e8f0',
+    background: '#ffffff',
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#0d212c',
+    outline: 'none',
+    boxSizing: 'border-box',
+  }
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', marginBottom: 6 }
+  const hasChanges =
+    name.trim() !== sowName.trim() || deadline !== sowDeadline || (Number(tokens) || 0) !== tokenConsumption
+  const canSave = name.trim().length > 0 && deadline.length > 0 && hasChanges
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div style={{ background: '#ffffff', borderRadius: 24, padding: '28px 28px 24px', width: 480, maxWidth: '90vw', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+        >
+          <X size={20} />
+        </button>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 18 }}>Edit SOW Details</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 22 }}>
+          <div>
+            <label style={labelStyle}>SOW Name</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter SOW Name" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>SOW Deadline</label>
+            <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Token Consumption</label>
+            <input type="number" min={0} value={tokens} onChange={(e) => setTokens(e.target.value)} placeholder="Tokens allocated" style={inputStyle} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            onClick={onClose}
+            style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
+          <button
+            disabled={!canSave}
+            onClick={() => onSave({ name: name.trim(), deadline, tokens: Number(tokens) || 0 })}
+            style={{ flex: 1, padding: '12px', borderRadius: 12, background: canSave ? '#00C4C4' : '#cbd5e1', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed' }}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Documents Summary: processed count, extraction rate, conflicts and a short overview */
+function DocumentsSummary({ documentCount, conflictCount }: { documentCount: number; conflictCount: number }) {
+  const [expanded, setExpanded] = useState(false)
+  const cards = [
+    { value: String(documentCount), label: 'Documents processed', bg: '#eff6ff', border: '#dbeafe', color: '#2563eb', icon: <FileText size={18} strokeWidth={1.75} /> },
+    { value: '92%', label: 'Content extracted', bg: '#f0fdf4', border: '#bbf7d0', color: '#16a34a', icon: <Layers size={18} strokeWidth={1.75} /> },
+    { value: String(conflictCount), label: 'Content conflicts detected', bg: '#fff7ed', border: '#fed7aa', color: '#ea580c', icon: <AlertTriangle size={18} strokeWidth={1.75} /> },
+  ]
+  return (
+    <div style={{ marginTop: 28 }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c', marginBottom: 12 }}>Documents Summary</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
+        {cards.map((c) => (
+          <div
+            key={c.label}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10 }}
+          >
+            <span style={{ color: c.color, display: 'flex', flexShrink: 0 }}>{c.icon}</span>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#0d212c', lineHeight: 1.1 }}>{c.value}</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#64748b', marginTop: 2 }}>{c.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px 24px' }}>
+        <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.65 }}>
+          The uploaded documents outline the digital transformation initiative, covering enterprise architecture, workplace requirements, and the proposed scope of transformation. The content highlights key business objectives, technology requirements, governance considerations and implementation timelines, which will help shape the SOW planning and questionnaire process.
+          {expanded && (
+            <>
+              {' '}
+              Key themes include phased delivery milestones, data residency and security expectations, integration with existing enterprise systems, and the acceptance criteria that will be used to sign off each deliverable.
+            </>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#0891b2' }}
+        >
+          {expanded ? 'Show less' : 'Show more'}
+          <ChevronDown size={16} style={{ transform: expanded ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s ease' }} />
+        </button>
+        <div style={{ marginTop: 16, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+          <Info size={18} color="#64748b" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+            Ongoing document monitoring: document insights are refreshed as documents are updated or reprocessed. If new content conflicts are identified, you&apos;ll receive a notification in the dashboard.
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OverviewTab({
   files,
   isDraftGenerated,
@@ -404,6 +621,11 @@ function OverviewTab({
   tokenConsumption,
   onTokenConsumptionChange,
   isPMO = false,
+  canEditDetails = false,
+  conflictCount = 0,
+  isSubmitted = false,
+  onAddFiles,
+  onRemoveFile,
 }: {
   files: UploadedFile[]
   isDraftGenerated?: boolean
@@ -413,9 +635,49 @@ function OverviewTab({
   onSowDeadlineChange?: (val: string) => void
   tokenConsumption?: number
   onTokenConsumptionChange?: (val: number) => void
+  /** PMO who can still change the SOW (uploads, deletes; confirmed first once the Context is submitted) */
   isPMO?: boolean
+  /** SOW details can be edited (false once the Context is submitted, until Edit is clicked there) */
+  canEditDetails?: boolean
+  conflictCount?: number
+  /** The Context was already submitted, so new uploads change it and need confirmation */
+  isSubmitted?: boolean
+  onAddFiles?: (files: UploadedFile[]) => void
+  onRemoveFile?: (id: string) => void
 }) {
+  const [editOpen, setEditOpen] = useState(false)
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
+  const [uploadConfirm, setUploadConfirm] = useState<{ proceed: () => void } | null>(null)
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
+  const [uploadTipOpen, setUploadTipOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const toUploaded = (list: File[]): UploadedFile[] =>
+    list.map((f) => ({
+      id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      name: f.name,
+      size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+      type: f.name.split('.').pop() || 'doc',
+      file: f,
+      status: 'complete',
+      progress: 100,
+    }))
+  const requestUpload = (proceed: () => void) => {
+    if (isSubmitted) setUploadConfirm({ proceed })
+    else proceed()
+  }
+
+  const detailRows = [
+    { label: 'SOW Name', value: sowName || '—' },
+    {
+      label: 'SOW Deadline',
+      value: sowDeadline
+        ? new Date(`${sowDeadline}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        : '—',
+    },
+    { label: 'Token Consumption', value: String(tokenConsumption ?? 1200) },
+  ]
+
   return (
     <div style={{ padding: '20px 16px' }}>
       {/* ── SOW Workflow Stepper (Above Uploaded Documents) ── */}
@@ -423,228 +685,220 @@ function OverviewTab({
         <SOWWorkflowStepper isDraftGenerated={isDraftGenerated} />
       </div>
 
-      {/* ── SOW Details Card (SOW Name, Deadline, Tokens) ── */}
-      <div
-        style={{
-          marginBottom: 24,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>
-              SOW Details
-            </div>
-          </div>
-          {!isPMO && (
-            <span
+      {/* ── SOW Details (read-only; edited from a popup) ── */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>SOW Details</div>
+          {isPMO ? (
+            <button
+              type="button"
+              disabled={!canEditDetails}
+              onClick={() => canEditDetails && setEditOpen(true)}
+              title={canEditDetails ? undefined : 'Click Edit in the Context tab to make the details editable again'}
               style={{
-                fontSize: 11,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: 'none',
+                border: 'none',
+                padding: '2px 4px',
+                fontSize: 13,
                 fontWeight: 600,
-                color: '#64748b',
-                background: '#f1f5f9',
-                padding: '3px 9px',
-                borderRadius: 6,
+                color: canEditDetails ? '#00a0a0' : '#94a3b8',
+                cursor: canEditDetails ? 'pointer' : 'not-allowed',
               }}
             >
+              <Edit2 size={13} />
+              Edit
+            </button>
+          ) : (
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', background: '#f1f5f9', padding: '3px 9px', borderRadius: 6 }}>
               Read Only
             </span>
           )}
         </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {/* SOW Name */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: '#64748b',
-                marginBottom: 6,
-              }}
-            >
-              SOW Name
-            </label>
-                          <input
-                type="text"
-                readOnly={!isPMO}
-                value={sowName || ''}
-                onChange={(e) => onSowNameChange?.(e.target.value)}
-                placeholder="Enter SOW Name"
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+          {detailRows.map((r) => (
+            <div key={r.label}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b', marginBottom: 6 }}>{r.label}</div>
+              <div
                 style={{
-                  width: '100%',
                   padding: '7px 10px',
                   borderRadius: 8,
                   border: '1px solid #e2e8f0',
-                  background: '#ffffff',
+                  background: '#f8fafc',
                   fontSize: 13,
                   fontWeight: 500,
                   color: '#0d212c',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  cursor: isPMO ? undefined : 'default',
-                  WebkitTextFillColor: '#0d212c',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  minHeight: 20,
                 }}
-              />
-          </div>
-
-          {/* Deadline */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: '#64748b',
-                marginBottom: 6,
-              }}
-            >
-              SOW Deadline
-            </label>
-                          <input
-                type="date"
-                disabled={!isPMO}
-                value={sowDeadline || ''}
-                onChange={(e) => onSowDeadlineChange?.(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '7px 10px',
-                  borderRadius: 8,
-                  border: '1px solid #e2e8f0',
-                  background: '#ffffff',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: '#0d212c',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  cursor: isPMO ? undefined : 'default',
-                  WebkitTextFillColor: '#0d212c',
-                }}
-              />
-          </div>
-
-          {/* Tokens */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11.5,
-                fontWeight: 700,
-                color: '#64748b',
-                marginBottom: 6,
-              }}
-            >
-              Token Consumption
-            </label>
-                          <input
-                type="number"
-                readOnly={!isPMO}
-                min={0}
-                value={tokenConsumption ?? 1200}
-                onChange={(e) => onTokenConsumptionChange?.(Number(e.target.value) || 0)}
-                placeholder="Tokens allocated"
-                style={{
-                  width: '100%',
-                  padding: '7px 10px',
-                  borderRadius: 8,
-                  border: '1px solid #e2e8f0',
-                  background: '#ffffff',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: '#0d212c',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  cursor: isPMO ? undefined : 'default',
-                  WebkitTextFillColor: '#0d212c',
-                }}
-              />
-          </div>
+                title={r.value}
+              >
+                {r.value}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c', marginBottom: 2 }}>
-          Uploaded Documents
-        </div>
+      {/* ── Documents ── */}
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>Documents</div>
+        {isPMO && (
+          <div
+            style={{ position: 'relative', display: 'inline-flex' }}
+            onMouseEnter={() => setUploadTipOpen(true)}
+            onMouseLeave={() => setUploadTipOpen(false)}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              multiple
+              accept=".pdf,.docx,.ppt,.pptx"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) onAddFiles?.(toUploaded(Array.from(e.target.files)))
+                e.target.value = ''
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => requestUpload(() => fileInputRef.current?.click())}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 6px', border: 'none', background: 'none', fontSize: 13, fontWeight: 600, color: '#00C4C4', cursor: 'pointer' }}
+            >
+              <UploadCloud size={15} color="#00C4C4" />
+              Upload document
+            </button>
+            {uploadTipOpen && (
+              <div
+                role="tooltip"
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  zIndex: 50,
+                  width: 230,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  background: '#0d212c',
+                  color: '#ffffff',
+                  fontSize: 11.5,
+                  lineHeight: 1.6,
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
+                  pointerEvents: 'none',
+                }}
+              >
+                <div>Supported: PDF, DOCX, PPT</div>
+                <div>Max file size: 10 MB</div>
+                <div>Max documents: 10 ({files.length} uploaded)</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {files.length === 0 ? (
-        <div style={{ color: '#94a3b8', fontSize: 14, padding: '40px 0', textAlign: 'center' }}>
-          No documents uploaded.
-        </div>
+        <div style={{ color: '#94a3b8', fontSize: 14, padding: '40px 0', textAlign: 'center' }}>No documents uploaded.</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {files.map((file) => (
-            <button
+            <div
               key={file.id}
+              role="button"
+              tabIndex={0}
               onClick={() => setPreviewFile(file)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '14px 16px',
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 12,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.15s ease',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setPreviewFile(file)
               }}
+              title="Click to preview"
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', cursor: 'pointer', transition: 'all 0.15s ease' }}
               onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#cbd5e1'
-                ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
-                ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-                  '0 4px 12px rgba(0,0,0,0.06)'
+                ;(e.currentTarget as HTMLDivElement).style.borderColor = '#cbd5e1'
+                ;(e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
               }}
               onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'
-                ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
-                ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-                  '0 1px 3px rgba(0,0,0,0.04)'
+                ;(e.currentTarget as HTMLDivElement).style.borderColor = '#e2e8f0'
+                ;(e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, flexShrink: 0 }}>
                 <FileIconElement ext={getFileExt(file.name)} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontWeight: 600,
-                    color: '#0d212c',
-                    fontSize: 13,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                  title={file.name}
-                >
+                <div style={{ fontWeight: 600, color: '#0d212c', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>
                   {file.name}
                 </div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
                   {file.size} · {file.type.toUpperCase()}
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: '#00a0a0', fontWeight: 600, flexShrink: 0 }}>
-                Preview →
-              </div>
-            </button>
+              {isPMO && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setRemoveTarget({ id: file.id, name: file.name })
+                  }}
+                  title="Delete document"
+                  aria-label={`Delete ${file.name}`}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4, display: 'flex', flexShrink: 0 }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#94a3b8')}
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
+
+      {/* ── Documents Summary (below the uploaded documents) ── */}
+      <DocumentsSummary documentCount={files.length} conflictCount={conflictCount} />
+
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+      {editOpen && (
+        <EditSOWDetailsModal
+          sowName={sowName || ''}
+          sowDeadline={sowDeadline || ''}
+          tokenConsumption={tokenConsumption ?? 1200}
+          onClose={() => setEditOpen(false)}
+          onSave={({ name, deadline, tokens }) => {
+            onSowNameChange?.(name)
+            onSowDeadlineChange?.(deadline)
+            onTokenConsumptionChange?.(tokens)
+            setEditOpen(false)
+          }}
+        />
+      )}
+      {uploadConfirm && (
+        <OverviewConfirmModal
+          title="Upload more documents?"
+          body="If you upload more documents, your context will change based on the document sources. Are you sure you want to continue?"
+          confirmLabel="Yes, upload"
+          onCancel={() => setUploadConfirm(null)}
+          onConfirm={() => {
+            const go = uploadConfirm.proceed
+            setUploadConfirm(null)
+            go()
+          }}
+        />
+      )}
+      {removeTarget && (
+        <OverviewConfirmModal
+          destructive
+          title="Delete document?"
+          body={<>Are you sure you want to delete &ldquo;{removeTarget.name}&rdquo;? This will have an impact on the context.</>}
+          confirmLabel="Delete"
+          onCancel={() => setRemoveTarget(null)}
+          onConfirm={() => {
+            onRemoveFile?.(removeTarget.id)
+            setRemoveTarget(null)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -2218,6 +2472,8 @@ export function ReviewerAndParticipantsModal({
   const [selectedIds, setSelectedIds] = useState<string[]>(REVIEWERS_DEFAULT.map((r) => r.id))
   const [newEmail, setNewEmail] = useState('')
   const [emailError, setEmailError] = useState('')
+  // Added email is not a known member: the admin is told to assign a role
+  const [showPendingNote, setShowPendingNote] = useState(false)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -2277,6 +2533,12 @@ export function ReviewerAndParticipantsModal({
       setEmailError('Please enter a valid email address (e.g. user@organization.com)')
       return
     }
+    const knownEmails = [
+      ...REVIEWERS_DEFAULT.map((r) => r.email),
+      ...INITIAL_PARTICIPANTS.map((p) => p.email),
+      ...Object.values(MEMBER_EMAILS),
+    ].map((e) => e.toLowerCase())
+    setShowPendingNote(!knownEmails.includes(trimmed.toLowerCase()))
     const newId = `r${Date.now()}`
     setReviewers((prev) => [
       ...prev,
@@ -2561,6 +2823,12 @@ export function ReviewerAndParticipantsModal({
                 <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
                   <AlertTriangle size={12} />
                   {emailError}
+                </div>
+              )}
+              {showPendingNote && !emailError && (
+                <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'flex-start', padding: '8px 10px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, fontSize: 12, lineHeight: 1.45, color: '#c2410c' }}>
+                  <Info size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span>{UNKNOWN_EMAIL_NOTE}</span>
                 </div>
               )}
             </div>
@@ -2934,18 +3202,21 @@ function ContextFieldHeader({
   /** PMO: this field has an open conflict / clarification from the uploaded documents */
   issueKind?: QuestionKind
   onResolve?: () => void
-  /** PMO: sign-off control for the field (In Scope) */
-  signOff?: { signedOff: boolean; onSignOff: () => void }
+  /** PMO: sign-off control for the field (In Scope); disabled until an item is ticked */
+  signOff?: { signedOff: boolean; onSignOff: () => void; disabled?: boolean; allSelected?: boolean; onToggleAll?: () => void }
 }) {
-  const outlineBtn: React.CSSProperties = {
+  const [signOffTip, setSignOffTip] = useState(false)
+  // Secondary action (green fill and stroke)
+  const textActionBtn: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
+    gap: 5,
     fontSize: 12,
-    fontWeight: 700,
-    color: '#0d212c',
-    background: '#ffffff',
-    border: '1px solid #cbd5e1',
-    padding: '5px 14px',
+    fontWeight: 500,
+    color: '#15803d',
+    background: '#f0fdf4',
+    border: '1px solid #86efac',
+    padding: '4px 12px',
     borderRadius: 8,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
@@ -2979,7 +3250,7 @@ function ContextFieldHeader({
               display: 'inline-flex',
               alignItems: 'center',
               fontSize: 11.5,
-              fontWeight: 700,
+              fontWeight: 600,
               padding: '3px 12px',
               borderRadius: 8,
               whiteSpace: 'nowrap',
@@ -2997,7 +3268,7 @@ function ContextFieldHeader({
               display: 'inline-flex',
               alignItems: 'center',
               fontSize: 11.5,
-              fontWeight: 700,
+              fontWeight: 600,
               padding: '3px 12px',
               borderRadius: 8,
               whiteSpace: 'nowrap',
@@ -3069,6 +3340,7 @@ function ContextFieldHeader({
 
       {/* Right Actions: View Trace — Text only, no stroke, no fill */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {onOpenTrace && (
         <button
           type="button"
           onClick={onOpenTrace}
@@ -3096,17 +3368,378 @@ function ContextFieldHeader({
           <Clock size={12} />
           View trace
         </button>
+        )}
         {issueKind && onResolve && (
-          <button type="button" onClick={onResolve} style={outlineBtn}>
+          <button type="button" onClick={onResolve} style={textActionBtn}>
+            <CheckCircle2 size={13} />
             Resolve
           </button>
         )}
+        {signOff && !signOff.signedOff && signOff.onToggleAll && (
+          <>
+            <button
+              type="button"
+              onClick={signOff.onToggleAll}
+              aria-label={signOff.allSelected ? 'Deselect all items' : 'Select all items'}
+              aria-pressed={!!signOff.allSelected}
+              title={signOff.allSelected ? 'Deselect all' : 'Select all In Scope items'}
+              style={{
+                width: 16,
+                height: 16,
+                padding: 0,
+                borderRadius: 4,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                border: signOff.allSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                background: signOff.allSelected ? '#00C4C4' : '#ffffff',
+              }}
+            >
+              {signOff.allSelected && <Check size={11} color="#ffffff" strokeWidth={3.5} />}
+            </button>
+            <span style={{ width: 1, height: 16, background: '#e2e8f0' }} />
+          </>
+        )}
         {signOff && !signOff.signedOff && (
-          <button type="button" onClick={signOff.onSignOff} style={outlineBtn}>
-            Sign off
-          </button>
+          <span
+            style={{ position: 'relative', display: 'inline-flex' }}
+            onMouseEnter={() => setSignOffTip(true)}
+            onMouseLeave={() => setSignOffTip(false)}
+          >
+            <button
+              type="button"
+              disabled={signOff.disabled}
+              onClick={signOff.onSignOff}
+              style={{ ...textActionBtn, ...(signOff.disabled ? { opacity: 0.55, cursor: 'not-allowed' } : {}) }}
+            >
+              <FileCheck size={13} />
+              Sign off
+            </button>
+            {signOffTip && (
+              <span
+                role="tooltip"
+                style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50, width: 240, padding: '8px 12px', borderRadius: 8, background: '#0d212c', color: '#ffffff', fontSize: 11.5, lineHeight: 1.5, fontWeight: 400, boxShadow: '0 6px 18px rgba(0,0,0,0.2)', pointerEvents: 'none' }}
+              >
+                Select the items on which you want to give the sign-off, then click here.
+              </span>
+            )}
+          </span>
         )}
       </div>
+    </div>
+  )
+}
+
+/* ── In Scope / Out of Scope list (commitment-style points, edited in place) ── */
+
+function ScopeSection({
+  label,
+  kind,
+  items,
+  isEditable,
+  required = false,
+  signOff,
+  signedOffIds = [],
+  selectedIds = [],
+  onToggleSelect,
+  onOpenItemTrace,
+  onOpenCitation,
+  onChangeItem,
+  onRemoveItem,
+  onAddItem,
+}: {
+  label: string
+  kind: ScopeItem['scope']
+  items: ScopeItem[]
+  isEditable: boolean
+  required?: boolean
+  signOff?: { signedOff: boolean; onSignOff: () => void; disabled?: boolean; allSelected?: boolean; onToggleAll?: () => void }
+  /** In Scope only: items that already have a sign-off */
+  signedOffIds?: string[]
+  /** In Scope: items ticked for sign-off, and the toggle (omit to hide the checkboxes) */
+  selectedIds?: string[]
+  onToggleSelect?: (id: string) => void
+  onOpenItemTrace: (item: ScopeItem, index: number) => void
+  onOpenCitation: (item: ScopeItem, index: number) => void
+  onChangeItem: (id: string, patch: Partial<Pick<ScopeItem, 'text' | 'scope' | 'qualifiers'>>) => void
+  onRemoveItem: (id: string) => void
+  onAddItem: (text: string) => void
+}) {
+  const [newText, setNewText] = useState('')
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  // Qualifiers being added / edited for one item; applied only on Save
+  const [qualDraft, setQualDraft] = useState<{ id: string; values: string[] } | null>(null)
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    fontSize: 13,
+    color: '#0d212c',
+    background: '#ffffff',
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    outline: 'none',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  }
+  const focusIn = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => (e.target.style.borderColor = '#cbd5e1')
+  const focusOut = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => (e.target.style.borderColor = '#e2e8f0')
+  const textBtn: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 3,
+    fontSize: 11.5,
+    color: '#008b8b',
+    background: 'none',
+    border: 'none',
+    padding: '2px 4px',
+    cursor: 'pointer',
+    fontWeight: 600,
+  }
+
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <ContextFieldHeader label={label} required={required} signOff={signOff} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {items.length === 0 && (
+          <div style={{ fontSize: 13, color: '#94a3b8', padding: '6px 2px' }}>No items yet.</div>
+        )}
+        {items.map((item, idx) => {
+          const signed = signedOffIds.includes(item.id)
+          return (
+            <div
+              key={item.id}
+              onMouseEnter={() => setHoveredId(item.id)}
+              onMouseLeave={() => setHoveredId((h) => (h === item.id ? null : h))}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                // Alternate rows for a clear visual hierarchy
+                background: idx % 2 === 1 ? '#f1f5f9' : '#ffffff',
+                padding: '10px 12px',
+                borderRadius: 10,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  {onToggleSelect && !signed && (hoveredId === item.id || selectedIds.length > 0) && (
+                    <button
+                      type="button"
+                      onClick={() => !signed && onToggleSelect(item.id)}
+                      aria-label={selectedIds.includes(item.id) ? 'Deselect for sign-off' : 'Select for sign-off'}
+                      aria-pressed={selectedIds.includes(item.id)}
+                      disabled={signed}
+                      style={{
+                        width: 16,
+                        height: 16,
+                        padding: 0,
+                        borderRadius: 4,
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: signed ? 'default' : 'pointer',
+                        border: selectedIds.includes(item.id) ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+                        background: selectedIds.includes(item.id) ? '#00C4C4' : '#ffffff',
+                      }}
+                    >
+                      {selectedIds.includes(item.id) && <Check size={11} color="#ffffff" strokeWidth={3.5} />}
+                    </button>
+                  )}
+                  <span
+                    style={{ width: 22, height: 22, borderRadius: '50%', background: idx % 2 === 1 ? '#ffffff' : 'rgba(0,196,196,0.15)', color: '#00a0a0', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  >
+                    {idx + 1}
+                  </span>
+                  {item.manuallyEdited ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: 5 }}>
+                      <Edit2 size={10} />
+                      Manually Edited
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCitation(item, idx)}
+                      title="Click to view full cited PDF document preview"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#64748b', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: 5, cursor: 'pointer', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      <FileText size={10} color="#64748b" />
+                      {item.citation || 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1)'}
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  {signed && (
+                    <span
+                      title="Signed off"
+                      style={{ width: 18, height: 18, borderRadius: '50%', background: '#16a34a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Check size={11} color="#ffffff" strokeWidth={3.5} />
+                    </span>
+                  )}
+                  <button type="button" onClick={() => onOpenItemTrace(item, idx)} style={textBtn}>
+                    <Clock size={10} />
+                    View trace
+                  </button>
+                  {isEditable && !signed && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveItem(item.id)}
+                      title="Remove item"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 2, display: 'flex' }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#94a3b8')}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {isEditable && !signed ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <input
+                      type="text"
+                      value={item.text}
+                      onChange={(e) => onChangeItem(item.id, { text: e.target.value })}
+                      onFocus={focusIn}
+                      onBlur={focusOut}
+                      aria-label="Subject"
+                      style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+                    />
+                    <div style={{ position: 'relative', width: 140, flexShrink: 0 }}>
+                      <select
+                        value={item.scope}
+                        onChange={(e) => onChangeItem(item.id, { scope: e.target.value as ScopeItem['scope'] })}
+                        onFocus={focusIn}
+                        onBlur={focusOut}
+                        aria-label="Scope"
+                        style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', paddingRight: 36 }}
+                      >
+                        <option value="included">Included</option>
+                        <option value="excluded">Excluded</option>
+                      </select>
+                      <ChevronDown size={14} color="#64748b" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                    </div>
+                  </div>
+                  {qualDraft?.id === item.id ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Qualifiers</label>
+                      {qualDraft.values.map((q, qi) => (
+                        <div key={qi} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            autoFocus={qi === qualDraft.values.length - 1}
+                            type="text"
+                            value={q}
+                            placeholder="e.g. Phase 1"
+                            onChange={(e) =>
+                              setQualDraft({ id: item.id, values: qualDraft.values.map((x, i) => (i === qi ? e.target.value : x)) })
+                            }
+                            onFocus={focusIn}
+                            onBlur={focusOut}
+                            aria-label="Qualifier"
+                            style={inputStyle}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setQualDraft({ id: item.id, values: qualDraft.values.filter((_, i) => i !== qi) })}
+                            title="Remove qualifier"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 2, display: 'flex' }}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setQualDraft({ id: item.id, values: [...qualDraft.values, ''] })}
+                        style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', padding: 0, fontSize: 12.5, fontWeight: 600, color: '#00a0a0', cursor: 'pointer' }}
+                      >
+                        <Plus size={13} />
+                        Qualifier
+                      </button>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                        <button
+                          type="button"
+                          onClick={() => setQualDraft(null)}
+                          style={{ padding: '7px 16px', borderRadius: 8, background: '#ffffff', border: '1px solid #e2e8f0', fontSize: 13, fontWeight: 700, color: '#0d212c', cursor: 'pointer' }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onChangeItem(item.id, { qualifiers: qualDraft.values.map((v) => v.trim()).filter(Boolean) })
+                            setQualDraft(null)
+                          }}
+                          style={{ padding: '7px 18px', borderRadius: 8, background: '#00C4C4', border: 'none', fontSize: 13, fontWeight: 700, color: '#ffffff', cursor: 'pointer' }}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      {item.qualifiers.length > 0 && (
+                        <span style={{ fontSize: 12.5, color: '#94a3b8' }}>Qualifiers: {item.qualifiers.join(', ')}</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setQualDraft({ id: item.id, values: item.qualifiers.length > 0 ? item.qualifiers : [''] })}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', padding: 0, fontSize: 12.5, fontWeight: 600, color: '#00a0a0', cursor: 'pointer' }}
+                      >
+                        <Plus size={13} />
+                        Qualifier
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
+                  <div style={{ fontSize: 14, color: '#0d212c', lineHeight: 1.5 }}>{item.text}</div>
+                  <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 4 }}>
+                    Scope: {item.scope === 'included' ? 'Included' : 'Excluded'}
+                    {item.qualifiers.length > 0 && ` · Qualifiers: ${item.qualifiers.join(', ')}`}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {isEditable && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <input
+            value={newText}
+            onChange={(e) => setNewText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newText.trim()) {
+                onAddItem(newText.trim())
+                setNewText('')
+              }
+            }}
+            onFocus={focusIn}
+            onBlur={focusOut}
+            placeholder={`Add an ${kind === 'included' ? 'in scope' : 'out of scope'} item and press Enter…`}
+            style={{ ...inputStyle, flex: 1, padding: '9px 12px' }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (!newText.trim()) return
+              onAddItem(newText.trim())
+              setNewText('')
+            }}
+            style={{ padding: '9px 16px', background: '#00C4C4', border: 'none', borderRadius: 8, fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 6px rgba(0,196,196,0.25)' }}
+          >
+            <Plus size={14} /> Add
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -3270,12 +3903,14 @@ function DocumentUploaderCard({
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <UploadCloud size={17} color="#00a0a0" />
-            Reference Document Repository
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center' }}>
+            <SectionTitleIcon icon={isEditable ? <UploadCloud size={14} /> : <FileText size={14} />} />
+            {isEditable ? 'Reference Document Repository' : 'Uploaded Documents'}
           </div>
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-            Upload supplementary RFP, questionnaire, or vendor contracts to strengthen AI extraction accuracy.
+            {isEditable
+              ? 'Upload supplementary RFP, questionnaire, or vendor contracts to strengthen AI extraction accuracy.'
+              : 'Documents used for this context. Upload or delete documents from the Overview tab.'}
           </div>
         </div>
       </div>
@@ -3461,6 +4096,17 @@ const MOCK_FORM_DATA: SOWFormData = {
       citationSnippet: 'Phase 2 – Output testing. U.S.-licensed clinicians evaluate the agent by posing as patients; the company reports 7.7K+ clinicians and 775K+ test calls.',
       citationPage: 1,
     },
+  ],
+  scopeItems: [
+    { id: 's1', scope: 'included', text: 'Vendor portal setup', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 2. Safety-assurance approach)', citationPage: 1, citationSnippet: 'Phase 1 – Architecture. The Polaris constellation pairs a primary conversational agent with specialist support models' },
+    { id: 's2', scope: 'included', text: 'AI sourcing engine integration', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 2. Safety-assurance approach)', citationPage: 1, citationSnippet: 'Phase 1 – Architecture. The Polaris constellation pairs a primary conversational agent with specialist support models' },
+    { id: 's3', scope: 'included', text: 'Contract repository migration', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 2. Safety-assurance approach)', citationPage: 1, citationSnippet: 'Phase 1 – Architecture. The Polaris constellation pairs a primary conversational agent with specialist support models' },
+    { id: 's4', scope: 'included', text: 'Role-based access control', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 2. Safety-assurance approach)', citationPage: 1, citationSnippet: 'Phase 1 – Architecture. The Polaris constellation pairs a primary conversational agent with specialist support models' },
+    { id: 's5', scope: 'included', text: 'Real-time spend analytics dashboard', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 2. Safety-assurance approach)', citationPage: 1, citationSnippet: 'Phase 1 – Architecture. The Polaris constellation pairs a primary conversational agent with specialist support models' },
+    { id: 's6', scope: 'included', text: 'Clinical safety monitoring protocols', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 2. Safety-assurance approach)', citationPage: 1, citationSnippet: 'Phase 1 – Architecture. The Polaris constellation pairs a primary conversational agent with specialist support models' },
+    { id: 'x1', scope: 'excluded', text: 'Direct diagnostic or prescribing services', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 1. Purpose and scope)', citationPage: 1, citationSnippet: 'Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.' },
+    { id: 'x2', scope: 'excluded', text: 'Hospice or mental-health disorder deployments', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 1. Purpose and scope)', citationPage: 1, citationSnippet: 'Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.' },
+    { id: 'x3', scope: 'excluded', text: 'Any operations outside the agreed non-diagnostic patient-facing scope', qualifiers: [], citation: 'Clinical_Safety_Case_Hazard_Log.pdf (Page 1 • 1. Purpose and scope)', citationPage: 1, citationSnippet: 'Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.' },
   ],
   clientName: 'M42 Health Platform',
   description:
@@ -3699,7 +4345,8 @@ function FormTab({
   formVersions?: { id: string; timestamp: string }[]
   isEditable?: boolean
 }) {
-  const [extraFiles, setExtraFiles] = useState<UploadedFile[]>(initialFiles || [])
+  // Documents are added / deleted from the Overview tab; the Context only lists them
+  const extraFiles = initialFiles || []
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
   const [citationModalTarget, setCitationModalTarget] = useState<ContextCitationTarget | null>(null)
   const [activeTraceTarget, setActiveTraceTarget] = useState<TraceRecord | null>(null)
@@ -3722,7 +4369,9 @@ function FormTab({
   // Context and resolved one by one with the Resolve button.
   const issues = ctx.init ? ctx.questions : []
   const [activeIssue, setActiveIssue] = useState<DocumentQuestion | null>(null)
-  const [signOffOpen, setSignOffOpen] = useState(false)
+  // In Scope items ticked for sign-off, and the confirmation popup
+  const [scopeSelected, setScopeSelected] = useState<string[]>([])
+  const [signOffConfirmOpen, setSignOffConfirmOpen] = useState(false)
   const generatedUpdatesRef = useRef<ContextUpdate[]>(ctx.updates)
   useEffect(() => {
     if (ctx.init) return
@@ -3734,13 +4383,12 @@ function FormTab({
     }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null)
-  const [uploadConfirm, setUploadConfirm] = useState<{ proceed: () => void } | null>(null)
   const [formData, setFormData] = useState<SOWFormData>(
     skipLoading
       ? withContextUpdates(MOCK_FORM_DATA, ctx.updates)
       : {
           commitments: [],
+          scopeItems: [],
           clientName: '',
           description: '',
           businessOutcome: '',
@@ -3752,6 +4400,10 @@ function FormTab({
         }
   )
   const [newCommitment, setNewCommitment] = useState('')
+  useEffect(() => {
+    onCtxChange((p) => (p.clientName === formData.clientName ? p : { ...p, clientName: formData.clientName }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.clientName])
   const timer1Ref = useRef<ReturnType<typeof setTimeout> | null>(null)
   const timer2Ref = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -3826,6 +4478,74 @@ function FormTab({
     setNewCommitment('')
   }
 
+  // Scope items are edited in place; changing an item's scope moves it to the other list
+  const changeScopeItem = (id: string, patch: Partial<Pick<ScopeItem, 'text' | 'scope' | 'qualifiers'>>) => {
+    setFormData((prev) => ({
+      ...prev,
+      scopeItems: prev.scopeItems.map((i) => (i.id === id ? { ...i, ...patch, manuallyEdited: true } : i)),
+    }))
+    // Changing the wording or the scope of a signed-off item withdraws its sign-off
+    if ((patch.text !== undefined || patch.scope !== undefined) && ctx.signedOffIds.includes(id)) {
+      onCtxChange((p) => ({ ...p, signedOffIds: p.signedOffIds.filter((x) => x !== id) }))
+    }
+  }
+  const addScopeItem = (scope: ScopeItem['scope'], text: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      scopeItems: [
+        ...prev.scopeItems,
+        { id: `scope-${Date.now()}`, text, scope, qualifiers: [], citation: 'Manual Input (PMO Added)', manuallyEdited: true, citationPage: 1 },
+      ],
+    }))
+  }
+  const removeScopeItem = (id: string) => {
+    setFormData((prev) => ({ ...prev, scopeItems: prev.scopeItems.filter((i) => i.id !== id) }))
+    if (ctx.signedOffIds.includes(id)) {
+      onCtxChange((p) => ({ ...p, signedOffIds: p.signedOffIds.filter((x) => x !== id) }))
+    }
+  }
+  const includedItems = formData.scopeItems.filter((i) => i.scope === 'included')
+  const unsignedIncluded = includedItems.filter((i) => !ctx.signedOffIds.includes(i.id))
+  const allSignedOff = includedItems.length > 0 && unsignedIncluded.length === 0
+  const selectedForSignOff = scopeSelected.filter((id) => unsignedIncluded.some((i) => i.id === id))
+  const openScopeItemTrace = (item: ScopeItem, index: number, label: string) =>
+    setActiveTraceTarget({
+      fieldKey: `scope-${item.id}`,
+      fieldLabel: `${label} #${index + 1}`,
+      sourceDoc: {
+        fileName: 'Clinical_Safety_Case_Hazard_Log.pdf',
+        page: item.citationPage || 1,
+        section: item.citation || 'Section 2. Safety-assurance approach',
+        quote: item.citationSnippet || item.text,
+        addedBy: 'Sarah Khan',
+        timestamp: '08 Oct 2026, 11:24',
+      },
+      contextItem: {
+        title: `${label} #${index + 1}`,
+        source: 'From SOW Intake Engine',
+        summary: item.text,
+        addedBy: 'Mike Chen',
+        timestamp: '08 Oct 2026, 13:17',
+      },
+      questionAnswer: {
+        question: `Is this item ${item.scope === 'included' ? 'in' : 'out of'} scope for the engagement?`,
+        context: 'From Clinical Safety Board review',
+        answer: item.scope === 'included' ? 'Confirmed as part of the agreed scope.' : 'Confirmed as excluded from the agreed scope.',
+        addedBy: 'Priya Nair',
+        timestamp: '08 Oct 2026, 15:03',
+      },
+      draftStatement: {
+        title: 'Draft Statement',
+        meta: 'Extracted from source contract',
+        statement: item.text,
+        createdBy: 'AI Assistant',
+        timestamp: '08 Oct 2026, 15:12',
+      },
+      isManuallyEdited: !!item.manuallyEdited,
+      manualEditBy: 'Ashika Jain (PMO)',
+      manualEditTimestamp: 'Just now',
+    })
+
   const removeCommitment = (id: string) =>
     setFormData((prev) => ({
       ...prev,
@@ -3896,15 +4616,13 @@ function FormTab({
   }
 
   const resolveIssue = (updates: ContextUpdate[], answers: Record<string, QuestionAnswer>) => {
-    const q = activeIssue
     setActiveIssue(null)
-    if (!q) return
-    const resolved = !!answers[q.id] && answers[q.id].kind !== 'skip'
     if (updates.length > 0) setFormData((prev) => withContextUpdates(prev, updates))
+    const isResolved = (id: string) => !!answers[id] && answers[id].kind !== 'skip'
     onCtxChange((p) => ({
       ...p,
       updates: [...p.updates, ...updates],
-      questions: resolved ? p.questions.filter((x) => x.id !== q.id) : p.questions,
+      questions: p.questions.filter((x) => !isResolved(x.id)),
     }))
   }
   const issueFor = (key: string) => (isEditable ? issues.find((q) => q.fieldKey === key) : undefined)
@@ -3958,8 +4676,9 @@ function FormTab({
       <SectionCard
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <div>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <SectionTitleIcon icon={<CheckSquare size={14} />} />
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#0d212c' }}>
                 Commitments<span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>
               </span>
               <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
@@ -3979,6 +4698,10 @@ function FormTab({
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 6,
+                  // Alternate rows (white, tinted, white, ...) for a clear visual hierarchy
+                  background: idx % 2 === 1 ? '#f1f5f9' : '#ffffff',
+                  padding: '10px 12px',
+                  borderRadius: 10,
                 }}
               >
                 {/* Header for commitment citation & trace */}
@@ -3989,7 +4712,7 @@ function FormTab({
                         width: 22,
                         height: 22,
                         borderRadius: '50%',
-                        background: 'rgba(0,196,196,0.15)',
+                        background: idx % 2 === 1 ? '#ffffff' : 'rgba(0,196,196,0.15)',
                         color: '#00a0a0',
                         fontSize: 11,
                         fontWeight: 700,
@@ -4176,7 +4899,7 @@ function FormTab({
                       padding: '10px 12px',
                       fontSize: 13,
                       color: '#0d212c',
-                      background: '#f8fafc',
+                      background: '#ffffff',
                       border: '1px solid #e2e8f0',
                       borderRadius: 8,
                       lineHeight: 1.6,
@@ -4241,7 +4964,8 @@ function FormTab({
       {/* ── Context Fields Card ── */}
       <SectionCard
         title={
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center' }}>
+            <SectionTitleIcon icon={<Layers size={14} />} />
             Context Fields
             <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
               Review, edit, and trace AI-extracted fields.
@@ -4360,45 +5084,68 @@ function FormTab({
         />
 
         {/* In Scope */}
-        <ContextRichTextField
+        <ScopeSection
           label="In Scope"
+          kind="included"
           required
-          fieldKey="inScope"
-          value={formData.inScope}
-          onChange={(v) => {
-            handleFieldChange('inScope', v)
-            if (ctx.scopeSignedOff) onCtxChange((p) => ({ ...p, scopeSignedOff: false }))
-          }}
-          citation={{
-            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
-            page: 1,
-            section: '2. Safety-assurance approach',
-            highlightSnippet: 'Phase 1 – Architecture. The Polaris constellation pairs a primary conversational agent with specialist support models',
-          }}
-          isManuallyEdited={!!formData.manuallyEditedFields?.inScope}
+          items={includedItems}
           isEditable={isEditable}
-          onOpenCitation={setCitationModalTarget}
-          onOpenTrace={openTraceForField}
-          signOff={isEditable ? { signedOff: ctx.scopeSignedOff, onSignOff: () => setSignOffOpen(true) } : undefined}
+          signOff={
+            isEditable
+              ? {
+                  signedOff: allSignedOff,
+                  disabled: selectedForSignOff.length === 0,
+                  onSignOff: () => selectedForSignOff.length > 0 && setSignOffConfirmOpen(true),
+                  allSelected: unsignedIncluded.length > 0 && selectedForSignOff.length === unsignedIncluded.length,
+                  onToggleAll: () =>
+                    setScopeSelected(
+                      selectedForSignOff.length === unsignedIncluded.length ? [] : unsignedIncluded.map((i) => i.id)
+                    ),
+                }
+              : undefined
+          }
+          signedOffIds={ctx.signedOffIds}
+          selectedIds={selectedForSignOff}
+          onToggleSelect={
+            isEditable
+              ? (id) => setScopeSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+              : undefined
+          }
+          onOpenItemTrace={(item, idx) => openScopeItemTrace(item, idx, 'In Scope')}
+          onOpenCitation={(item, idx) =>
+            setCitationModalTarget({
+              title: `In Scope #${idx + 1}`,
+              sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+              page: item.citationPage || 1,
+              section: item.citation || 'Clinical Safety',
+              highlightSnippet: item.citationSnippet || item.text,
+            })
+          }
+          onChangeItem={changeScopeItem}
+          onRemoveItem={removeScopeItem}
+          onAddItem={(text) => addScopeItem('included', text)}
         />
 
         {/* Out of Scope */}
-        <ContextRichTextField
+        <ScopeSection
           label="Out of Scope"
+          kind="excluded"
           required
-          fieldKey="outOfScope"
-          value={formData.outOfScope}
-          onChange={(v) => handleFieldChange('outOfScope', v)}
-          citation={{
-            sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
-            page: 1,
-            section: '1. Purpose and scope (Intended use)',
-            highlightSnippet: 'Intended use (public position). Hippocratic AI agents perform non-diagnostic, patient-facing tasks. They do not diagnose or prescribe, and are not deployed for hospice, mental-health disorders, or children under two.',
-          }}
-          isManuallyEdited={!!formData.manuallyEditedFields?.outOfScope}
+          items={formData.scopeItems.filter((i) => i.scope === 'excluded')}
           isEditable={isEditable}
-          onOpenCitation={setCitationModalTarget}
-          onOpenTrace={openTraceForField}
+          onOpenItemTrace={(item, idx) => openScopeItemTrace(item, idx, 'Out of Scope')}
+          onOpenCitation={(item, idx) =>
+            setCitationModalTarget({
+              title: `Out of Scope #${idx + 1}`,
+              sourceDoc: 'Clinical_Safety_Case_Hazard_Log.pdf',
+              page: item.citationPage || 1,
+              section: item.citation || 'Clinical Safety',
+              highlightSnippet: item.citationSnippet || item.text,
+            })
+          }
+          onChangeItem={changeScopeItem}
+          onRemoveItem={removeScopeItem}
+          onAddItem={(text) => addScopeItem('excluded', text)}
         />
 
         {/* AI Generated Tags (With Delete Cross & Input Field to Add New Tags) */}
@@ -4530,25 +5277,12 @@ function FormTab({
         />
       </SectionCard>
 
-      {/* ── Document Uploader at Bottom of Context Tab ── */}
+      {/* ── Uploaded documents (read-only here; manage them from the Overview tab) ── */}
       <DocumentUploaderCard
         files={extraFiles}
-        onAddFiles={(newDocs) => {
-          setExtraFiles((prev) => [...prev, ...newDocs])
-          // Compare what is already on the SOW with the new documents
-          const existingName = initialFiles?.[0]?.name ?? 'Clinical_Safety_Case_Hazard_Log.pdf'
-          const names = [existingName, ...newDocs.map((d) => d.name)]
-          const questions = buildDocumentQuestions(names, {
-            clientName: formData.clientName,
-          })
-          onCtxChange((p) => ({ ...p, init: true, questions }))
-        }}
-        onRemoveFile={(id) => {
-          const doc = extraFiles.find((d) => d.id === id)
-          if (doc) setRemoveTarget({ id: doc.id, name: doc.name })
-        }}
-        isEditable={isEditable}
-        onRequestUpload={isSubmitted ? (proceed) => setUploadConfirm({ proceed }) : undefined}
+        onAddFiles={() => undefined}
+        onRemoveFile={() => undefined}
+        isEditable={false}
       />
 
       </div>
@@ -4558,7 +5292,7 @@ function FormTab({
         <ConflictResolver
           isOpen
           skipIntro
-          questions={[activeIssue]}
+          questions={[activeIssue, ...issues.filter((q) => q.id !== activeIssue.id)]}
           fileNames={[]}
           onComplete={resolveIssue}
           onClose={() => setActiveIssue(null)}
@@ -4566,128 +5300,42 @@ function FormTab({
       )}
 
       {/* Sign off the In Scope items */}
-      {signOffOpen && (
+      {signOffConfirmOpen && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={(e) => {
-            if (e.target === e.currentTarget) setSignOffOpen(false)
+            if (e.target === e.currentTarget) setSignOffConfirmOpen(false)
           }}
         >
-          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 500, maxWidth: '90vw', maxHeight: '86vh', display: 'flex', flexDirection: 'column', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
             <button
-              onClick={() => setSignOffOpen(false)}
+              onClick={() => setSignOffConfirmOpen(false)}
+              aria-label="Close"
               style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
             >
               <X size={20} />
             </button>
             <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Sign off scope?</div>
             <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
-              By signing off, you confirm that you have read and validated the documents and finalised the In Scope items. These items will be treated as the approved scope when the SOW is generated.
+              By signing off, you confirm that you have read and validated the In Scope items. These items will be treated as the approved scope when the SOW is generated.
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button
-                onClick={() => setSignOffOpen(false)}
+                onClick={() => setSignOffConfirmOpen(false)}
                 style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 Cancel
               </button>
               <button
                 onClick={() => {
-                  setSignOffOpen(false)
-                  onCtxChange((p) => ({ ...p, scopeSignedOff: true }))
+                  const chosen = selectedForSignOff
+                  setSignOffConfirmOpen(false)
+                  setScopeSelected([])
+                  onCtxChange((p) => ({ ...p, signedOffIds: Array.from(new Set([...p.signedOffIds, ...chosen])) }))
                 }}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#00C4C4', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#16a34a', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 Sign off
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm before more documents are uploaded to a submitted Context */}
-      {uploadConfirm && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setUploadConfirm(null)
-          }}
-        >
-          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <button
-              onClick={() => setUploadConfirm(null)}
-              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
-            >
-              <X size={20} />
-            </button>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Upload more documents?</div>
-            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
-              If you upload more documents, your context will change based on the document sources. Are you sure you want to continue?
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => setUploadConfirm(null)}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const go = uploadConfirm.proceed
-                  setUploadConfirm(null)
-                  go()
-                }}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#00C4C4', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Yes, upload
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm before a document is removed from the Context */}
-      {removeTarget && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setRemoveTarget(null)
-          }}
-        >
-          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <button
-              onClick={() => setRemoveTarget(null)}
-              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
-            >
-              <X size={20} />
-            </button>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <Trash2 size={28} color="#ef4444" />
-            </div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Delete document?</div>
-            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
-              Are you sure you want to delete &ldquo;{removeTarget.name}&rdquo;? This will have an impact on the context.
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => setRemoveTarget(null)}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const remaining = extraFiles.filter((d) => d.id !== removeTarget.id)
-                  setExtraFiles(remaining)
-                  setRemoveTarget(null)
-                  // Re-check what is left: the remaining documents may now disagree
-                  const names = remaining.map((d) => d.name)
-                  const questions = buildDocumentQuestions(names, { clientName: formData.clientName })
-                  onCtxChange((p) => ({ ...p, init: true, questions }))
-                }}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#E60000', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Delete
               </button>
             </div>
           </div>
@@ -5317,6 +5965,85 @@ const SECTION_MEMBERS: SectionMember[] = [
 
 function memberById(id: string) {
   return SECTION_MEMBERS.find((m) => m.id === id) ?? SECTION_MEMBERS[0]
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const UNKNOWN_EMAIL_NOTE =
+  "This email isn't in the member list yet. The admin has been notified and will assign a role, after which they can access this SOW."
+
+/** Known member for an email, or a new pending member (the admin assigns the role later) */
+function findOrRegisterMember(email: string): { member: SectionMember; isNew: boolean } {
+  const e = email.trim().toLowerCase()
+  const knownName = Object.keys(MEMBER_EMAILS).find((n) => MEMBER_EMAILS[n].toLowerCase() === e)
+  const existing = SECTION_MEMBERS.find((m) => m.name === knownName || (m.pending && m.name.toLowerCase() === e))
+  if (existing) return { member: existing, isNew: false }
+  const member: SectionMember = {
+    id: `mx${SECTION_MEMBERS.length + 1}`,
+    name: email.trim(),
+    initials: email.trim().slice(0, 2).toUpperCase(),
+    color: '#94a3b8',
+    pending: true,
+  }
+  SECTION_MEMBERS.push(member)
+  MEMBER_EMAILS[member.name] = member.name
+  return { member, isNew: true }
+}
+
+/** Email field shown under member lists: adds a listed member, or a pending one with an orange note */
+function MemberEmailInvite({ onAdded }: { onAdded: (member: SectionMember) => void }) {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+  const [showNote, setShowNote] = useState(false)
+  const submit = () => {
+    const value = email.trim()
+    if (!value) return
+    if (!EMAIL_PATTERN.test(value)) {
+      setError('Enter a valid email address')
+      setShowNote(false)
+      return
+    }
+    const { member } = findOrRegisterMember(value)
+    setError('')
+    setShowNote(!!member.pending)
+    setEmail('')
+    onAdded(member)
+  }
+  return (
+    <div style={{ padding: '8px 8px 4px' }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          type="email"
+          value={email}
+          placeholder="Add by email"
+          onChange={(e) => {
+            setEmail(e.target.value)
+            if (error) setError('')
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              submit()
+            }
+          }}
+          style={{ flex: 1, minWidth: 0, padding: '6px 9px', fontSize: 12, color: '#0d212c', border: `1px solid ${error ? '#ef4444' : '#e2e8f0'}`, borderRadius: 7, outline: 'none', fontFamily: 'inherit' }}
+        />
+        <button
+          type="button"
+          onClick={submit}
+          style={{ padding: '6px 10px', borderRadius: 7, background: '#00C4C4', border: 'none', color: '#ffffff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+        >
+          Add
+        </button>
+      </div>
+      {error && <div style={{ marginTop: 4, fontSize: 11, color: '#ef4444' }}>{error}</div>}
+      {showNote && (
+        <div style={{ marginTop: 6, display: 'flex', gap: 6, alignItems: 'flex-start', padding: '6px 8px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 7, fontSize: 11, lineHeight: 1.45, color: '#c2410c' }}>
+          <Info size={12} style={{ flexShrink: 0, marginTop: 2 }} />
+          <span>{UNKNOWN_EMAIL_NOTE}</span>
+        </div>
+      )}
+    </div>
+  )
 }
 
 const INITIAL_SECTIONS: SOWSection[] = [
@@ -6332,6 +7059,152 @@ function AssigneesDisplay({
   )
 }
 
+const MAX_ITEM_CONTRIBUTORS = 5
+
+/** Contributor picker popup (checkbox list, max 5) used to assign or change contributors on an item */
+function ContributorPickerPanel({
+  initialIds,
+  confirmLabel,
+  onConfirm,
+  onClose,
+}: {
+  initialIds: string[]
+  confirmLabel: string
+  onConfirm: (ids: string[]) => void
+  onClose: () => void
+}) {
+  const [picked, setPicked] = useState<string[]>(initialIds)
+  const [limitError, setLimitError] = useState(false)
+  const toggle = (id: string) => {
+    if (picked.includes(id)) {
+      setPicked(picked.filter((x) => x !== id))
+      setLimitError(false)
+    } else if (picked.length >= MAX_ITEM_CONTRIBUTORS) {
+      setLimitError(true)
+    } else {
+      setPicked([...picked, id])
+      setLimitError(false)
+    }
+  }
+  return (
+    <>
+      <div
+        style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
+      />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 5px)',
+          right: 0,
+          minWidth: 190,
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 10,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          padding: 5,
+          zIndex: 999,
+        }}
+      >
+        <div style={{ padding: '6px 10px 4px', fontSize: 10.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          Assign contributors
+        </div>
+        {limitError && (
+          <div style={{ margin: '2px 4px 4px', padding: '4px 8px', fontSize: 10.5, color: '#ef4444', background: '#fef2f2', borderRadius: 6 }}>
+            Maximum {MAX_ITEM_CONTRIBUTORS} contributors per item.
+          </div>
+        )}
+        {SECTION_MEMBERS.map((m) => {
+          const checked = picked.includes(m.id)
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => toggle(m.id)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '6px 10px',
+                borderRadius: 8,
+                background: checked ? 'rgba(0,196,196,0.08)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12,
+                color: checked ? '#008080' : '#0d212c',
+                fontWeight: checked ? 700 : 500,
+                textAlign: 'left',
+              }}
+              onMouseEnter={(e) => {
+                if (!checked) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
+              }}
+              onMouseLeave={(e) => {
+                if (!checked) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+              }}
+            >
+              <span
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 4,
+                  flexShrink: 0,
+                  border: checked ? 'none' : '1.5px solid #cbd5e1',
+                  background: checked ? '#00C4C4' : '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {checked && <Check size={10} color="#ffffff" strokeWidth={3} />}
+              </span>
+              <MemberAvatar memberId={m.id} size={18} />
+              <span style={{ flex: 1, whiteSpace: 'nowrap', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
+              {m.pending && <span style={{ fontSize: 9.5, fontWeight: 600, color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 9999, padding: '0 6px' }}>Pending</span>}
+            </button>
+          )
+        })}
+        <div style={{ borderTop: '1px solid #f1f5f9', marginTop: 4, maxWidth: 260 }}>
+          <MemberEmailInvite
+            onAdded={(m) => {
+              if (picked.includes(m.id)) return
+              if (picked.length >= MAX_ITEM_CONTRIBUTORS) {
+                setLimitError(true)
+                return
+              }
+              setLimitError(false)
+              setPicked([...picked, m.id])
+            }}
+          />
+        </div>
+        <div style={{ borderTop: '1px solid #f1f5f9', marginTop: 4, padding: '6px 4px 2px', display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ padding: '4px 10px', borderRadius: 6, background: '#ffffff', border: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, color: '#64748b', cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onConfirm(picked)
+              onClose()
+            }}
+            style={{ padding: '4px 10px', borderRadius: 6, background: '#00C4C4', border: 'none', fontSize: 11, fontWeight: 700, color: '#ffffff', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function AssigneesList({
   assignedTo,
   onReassign,
@@ -6373,63 +7246,14 @@ function AssigneesList({
           {onReassign ? '+ Assign' : 'Unassigned'}
         </button>
         {menuOpen && onReassign && (
-          <>
-            <div
-              style={{ position: 'fixed', inset: 0, zIndex: 998 }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setMenuOpen(false)
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 4px)',
-                right: 0,
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 8,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                padding: 4,
-                zIndex: 999,
-                minWidth: 160,
-              }}
-            >
-              <div style={{ padding: '4px 8px', fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
-                Assign to
-              </div>
-              {SECTION_MEMBERS.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onReassign([m.id])
-                    setMenuOpen(false)
-                  }}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '5px 8px',
-                    borderRadius: 5,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    color: '#0d212c',
-                    textAlign: 'left',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
-                >
-                  <MemberAvatar memberId={m.id} size={18} />
-                  <span>{m.name}</span>
-                </button>
-              ))}
-            </div>
-          </>
+          <ContributorPickerPanel
+            initialIds={[]}
+            confirmLabel="Assign Contributor"
+            onConfirm={(newIds) => {
+              if (newIds.length > 0) onReassign(newIds)
+            }}
+            onClose={() => setMenuOpen(false)}
+          />
         )}
       </div>
     )
@@ -6562,86 +7386,14 @@ function AssigneesList({
         </>
       )}
 
-      {/* Reassign dropdown menu */}
+      {/* Change contributors popup */}
       {menuOpen && onReassign && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 998 }}
-            onClick={(e) => {
-              e.stopPropagation()
-              setMenuOpen(false)
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 5px)',
-              right: 0,
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: 10,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-              padding: 5,
-              zIndex: 999,
-              minWidth: 180,
-            }}
-          >
-            <div
-              style={{
-                padding: '6px 10px 4px',
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: '#94a3b8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              Assign contributors
-            </div>
-            {SECTION_MEMBERS.map((m) => {
-              const isCurrent = ids.includes(m.id)
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    // Toggle: remove if already assigned, add if not
-                    const newIds = isCurrent
-                      ? ids.filter((id) => id !== m.id)
-                      : [...ids, m.id]
-                    onReassign(newIds)
-                  }}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 10px',
-                    borderRadius: 8,
-                    background: isCurrent ? 'rgba(0,196,196,0.08)' : 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    color: isCurrent ? '#008080' : '#0d212c',
-                    fontWeight: isCurrent ? 700 : 500,
-                    textAlign: 'left',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isCurrent) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                  }}
-                >
-                  <MemberAvatar memberId={m.id} size={18} />
-                  <span style={{ flex: 1 }}>{m.name}</span>
-                  {isCurrent && <Check size={13} color="#00C4C4" strokeWidth={2.5} />}
-                </button>
-              )
-            })}
-          </div>
-        </>
+        <ContributorPickerPanel
+          initialIds={ids}
+          confirmLabel="Change Contributor"
+          onConfirm={(newIds) => onReassign(newIds)}
+          onClose={() => setMenuOpen(false)}
+        />
       )}
     </div>
   )
@@ -8171,6 +8923,23 @@ function StructureTab({
                           </button>
                         )
                       })}
+                      <div style={{ borderTop: '1px solid #e2e8f0', marginTop: 4 }}>
+                        <MemberEmailInvite
+                          onAdded={(m) => {
+                            const full = Array.from(selected).some((id) => {
+                              const it = sections.flatMap((sc) => sc.items).find((x) => x.id === id)
+                              const a = it ? (Array.isArray(it.assignedTo) ? it.assignedTo : it.assignedTo ? [it.assignedTo] : []) : []
+                              return a.length >= 5 && !a.includes(m.id)
+                            })
+                            if (full) {
+                              setAssignLimitError(true)
+                              return
+                            }
+                            setAssignLimitError(false)
+                            bulkAssign(m.id, true)
+                          }}
+                        />
+                      </div>
                       <div style={{ padding: '8px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
                         <button
                           onClick={() => { clearSelection(); setAssignDropdownOpen(false) }}
@@ -8546,6 +9315,39 @@ function StructureTab({
   )
 }
 
+/** Small spinning loader used inside buttons */
+function Spinner({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-label="Loading">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" strokeDasharray="40 20" strokeLinecap="round">
+        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  )
+}
+
+/** Mock external sources used by "Check Online" (the exact source is shown as the citation) */
+const ONLINE_SOURCES: { title: string; site: string; url: string; answer: string }[] = [
+  {
+    title: 'Procurement Platform Market Guide',
+    site: 'gartner.com',
+    url: 'https://www.gartner.com/en/supply-chain',
+    answer: 'Per published industry guidance, this is standard practice for enterprise procurement programmes; the details should be validated with the client before they are finalised in the SOW.',
+  },
+  {
+    title: 'Digital Transformation in Healthcare',
+    site: 'mckinsey.com',
+    url: 'https://www.mckinsey.com/industries/healthcare',
+    answer: 'Industry research indicates that comparable programmes document this up front with the client stakeholders; the findings are captured here and should be confirmed with the client.',
+  },
+  {
+    title: 'Digital Health Regulatory Overview',
+    site: 'who.int',
+    url: 'https://www.who.int/health-topics/digital-health',
+    answer: 'Public regulatory guidance supports this position; the referenced requirements are noted here and should be confirmed against the client\'s local regulations.',
+  },
+]
+
 /* ── Item row (assumption or question) ── */
 function ItemRow({
   item,
@@ -8628,6 +9430,21 @@ function ItemRow({
     }
     return null
   })
+  const [onlineSource, setOnlineSource] = useState<(typeof ONLINE_SOURCES)[number] | null>(null)
+  // 'internal' | 'online' while an AI lookup is running (the answer is filled in when it finishes)
+  const [checking, setChecking] = useState<'internal' | 'online' | null>(null)
+  const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (checkTimerRef.current) clearTimeout(checkTimerRef.current)
+  }, [])
+  const runCheck = (kind: 'internal' | 'online', apply: () => void) => {
+    if (checking) return
+    setChecking(kind)
+    checkTimerRef.current = setTimeout(() => {
+      apply()
+      setChecking(null)
+    }, 1800)
+  }
   const [isResolved, setIsResolved] = useState(false)
   const [isPinned, setIsPinned] = useState(false)
   const isAssumption = item.type === 'assumption'
@@ -9016,6 +9833,21 @@ function ItemRow({
             </button>
           </div>
         )}
+        {item.response && !editing && onlineSource && (
+          <div style={{ marginTop: 6, display: 'flex' }}>
+            <a
+              href={onlineSource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              title={`Source: ${onlineSource.url}`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3.5px 10px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', fontSize: 12, fontWeight: 500, textDecoration: 'none' }}
+            >
+              <Globe size={13} strokeWidth={1.75} color="#64748b" />
+              <span>{onlineSource.title} • {onlineSource.site}</span>
+            </a>
+          </div>
+        )}
         {!disableAnswer && (!item.response || editing) && (
           <div
             style={{
@@ -9105,6 +9937,28 @@ function ItemRow({
                 </button>
               </div>
             )}
+            {onlineSource && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <a
+                  href={onlineSource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`Source: ${onlineSource.url}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3.5px 10px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', fontSize: 12, fontWeight: 500, textDecoration: 'none' }}
+                >
+                  <Globe size={13} strokeWidth={1.75} color="#64748b" />
+                  <span>{onlineSource.title} • {onlineSource.site}</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setOnlineSource(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 2 }}
+                  title="Remove source"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 <label style={{ cursor: attachedDoc ? 'not-allowed' : 'pointer', opacity: attachedDoc ? 0.6 : 1 }}>
@@ -9147,17 +10001,21 @@ function ItemRow({
                 </label>
                 <button
                   type="button"
-                  onClick={() => {
-                    setDraft(
-                      isAssumption
-                        ? 'Confirmed — validated with the client stakeholder and captured for the record.'
-                        : 'Yes, confirmed with the client team; details captured and will be reflected in the final SOW.'
-                    )
-                    setIsAiGenerated(true)
-                    setIsEditedAi(false)
-                    onConsumeTokens?.(10)
-                  }}
+                  disabled={!!checking}
+                  onClick={() =>
+                    runCheck('internal', () => {
+                      setDraft(
+                        isAssumption
+                          ? 'Confirmed — validated with the client stakeholder and captured for the record.'
+                          : 'Yes, confirmed with the client team; details captured and will be reflected in the final SOW.'
+                      )
+                      setIsAiGenerated(true)
+                      setIsEditedAi(false)
+                      onConsumeTokens?.(10)
+                    })
+                  }
                   style={{
+                    opacity: checking && checking !== 'internal' ? 0.5 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 5,
@@ -9171,6 +10029,9 @@ function ItemRow({
                     cursor: 'pointer',
                   }}
                 >
+                  {checking === 'internal' ? (
+                    <Spinner size={11} />
+                  ) : (
                   <svg
                     width="11"
                     height="11"
@@ -9183,8 +10044,42 @@ function ItemRow({
                   >
                     <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
                   </svg>
-                  Check internal sources <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(10 Tokens)</span>
+                  )}
+                  {checking === 'internal' ? 'Checking sources…' : <>Check internal sources <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(10 Tokens)</span></>}
                 </button>
+                {(
+                  <button
+                    type="button"
+                    disabled={!!checking}
+                    onClick={() =>
+                      runCheck('online', () => {
+                        const src = ONLINE_SOURCES[Math.abs(Array.from(item.id).reduce((h, c) => h + c.charCodeAt(0), 0)) % ONLINE_SOURCES.length]
+                        setDraft(src.answer)
+                        setOnlineSource(src)
+                        setIsAiGenerated(true)
+                        setIsEditedAi(false)
+                        onConsumeTokens?.(10)
+                      })
+                    }
+                    style={{
+                      opacity: checking && checking !== 'online' ? 0.5 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '5px 10px',
+                      borderRadius: 6,
+                      border: '1px solid rgba(59,130,246,0.35)',
+                      background: 'rgba(59,130,246,0.07)',
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      color: '#2563eb',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {checking === 'online' ? <Spinner size={11} /> : <Globe size={11} />}
+                    {checking === 'online' ? 'Searching online…' : <>Check online <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 2 }}>(10 Tokens)</span></>}
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={!draft.trim()}
@@ -9582,6 +10477,8 @@ interface AIReviewFinding {
   suggestedFix?: string
   resolved: boolean
   resolutionType?: string
+  /** Action recorded in the AI Review popup; sections to act on are highlighted in the draft afterwards */
+  recordedAction?: 'manual' | 'ai'
   assignedEmail?: string
   dismissReason?: string
 }
@@ -9650,8 +10547,7 @@ function AIReviewModal({
   onAcknowledge,
   onSendToRework,
   hasRunBefore,
-  onResolveManually,
-  onAcceptAiOption,
+  onApplyActions,
   findings,
   setFindings,
   initialStage = 'thinking',
@@ -9661,8 +10557,8 @@ function AIReviewModal({
   onAcknowledge?: () => void
   onSendToRework?: () => void
   hasRunBefore: boolean
-  onResolveManually?: (affected: string) => void
-  onAcceptAiOption?: (finding: AIReviewFinding) => void
+  /** Called once every finding has a recorded action; the draft then highlights the sections to act on */
+  onApplyActions?: (findings: AIReviewFinding[]) => void
   findings: AIReviewFinding[]
   setFindings: React.Dispatch<React.SetStateAction<AIReviewFinding[]>>
   initialStage?: 'thinking' | 'summary'
@@ -9712,11 +10608,10 @@ function AIReviewModal({
 
   // 1. Resolve manually (keep popup open)
   const handleResolveManuallyClick = (finding: AIReviewFinding) => {
-    onResolveManually?.(finding.affected)
     setFindings((prev) =>
       prev.map((f) =>
         f.id === finding.id
-          ? { ...f, resolved: true, resolutionType: 'Resolved manually' }
+          ? { ...f, resolved: true, resolutionType: 'Will resolve manually', recordedAction: 'manual' as const }
           : f
       )
     )
@@ -9724,7 +10619,13 @@ function AIReviewModal({
 
   // 2. Accept AI option (keep popup open)
   const handleAcceptAiOptionClick = (finding: AIReviewFinding) => {
-    onAcceptAiOption?.(finding)
+    setFindings((prev) =>
+      prev.map((f) =>
+        f.id === finding.id
+          ? { ...f, resolved: true, resolutionType: 'AI option selected', recordedAction: 'ai' as const }
+          : f
+      )
+    )
   }
 
   // 3. Assign to contributor (with regex validation)
@@ -9801,6 +10702,9 @@ function AIReviewModal({
     findings.some((f) => f.criteria === param.key && f.resolved)
   )
   const totalOpenFindings = findings.filter((f) => !f.resolved).length
+  const recordedCount = findings.length - totalOpenFindings
+  const allRecorded = findings.length > 0 && totalOpenFindings === 0
+  const sectionsToAct = findings.filter((f) => f.recordedAction).length
 
   return (
     <div
@@ -10433,7 +11337,268 @@ function AIReviewModal({
           </div>
         </div>
       )}
+        {stage === 'summary' && (
+          <div
+            style={{
+              padding: '14px 24px',
+              borderTop: '1px solid #e2e8f0',
+              background: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ fontSize: 12.5, color: '#64748b' }}>
+              {allRecorded
+                ? sectionsToAct > 0
+                  ? `All ${findings.length} findings have an action. ${sectionsToAct} ${sectionsToAct === 1 ? 'section' : 'sections'} will be highlighted in the draft.`
+                  : `All ${findings.length} findings have an action.`
+                : `${recordedCount} of ${findings.length} findings have an action. Choose an action for each finding to continue.`}
+            </span>
+            <button
+              type="button"
+              disabled={!allRecorded}
+              onClick={() => {
+                if (!allRecorded) return
+                onApplyActions?.(findings)
+                onClose()
+              }}
+              style={{
+                padding: '8px 18px',
+                borderRadius: 8,
+                border: 'none',
+                background: allRecorded ? '#00C4C4' : '#cbd5e1',
+                color: allRecorded ? '#ffffff' : '#64748b',
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: allRecorded ? 'pointer' : 'not-allowed',
+                whiteSpace: 'nowrap',
+                boxShadow: allRecorded ? '0 2px 6px rgba(0,196,196,0.25)' : 'none',
+              }}
+            >
+              {sectionsToAct > 0 ? 'Review in draft' : 'Done'}
+            </button>
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+/* ── Draft risks (Risk tab in the draft side panel) ─────────────────────── */
+
+type DraftRiskSeverity = 'High' | 'Medium' | 'Low'
+type DraftRiskKind = 'missing-content' | 'low-confidence' | 'low-score' | 'context' | 'ai-findings' | 'comments'
+interface DraftRisk {
+  id: string
+  kind: DraftRiskKind
+  /** Used only to order the list (most important first) */
+  severity: DraftRiskSeverity
+  title: string
+  description: string
+  /** Section the risk relates to (clicking it jumps there in the draft) */
+  section?: string
+  action: string
+}
+
+interface DraftRiskInputs {
+  planningSections: SOWSection[]
+  /** Completeness score of the Planning tab when the draft was generated */
+  generatedScore: number
+  unresolvedContextIssues: number
+  openAiFindings: number
+  openComments: number
+}
+
+/** Confidence of a section = share of its questions that were answered in Planning */
+function sectionConfidence(sec: SOWSection) {
+  const questions = sec.items.filter((i) => i.type === 'question')
+  const answered = questions.filter((i) => i.answered).length
+  return {
+    title: sec.title,
+    total: questions.length,
+    unanswered: questions.length - answered,
+    value: questions.length === 0 ? 100 : Math.round((answered / questions.length) * 100),
+  }
+}
+
+function buildDraftRisks(i: DraftRiskInputs): DraftRisk[] {
+  const risks: DraftRisk[] = []
+  i.planningSections.map(sectionConfidence).forEach((c) => {
+    if (c.unanswered === 0) return
+    if (c.value === 0) {
+      risks.push({
+        id: `content-${c.title}`,
+        kind: 'missing-content',
+        severity: 'High',
+        title: `Full content not generated for ${c.title}`,
+        description: `None of the ${c.total} ${c.total === 1 ? 'question was' : 'questions were'} answered, so this section is mostly placeholder content.`,
+        section: c.title,
+        action: 'Answer the open questions in Planning, or write the section manually in the draft.',
+      })
+    } else {
+      risks.push({
+        id: `conf-${c.title}`,
+        kind: 'low-confidence',
+        severity: c.value < 50 ? 'High' : 'Medium',
+        title: `Low confidence in ${c.title}`,
+        description: `${c.unanswered} of ${c.total} questions are unanswered, so parts of this section may be incomplete.`,
+        section: c.title,
+        action: 'Review the section and fill in the missing details.',
+      })
+    }
+  })
+  if (i.generatedScore < 80) {
+    risks.push({
+      id: 'score',
+      kind: 'low-score',
+      severity: 'High',
+      title: 'Draft generated below 80% completeness',
+      description: `The draft was generated when the Planning completeness score was ${i.generatedScore}%. This directly affects the overall quality of the draft.`,
+      action: 'Complete the open questions and review each section carefully before sending it for review.',
+    })
+  }
+  if (i.unresolvedContextIssues > 0) {
+    risks.push({
+      id: 'context',
+      kind: 'context',
+      severity: 'Medium',
+      title: 'Unresolved conflicts in the Context',
+      description: `${i.unresolvedContextIssues} ${i.unresolvedContextIssues === 1 ? 'conflict or clarification from the uploaded documents is' : 'conflicts or clarifications from the uploaded documents are'} still open, so some statements may rely on inconsistent source values.`,
+      action: 'Resolve the open items in the Context tab.',
+    })
+  }
+  if (i.openAiFindings > 0) {
+    risks.push({
+      id: 'ai',
+      kind: 'ai-findings',
+      severity: 'Medium',
+      title: 'Open AI review findings',
+      description: `${i.openAiFindings} ${i.openAiFindings === 1 ? 'finding' : 'findings'} from the AI review (completeness, consistency, traceability, clarity) have no action yet.`,
+      action: 'Open AI Review & Summary and choose an action for each finding.',
+    })
+  }
+  if (i.openComments > 0) {
+    risks.push({
+      id: 'comments',
+      kind: 'comments',
+      severity: 'Low',
+      title: 'Open review comments',
+      description: `${i.openComments} ${i.openComments === 1 ? 'comment is' : 'comments are'} still unresolved in the draft.`,
+      action: 'Resolve the comments before approval.',
+    })
+  }
+  const order: Record<DraftRiskSeverity, number> = { High: 0, Medium: 1, Low: 2 }
+  return risks.sort((a, b) => order[a.severity] - order[b.severity])
+}
+
+const RISK_ICONS: Record<DraftRiskKind, { icon: LucideIcon; color: string; bg: string }> = {
+  'missing-content': { icon: FileWarning, color: '#dc2626', bg: '#fef2f2' },
+  'low-confidence': { icon: CircleHelp, color: '#d97706', bg: '#fffbeb' },
+  'low-score': { icon: Gauge, color: '#ea580c', bg: '#fff7ed' },
+  context: { icon: AlertTriangle, color: '#7c3aed', bg: '#f5f3ff' },
+  'ai-findings': { icon: Sparkles, color: '#0891b2', bg: '#ecfeff' },
+  comments: { icon: MessageSquare, color: '#00a0a0', bg: 'rgba(0,196,196,0.10)' },
+}
+
+const RISK_SEVERITY_STYLES: Record<DraftRiskSeverity, { color: string; bg: string; border: string }> = {
+  High: { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  Medium: { color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  Low: { color: '#00a0a0', bg: 'rgba(0,196,196,0.10)', border: 'rgba(0,196,196,0.3)' },
+}
+
+function DraftRiskPanel({
+  risks,
+  onJump,
+}: {
+  risks: DraftRisk[]
+  onJump: (section: string) => void
+}) {
+  // Filter chips: click a category to show only its risks, click again to show all
+  const [filter, setFilter] = useState<DraftRiskSeverity | null>(null)
+  if (risks.length === 0) {
+    return (
+      <div style={{ fontSize: 12.5, color: '#16a34a', textAlign: 'center', padding: '36px 14px', lineHeight: 1.5, fontWeight: 600 }}>
+        No risks identified. All questions are answered and the draft is complete.
+      </div>
+    )
+  }
+  const categories: DraftRiskSeverity[] = ['High', 'Medium', 'Low']
+  const visible = filter ? risks.filter((r) => r.severity === filter) : risks
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 8 }}>
+        {categories.map((sev) => {
+          const st = RISK_SEVERITY_STYLES[sev]
+          const active = filter === sev
+          const n = risks.filter((r) => r.severity === sev).length
+          return (
+            <button
+              key={sev}
+              type="button"
+              onClick={() => setFilter(active ? null : sev)}
+              aria-pressed={active}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 12px',
+                borderRadius: 9999,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                color: active ? '#ffffff' : st.color,
+                background: active ? st.color : st.bg,
+                border: `1px solid ${active ? st.color : st.border}`,
+              }}
+            >
+              {sev}
+              <span style={{ opacity: 0.85 }}>{n}</span>
+            </button>
+          )
+        })}
+      </div>
+      {visible.length === 0 && (
+        <div style={{ fontSize: 12.5, color: '#94a3b8', textAlign: 'center', padding: '28px 14px' }}>
+          No {filter?.toLowerCase()} risks.
+        </div>
+      )}
+      {visible.map((r, idx) => {
+        const st = RISK_ICONS[r.kind]
+        const sev = RISK_SEVERITY_STYLES[r.severity]
+        const Icon = st.icon
+        return (
+          <div
+            key={r.id}
+            style={{ display: 'flex', gap: 12, padding: '14px 4px', borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0' }}
+          >
+            <span style={{ width: 32, height: 32, borderRadius: 8, background: st.bg, color: st.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon size={16} />
+            </span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', lineHeight: 1.35 }}>{r.title}</div>
+                <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: sev.color, background: sev.bg, border: `1px solid ${sev.border}`, padding: '0 8px', borderRadius: 9999, lineHeight: '18px' }}>
+                  {r.severity}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginTop: 2 }}>{r.description}</div>
+              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginTop: 2 }}>{r.action}</div>
+              {r.section && (
+                <button
+                  type="button"
+                  onClick={() => onJump(r.section as string)}
+                  style={{ marginTop: 4, background: 'none', border: 'none', padding: 0, fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer' }}
+                >
+                  Go to section →
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -10449,7 +11614,13 @@ function SOWDraftTab({
   sowDeadline = '2026-10-31',
   headerActionsSlot = null,
   assignedSectionTitles = [],
+  planningSections = [],
+  generatedScore = 100,
+  unresolvedContextIssues = 0,
 }: {
+  planningSections?: SOWSection[]
+  generatedScore?: number
+  unresolvedContextIssues?: number
   assignedSectionTitles?: string[]
   isContributor?: boolean
   isReviewer?: boolean
@@ -10488,6 +11659,9 @@ function SOWDraftTab({
   const [approvePopupIdx, setApprovePopupIdx] = useState<number | null>(null)
   const [rejectPopupIdx, setRejectPopupIdx] = useState<number | null>(null)
   const [addReviewerIdx, setAddReviewerIdx] = useState<number | null>(null)
+  // Contributors picked in the open popup; applied only on "Invite Participants"
+  const [reviewerDraft, setReviewerDraft] = useState<string[]>([])
+  const [reviewerLimitError, setReviewerLimitError] = useState(false)
   const [reviewerSearch, setReviewerSearch] = useState('')
   const [approvalComment, setApprovalComment] = useState('')
   const [sectionDeadlines, setSectionDeadlines] = useState<Record<number, string>>(() => ({
@@ -10546,7 +11720,7 @@ function SOWDraftTab({
   const [editEmailError, setEditEmailError] = useState(false)
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
   const [editingReplyText, setEditingReplyText] = useState('')
-  const [drawerTab, setDrawerTab] = useState<'comments' | 'history' | 'trace'>('comments')
+  const [drawerTab, setDrawerTab] = useState<'comments' | 'history' | 'trace' | 'risk'>('comments')
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
   const [showFab, setShowFab] = useState(true)
   const lastScrollTop = useRef(0)
@@ -10667,6 +11841,10 @@ function SOWDraftTab({
   const [aiModalInitialStage, setAiModalInitialStage] = useState<'thinking' | 'summary'>('thinking')
   const [aiSuggestion, setAiSuggestion] = useState<{ finding: AIReviewFinding; sectionIdx: number } | null>(null)
   const [aiSuggestionPos, setAiSuggestionPos] = useState<{ top: number; left: number } | null>(null)
+  // Sections the user chose to act on in the AI Review popup (highlighted in the draft)
+  const [actionQueue, setActionQueue] = useState<
+    { finding: AIReviewFinding; sectionIdx: number; action: 'manual' | 'ai' }[]
+  >([])
   const [showSourceInfoTooltip, setShowSourceInfoTooltip] = useState(false)
   const openAIReview = (stage: 'thinking' | 'summary') => {
     setAiModalInitialStage(stage)
@@ -11778,9 +12956,85 @@ function SOWDraftTab({
     }
   }, [aiSuggestion])
 
+  // ── Highlight every section the user chose to act on in the AI Review popup ──
+  useEffect(() => {
+    if (actionQueue.length === 0) return
+    const cleanups: (() => void)[] = []
+    Array.from(new Set(actionQueue.map((q) => q.sectionIdx))).forEach((idx) => {
+      const el = document.getElementById(`sow-section-${idx}`)
+      if (!el) return
+      el.classList.add('sow-action-highlight')
+      // Editing a section marks its manual action as done
+      const onFocus = () =>
+        setActionQueue((prev) => prev.filter((q) => !(q.sectionIdx === idx && q.action === 'manual')))
+      el.addEventListener('focusin', onFocus)
+      cleanups.push(() => {
+        el.removeEventListener('focusin', onFocus)
+        el.classList.remove('sow-action-highlight')
+      })
+    })
+    return () => cleanups.forEach((fn) => fn())
+  }, [actionQueue])
+
+  const draftRisks = buildDraftRisks({
+    planningSections,
+    generatedScore,
+    unresolvedContextIssues,
+    openAiFindings: aiFindings.filter((f) => !f.resolved).length,
+    openComments: comments.filter((c) => !c.resolved).length,
+  })
+
+  // Move on to the next AI option once one has been answered
+  const advanceAiQueue = (doneId: string) => {
+    const rest = actionQueue.filter((q) => q.finding.id !== doneId)
+    setActionQueue(rest)
+    const next = rest.find((q) => q.action === 'ai')
+    if (next) {
+      setActiveSectionIdx(next.sectionIdx)
+      setAiSuggestion({ finding: next.finding, sectionIdx: next.sectionIdx })
+    } else {
+      setAiSuggestion(null)
+    }
+  }
+
   return (
     <>
       {headerActionsSlot && !isDraftGenerating && createPortal(draftHeaderActions, headerActionsSlot)}
+      {actionQueue.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9998,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 16px',
+            background: '#0d212c',
+            color: '#ffffff',
+            borderRadius: 12,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          <AlertTriangle size={15} color="#fbbf24" />
+          {new Set(actionQueue.map((q) => q.sectionIdx)).size} highlighted{' '}
+          {new Set(actionQueue.map((q) => q.sectionIdx)).size === 1 ? 'section needs' : 'sections need'} your action
+          <button
+            type="button"
+            onClick={() => {
+              setActionQueue([])
+              setAiSuggestion(null)
+            }}
+            style={{ background: 'none', border: 'none', color: '#5eead4', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: 0 }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
       {renameTarget && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
@@ -11934,7 +13188,7 @@ function SOWDraftTab({
                 setAiFindings((prev) =>
                   prev.map((f) => (f.id === id ? { ...f, resolved: true, resolutionType: 'Accepted AI option' } : f))
                 )
-                setAiSuggestion(null)
+                advanceAiQueue(id)
                 showToast('AI suggestion accepted', 'success')
               }}
               style={{
@@ -11959,7 +13213,13 @@ function SOWDraftTab({
             <button
               type="button"
               onClick={() => {
-                setAiSuggestion(null)
+                const id = aiSuggestion.finding.id
+                setAiFindings((prev) =>
+                  prev.map((f) =>
+                    f.id === id ? { ...f, resolved: false, resolutionType: undefined, recordedAction: undefined } : f
+                  )
+                )
+                advanceAiQueue(id)
                 showToast('AI suggestion rejected', 'info')
               }}
               style={{
@@ -12446,6 +13706,8 @@ function SOWDraftTab({
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
+                                    setReviewerDraft(tocItems[idx]?.reviewers ?? [])
+                                    setReviewerLimitError(false)
                                     setAddReviewerIdx(idx)
                                     setOpenMenuIdx(null)
                                   }}
@@ -13402,6 +14664,11 @@ function SOWDraftTab({
                 .sow-editor-scroll-area [contenteditable]:focus-visible {
                   outline: none !important;
                 }
+                .sow-section.sow-action-highlight {
+                  background: rgba(251,191,36,0.10);
+                  box-shadow: 0 0 0 2px rgba(245,158,11,0.55);
+                  border-radius: 8px;
+                }
                 .sow-section.sow-ai-suggest-highlight {
                   background: rgba(0,196,196,0.08);
                   box-shadow: 0 0 0 2px rgba(0,196,196,0.45);
@@ -13727,7 +14994,7 @@ function SOWDraftTab({
           {(
           <div
             style={{
-              width: 400,
+              width: 380,
               flexShrink: 0,
               borderLeft: '1px solid rgba(0,196,196,0.15)',
               display: 'flex',
@@ -13813,6 +15080,33 @@ function SOWDraftTab({
                   }}
                 >
                   <span>Trace</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDrawerTab('risk')}
+                  style={{
+                    padding: '12px 2px 10px',
+                    border: 'none',
+                    borderBottom: drawerTab === 'risk' ? '2.5px solid #00C4C4' : '2.5px solid transparent',
+                    background: 'transparent',
+                    color: drawerTab === 'risk' ? '#00a0a0' : '#64748b',
+                    fontSize: 13,
+                    fontWeight: drawerTab === 'risk' ? 700 : 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginBottom: -1.5,
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <span>Risk</span>
+                  {draftRisks.length > 0 && (
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: '#ffffff', background: draftRisks.some((r) => r.severity === 'High') ? '#dc2626' : '#d97706', borderRadius: 9999, padding: '0 6px', lineHeight: '16px' }}>
+                      {draftRisks.length}
+                    </span>
+                  )}
                 </button>
               </div>
 
@@ -14258,6 +15552,17 @@ function SOWDraftTab({
                     )
                   })
                 )
+              ) : drawerTab === 'risk' ? (
+                <DraftRiskPanel
+                  risks={draftRisks}
+                  onJump={(title) => {
+                    const idx = findSectionIdxForAffected(title)
+                    if (idx !== -1) {
+                      setActiveSectionIdx(idx)
+                      document.getElementById(`sow-section-${idx}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }
+                  }}
+                />
               ) : drawerTab === 'trace' ? (
                 /* Section Trace Tab in Side Drawer */
                 draftTraceTarget ? (
@@ -14410,7 +15715,7 @@ function SOWDraftTab({
             style={{
               position: 'absolute',
               bottom: 24,
-              left: 'calc(50% - 215px)',
+              left: 'calc(50% - 205px)',
               transform: `translateX(-50%) translateY(${showFab ? '0' : '80px'})`,
               opacity: showFab ? 1 : 0,
               pointerEvents: showFab ? 'auto' : 'none',
@@ -14718,25 +16023,28 @@ function SOWDraftTab({
               </div>
             </div>
             <div style={{ padding: '16px 28px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {reviewerLimitError && (
+                <div style={{ padding: '6px 10px', fontSize: 12, color: '#ef4444', background: '#fef2f2', borderRadius: 6 }}>
+                  Maximum 5 contributors can be assigned.
+                </div>
+              )}
               {allMembers.map((name) => {
-                const isChecked = !!tocItems[addReviewerIdx]?.reviewers.includes(name)
+                const isChecked = reviewerDraft.includes(name)
                 const matches = name.toLowerCase().includes(reviewerSearch.toLowerCase())
                 if (!matches) return null
                 return (
                   <div
                     key={name}
                     onClick={() => {
-                      setTocItems((prev) =>
-                        prev.map((t, i) => {
-                          if (i !== addReviewerIdx) return t
-                          return {
-                            ...t,
-                            reviewers: isChecked
-                              ? t.reviewers.filter((r) => r !== name)
-                              : [...t.reviewers.filter((r) => r !== name), name],
-                          }
-                        })
-                      )
+                      if (isChecked) {
+                        setReviewerDraft((prev) => prev.filter((r) => r !== name))
+                        setReviewerLimitError(false)
+                      } else if (reviewerDraft.length >= 5) {
+                        setReviewerLimitError(true)
+                      } else {
+                        setReviewerDraft((prev) => [...prev, name])
+                        setReviewerLimitError(false)
+                      }
                     }}
                     style={{
                       display: 'flex',
@@ -14778,6 +16086,19 @@ function SOWDraftTab({
                 )
               })}
             </div>
+            <div style={{ padding: '0 20px 12px' }}>
+              <MemberEmailInvite
+                onAdded={(m) => {
+                  if (reviewerDraft.includes(m.name)) return
+                  if (reviewerDraft.length >= 5) {
+                    setReviewerLimitError(true)
+                    return
+                  }
+                  setReviewerLimitError(false)
+                  setReviewerDraft((prev) => [...prev, m.name])
+                }}
+              />
+            </div>
             <div
               style={{
                 padding: '0 28px 20px',
@@ -14805,21 +16126,25 @@ function SOWDraftTab({
               </button>
               <button
                 onClick={() => {
+                  const idx = addReviewerIdx
+                  if (idx !== null) {
+                    setTocItems((prev) => prev.map((t, i) => (i === idx ? { ...t, reviewers: reviewerDraft } : t)))
+                  }
                   setAddReviewerIdx(null)
                   setReviewerSearch('')
                 }}
                 style={{
                   padding: '8px 18px',
-                  background: '#0d212c',
+                  background: '#00C4C4',
                   border: 'none',
                   borderRadius: 8,
                   cursor: 'pointer',
                   fontSize: 13,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   color: '#fff',
                 }}
               >
-                Done
+                Invite Participants
               </button>
             </div>
           </div>
@@ -14838,19 +16163,19 @@ function SOWDraftTab({
           findings={aiFindings}
           setFindings={setAiFindings}
           initialStage={aiModalInitialStage}
-          onAcceptAiOption={(finding) => {
-            setShowAIReviewModal(false)
-            const idx = findSectionIdxForAffected(finding.affected)
-            const sectionIdx = idx !== -1 ? idx : activeSectionIdx
-            setActiveSectionIdx(sectionIdx)
-            setAiSuggestion({ finding, sectionIdx })
-          }}
-          onResolveManually={(affected) => {
-            setShowAIReviewModal(false)
-            const targetSection = findSectionIdxForAffected(affected)
-            if (targetSection !== -1) {
-              setActiveSectionIdx(targetSection)
-            }
+          onApplyActions={(all) => {
+            // Highlight the sections that need the user's action; AI options are suggested one by one
+            const queue = all
+              .filter((f) => f.recordedAction)
+              .map((f) => {
+                const idx = findSectionIdxForAffected(f.affected)
+                return { finding: f, sectionIdx: idx !== -1 ? idx : activeSectionIdx, action: f.recordedAction as 'manual' | 'ai' }
+              })
+            setActionQueue(queue)
+            if (queue.length === 0) return
+            setActiveSectionIdx(queue[0].sectionIdx)
+            const firstAi = queue.find((q) => q.action === 'ai')
+            setAiSuggestion(firstAi ? { finding: firstAi.finding, sectionIdx: firstAi.sectionIdx } : null)
           }}
         />
       )}
@@ -15485,6 +16810,9 @@ export function SOWDetailScreen({
   ]
   const effectiveFiles = uploadedFiles && uploadedFiles.length > 0 ? uploadedFiles : (sowVariant === 'v2' || sowVariant === 'meridian' || isDeactivated) ? defaultMockFiles : uploadedFiles
 
+  // Documents live here so the Overview manages them and the Context only lists them
+  const [docFiles, setDocFiles] = useState<UploadedFile[]>(effectiveFiles)
+
   type DraftGenState = 'idle' | 'generating' | 'shimmer' | 'ready'
   const [activeTab, setActiveTab] = useState<SOWTab>(
     sowVariant === 'v2' || sowVariant === 'meridian' || isContributor || isReviewer ? 'structure' : 'overview'
@@ -15493,6 +16821,9 @@ export function SOWDetailScreen({
     sowVariant === 'v2' || sowVariant === 'meridian' || isContributor || isReviewer || isDeactivated
   )
   const [isDraftUnlocked, setIsDraftUnlocked] = useState(isDeactivated)
+  // Answered questions when the draft was last generated (null = unknown), to detect new answers afterwards
+  const [generatedAnswered, setGeneratedAnswered] = useState<number | null>(null)
+  const [showRegenPrompt, setShowRegenPrompt] = useState(false)
   const [isFormReady, setIsFormReady] = useState(false)
   const [isFormEditable, setIsFormEditable] = useState(false)
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
@@ -15507,10 +16838,24 @@ export function SOWDetailScreen({
   const isPMORole = effectiveViewerRole === 'pmo'
   const isAdminRole = effectiveViewerRole === 'admin'
   // First-visit Context questions: answered once, kept across tab switches
-  const [contextIssueState, setContextIssueState] = useState<ContextIssueState>({ init: false, questions: [], updates: [], scopeSignedOff: false })
+  const [contextIssueState, setContextIssueState] = useState<ContextIssueState>({ init: false, questions: [], updates: [], signedOffIds: [] })
+  // Re-check the documents against each other whenever one is added or deleted
+  const syncDocumentQuestions = (next: UploadedFile[]) => {
+    setDocFiles(next)
+    setContextIssueState((p) => ({
+      ...p,
+      init: true,
+      questions: buildDocumentQuestions(
+        next.map((d) => d.name),
+        { clientName: p.clientName }
+      ),
+    }))
+  }
+  const handleAddFiles = (newDocs: UploadedFile[]) => syncDocumentQuestions([...docFiles, ...newDocs])
+  const handleRemoveFile = (id: string) => syncDocumentQuestions(docFiles.filter((d) => d.id !== id))
   const [sendApprovalTipPos, setSendApprovalTipPos] = useState<{ top: number; right: number } | null>(null)
   // Once the draft has been generated, Context and Planning become view-only for everyone
-  const contentFrozen = isViewOnly || isDraftUnlocked
+  const contentFrozen = isViewOnly
   // After a non-PMO role sends the SOW for approval, nothing is editable for them any more
   const sentLock = isSentForReview && !isPMORole
   const baseSections =
@@ -15546,7 +16891,26 @@ export function SOWDetailScreen({
     showToast('Participants invited successfully!', 'success')
   }
 
+  const answeredNow = (savedSections ?? sourceSectionsForRole).reduce(
+    (n, sec) => n + sec.items.filter((i) => i.type === 'question' && i.answered).length,
+    0
+  )
+  // New answers were added in Planning after the draft was generated
+  const needsRegen =
+    isDraftUnlocked && !isViewOnly && isPMORole && canGenerateDraft && generatedAnswered !== null && answeredNow > generatedAnswered
+
+  // Below 80% completeness the user must confirm before the draft is generated
+  const requestGenerateDraft = () => {
+    // Contributor, Reviewer and Client generate straight away, without the confirmation popup
+    if (!isPMORole) handleGenerateDraft()
+    else if (completionScore < 80) setShowLowScoreConfirm(true)
+    else handleGenerateDraft()
+  }
+
   const handleGenerateDraft = () => {
+    setGenerateTip(null)
+    setGeneratedScore(completionScore)
+    setGeneratedAnswered(answeredNow)
     setIsDraftUnlocked(true)
     setActiveTab('sow-draft')
     setDraftGenState('generating')
@@ -15565,7 +16929,14 @@ export function SOWDetailScreen({
     showToast('SOW sent for review successfully!', 'success')
   }
 
-  const tabs = buildTabs(isStructureUnlocked || isDeactivated, isDraftUnlocked || isDeactivated || isAdminRole)
+  // The PMO can reach the Draft tab as soon as Planning is unlocked (the draft itself is generated from Generate Draft)
+  const draftTabUnlocked =
+    isDraftUnlocked || isDeactivated || isAdminRole || (isStructureUnlocked && isPMORole && showGenerateDraft)
+  const tabs = buildTabs(isStructureUnlocked || isDeactivated, draftTabUnlocked)
+  const [showLowScoreConfirm, setShowLowScoreConfirm] = useState(false)
+  // Tooltip for the Generate Draft button of the non-PMO roles (shown in a portal so the header cannot clip it)
+  const [generateTip, setGenerateTip] = useState<{ top: number; right: number } | null>(null)
+  const [generatedScore, setGeneratedScore] = useState(100)
 
   const [isFormDirty, setIsFormDirty] = useState(false)
   const [showOverrideConfirm, setShowOverrideConfirm] = useState(false)
@@ -15737,7 +17108,11 @@ export function SOWDetailScreen({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => !tab.locked && setActiveTab(tab.id)}
+                  onClick={() => {
+                    if (tab.locked) return
+                    setActiveTab(tab.id)
+                    if (tab.id === 'sow-draft' && needsRegen) setShowRegenPrompt(true)
+                  }}
                   style={{
                     padding: '12px 18px',
                     background: 'none',
@@ -15765,11 +17140,6 @@ export function SOWDetailScreen({
                 >
                   {tab.label}
                   {tab.locked && <LockIcon />}
-                  {!tab.locked && isDraftUnlocked && (tab.id === 'form' || tab.id === 'structure') && (
-                    <span title="Locked after the draft was generated — view only" style={{ display: 'inline-flex' }}>
-                      <LockIcon />
-                    </span>
-                  )}
                 </button>
               )
             })}
@@ -15888,12 +17258,20 @@ export function SOWDetailScreen({
                 </div>
                 </div>
               )}
-              {activeTab === 'structure' && canGenerateDraft && draftGenState === 'idle' && !isDraftUnlocked && (
-                <div style={{ order: 2, display: 'flex' }}>
+              {(activeTab === 'structure' || activeTab === 'sow-draft') && canGenerateDraft && !sentLock && draftGenState === 'idle' && !isDraftUnlocked && (
+                <div
+                  style={{ order: 2, display: 'flex' }}
+                  onMouseEnter={(e) => {
+                    if (isPMORole) return
+                    const r = e.currentTarget.getBoundingClientRect()
+                    setGenerateTip({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) })
+                  }}
+                  onMouseLeave={() => setGenerateTip(null)}
+                >
                 <button
-                  onClick={handleGenerateDraft}
-                  disabled={isViewOnly || completionScore < 80}
-                  title={isViewOnly ? 'This SOW is view only' : completionScore < 80 ? 'Completion must be at least 80% to generate draft' : 'Generate Draft'}
+                  onClick={requestGenerateDraft}
+                  disabled={isViewOnly}
+                  title={isViewOnly ? 'This SOW is view only' : 'Generate Draft'}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -15901,17 +17279,17 @@ export function SOWDetailScreen({
                     padding: '6px 14px',
                     borderRadius: 8,
                     border: 'none',
-                    background: isViewOnly || completionScore < 80 ? '#cbd5e1' : '#00C4C4',
+                    background: isViewOnly ? '#cbd5e1' : '#00C4C4',
                     fontSize: 12,
                     fontWeight: 700,
-                    color: isViewOnly || completionScore < 80 ? '#64748b' : '#ffffff',
-                    cursor: isViewOnly || completionScore < 80 ? 'not-allowed' : 'pointer',
+                    color: isViewOnly ? '#64748b' : '#ffffff',
+                    cursor: isViewOnly ? 'not-allowed' : 'pointer',
                     whiteSpace: 'nowrap',
-                    boxShadow: isViewOnly || completionScore < 80 ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
+                    boxShadow: isViewOnly ? 'none' : '0 2px 8px rgba(0,196,196,0.25)',
                     transition: 'all 0.15s ease',
                   }}
-                  onMouseEnter={(e) => { if (!isViewOnly && completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8' }}
-                  onMouseLeave={(e) => { if (!isViewOnly && completionScore >= 80) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4' }}
+                  onMouseEnter={(e) => { if (!isViewOnly) (e.currentTarget as HTMLButtonElement).style.background = '#00a8a8' }}
+                  onMouseLeave={(e) => { if (!isViewOnly) (e.currentTarget as HTMLButtonElement).style.background = '#00C4C4' }}
                 >
                   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -15923,6 +17301,32 @@ export function SOWDetailScreen({
                 </button>
                 </div>
               )}
+              {(activeTab === 'structure' || activeTab === 'sow-draft') && needsRegen && draftGenState === 'ready' && (
+                <div style={{ order: 2, display: 'flex' }}>
+                  <button
+                    onClick={requestGenerateDraft}
+                    title="You answered more questions after the draft was generated"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#00C4C4',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 8px rgba(0,196,196,0.25)',
+                    }}
+                  >
+                    <RefreshCw size={13} />
+                    Regenerate Draft
+                  </button>
+                </div>
+              )}
               {/* Send for approval — Contributor, Reviewer and Client */}
               {!isViewOnly && showSendForApproval && draftGenState !== 'generating' && draftGenState !== 'shimmer' && (
                 <div
@@ -15932,7 +17336,6 @@ export function SOWDetailScreen({
                     setSendApprovalTipPos({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) })
                   }}
                   onMouseLeave={() => setSendApprovalTipPos(null)}
-                  title={activeTab === 'structure' && isDraftUnlocked && !isSentForReview ? 'Planning is locked after the draft is generated' : undefined}
                 >
                   <button
                     onClick={() => {
@@ -16025,7 +17428,14 @@ export function SOWDetailScreen({
           )}
           {activeTab === 'overview' && (
             <OverviewTab
-              files={effectiveFiles}
+              files={docFiles}
+              canEditDetails={isPMORole && !contentFrozen && (isStructureUnlocked ? isFormEditable : true)}
+              conflictCount={
+                buildDocumentQuestions(docFiles.map((d) => d.name)).filter((q) => q.kind === 'conflict').length
+              }
+              isSubmitted={isStructureUnlocked}
+              onAddFiles={handleAddFiles}
+              onRemoveFile={handleRemoveFile}
               isDraftGenerated={isDraftUnlocked || draftGenState === 'ready'}
               sowName={currentSowName}
               onSowNameChange={setCurrentSowName}
@@ -16038,7 +17448,7 @@ export function SOWDetailScreen({
           )}
           {activeTab === 'form' && (
             <FormTab
-              files={effectiveFiles}
+              files={docFiles}
               showUploadedDocs={isFormEditable && isStructureUnlocked}
               onReady={() => setIsFormReady(true)}
               onSubmit={handleFormSubmit}
@@ -16085,6 +17495,9 @@ export function SOWDetailScreen({
                   viewerRole={effectiveViewerRole}
                   isReadOnly={isViewOnly || sentLock}
                   assignedSectionTitles={assignedSectionTitles}
+                  planningSections={savedSections ?? sourceSectionsForRole}
+                  generatedScore={generatedScore}
+                  unresolvedContextIssues={contextIssueState.questions.length}
                   isDraftGenerating={draftGenState === 'generating'}
                   sowDeadline={sowDeadline || '2026-10-31'}
                   onOpenParticipantsModal={() => setShowParticipantsModal(true)}
@@ -16096,7 +17509,7 @@ export function SOWDetailScreen({
             ) : (
               <LockedTabState
                 title="SOW Draft Not Yet Available"
-                description="Complete the Structure tab and click Generate Draft to unlock the SOW Draft."
+                description="Click Generate Draft to create the SOW Draft. Answering more questions in Planning first will improve its quality."
               />
             ))}
           {activeTab === 'audit-log' && (
@@ -16109,12 +17522,72 @@ export function SOWDetailScreen({
                 flexDirection: 'column',
               }}
             >
-              <AuditLogView />
+              <AuditLogView legendSlot={draftHeaderSlot} />
             </div>
           )}
         </div>
         {/* end tab content */}
       </div>
+      {generateTip &&
+        createPortal(
+          <div
+            role="tooltip"
+            style={{
+              position: 'fixed',
+              top: generateTip.top,
+              right: generateTip.right,
+              zIndex: 100000,
+              width: 250,
+              padding: '8px 12px',
+              borderRadius: 8,
+              background: '#0d212c',
+              color: '#ffffff',
+              fontSize: 11.5,
+              lineHeight: 1.5,
+              boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
+              pointerEvents: 'none',
+            }}
+          >
+            You can see this button because you have edit access to the Draft page. Users without edit access do not get it.
+          </div>,
+          document.body
+        )}
+      {showRegenPrompt && needsRegen && (
+        <OverviewConfirmModal
+          warning
+          title="Regenerate the draft"
+          body={
+            <>
+              You have answered more questions in Planning. Please regenerate the draft to update the draft version.
+              {completionScore < 80 && ` Your completeness score is ${completionScore}%, which is below 80% and will directly impact the quality of the draft.`}
+            </>
+          }
+          confirmLabel="Regenerate draft"
+          onCancel={() => setShowRegenPrompt(false)}
+          onConfirm={() => {
+            // This popup is the only confirmation, so skip the low-score warning
+            setShowRegenPrompt(false)
+            handleGenerateDraft()
+          }}
+        />
+      )}
+      {showLowScoreConfirm && (
+        <OverviewConfirmModal
+          warning
+          title="Are you sure you want to generate draft?"
+          body={
+            <>
+              Your completeness score is {completionScore}%, which is below 80%. This will directly impact the quality of your draft.
+            </>
+          }
+          confirmLabel="Yes, generate"
+          onCancel={() => setShowLowScoreConfirm(false)}
+          onConfirm={() => {
+            setShowLowScoreConfirm(false)
+            handleGenerateDraft()
+          }}
+        />
+      )}
       {showOverrideConfirm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#fff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', textAlign: 'center' }}>
@@ -16368,8 +17841,11 @@ function DeleteConfirmModal({
 
         {!hideReason && (
           <>
-            <div style={{ textAlign: 'left', marginBottom: 6, fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
+            <div style={{ textAlign: 'left', fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
               Reason
+            </div>
+            <div style={{ textAlign: 'left', marginBottom: 6, fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
+              The reason you add here is feedback that will be used to train the AI agent.
             </div>
             <textarea
               placeholder="Type a reason..."

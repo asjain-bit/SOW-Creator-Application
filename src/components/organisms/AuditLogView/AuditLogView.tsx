@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { createPortal } from 'react-dom'
 import {
   FileText,
   FileSearch,
@@ -25,13 +26,13 @@ export const AUDIT_CATEGORY_STYLES: Record<
 > = {
   critical: { label: 'Critical / Risk', icon: TriangleAlert, color: '#DC2626', background: '#FEF2F2', border: '#FECACA' },
   dependency: { label: 'Dependency', icon: GitBranch, color: '#7C3AED', background: '#F5F3FF', border: '#DDD6FE' },
-  'key-action': { label: 'Key Action', icon: FileText, color: '#D97706', background: '#FFFBEB', border: '#FDE68A' },
+  'key-action': { label: 'Agent Action', icon: FileText, color: '#D97706', background: '#FFFBEB', border: '#FDE68A' },
   approval: { label: 'Approval / Sign-off', icon: CircleCheck, color: '#16A34A', background: '#F0FDF4', border: '#BBF7D0' },
-  information: { label: 'Information', icon: FileSearch, color: '#00C4CB', background: 'rgba(0,196,203,0.08)', border: 'rgba(0,196,203,0.3)' },
+  information: { label: 'User Action', icon: FileSearch, color: '#00C4CB', background: 'rgba(0,196,203,0.08)', border: 'rgba(0,196,203,0.3)' },
   general: { label: 'General', icon: FileText, color: '#00a0a0', background: 'rgba(0,196,196,0.10)', border: 'rgba(0,196,196,0.3)' },
 }
 
-const LEGEND_CATEGORIES: AuditCategory[] = ['critical', 'dependency', 'key-action', 'approval', 'information']
+const LEGEND_CATEGORIES: AuditCategory[] = ['critical', 'key-action', 'approval', 'information']
 
 /** Category used for each existing event type */
 const CATEGORY_BY_ICON: Record<AuditEvent['icon'], AuditCategory> = {
@@ -40,6 +41,8 @@ const CATEGORY_BY_ICON: Record<AuditEvent['icon'], AuditCategory> = {
   structure: 'information',
   upload: 'information',
   analysis: 'dependency',
+  conflict: 'critical',
+  dependency: 'dependency',
   reviewers: 'general',
 }
 
@@ -49,12 +52,28 @@ export interface AuditEvent {
   action: string
   description: string
   actor: string
-  icon: 'upload' | 'analysis' | 'form' | 'structure' | 'reviewers' | 'draft'
+  icon: 'upload' | 'analysis' | 'form' | 'structure' | 'reviewers' | 'draft' | 'conflict' | 'dependency'
   /** Optional; defaults from the icon type */
   category?: AuditCategory
 }
 
 export let MOCK_AUDIT_LOGS: AuditEvent[] = [
+  {
+    id: 'AUD-108',
+    timestamp: '23 Sept 2026, 06:50 PM',
+    action: 'Content Conflict Detected',
+    description: '2 inconsistencies found between the RFP and Enterprise Architecture Specs.',
+    actor: 'AI Content Analysis Agent (v2.1)',
+    icon: 'conflict',
+  },
+  {
+    id: 'AUD-107',
+    timestamp: '23 Sept 2026, 06:46 PM',
+    action: 'Dependent Questions Generated',
+    description: '8 follow-up questions created from 3 extracted dependencies.',
+    actor: 'AI Question Generator (v1.8)',
+    icon: 'dependency',
+  },
   {
     id: 'AUD-106',
     timestamp: '23 Sept 2026, 06:42 PM',
@@ -111,9 +130,9 @@ export let MOCK_AUDIT_LOGS: AuditEvent[] = [
   },
 ]
 
-let globalLogId = 107
+let globalLogId = 109
 
-export function addGlobalAuditLog(action: string, description: string, actor: string, icon: AuditEvent['icon'] = 'structure') {
+export function addGlobalAuditLog(action: string, description: string, actor: string, icon: AuditEvent['icon'] = 'structure', category?: AuditCategory) {
   const newLog: AuditEvent = {
     id: `AUD-${globalLogId++}`,
     timestamp: new Date().toLocaleString('en-GB', {
@@ -128,6 +147,7 @@ export function addGlobalAuditLog(action: string, description: string, actor: st
     description,
     actor,
     icon,
+    ...(category ? { category } : {}),
   }
   MOCK_AUDIT_LOGS = [newLog, ...MOCK_AUDIT_LOGS]
 }
@@ -135,9 +155,11 @@ export function addGlobalAuditLog(action: string, description: string, actor: st
 export interface AuditLogViewProps {
   onBackToDashboard?: () => void
   notificationButton?: React.ReactNode
+  /** When set, the legend is shown there (e.g. the tab row of the SOW screen) instead of beside the title */
+  legendSlot?: HTMLElement | null
 }
 
-export function AuditLogView({ onBackToDashboard: _onBack, notificationButton }: AuditLogViewProps) {
+export function AuditLogView({ onBackToDashboard: _onBack, notificationButton, legendSlot }: AuditLogViewProps) {
   const renderIcon = (item: AuditEvent) => {
     const category = item.category ?? CATEGORY_BY_ICON[item.icon] ?? 'general'
     const style = AUDIT_CATEGORY_STYLES[category]
@@ -152,22 +174,8 @@ export function AuditLogView({ onBackToDashboard: _onBack, notificationButton }:
   }
   const containerFor = (item: AuditEvent) => AUDIT_CATEGORY_STYLES[item.category ?? CATEGORY_BY_ICON[item.icon] ?? 'general']
 
-  return (
-    <div className="flex flex-col h-full overflow-y-auto" style={{ padding: 0 }}>
-      {/* ── Page Header ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexShrink: 0,
-          marginBottom: 16,
-        }}
-      >
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>
-          Audit Log
-        </h1>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8, marginLeft: 16 }}>
+  const legend = (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8, marginLeft: 0 }}>
           {LEGEND_CATEGORIES.map((c) => (
             <span
               key={c}
@@ -190,6 +198,25 @@ export function AuditLogView({ onBackToDashboard: _onBack, notificationButton }:
           ))}
           {notificationButton}
         </div>
+  )
+
+  return (
+    <div className="flex flex-col h-full overflow-y-auto" style={{ padding: 0 }}>
+      {legendSlot && createPortal(legend, legendSlot)}
+      {/* ── Page Header ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0,
+          marginBottom: 16,
+        }}
+      >
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>
+          Audit Log
+        </h1>
+        {legendSlot ? null : legend}
       </div>
 
       {/* ── Main Timeline List View (Directly rendered without white section wrapper) ── */}

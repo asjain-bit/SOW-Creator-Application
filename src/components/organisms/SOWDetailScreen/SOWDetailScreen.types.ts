@@ -7,6 +7,8 @@ export interface SectionMember {
   name: string
   initials: string
   color: string
+  /** Added by email and waiting for the admin to assign a role */
+  pending?: boolean
 }
 
 export interface SectionItem {
@@ -48,8 +50,22 @@ export interface CommitmentItem {
   manuallyEdited?: boolean
 }
 
+/** One In Scope / Out of Scope point. Its scope decides which list it appears in. */
+export interface ScopeItem {
+  id: string
+  text: string
+  scope: 'included' | 'excluded'
+  /** Extra notes that narrow the item, e.g. "Phase 1" */
+  qualifiers: string[]
+  citation?: string
+  citationPage?: number
+  citationSnippet?: string
+  manuallyEdited?: boolean
+}
+
 export interface SOWFormData {
   commitments: CommitmentItem[]
+  scopeItems: ScopeItem[]
   clientName: string
   clientNameCitation?: string
   description: string
