@@ -13208,7 +13208,7 @@ function SOWDraftTab({
               }}
             >
               <Check size={12} strokeWidth={3} />
-              Accept
+              Sign off
             </button>
             <button
               type="button"
