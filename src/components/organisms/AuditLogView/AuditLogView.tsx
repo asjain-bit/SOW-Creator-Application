@@ -40,10 +40,10 @@ const CATEGORY_BY_ICON: Record<AuditEvent['icon'], AuditCategory> = {
   form: 'approval',
   structure: 'information',
   upload: 'information',
-  analysis: 'dependency',
+  analysis: 'key-action',
   conflict: 'critical',
-  dependency: 'dependency',
-  reviewers: 'general',
+  dependency: 'key-action',
+  reviewers: 'information',
 }
 
 export interface AuditEvent {
@@ -165,7 +165,7 @@ export function AuditLogView({ onBackToDashboard: _onBack, notificationButton, l
     const style = AUDIT_CATEGORY_STYLES[category]
     const iconProps = { size: 16, color: style.color, strokeWidth: 2 }
     // Keep the existing icon for general / upload / analysis events, otherwise use the category icon
-    if (category === 'general' || item.icon === 'upload' || item.icon === 'analysis') {
+    if (category === 'general' || item.icon === 'upload' || item.icon === 'analysis' || item.icon === 'reviewers') {
       const Existing = item.icon === 'upload' ? UploadCloud : item.icon === 'analysis' ? Sparkles : item.icon === 'reviewers' ? Users : FileText
       return <Existing {...iconProps} />
     }

@@ -8213,7 +8213,7 @@ function StructureTab({
   const allItemIds = visibleSections.flatMap((s) => s.items.map((i) => i.id))
   const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
-  const answerItem = (itemId: string, response: string, isAiGenerated: boolean, isEdited: boolean) => {
+  const answerItem = (itemId: string, response: string, isAiGenerated: boolean, isEdited: boolean, answerMode?: 'internal' | 'online') => {
     let itemName = ''
     setSections((prev) =>
       prev.map((s) => ({
@@ -8221,7 +8221,7 @@ function StructureTab({
         items: s.items.map((it) => {
           if (it.id === itemId) {
             itemName = it.text
-            return { ...it, answered: true, response, isAiGenerated, isEdited }
+            return { ...it, answered: true, response, isAiGenerated, isEdited, answerMode: isAiGenerated ? answerMode : undefined }
           }
           return it
         }),
@@ -9171,7 +9171,7 @@ function StructureTab({
                             onConsumeTokens={onConsumeTokens}
                             onReassign={(newMemberIds) => reassignItem(item.id, newMemberIds)}
                             disableAnswer={disableAnswer || isReviewer}
-                            onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
+                            onAnswer={(text, isAi, isEd, mode) => answerItem(item.id, text, isAi, isEd, mode)}
                             onToggleQueue={() => toggleClientQueue(item.id)}
                             onOpenCitation={setCitationModalTarget}
                             onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
@@ -9202,7 +9202,7 @@ function StructureTab({
                             onConsumeTokens={onConsumeTokens}
                             onReassign={(newMemberIds) => reassignItem(item.id, newMemberIds)}
                             disableAnswer={disableAnswer || isReviewer}
-                            onAnswer={(text, isAi, isEd) => answerItem(item.id, text, isAi, isEd)}
+                            onAnswer={(text, isAi, isEd, mode) => answerItem(item.id, text, isAi, isEd, mode)}
                             onToggleQueue={() => toggleClientQueue(item.id)}
                             onOpenCitation={setCitationModalTarget}
                             onOpenTrace={(it, lbl) => setActiveTraceItem({ item: it, label: lbl })}
@@ -9326,6 +9326,13 @@ function Spinner({ size = 12 }: { size?: number }) {
   )
 }
 
+/** Mock internal documents cited by "Check internal sources" */
+const INTERNAL_SOURCES: { name: string; page: number; section: string; snippet: string }[] = [
+  { name: 'Procurement_Playbook_v3.pdf', page: 4, section: 'Procurement_Playbook_v3.pdf (Page 4 • Section 3)', snippet: 'Stakeholder sign-off on current-state processes is captured before programme kick-off.' },
+  { name: 'Vendor_Onboarding_Policy.docx', page: 2, section: 'Vendor_Onboarding_Policy.docx (Page 2 • Section 1)', snippet: 'All vendor engagements follow the documented onboarding and due-diligence workflow.' },
+  { name: 'Enterprise_Architecture_Standards.pdf', page: 7, section: 'Enterprise_Architecture_Standards.pdf (Page 7 • Section 5)', snippet: 'Integration approaches are validated against the enterprise architecture standards.' },
+]
+
 /** Mock external sources used by "Check Online" (the exact source is shown as the citation) */
 const ONLINE_SOURCES: { title: string; site: string; url: string; answer: string }[] = [
   {
@@ -9388,7 +9395,7 @@ function ItemRow({
   isContributor?: boolean
   isReviewer?: boolean
   disableAnswer?: boolean
-  onAnswer?: (text: string, isAiGenerated: boolean, isEdited: boolean) => void
+  onAnswer?: (text: string, isAiGenerated: boolean, isEdited: boolean, answerMode?: 'internal' | 'online') => void
   onDelete?: () => void
   onToggleQueue?: () => void
   hideAssigneesAndQueue?: boolean
@@ -9431,6 +9438,9 @@ function ItemRow({
     return null
   })
   const [onlineSource, setOnlineSource] = useState<(typeof ONLINE_SOURCES)[number] | null>(null)
+  // Internal document cited by "Check internal sources", and how the answer was produced
+  const [internalSource, setInternalSource] = useState<(typeof INTERNAL_SOURCES)[number] | null>(null)
+  const [answerMode, setAnswerMode] = useState<'internal' | 'online' | null>(item.answerMode ?? null)
   // 'internal' | 'online' while an AI lookup is running (the answer is filled in when it finishes)
   const [checking, setChecking] = useState<'internal' | 'online' | null>(null)
   const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -9690,7 +9700,7 @@ function ItemRow({
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
               </svg>
-              Answered with AI
+              {item.answerMode === 'online' ? 'Answered with Check online' : item.answerMode === 'internal' ? 'Answered with Check internal sources' : 'Answered with AI'}
             </span>
           )}
         </div>
@@ -9753,6 +9763,7 @@ function ItemRow({
                 onClick={() => {
                   setDraft(item.response ?? '')
                   setIsAiGenerated(item.isAiGenerated ?? false)
+                  setAnswerMode(item.answerMode ?? null)
                   setEditing(true)
                 }}
                 style={{
@@ -9830,6 +9841,27 @@ function ItemRow({
             >
               <FileText size={13} strokeWidth={1.75} color="#64748b" />
               <span>{attachedDoc.section || `${attachedDoc.name} (Page ${attachedDoc.page || 2} • Section 5)`}</span>
+            </button>
+          </div>
+        )}
+        {item.response && !editing && internalSource && (
+          <div style={{ marginTop: 6, display: 'flex' }}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenCitation?.({
+                  title: item.text,
+                  sourceDoc: internalSource.name,
+                  page: internalSource.page,
+                  section: internalSource.section,
+                  highlightSnippet: internalSource.snippet,
+                })
+              }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3.5px 10px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
+            >
+              <FileText size={13} strokeWidth={1.75} color="#64748b" />
+              <span>{internalSource.section}</span>
             </button>
           </div>
         )}
@@ -9937,6 +9969,38 @@ function ItemRow({
                 </button>
               </div>
             )}
+            {internalSource && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onOpenCitation?.({
+                      title: item.text,
+                      sourceDoc: internalSource.name,
+                      page: internalSource.page,
+                      section: internalSource.section,
+                      highlightSnippet: internalSource.snippet,
+                    })
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3.5px 10px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
+                >
+                  <FileText size={13} strokeWidth={1.75} color="#64748b" />
+                  <span>{internalSource.section}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInternalSource(null)
+                    setAnswerMode(null)
+                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 2 }}
+                  title="Remove source"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
             {onlineSource && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <a
@@ -9951,7 +10015,10 @@ function ItemRow({
                 </a>
                 <button
                   type="button"
-                  onClick={() => setOnlineSource(null)}
+                  onClick={() => {
+                    setOnlineSource(null)
+                    setAnswerMode(null)
+                  }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 2 }}
                   title="Remove source"
                 >
@@ -10009,6 +10076,9 @@ function ItemRow({
                           ? 'Confirmed — validated with the client stakeholder and captured for the record.'
                           : 'Yes, confirmed with the client team; details captured and will be reflected in the final SOW.'
                       )
+                      setInternalSource(INTERNAL_SOURCES[Math.abs(Array.from(item.id).reduce((h, c) => h + c.charCodeAt(0), 0)) % INTERNAL_SOURCES.length])
+                      setOnlineSource(null)
+                      setAnswerMode('internal')
                       setIsAiGenerated(true)
                       setIsEditedAi(false)
                       onConsumeTokens?.(10)
@@ -10056,6 +10126,8 @@ function ItemRow({
                         const src = ONLINE_SOURCES[Math.abs(Array.from(item.id).reduce((h, c) => h + c.charCodeAt(0), 0)) % ONLINE_SOURCES.length]
                         setDraft(src.answer)
                         setOnlineSource(src)
+                        setInternalSource(null)
+                        setAnswerMode('online')
                         setIsAiGenerated(true)
                         setIsEditedAi(false)
                         onConsumeTokens?.(10)
@@ -10084,7 +10156,7 @@ function ItemRow({
                   type="button"
                   disabled={!draft.trim()}
                   onClick={() => {
-                    onAnswer?.(draft.trim(), isAiGenerated, isEditedAi)
+                    onAnswer?.(draft.trim(), isAiGenerated, isEditedAi, answerMode ?? undefined)
                     setEditing(false)
                   }}
                   style={{

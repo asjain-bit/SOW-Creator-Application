@@ -21,6 +21,8 @@ export interface SectionItem {
   inClientQueue?: boolean // flag for client queue
   queuedBy?: string // who added this item to the client queue
   isAiGenerated?: boolean
+  /** How an AI answer was produced: internal sources or an online search */
+  answerMode?: 'internal' | 'online'
   isEdited?: boolean
 }
 
