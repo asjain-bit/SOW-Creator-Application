@@ -9680,29 +9680,38 @@ function ItemRow({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'inline', alignItems: 'center' }}>
           <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, marginRight: 8 }}>{item.text}</span>
-          {item.isAiGenerated && (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                color: '#7c3aed',
-                background: 'rgba(139,92,246,0.1)',
-                border: '1px solid rgba(139,92,246,0.25)',
-                padding: '2px 7px',
-                borderRadius: 5,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 3.5,
-                verticalAlign: 'middle',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
-              </svg>
-              {item.answerMode === 'online' ? 'Answered with Check online' : item.answerMode === 'internal' ? 'Answered with Check internal sources' : 'Answered with AI'}
-            </span>
-          )}
+          {item.isAiGenerated && (() => {
+            // Chip colour follows the button used: purple for internal sources, blue for online
+            const online = item.answerMode === 'online'
+            const chipColor = online ? '#2563eb' : '#7c3aed'
+            return (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: chipColor,
+                  background: online ? 'rgba(59,130,246,0.07)' : 'rgba(139,92,246,0.1)',
+                  border: online ? '1px solid rgba(59,130,246,0.35)' : '1px solid rgba(139,92,246,0.25)',
+                  padding: '2px 7px',
+                  borderRadius: 5,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3.5,
+                  verticalAlign: 'middle',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {online ? (
+                  <Globe size={10} />
+                ) : (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={chipColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
+                  </svg>
+                )}
+                {online ? 'Answered with Online Sources' : item.answerMode === 'internal' ? 'Answered with Internal Sources' : 'Answered with AI'}
+              </span>
+            )
+          })()}
         </div>
         {queuedByLabel && (
           <div style={{ marginTop: 4, fontSize: 11, color: '#64748b' }}>
