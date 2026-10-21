@@ -24,6 +24,8 @@ export interface SectionItem {
   /** How an AI answer was produced: internal sources or an online search */
   answerMode?: 'internal' | 'online'
   isEdited?: boolean
+  /** Contributors who were reassigned away from this item and now only have view access */
+  viewOnlyMembers?: string[]
 }
 
 export interface SOWSection {

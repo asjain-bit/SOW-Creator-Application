@@ -51,6 +51,7 @@ import {
   History,
   Globe,
   FileWarning,
+  FileSpreadsheet,
   CircleHelp,
   Gauge,
 } from 'lucide-react'
@@ -7032,10 +7033,15 @@ function AssigneesDisplay({
   assignedTo,
   inClientQueue,
   onReassign,
+  isContributor = false,
+  itemType = 'question',
 }: {
   assignedTo?: string | string[]
   inClientQueue?: boolean
   onReassign?: (newMemberIds: string[]) => void
+  /** A contributor reassigning their own item (different wording and consequence) */
+  isContributor?: boolean
+  itemType?: 'question' | 'assumption'
 }) {
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -7054,12 +7060,13 @@ function AssigneesDisplay({
           Client Queue
         </span>
       )}
-      <AssigneesList assignedTo={assignedTo} onReassign={onReassign} />
+      <AssigneesList assignedTo={assignedTo} onReassign={onReassign} isContributor={isContributor} itemType={itemType} />
     </div>
   )
 }
 
-const MAX_ITEM_CONTRIBUTORS = 5
+/** Planning items have exactly one contributor */
+const MAX_ITEM_CONTRIBUTORS = 1
 
 /** Contributor picker popup (checkbox list, max 5) used to assign or change contributors on an item */
 function ContributorPickerPanel({
@@ -7075,17 +7082,13 @@ function ContributorPickerPanel({
 }) {
   const [picked, setPicked] = useState<string[]>(initialIds)
   const [limitError, setLimitError] = useState(false)
+  // One contributor per item: choosing someone replaces the current choice
   const toggle = (id: string) => {
-    if (picked.includes(id)) {
-      setPicked(picked.filter((x) => x !== id))
-      setLimitError(false)
-    } else if (picked.length >= MAX_ITEM_CONTRIBUTORS) {
-      setLimitError(true)
-    } else {
-      setPicked([...picked, id])
-      setLimitError(false)
-    }
+    setLimitError(false)
+    setPicked(picked.includes(id) ? [] : [id])
   }
+  // The confirm button stays disabled until a different contributor is chosen
+  const changed = picked.length > 0 && (picked.length !== initialIds.length || picked.some((id) => !initialIds.includes(id)))
   return (
     <>
       <div
@@ -7111,11 +7114,11 @@ function ContributorPickerPanel({
         }}
       >
         <div style={{ padding: '6px 10px 4px', fontSize: 10.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Assign contributors
+          Assign a contributor
         </div>
         {limitError && (
           <div style={{ margin: '2px 4px 4px', padding: '4px 8px', fontSize: 10.5, color: '#ef4444', background: '#fef2f2', borderRadius: 6 }}>
-            Maximum {MAX_ITEM_CONTRIBUTORS} contributors per item.
+            Only {MAX_ITEM_CONTRIBUTORS} contributor can be assigned per item.
           </div>
         )}
         {SECTION_MEMBERS.map((m) => {
@@ -7171,13 +7174,8 @@ function ContributorPickerPanel({
         <div style={{ borderTop: '1px solid #f1f5f9', marginTop: 4, maxWidth: 260 }}>
           <MemberEmailInvite
             onAdded={(m) => {
-              if (picked.includes(m.id)) return
-              if (picked.length >= MAX_ITEM_CONTRIBUTORS) {
-                setLimitError(true)
-                return
-              }
               setLimitError(false)
-              setPicked([...picked, m.id])
+              setPicked([m.id])
             }}
           />
         </div>
@@ -7191,11 +7189,13 @@ function ContributorPickerPanel({
           </button>
           <button
             type="button"
+            disabled={!changed}
             onClick={() => {
+              if (!changed) return
               onConfirm(picked)
               onClose()
             }}
-            style={{ padding: '4px 10px', borderRadius: 6, background: '#00C4C4', border: 'none', fontSize: 11, fontWeight: 700, color: '#ffffff', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            style={{ padding: '4px 10px', borderRadius: 6, background: changed ? '#00C4C4' : '#cbd5e1', border: 'none', fontSize: 11, fontWeight: 700, color: changed ? '#ffffff' : '#64748b', cursor: changed ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}
           >
             {confirmLabel}
           </button>
@@ -7208,13 +7208,20 @@ function ContributorPickerPanel({
 function AssigneesList({
   assignedTo,
   onReassign,
+  isContributor = false,
+  itemType = 'question',
 }: {
   assignedTo?: string | string[]
   onReassign?: (newMemberIds: string[]) => void
+  isContributor?: boolean
+  /** Wording in the confirmation: this question or this assumption */
+  itemType?: 'question' | 'assumption'
 }) {
   const [hovered, setHovered] = useState(false)
   const [clickedOpen, setClickedOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  // New contributor waiting for the user's confirmation
+  const [pendingIds, setPendingIds] = useState<string[] | null>(null)
 
   const ids = Array.isArray(assignedTo)
     ? assignedTo
@@ -7379,7 +7386,7 @@ function AssigneesList({
                   textAlign: 'left',
                 }}
               >
-                Change contributor →
+                {isContributor ? 'Reassign contributor →' : 'Change contributor →'}
               </button>
             )}
           </div>
@@ -7390,11 +7397,64 @@ function AssigneesList({
       {menuOpen && onReassign && (
         <ContributorPickerPanel
           initialIds={ids}
-          confirmLabel="Change Contributor"
-          onConfirm={(newIds) => onReassign(newIds)}
+          confirmLabel={isContributor ? 'Reassign Contributor' : 'Change Contributor'}
+          onConfirm={(newIds) => {
+            // Only a real change of contributor needs confirming
+            const changed = newIds.length !== ids.length || newIds.some((id) => !ids.includes(id))
+            if (changed && newIds.length > 0) setPendingIds(newIds)
+            else if (changed) onReassign(newIds)
+          }}
           onClose={() => setMenuOpen(false)}
         />
       )}
+
+      {pendingIds &&
+        onReassign &&
+        createPortal(
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (e.target === e.currentTarget) setPendingIds(null)
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}
+            >
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <AlertTriangle size={28} color="#f97316" />
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+                {isContributor ? `Reassign this ${itemType}?` : 'Change the contributor?'}
+              </div>
+              <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
+                {isContributor
+                  ? `Are you sure you want to reassign this ${itemType} to ${pendingIds.map((id) => memberById(id).name).join(', ')}? After this, you will no longer be able to edit it.`
+                  : `Are you sure you want to change the contributor? The previously assigned contributor will only have view access to this ${itemType}.`}
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setPendingIds(null)}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const next = pendingIds
+                    setPendingIds(null)
+                    onReassign(next)
+                  }}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#f97316', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {isContributor ? 'Reassign' : 'Change contributor'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
@@ -7963,7 +8023,10 @@ function StructureTab({
   onConsumeTokens,
   readOnly = false,
   onSectionsChange,
+  excelImport = null,
 }: {
+  /** An uploaded Excel file whose answers should be filled into open questions / assumptions */
+  excelImport?: { id: number; fileName: string } | null
   onSectionsChange?: (sections: SOWSection[]) => void
   initialSections?: SOWSection[]
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
@@ -7983,6 +8046,42 @@ function StructureTab({
   const isClient = viewerRole === 'client'
   const isAdmin = viewerRole === 'admin'
   const [sections, setSections] = useState<SOWSection[]>(initialSections)
+  // Excel autofill: show a loader, then fill some of the open items from the sheet
+  const [importing, setImporting] = useState<string | null>(null)
+  const lastImportId = useRef<number | null>(null)
+  useEffect(() => {
+    if (!excelImport || lastImportId.current === excelImport.id) return
+    lastImportId.current = excelImport.id
+    setImporting(excelImport.fileName)
+    const timer = setTimeout(() => {
+      setSections((prev) => {
+        // Counter lives inside the updater so a repeated run gives the same result
+        let filled = 0
+        return prev.map((sec) => ({
+          ...sec,
+          items: sec.items.map((it) => {
+            // Fill the first open items, up to 8 in total
+            if (it.answered || filled >= 8) return it
+            filled += 1
+            return {
+              ...it,
+              answered: true,
+              isAiGenerated: false,
+              response:
+                it.type === 'assumption'
+                  ? `Confirmed in ${excelImport.fileName}.`
+                  : `Answered in ${excelImport.fileName}: details captured and will be reflected in the SOW.`,
+            }
+          }),
+        }))
+      })
+      setImporting(null)
+      showToast('Questions and assumptions were filled from the Excel sheet.', 'success')
+      addGlobalAuditLog('Answers Imported from Excel', `Filled open questions and assumptions from ${excelImport.fileName}`, 'Ashika Jain (PMO)', 'upload')
+    }, 2600)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [excelImport])
   useEffect(() => {
     onSectionsChange?.(sections)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -8013,6 +8112,9 @@ function StructureTab({
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [hoveredSection, setHoveredSection] = useState<string | null>(null)
   const [assignDropdownOpen, setAssignDropdownOpen] = useState(false)
+  // Contributor chosen in the bulk dropdown, and the confirmation popup before it is applied
+  const [bulkPick, setBulkPick] = useState<string | null>(null)
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
   // Drag & drop state (PMO only)
   const [dragSectionId, setDragSectionId] = useState<string | null>(null)
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null)
@@ -8034,6 +8136,9 @@ function StructureTab({
   const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const hasSelection = selected.size > 0
+  useEffect(() => {
+    if (selected.size === 0) setBulkPick(null)
+  }, [selected])
 
   // Close assign dropdown on outside click
   useEffect(() => {
@@ -8126,20 +8231,28 @@ function StructureTab({
       prev.map((s) => ({
         ...s,
         items: s.items.map((it) => {
-          if (!selected.has(it.id)) return it
+          // Items that are view-only for this contributor cannot be (re)assigned by them
+          if (!selected.has(it.id) || isViewOnlyForMe(it)) return it
           const currentAssignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
           let newAssignees = currentAssignees
           if (forceAssign !== undefined) {
-             if (forceAssign && !currentAssignees.includes(memberId)) {
-               if (currentAssignees.length < 5) newAssignees = [...currentAssignees, memberId]
-             }
+             // One contributor per item: assigning someone replaces the current contributor
+             if (forceAssign) newAssignees = [memberId]
              if (!forceAssign && currentAssignees.includes(memberId)) newAssignees = currentAssignees.filter((m: string) => m !== memberId)
           } else {
              newAssignees = currentAssignees.includes(memberId)
               ? currentAssignees.filter((m: string) => m !== memberId)
-              : (currentAssignees.length < 5 ? [...currentAssignees, memberId] : currentAssignees)
+              : [memberId]
           }
-          return { ...it, assignedTo: newAssignees }
+          // Previous contributors keep view access only; the new one regains full access
+          const viewOnlyMembers = Array.from(
+            new Set([
+              ...(it.viewOnlyMembers ?? []).filter((m) => !newAssignees.includes(m)),
+              ...currentAssignees.filter((m: string) => !newAssignees.includes(m)),
+              ...(isContributor && forceAssign && !newAssignees.includes(currentMemberId) ? [currentMemberId] : []),
+            ])
+          )
+          return { ...it, assignedTo: newAssignees, viewOnlyMembers }
         }),
       }))
     )
@@ -8210,7 +8323,15 @@ function StructureTab({
     : sections
 
   // All item ids across visible sections (for "select all" within multi-select bar)
-  const allItemIds = visibleSections.flatMap((s) => s.items.map((i) => i.id))
+  // A contributor can only edit items they are the contributor on. Items reassigned away from them,
+  // or assigned to someone else, are view-only and cannot be selected for bulk actions.
+  const isViewOnlyForMe = (it: SectionItem) => {
+    if (!isContributor) return false
+    if (it.viewOnlyMembers?.includes(currentMemberId)) return true
+    const assignees = Array.isArray(it.assignedTo) ? it.assignedTo : it.assignedTo ? [it.assignedTo] : []
+    return assignees.length > 0 && !assignees.includes(currentMemberId)
+  }
+  const allItemIds = visibleSections.flatMap((s) => s.items.filter((i) => !isViewOnlyForMe(i)).map((i) => i.id))
   const allSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
 
   const answerItem = (itemId: string, response: string, isAiGenerated: boolean, isEdited: boolean, answerMode?: 'internal' | 'online') => {
@@ -8265,7 +8386,21 @@ function StructureTab({
         ...s,
         items: s.items.map((it) =>
           it.id === itemId
-            ? { ...it, assignedTo: newMemberIds.length === 1 ? newMemberIds[0] : newMemberIds }
+            ? {
+                ...it,
+                assignedTo: newMemberIds.length === 1 ? newMemberIds[0] : newMemberIds,
+                // Previous contributors keep view access only; newly assigned ones regain full access
+                viewOnlyMembers: Array.from(
+                  new Set([
+                    ...(it.viewOnlyMembers ?? []).filter((m) => !newMemberIds.includes(m)),
+                    ...(Array.isArray(it.assignedTo) ? it.assignedTo : it.assignedTo ? [it.assignedTo] : []).filter(
+                      (m) => !newMemberIds.includes(m)
+                    ),
+                    // A contributor who reassigns an item can no longer edit it, whoever held it before
+                    ...(isContributor && !newMemberIds.includes(currentMemberId) ? [currentMemberId] : []),
+                  ])
+                ),
+              }
             : it
         ),
       }))
@@ -8325,8 +8460,20 @@ function StructureTab({
         height: '100%',
         minHeight: 0,
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
+      {importing && (
+        <div
+          style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <FormGeneratingAnimation
+            title="Filling in answers"
+            description={`Reading ${importing} and matching answers to your questions and assumptions.`}
+            hint="This only takes a moment…"
+          />
+        </div>
+      )}
       {/* ── Two-pane layout ── */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <div
@@ -8824,39 +8971,17 @@ function StructureTab({
                       </div>
                       {assignLimitError && (
                         <div style={{ padding: '6px 12px', fontSize: 11, color: '#ef4444', background: '#fef2f2', borderBottom: '1px solid #fee2e2' }}>
-                          Maximum 5 contributors can be assigned to an item.
+                          Only 1 contributor can be assigned to an item.
                         </div>
                       )}
                       {SECTION_MEMBERS.map((m) => {
-                        const allItemIdsArray = Array.from(selected)
-                        const validSelectedIds = allItemIdsArray.filter(id => {
-                          const it = sections.flatMap(s => s.items).find(x => x.id === id)
-                          return !!it
-                        })
-                        const isAssigned = validSelectedIds.length > 0 && validSelectedIds.every(id => {
-                          const it = sections.flatMap(s => s.items).find(x => x.id === id)
-                          if (!it) return false
-                          const assignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
-                          return assignees.includes(m.id)
-                        })
+                        const isAssigned = bulkPick === m.id
                         return (
                           <button
                             key={m.id}
                             onClick={() => {
-                              if (!isAssigned) {
-                                const hasMax = validSelectedIds.some(id => {
-                                  const it = sections.flatMap(s => s.items).find(x => x.id === id)
-                                  if (!it) return false
-                                  const assignees = Array.isArray(it.assignedTo) ? it.assignedTo : (it.assignedTo ? [it.assignedTo] : [])
-                                  return assignees.length >= 5
-                                })
-                                if (hasMax) {
-                                  setAssignLimitError(true)
-                                  return
-                                }
-                              }
                               setAssignLimitError(false)
-                              bulkAssign(m.id, !isAssigned)
+                              setBulkPick(isAssigned ? null : m.id)
                             }}
                             style={{
                               display: 'flex',
@@ -8926,33 +9051,43 @@ function StructureTab({
                       <div style={{ borderTop: '1px solid #e2e8f0', marginTop: 4 }}>
                         <MemberEmailInvite
                           onAdded={(m) => {
-                            const full = Array.from(selected).some((id) => {
-                              const it = sections.flatMap((sc) => sc.items).find((x) => x.id === id)
-                              const a = it ? (Array.isArray(it.assignedTo) ? it.assignedTo : it.assignedTo ? [it.assignedTo] : []) : []
-                              return a.length >= 5 && !a.includes(m.id)
-                            })
-                            if (full) {
-                              setAssignLimitError(true)
-                              return
-                            }
                             setAssignLimitError(false)
-                            bulkAssign(m.id, true)
+                            setBulkPick(m.id)
                           }}
                         />
                       </div>
                       <div style={{ padding: '8px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
                         <button
-                          onClick={() => { clearSelection(); setAssignDropdownOpen(false) }}
+                          onClick={() => { setBulkPick(null); clearSelection(); setAssignDropdownOpen(false) }}
                           style={{ padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: '#64748b' }}
                         >
                           Cancel
                         </button>
-                        <button
-                          onClick={() => { clearSelection(); setAssignDropdownOpen(false) }}
-                          style={{ padding: '6px 10px', borderRadius: 6, background: '#00C4C4', border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', color: '#fff' }}
-                        >
-                          Invite Participants
-                        </button>
+                        {(() => {
+                          // Enabled only when the chosen contributor differs for at least one selected item
+                          const allItems = sections.flatMap((sc) => sc.items)
+                          const differs =
+                            !!bulkPick &&
+                            Array.from(selected).some((id) => {
+                              const it = allItems.find((x) => x.id === id)
+                              if (!it || isViewOnlyForMe(it)) return false
+                              const a = Array.isArray(it.assignedTo) ? it.assignedTo : it.assignedTo ? [it.assignedTo] : []
+                              return !(a.length === 1 && a[0] === bulkPick)
+                            })
+                          return (
+                            <button
+                              disabled={!differs}
+                              onClick={() => {
+                                if (!differs) return
+                                setAssignDropdownOpen(false)
+                                setBulkConfirmOpen(true)
+                              }}
+                              style={{ padding: '6px 10px', borderRadius: 6, background: differs ? '#00C4C4' : '#cbd5e1', border: 'none', fontSize: 11, fontWeight: 700, cursor: differs ? 'pointer' : 'not-allowed', color: differs ? '#fff' : '#64748b', whiteSpace: 'nowrap' }}
+                            >
+                              {isContributor ? 'Reassign Contributor' : 'Change Contributor'}
+                            </button>
+                          )
+                        })()}
                       </div>
                     </div>
                   )}
@@ -9167,10 +9302,10 @@ function StructureTab({
                             onToggle={() => toggleSelect(item.id)}
                             isContributor={isContributor}
                             isReviewer={isReviewer}
-                            canEdit={canEditSec}
+                            canEdit={canEditSec && !isViewOnlyForMe(item)}
                             onConsumeTokens={onConsumeTokens}
                             onReassign={(newMemberIds) => reassignItem(item.id, newMemberIds)}
-                            disableAnswer={disableAnswer || isReviewer}
+                            disableAnswer={disableAnswer || isReviewer || isViewOnlyForMe(item)}
                             onAnswer={(text, isAi, isEd, mode) => answerItem(item.id, text, isAi, isEd, mode)}
                             onToggleQueue={() => toggleClientQueue(item.id)}
                             onOpenCitation={setCitationModalTarget}
@@ -9198,10 +9333,10 @@ function StructureTab({
                             onToggle={() => toggleSelect(item.id)}
                             isContributor={isContributor}
                             isReviewer={isReviewer}
-                            canEdit={canEditSec}
+                            canEdit={canEditSec && !isViewOnlyForMe(item)}
                             onConsumeTokens={onConsumeTokens}
                             onReassign={(newMemberIds) => reassignItem(item.id, newMemberIds)}
-                            disableAnswer={disableAnswer || isReviewer}
+                            disableAnswer={disableAnswer || isReviewer || isViewOnlyForMe(item)}
                             onAnswer={(text, isAi, isEd, mode) => answerItem(item.id, text, isAi, isEd, mode)}
                             onToggleQueue={() => toggleClientQueue(item.id)}
                             onOpenCitation={setCitationModalTarget}
@@ -9254,6 +9389,58 @@ function StructureTab({
           onConsumeTokens={onConsumeTokens}
         />
       )}
+
+      {bulkConfirmOpen && bulkPick && (() => {
+        const chosen = sections.flatMap((sc) => sc.items).filter((it) => selected.has(it.id) && !isViewOnlyForMe(it))
+        const hasQ = chosen.some((it) => it.type === 'question')
+        const hasA = chosen.some((it) => it.type === 'assumption')
+        const noun = hasQ && hasA ? 'questions and assumptions' : hasA ? 'assumptions' : 'questions'
+        const who = memberById(bulkPick).name
+        const close = () => setBulkConfirmOpen(false)
+        return createPortal(
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) close()
+            }}
+          >
+            <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 480, maxWidth: '90vw', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <AlertTriangle size={28} color="#f97316" />
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+                {isContributor ? `Reassign the selected ${noun}?` : 'Change the contributor?'}
+              </div>
+              <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
+                {isContributor
+                  ? `Are you sure you want to reassign the ${chosen.length} selected ${noun} to ${who}? After this, you will no longer be able to edit them.`
+                  : `Are you sure you want to change the contributor of the ${chosen.length} selected ${noun} to ${who}? The previously assigned contributors will only have view access to them.`}
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={close}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    bulkAssign(bulkPick, true)
+                    showToast(`${chosen.length} ${chosen.length === 1 ? 'item' : 'items'} assigned to ${who}.`, 'success')
+                    setBulkConfirmOpen(false)
+                    setBulkPick(null)
+                    clearSelection()
+                  }}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#f97316', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {isContributor ? 'Reassign' : 'Change contributor'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      })()}
 
       {/* Custom Delete Confirmation Modal */}
       {deleteConfirm?.isOpen && (
@@ -10321,6 +10508,8 @@ function ItemRow({
             assignedTo={item.assignedTo}
             inClientQueue={item.inClientQueue}
             onReassign={canEdit ? onReassign : undefined}
+            isContributor={isContributor}
+            itemType={item.type}
           />
         )}
         {canEdit && !hideAssigneesAndQueue && (
@@ -17015,6 +17204,9 @@ export function SOWDetailScreen({
     isDraftUnlocked || isDeactivated || isAdminRole || (isStructureUnlocked && isPMORole && showGenerateDraft)
   const tabs = buildTabs(isStructureUnlocked || isDeactivated, draftTabUnlocked)
   const [showLowScoreConfirm, setShowLowScoreConfirm] = useState(false)
+  // Excel file uploaded in Planning (PMO) whose answers autofill open items
+  const [excelImport, setExcelImport] = useState<{ id: number; fileName: string } | null>(null)
+  const excelInputRef = useRef<HTMLInputElement>(null)
   // Tooltip for the Generate Draft button of the non-PMO roles (shown in a portal so the header cannot clip it)
   const [generateTip, setGenerateTip] = useState<{ top: number; right: number } | null>(null)
   const [generatedScore, setGeneratedScore] = useState(100)
@@ -17339,6 +17531,35 @@ export function SOWDetailScreen({
                 </div>
                 </div>
               )}
+              {activeTab === 'structure' && isPMORole && !isViewOnly && draftGenState !== 'generating' && draftGenState !== 'shimmer' && (
+                <div style={{ order: 1, display: 'flex' }}>
+                  <input
+                    ref={excelInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      e.target.value = ''
+                      if (!file) return
+                      if (!/\.(xlsx|xls)$/i.test(file.name)) {
+                        showToast('Only Excel files (.xlsx, .xls) are supported.', 'error')
+                        return
+                      }
+                      setExcelImport({ id: Date.now(), fileName: file.name })
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => excelInputRef.current?.click()}
+                    title="Upload an Excel file to autofill questions and assumptions"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 8px', border: 'none', background: 'none', fontSize: 12.5, fontWeight: 600, color: '#00C4C4', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    <FileSpreadsheet size={14} />
+                    Upload Excel
+                  </button>
+                </div>
+              )}
               {(activeTab === 'structure' || activeTab === 'sow-draft') && canGenerateDraft && !sentLock && draftGenState === 'idle' && !isDraftUnlocked && (
                 <div
                   style={{ order: 2, display: 'flex' }}
@@ -17557,6 +17778,7 @@ export function SOWDetailScreen({
                 onResolveChanges={(accept) => setHasPendingStructureChanges(false)}
                 onOpenParticipantsModal={() => setShowParticipantsModal(true)}
                 sowDeadline={sowDeadline || '2026-10-31'}
+                excelImport={excelImport}
               />
             ) : (
               <LockedTabState
