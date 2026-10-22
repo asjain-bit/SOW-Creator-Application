@@ -209,11 +209,25 @@ interface ChartPoint {
 }
 
 /** Manual cost vs AI cost over the listed weeks, with the selected week highlighted */
-function CostChart({ points, selectedIndex, tall = false }: { points: ChartPoint[]; selectedIndex: number; tall?: boolean }) {
+function CostChart({ points, selectedIndex }: { points: ChartPoint[]; selectedIndex: number }) {
   const [hover, setHover] = useState<number | null>(null)
-  const W = 640
-  // The Admin's input card has the extra Recalculate row, so the chart grows to match its height
-  const H = tall ? 296 : 270
+  // The chart fills whatever space the card gives it (taller for the Admin, who has the Recalculate row)
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState({ w: 640, h: 270 })
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) setSize({ w: Math.round(r.width), h: Math.round(r.height) })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const W = size.w
+  const H = size.h
   const left = 52
   const right = 112
   const top = 18
@@ -228,8 +242,8 @@ function CostChart({ points, selectedIndex, tall = false }: { points: ChartPoint
   const colW = points.length > 1 ? (W - left - right) / (points.length - 1) : 40
   const hp = hover !== null ? points[hover] : null
   return (
-    <div style={{ position: 'relative' }} onMouseLeave={() => setHover(null)}>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Manual cost versus AI cost by week" style={{ display: 'block' }}>
+    <div ref={wrapRef} style={{ position: 'relative', height: '100%', minHeight: 250 }} onMouseLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label="Manual cost versus AI cost by week" style={{ display: 'block', position: 'absolute', inset: 0 }}>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={left} x2={W - right} y1={y(t)} y2={y(t)} stroke="#e2e8f0" strokeWidth="1" />
@@ -391,63 +405,61 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', overflowY: 'auto' }}>
-      {/* Header */}
+      {/* Header: title on the left, week selector and notifications on the right (same as the other pages) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>Usage Insights</h1>
-        {notificationButton}
-      </div>
-
-      {/* Overview */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button type="button" aria-label="Previous week" disabled={weekIdx <= firstListed} onClick={() => setWeekIdx((i) => i - 1)} style={navBtn(weekIdx <= firstListed)}>
-            <ChevronLeft size={16} />
-          </button>
-          <div ref={weekMenuRef} style={{ position: 'relative' }}>
-            <button
-              type="button"
-              aria-haspopup="listbox"
-              aria-expanded={weekMenuOpen}
-              onClick={() => setWeekMenuOpen((o) => !o)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', fontSize: 13, fontWeight: 500, color: '#0d212c', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              <CalendarDays size={15} color={PRIMARY} />
-              {week.start} – {week.end}
-              <ChevronDown size={14} color="#64748b" style={{ transform: weekMenuOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s ease' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button type="button" aria-label="Previous week" disabled={weekIdx <= firstListed} onClick={() => setWeekIdx((i) => i - 1)} style={navBtn(weekIdx <= firstListed)}>
+              <ChevronLeft size={16} />
             </button>
-            {weekMenuOpen && (
-              <ul
-                role="listbox"
-                aria-label="Weeks in this month"
-                style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60, minWidth: 230, margin: 0, padding: 6, listStyle: 'none', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
+            <div ref={weekMenuRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={weekMenuOpen}
+                onClick={() => setWeekMenuOpen((o) => !o)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', fontSize: 13, fontWeight: 500, color: '#0d212c', cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                {listedWeeks.map(({ w, i }) => (
-                  <li key={w.label} role="option" aria-selected={i === weekIdx}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setWeekIdx(i)
-                        setWeekMenuOpen(false)
-                      }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 10px', borderRadius: 8, border: 'none', background: i === weekIdx ? 'rgba(0,196,196,0.1)' : 'transparent', color: i === weekIdx ? '#008080' : '#0d212c', fontSize: 13, fontWeight: i === weekIdx ? 700 : 500, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
-                      onMouseEnter={(e) => {
-                        if (i !== weekIdx) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
-                      }}
-                      onMouseLeave={(e) => {
-                        if (i !== weekIdx) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
-                      }}
-                    >
-                      {w.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                <CalendarDays size={15} color={PRIMARY} />
+                {week.start} – {week.end}
+                <ChevronDown size={14} color="#64748b" style={{ transform: weekMenuOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s ease' }} />
+              </button>
+              {weekMenuOpen && (
+                <ul
+                  role="listbox"
+                  aria-label="Weeks in this month"
+                  style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60, minWidth: 230, margin: 0, padding: 6, listStyle: 'none', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
+                >
+                  {listedWeeks.map(({ w, i }) => (
+                    <li key={w.label} role="option" aria-selected={i === weekIdx}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWeekIdx(i)
+                          setWeekMenuOpen(false)
+                        }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 10px', borderRadius: 8, border: 'none', background: i === weekIdx ? 'rgba(0,196,196,0.1)' : 'transparent', color: i === weekIdx ? '#008080' : '#0d212c', fontSize: 13, fontWeight: i === weekIdx ? 700 : 500, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                        onMouseEnter={(e) => {
+                          if (i !== weekIdx) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
+                        }}
+                        onMouseLeave={(e) => {
+                          if (i !== weekIdx) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                        }}
+                      >
+                        {w.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <button type="button" aria-label="Next week" disabled={weekIdx >= lastListed} onClick={() => setWeekIdx((i) => i + 1)} style={navBtn(weekIdx >= lastListed)}>
+              <ChevronRight size={16} />
+            </button>
+            <InfoTip align="right">Usage is shown for the selected week, Monday to Sunday. Pick any week of the current month.</InfoTip>
           </div>
-          <button type="button" aria-label="Next week" disabled={weekIdx >= lastListed} onClick={() => setWeekIdx((i) => i + 1)} style={navBtn(weekIdx >= lastListed)}>
-            <ChevronRight size={16} />
-          </button>
-          <InfoTip align="right">Usage is shown for the selected week, Monday to Sunday. Pick any week of the current month.</InfoTip>
+          {notificationButton}
         </div>
       </div>
 
@@ -560,9 +572,9 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
               </div>
             </div>
 
-            <div style={{ flex: 1, minHeight: 0, padding: '12px 0' }}>
+            <div style={{ flex: 1, minHeight: 0, padding: '12px 0', display: 'flex', flexDirection: 'column' }}>
               {chartView === 'chart' ? (
-                <CostChart points={chartPoints} selectedIndex={weekIdx} tall={canRecalculate} />
+                <CostChart points={chartPoints} selectedIndex={weekIdx} />
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px 0', alignContent: 'center', height: '100%' }}>
                   <div style={{ paddingRight: 20, borderRight: '1px solid rgba(0,196,196,0.15)' }}>
