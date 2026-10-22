@@ -58,7 +58,7 @@ const cardStyle: React.CSSProperties = {
   boxShadow: '0 2px 12px rgba(0,196,196,0.07)',
 }
 
-function InfoTip({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
+function InfoTip({ children, align = 'left', placement = 'top' }: { children: React.ReactNode; align?: 'left' | 'right'; placement?: 'top' | 'bottom' }) {
   const [open, setOpen] = useState(false)
   return (
     <span
@@ -72,8 +72,10 @@ function InfoTip({ children, align = 'left' }: { children: React.ReactNode; alig
           role="tooltip"
           style={{
             position: 'absolute',
-            bottom: 'calc(100% + 8px)',
-            [align]: -12,
+            // Tips near the top of the page open downwards so the page edge does not clip them
+            ...(placement === 'bottom' ? { top: 'calc(100% + 8px)' } : { bottom: 'calc(100% + 8px)' }),
+            // Bottom tips sit flush with the icon so they stay inside the page edge
+            [align]: placement === 'bottom' ? 0 : -12,
             width: 300,
             background: '#0d212c',
             color: '#ffffff',
@@ -457,7 +459,7 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
             <button type="button" aria-label="Next week" disabled={weekIdx >= lastListed} onClick={() => setWeekIdx((i) => i + 1)} style={navBtn(weekIdx >= lastListed)}>
               <ChevronRight size={16} />
             </button>
-            <InfoTip align="right">Usage is shown for the selected week, Monday to Sunday. Pick any week of the current month.</InfoTip>
+            <InfoTip align="right" placement="bottom">Usage is shown for the selected week, Monday to Sunday. Pick any week of the current month.</InfoTip>
           </div>
           {notificationButton}
         </div>
