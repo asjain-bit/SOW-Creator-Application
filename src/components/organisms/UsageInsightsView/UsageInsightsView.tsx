@@ -209,10 +209,11 @@ interface ChartPoint {
 }
 
 /** Manual cost vs AI cost over the listed weeks, with the selected week highlighted */
-function CostChart({ points, selectedIndex }: { points: ChartPoint[]; selectedIndex: number }) {
+function CostChart({ points, selectedIndex, tall = false }: { points: ChartPoint[]; selectedIndex: number; tall?: boolean }) {
   const [hover, setHover] = useState<number | null>(null)
   const W = 640
-  const H = 270
+  // The Admin's input card has the extra Recalculate row, so the chart grows to match its height
+  const H = tall ? 296 : 270
   const left = 52
   const right = 112
   const top = 18
@@ -536,6 +537,8 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingBottom: 12, borderBottom: '1px solid rgba(0,196,196,0.12)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 16, fontWeight: 600, color: '#0d212c' }}>Manual cost vs AI cost</span>
+                {chartView === 'chart' && (
+                  <>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#475569' }}>
                   <span style={{ width: 14, height: 3, borderRadius: 2, background: MANUAL_COLOR }} />
                   Manual cost
@@ -544,6 +547,8 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
                   <span style={{ width: 14, height: 3, borderRadius: 2, background: AI_COLOR }} />
                   AI cost
                 </span>
+                  </>
+                )}
               </div>
               <div style={{ display: 'inline-flex', padding: 3, gap: 2, border: '1px solid #e2e8f0', borderRadius: 10, background: '#ffffff' }}>
                 <button type="button" aria-label="Chart view" aria-pressed={chartView === 'chart'} onClick={() => setChartView('chart')} style={viewToggle(chartView === 'chart')}>
@@ -557,7 +562,7 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
 
             <div style={{ flex: 1, minHeight: 0, padding: '12px 0' }}>
               {chartView === 'chart' ? (
-                <CostChart points={chartPoints} selectedIndex={weekIdx} />
+                <CostChart points={chartPoints} selectedIndex={weekIdx} tall={canRecalculate} />
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px 0', alignContent: 'center', height: '100%' }}>
                   <div style={{ paddingRight: 20, borderRight: '1px solid rgba(0,196,196,0.15)' }}>
