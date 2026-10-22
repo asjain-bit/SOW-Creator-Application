@@ -5213,13 +5213,14 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         label: 'Agents',
                         icon: <Bot size={20} />,
                       },
-                      {
-                        id: 'usage' as ActiveNav,
-                        label: 'Usage',
-                        icon: <BarChart3 size={20} />,
-                      },
                     ]
                   : []),
+                // Usage Insights is open to every profile; only the Admin can recalculate the Value/ROI
+                {
+                  id: 'usage' as ActiveNav,
+                  label: 'Usage',
+                  icon: <BarChart3 size={20} />,
+                },
               ] as { id: ActiveNav; label: string; icon: React.ReactNode; badge?: number }[]
             ).map(({ id, label, icon }) => {
               const isActive = contentOverride
@@ -5455,9 +5456,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <AgentsView notificationButton={renderNotificationButton()} />
             </div>
-          ) : homeView === 'usage' && isPMO && !isAdmin ? (
+          ) : homeView === 'usage' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <UsageInsightsView sows={sowList} notificationButton={renderNotificationButton()} />
+              <UsageInsightsView sows={sowList} canRecalculate={isAdmin} notificationButton={renderNotificationButton()} />
             </div>
           ) : homeView === 'audit-log' ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">

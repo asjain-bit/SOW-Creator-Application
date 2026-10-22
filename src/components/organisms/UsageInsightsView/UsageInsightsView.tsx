@@ -1,27 +1,39 @@
 /**
  * @layer organism
- * @description Usage Insights page: weekly KPI cards (SOWs generated, tokens consumed, estimated AI cost),
- * a Value/ROI calculator and SOWs grouped by readiness %.
- * @usage <UsageInsightsView sows={sows} notificationButton={bell} />
+ * @description Usage Insights page: weekly KPI cards (SOWs generated, tokens consumed, web search credits,
+ * estimated AI cost), a Value/ROI calculator with a manual-vs-AI cost chart (only the Admin can recalculate)
+ * and SOWs grouped by readiness %.
+ * @usage <UsageInsightsView sows={sows} canRecalculate={isAdmin} notificationButton={bell} />
  */
 
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { BarChart3, ChevronLeft, ChevronRight, CalendarDays, DollarSign, FileText, Info, RefreshCw } from 'lucide-react'
+import { BarChart3, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, DollarSign, FileText, Info, List, LineChart, RefreshCw, Search } from 'lucide-react'
 import type { RoiInputs, UsageInsightsViewProps, UsageWeek } from './UsageInsightsView.types'
 
 const PRIMARY = '#00C4C4'
 
-// Sample weekly usage (latest week last)
+// Sample weekly usage (latest week last). Tokens are in millions.
 const WEEKS: UsageWeek[] = [
-  { start: 'Sep 21', end: 'Sep 27, 2026', label: 'Sep 21 – Sep 27, 2026', sowsGenerated: 15, tokens: 12_100_000 },
-  { start: 'Sep 28', end: 'Oct 4, 2026', label: 'Sep 28 – Oct 4, 2026', sowsGenerated: 12, tokens: 9_800_000 },
-  { start: 'Oct 5', end: 'Oct 11, 2026', label: 'Oct 5 – Oct 11, 2026', sowsGenerated: 17, tokens: 14_200_000 },
-  { start: 'Oct 12', end: 'Oct 18, 2026', label: 'Oct 12 – Oct 18, 2026', sowsGenerated: 21, tokens: 18_600_000 },
+  { start: 'Sep 21', end: 'Sep 27, 2026', label: 'Sep 21 – Sep 27, 2026', axisLabel: 'Sep 21', inCurrentMonth: false, sowsGenerated: 15, inputTokens: 7.9, outputTokens: 1.9, embeddingTokens: 2.3, searchCredits: 1900 },
+  { start: 'Sep 28', end: 'Oct 4, 2026', label: 'Sep 28 – Oct 4, 2026', axisLabel: 'Sep 28', inCurrentMonth: true, sowsGenerated: 12, inputTokens: 6.4, outputTokens: 1.5, embeddingTokens: 1.9, searchCredits: 1550 },
+  { start: 'Oct 5', end: 'Oct 11, 2026', label: 'Oct 5 – Oct 11, 2026', axisLabel: 'Oct 5', inCurrentMonth: true, sowsGenerated: 17, inputTokens: 9.2, outputTokens: 2.2, embeddingTokens: 2.8, searchCredits: 2050 },
+  { start: 'Oct 12', end: 'Oct 18, 2026', label: 'Oct 12 – Oct 18, 2026', axisLabel: 'Oct 12', inCurrentMonth: true, sowsGenerated: 21, inputTokens: 12.0, outputTokens: 3.1, embeddingTokens: 3.5, searchCredits: 2500 },
+  { start: 'Oct 19', end: 'Oct 25, 2026', label: 'Oct 19 – Oct 25, 2026', axisLabel: 'Oct 19', inCurrentMonth: true, sowsGenerated: 18, inputTokens: 10.2, outputTokens: 2.6, embeddingTokens: 3.0, searchCredits: 2100 },
 ]
 
-const DEFAULT_INPUTS: RoiInputs = { hours: 4, costPerHour: 30, tokenPrice: 4 }
+// The last full week is selected when the page opens
+const DEFAULT_WEEK_INDEX = 3
+
+const DEFAULT_INPUTS: RoiInputs = { hours: 6, costPerHour: 35, inputPrice: 1.25, outputPrice: 10, embeddingPrice: 0.13, searchPrice: 0.008 }
+
+/** Costs for one week from the given prices */
+const costsFor = (w: UsageWeek, i: RoiInputs) => {
+  const model = w.inputTokens * i.inputPrice + w.outputTokens * i.outputPrice + w.embeddingTokens * i.embeddingPrice
+  const search = w.searchCredits * i.searchPrice
+  return { model, search, ai: model + search, manual: w.sowsGenerated * i.hours * i.costPerHour }
+}
 
 const PAGE_SIZE = 3
 const LOW_MAX = 49
@@ -35,8 +47,9 @@ const RANGE_STYLE: Record<Range, { fg: string; bg: string; bar: string }> = {
   High: { fg: '#166534', bg: '#dcfce7', bar: '#22c55e' },
 }
 
-const formatTokens = (n: number) => `${(n / 1_000_000).toFixed(1)}M`
+const formatTokens = (millions: number) => `${millions.toFixed(1)}M`
 const usd = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`
+const usd2 = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 const cardStyle: React.CSSProperties = {
   background: '#FFFFFFCC',
@@ -124,6 +137,7 @@ function NumberRow({
   suffix,
   value,
   onChange,
+  readOnly = false,
 }: {
   label: string
   hint?: string
@@ -131,6 +145,8 @@ function NumberRow({
   suffix: string
   value: number
   onChange: (n: number) => void
+  /** Non-admin users can see the inputs but not change them */
+  readOnly?: boolean
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 0', borderBottom: '1px solid rgba(0,196,196,0.1)' }}>
@@ -144,10 +160,10 @@ function NumberRow({
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            width: 110,
+            width: 130,
             height: 36,
             padding: '0 10px',
-            background: '#ffffff',
+            background: readOnly ? '#f8fafc' : '#ffffff',
             border: '1px solid #e2e8f0',
             borderRadius: 10,
             boxSizing: 'border-box',
@@ -158,6 +174,8 @@ function NumberRow({
             id={`roi-${label.replace(/\s+/g, "-")}`}
             type="number"
             min={0}
+            step="any"
+            readOnly={readOnly}
             value={Number.isNaN(value) ? '' : value}
             onChange={(e) => onChange(e.target.value === '' ? NaN : Math.max(0, Number(e.target.value)))}
             style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: 13.5, fontWeight: 600, color: '#0d212c', textAlign: 'right', fontFamily: 'inherit' }}
@@ -169,16 +187,100 @@ function NumberRow({
   )
 }
 
-export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, notificationButton }) => {
-  const [weekIdx, setWeekIdx] = useState(WEEKS.length - 1)
+const MANUAL_COLOR = PRIMARY
+const AI_COLOR = '#ea580c'
+
+/** Rounds a chart maximum up to a tidy value so the axis ticks read well */
+function niceMax(v: number) {
+  if (v <= 0) return 1
+  const pow = Math.pow(10, Math.floor(Math.log10(v)))
+  const n = v / pow
+  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10
+  return step * pow
+}
+const axisMoney = (n: number) => (n >= 1000 ? `$${n / 1000}K` : `$${n}`)
+
+interface ChartPoint {
+  label: string
+  manual: number
+  ai: number
+}
+
+/** Manual cost vs AI cost over the listed weeks, with the selected week highlighted */
+function CostChart({ points, selectedIndex }: { points: ChartPoint[]; selectedIndex: number }) {
+  const W = 640
+  const H = 270
+  const left = 52
+  const right = 112
+  const top = 18
+  const bottom = 40
+  const max = niceMax(Math.max(...points.map((p) => p.manual), 1))
+  const ticks = [0, 1, 2, 3, 4, 5].map((i) => (max / 5) * i)
+  const x = (i: number) => left + (points.length === 1 ? 0 : (i * (W - left - right)) / (points.length - 1))
+  const y = (v: number) => top + (1 - v / max) * (H - top - bottom)
+  const path = (key: 'manual' | 'ai') => points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${y(p[key])}`).join(' ')
+  const last = points[points.length - 1]
+  const sel = points[selectedIndex]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Manual cost versus AI cost by week" style={{ display: 'block' }}>
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={left} x2={W - right} y1={y(t)} y2={y(t)} stroke="#e2e8f0" strokeWidth="1" />
+          <text x={left - 10} y={y(t) + 4} textAnchor="end" fontSize="11" fill="#94a3b8">
+            {axisMoney(t)}
+          </text>
+        </g>
+      ))}
+      {sel && <line x1={x(selectedIndex)} x2={x(selectedIndex)} y1={top} y2={H - bottom} stroke="#cbd5e1" strokeDasharray="3 3" />}
+      <path d={path('manual')} fill="none" stroke={MANUAL_COLOR} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={path('ai')} fill="none" stroke={AI_COLOR} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      {points.map((p, i) => (
+        <g key={p.label}>
+          <circle cx={x(i)} cy={y(p.manual)} r={i === selectedIndex ? 5 : 3.5} fill={MANUAL_COLOR}>
+            <title>{`${p.label}: Manual ${usd(p.manual)}`}</title>
+          </circle>
+          <circle cx={x(i)} cy={y(p.ai)} r={i === selectedIndex ? 5 : 3.5} fill={AI_COLOR}>
+            <title>{`${p.label}: AI ${usd2(p.ai)}`}</title>
+          </circle>
+          <text x={x(i)} y={H - 12} textAnchor="middle" fontSize="12" fontWeight={i === selectedIndex ? 700 : 400} fill={i === selectedIndex ? '#0d212c' : '#64748b'}>
+            {p.label}
+          </text>
+        </g>
+      ))}
+      <text x={x(points.length - 1) + 12} y={y(last.manual) + 4} fontSize="12.5" fontWeight="700" fill="#0d212c">
+        {`Manual ${usd(last.manual)}`}
+      </text>
+      <text x={x(points.length - 1) + 12} y={y(last.ai) - 10} fontSize="12.5" fontWeight="700" fill="#0d212c">
+        {`AI ${usd2(last.ai)}`}
+      </text>
+    </svg>
+  )
+}
+
+export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, notificationButton, canRecalculate = true }) => {
+  const [weekIdx, setWeekIdx] = useState(DEFAULT_WEEK_INDEX)
+  const [weekMenuOpen, setWeekMenuOpen] = useState(false)
+  const [chartView, setChartView] = useState<'chart' | 'table'>('chart')
   const [draft, setDraft] = useState<RoiInputs>(DEFAULT_INPUTS)
   const [applied, setApplied] = useState<RoiInputs>(DEFAULT_INPUTS)
   const [recalculating, setRecalculating] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const weekMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
+  // Close the week dropdown when clicking elsewhere
+  useEffect(() => {
+    if (!weekMenuOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (weekMenuRef.current && !weekMenuRef.current.contains(e.target as Node)) setWeekMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [weekMenuOpen])
+
   const recalculate = () => {
+    if (!canRecalculate) return
     setRecalculating(true)
     timerRef.current = setTimeout(() => {
       setApplied(draft)
@@ -187,15 +289,21 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
   }
 
   const week = WEEKS[weekIdx]
-  const dirty =
-    draft.hours !== applied.hours || draft.costPerHour !== applied.costPerHour || draft.tokenPrice !== applied.tokenPrice
-  const valid = ![draft.hours, draft.costPerHour, draft.tokenPrice].some((n) => Number.isNaN(n))
+  const listedWeeks = WEEKS.map((w, i) => ({ w, i })).filter(({ w }) => w.inCurrentMonth)
+  const firstListed = listedWeeks[0]?.i ?? 0
+  const lastListed = listedWeeks[listedWeeks.length - 1]?.i ?? WEEKS.length - 1
+  const dirty = (Object.keys(DEFAULT_INPUTS) as (keyof RoiInputs)[]).some((k) => draft[k] !== applied[k])
+  const valid = !Object.values(draft).some((n) => Number.isNaN(n))
 
+  const costs = costsFor(week, applied)
   const totalHours = week.sowsGenerated * applied.hours
-  const manualCost = totalHours * applied.costPerHour
-  const aiCost = (week.tokens / 1_000_000) * applied.tokenPrice
-  const roi = aiCost > 0 ? manualCost / aiCost : 0
-  const savings = manualCost - aiCost
+  const totalTokens = week.inputTokens + week.outputTokens + week.embeddingTokens
+  const roi = costs.ai > 0 ? costs.manual / costs.ai : 0
+  const savings = costs.manual - costs.ai
+  const chartPoints: ChartPoint[] = WEEKS.map((w) => {
+    const c = costsFor(w, applied)
+    return { label: w.axisLabel, manual: c.manual, ai: c.ai }
+  })
 
   const scored = sows.filter((s) => typeof s.readiness === 'number') as (typeof sows[number] & { readiness: number })[]
   const [visible, setVisible] = useState(PAGE_SIZE)
@@ -221,6 +329,18 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
   })
 
   const sectionTitle: React.CSSProperties = { fontSize: 16, fontWeight: 600, color: '#0d212c', margin: '0 0 12px' }
+  const viewToggle = (active: boolean): React.CSSProperties => ({
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    border: 'none',
+    background: active ? PRIMARY : 'transparent',
+    color: active ? '#ffffff' : '#64748b',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', overflowY: 'auto' }}>
@@ -234,21 +354,58 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <h2 style={{ ...sectionTitle, margin: 0 }}>Overview</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button type="button" aria-label="Previous week" disabled={weekIdx === 0} onClick={() => setWeekIdx((i) => i - 1)} style={navBtn(weekIdx === 0)}>
+          <button type="button" aria-label="Previous week" disabled={weekIdx <= firstListed} onClick={() => setWeekIdx((i) => i - 1)} style={navBtn(weekIdx <= firstListed)}>
             <ChevronLeft size={16} />
           </button>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', fontSize: 13, fontWeight: 500, color: '#0d212c' }}>
-            <CalendarDays size={15} color={PRIMARY} />
-            {week.start} – {week.end}
-          </span>
-          <button type="button" aria-label="Next week" disabled={weekIdx === WEEKS.length - 1} onClick={() => setWeekIdx((i) => i + 1)} style={navBtn(weekIdx === WEEKS.length - 1)}>
+          <div ref={weekMenuRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={weekMenuOpen}
+              onClick={() => setWeekMenuOpen((o) => !o)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', fontSize: 13, fontWeight: 500, color: '#0d212c', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <CalendarDays size={15} color={PRIMARY} />
+              {week.start} – {week.end}
+              <ChevronDown size={14} color="#64748b" style={{ transform: weekMenuOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s ease' }} />
+            </button>
+            {weekMenuOpen && (
+              <ul
+                role="listbox"
+                aria-label="Weeks in this month"
+                style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60, minWidth: 230, margin: 0, padding: 6, listStyle: 'none', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
+              >
+                {listedWeeks.map(({ w, i }) => (
+                  <li key={w.label} role="option" aria-selected={i === weekIdx}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWeekIdx(i)
+                        setWeekMenuOpen(false)
+                      }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 10px', borderRadius: 8, border: 'none', background: i === weekIdx ? 'rgba(0,196,196,0.1)' : 'transparent', color: i === weekIdx ? '#008080' : '#0d212c', fontSize: 13, fontWeight: i === weekIdx ? 700 : 500, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                      onMouseEnter={(e) => {
+                        if (i !== weekIdx) (e.currentTarget as HTMLButtonElement).style.background = '#f8fafc'
+                      }}
+                      onMouseLeave={(e) => {
+                        if (i !== weekIdx) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                      }}
+                    >
+                      {w.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <button type="button" aria-label="Next week" disabled={weekIdx >= lastListed} onClick={() => setWeekIdx((i) => i + 1)} style={navBtn(weekIdx >= lastListed)}>
             <ChevronRight size={16} />
           </button>
-          <InfoTip align="right">Usage is shown for the selected week, Monday to Sunday.</InfoTip>
+          <InfoTip align="right">Usage is shown for the selected week, Monday to Sunday. Pick any week of the current month.</InfoTip>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3.5" style={{ marginBottom: 24 }}>
+      <div className="grid grid-cols-4 gap-3.5" style={{ marginBottom: 24 }}>
         <KpiCard
           label="SOWs Generated"
           value={String(week.sowsGenerated)}
@@ -257,13 +414,22 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
         />
         <KpiCard
           label="Tokens Consumed"
-          value={formatTokens(week.tokens)}
+          value={formatTokens(totalTokens)}
+          sub={`${formatTokens(week.inputTokens)} input | ${formatTokens(week.outputTokens)} output | ${formatTokens(week.embeddingTokens)} embedding`}
           icon={<BarChart3 size={16} color="#0284c7" strokeWidth={1.8} />}
           iconBg="#e0f2fe"
         />
         <KpiCard
+          label="Web Search Credits"
+          value={week.searchCredits.toLocaleString('en-US')}
+          sub="Search, extract & page reads"
+          icon={<Search size={16} color="#d97706" strokeWidth={1.8} />}
+          iconBg="#fef3c7"
+        />
+        <KpiCard
           label="Estimated AI Cost"
-          value={usd(aiCost)}
+          value={usd2(costs.ai)}
+          sub={`${usd2(costs.model)} model | ${usd2(costs.search)} search`}
           icon={<DollarSign size={16} color="#16a34a" strokeWidth={1.8} />}
           iconBg="#dcfce7"
         />
@@ -273,33 +439,40 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
       <h2 style={sectionTitle}>Value/ROI</h2>
       <div style={{ display: 'flex', gap: 14, marginBottom: 24, alignItems: 'stretch' }}>
         <div style={{ ...cardStyle, padding: '6px 22px 18px', flex: 1, minWidth: 0 }}>
-          <NumberRow label="Hours spent on current approach" hint="(per SOW)" suffix="hours" value={draft.hours} onChange={(n) => setDraft((d) => ({ ...d, hours: n }))} />
-          <NumberRow label="Cost per hour" prefix="$" suffix="USD" value={draft.costPerHour} onChange={(n) => setDraft((d) => ({ ...d, costPerHour: n }))} />
-          <NumberRow label="Token price" hint="(per 1M tokens)" prefix="$" suffix="USD" value={draft.tokenPrice} onChange={(n) => setDraft((d) => ({ ...d, tokenPrice: n }))} />
+          <NumberRow readOnly={!canRecalculate} label="Manual hours per output" hint="(per report or SOW)" suffix="hours" value={draft.hours} onChange={(n) => setDraft((d) => ({ ...d, hours: n }))} />
+          <NumberRow readOnly={!canRecalculate} label="Resource cost per hour" hint="(cost of the person doing it manually)" prefix="$" suffix="USD" value={draft.costPerHour} onChange={(n) => setDraft((d) => ({ ...d, costPerHour: n }))} />
+          <NumberRow readOnly={!canRecalculate} label="Input token price" hint="(per 1M input tokens)" prefix="$" suffix="USD" value={draft.inputPrice} onChange={(n) => setDraft((d) => ({ ...d, inputPrice: n }))} />
+          <NumberRow readOnly={!canRecalculate} label="Output token price" hint="(per 1M output tokens)" prefix="$" suffix="USD" value={draft.outputPrice} onChange={(n) => setDraft((d) => ({ ...d, outputPrice: n }))} />
+          <NumberRow readOnly={!canRecalculate} label="Embedding token price" hint="(per 1M tokens · uploaded files)" prefix="$" suffix="USD" value={draft.embeddingPrice} onChange={(n) => setDraft((d) => ({ ...d, embeddingPrice: n }))} />
+          <NumberRow readOnly={!canRecalculate} label="Price per search credit" hint="(web search)" prefix="$" suffix="USD" value={draft.searchPrice} onChange={(n) => setDraft((d) => ({ ...d, searchPrice: n }))} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16 }}>
-            <span style={{ fontSize: 12, color: '#94a3b8' }}>AI cost excludes web search</span>
-            <button
-              type="button"
-              disabled={!dirty || !valid || recalculating}
-              onClick={recalculate}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '9px 18px',
-                borderRadius: 10,
-                border: 'none',
-                background: dirty && valid && !recalculating ? PRIMARY : '#cbd5e1',
-                color: dirty && valid && !recalculating ? '#ffffff' : '#64748b',
-                fontSize: 13.5,
-                fontWeight: 700,
-                cursor: dirty && valid && !recalculating ? 'pointer' : 'not-allowed',
-                fontFamily: 'inherit',
-              }}
-            >
-              <RefreshCw size={14} />
-              Recalculate
-            </button>
+            <span style={{ fontSize: 12, color: '#94a3b8' }}>
+              AI cost includes model + web search{canRecalculate ? '' : ' · Only an admin can recalculate'}
+            </span>
+            {canRecalculate && (
+              <button
+                type="button"
+                disabled={!dirty || !valid || recalculating}
+                onClick={recalculate}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '9px 18px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: dirty && valid && !recalculating ? PRIMARY : '#cbd5e1',
+                  color: dirty && valid && !recalculating ? '#ffffff' : '#64748b',
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  cursor: dirty && valid && !recalculating ? 'pointer' : 'not-allowed',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <RefreshCw size={14} />
+                Recalculate
+              </button>
+            )}
           </div>
         </div>
 
@@ -313,54 +486,105 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
             <div style={{ fontSize: 13.5, fontWeight: 500, color: '#475569' }}>Recalculating value/ROI</div>
           </div>
         ) : (
-        <div style={{ ...cardStyle, padding: '22px 24px', flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '22px 24px', alignContent: 'start' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-              Manual cost
-              <InfoTip>
-                <div>Manual cost is the multiply of manual hours into cost per hour.</div>
-                <div>Outputs × Manual hours × Cost per hour</div>
-              </InfoTip>
+          <div style={{ ...cardStyle, padding: '20px 24px', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            {/* Chart header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingBottom: 12, borderBottom: '1px solid rgba(0,196,196,0.12)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 16, fontWeight: 600, color: '#0d212c' }}>Manual cost vs AI cost</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#475569' }}>
+                  <span style={{ width: 14, height: 3, borderRadius: 2, background: MANUAL_COLOR }} />
+                  Manual cost
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#475569' }}>
+                  <span style={{ width: 14, height: 3, borderRadius: 2, background: AI_COLOR }} />
+                  AI cost
+                </span>
+              </div>
+              <div style={{ display: 'inline-flex', padding: 3, gap: 2, border: '1px solid #e2e8f0', borderRadius: 10, background: '#ffffff' }}>
+                <button type="button" aria-label="Chart view" aria-pressed={chartView === 'chart'} onClick={() => setChartView('chart')} style={viewToggle(chartView === 'chart')}>
+                  <LineChart size={15} />
+                </button>
+                <button type="button" aria-label="Table view" aria-pressed={chartView === 'table'} onClick={() => setChartView('table')} style={viewToggle(chartView === 'table')}>
+                  <List size={15} />
+                </button>
+              </div>
             </div>
-            <div style={{ fontSize: 28, fontWeight: 600, color: '#0d212c', margin: '6px 0' }}>{usd(manualCost)}</div>
-            <div style={{ fontSize: 12, color: '#64748b' }}>Total hours {totalHours} | Cost per hour ${applied.costPerHour}</div>
+
+            <div style={{ flex: 1, minHeight: 0, padding: '12px 0' }}>
+              {chartView === 'chart' ? (
+                <CostChart points={chartPoints} selectedIndex={weekIdx} />
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ color: '#94a3b8', textAlign: 'left' }}>
+                      <th style={{ padding: '8px 4px', fontWeight: 600 }}>Week</th>
+                      <th style={{ padding: '8px 4px', fontWeight: 600, textAlign: 'right' }}>Manual cost</th>
+                      <th style={{ padding: '8px 4px', fontWeight: 600, textAlign: 'right' }}>AI cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {WEEKS.map((w, i) => {
+                      const c = costsFor(w, applied)
+                      return (
+                        <tr key={w.label} style={{ borderTop: '1px solid rgba(0,196,196,0.1)', fontWeight: i === weekIdx ? 700 : 400, color: '#0d212c' }}>
+                          <td style={{ padding: '9px 4px' }}>{w.label}</td>
+                          <td style={{ padding: '9px 4px', textAlign: 'right' }}>{usd(c.manual)}</td>
+                          <td style={{ padding: '9px 4px', textAlign: 'right' }}>{usd2(c.ai)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Numbers for the selected week */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 14, paddingTop: 14, borderTop: '1px solid rgba(0,196,196,0.12)' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
+                  Manual cost
+                  <InfoTip>
+                    <div>Manual cost is the multiply of manual hours into cost per hour.</div>
+                    <div>Outputs × Manual hours × Cost per hour</div>
+                  </InfoTip>
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 600, color: '#0d212c', margin: '4px 0' }}>{usd(costs.manual)}</div>
+                <div style={{ fontSize: 11.5, color: '#64748b' }}>{totalHours} hrs · ${applied.costPerHour}/hr</div>
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
+                  AI cost
+                  <InfoTip>
+                    <div>AI cost is the model cost (input, output and embedding tokens) plus the web search cost.</div>
+                    <div>Tokens × token prices + Search credits × credit price</div>
+                  </InfoTip>
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 600, color: AI_COLOR, margin: '4px 0' }}>{usd2(costs.ai)}</div>
+                <div style={{ fontSize: 11.5, color: '#64748b' }}>{formatTokens(totalTokens)} tokens · {week.searchCredits.toLocaleString('en-US')} credits</div>
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
+                  Estimated ROI
+                  <InfoTip>
+                    <div>Estimated ROI is calculated by dividing manual cost by AI cost.</div>
+                    <div>Manual cost ÷ AI cost</div>
+                  </InfoTip>
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 600, color: PRIMARY, margin: '4px 0' }}>{Math.round(roi)}x</div>
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
+                  Estimated savings
+                  <InfoTip align="right">
+                    <div>Estimated savings is calculated by subtracting AI cost from manual cost.</div>
+                    <div>Manual cost - AI cost</div>
+                  </InfoTip>
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 600, color: PRIMARY, margin: '4px 0' }}>{usd(savings)}</div>
+                <div style={{ fontSize: 11.5, color: '#64748b' }}>this week</div>
+              </div>
+            </div>
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-              AI cost
-              <InfoTip align="right">
-                <div>AI cost is the multiply of tokens consumed into token price per 1M tokens.</div>
-                <div>Tokens consumed × Token price per 1M</div>
-              </InfoTip>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 600, color: '#0284c7', margin: '6px 0' }}>{usd(aiCost)}</div>
-            <div style={{ fontSize: 12, color: '#64748b' }}>Total tokens {formatTokens(week.tokens)} | Token price ${applied.tokenPrice.toFixed(2)}</div>
-          </div>
-          <div style={{ gridColumn: '1 / -1', height: 1, background: 'rgba(0,196,196,0.12)' }} />
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-              Estimated ROI
-              <InfoTip>
-                <div>Estimated ROI is calculated by dividing manual cost by AI cost.</div>
-                <div>Manual cost ÷ AI cost</div>
-              </InfoTip>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 600, color: PRIMARY, margin: '6px 0' }}>{Math.round(roi)}x</div>
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-              Estimated savings
-              <InfoTip align="right">
-                <div>Estimated savings is calculated by subtracting AI cost from manual cost.</div>
-                <div>Manual cost - AI cost</div>
-              </InfoTip>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 600, color: PRIMARY, margin: '6px 0', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              {usd(savings)}
-              <span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>this week</span>
-            </div>
-          </div>
-        </div>
         )}
       </div>
 
