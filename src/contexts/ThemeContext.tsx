@@ -29,7 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', 'light')
-      document.documentElement.style.colorScheme = 'light'
+      document.documentElement.style.colorScheme = 'only light'
     }
   }, [])
 
@@ -40,7 +40,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setResolvedTheme(target)
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', target)
-      document.documentElement.style.colorScheme = target
+      document.documentElement.style.colorScheme = 'only light'
     }
   }
 

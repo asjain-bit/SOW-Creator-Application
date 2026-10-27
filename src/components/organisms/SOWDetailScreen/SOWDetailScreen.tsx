@@ -12113,6 +12113,10 @@ function SOWDraftTab({
   const [showAIReviewModal, setShowAIReviewModal] = useState(false)
   const [hasRunAICheck, setHasRunAICheck] = useState(true)
   const [aiFindings, setAiFindings] = useState<AIReviewFinding[]>(INITIAL_AI_FINDINGS)
+  // The scores on the summary card only change when the AI check is run again, not as actions are taken
+  const [scoredFindings, setScoredFindings] = useState<AIReviewFinding[]>(INITIAL_AI_FINDINGS)
+  const aiFindingsRef = useRef(aiFindings)
+  aiFindingsRef.current = aiFindings
   const [aiModalInitialStage, setAiModalInitialStage] = useState<'thinking' | 'summary'>('thinking')
   const [aiSuggestion, setAiSuggestion] = useState<{ finding: AIReviewFinding; sectionIdx: number } | null>(null)
   const [aiSuggestionPos, setAiSuggestionPos] = useState<{ top: number; left: number } | null>(null)
@@ -12134,7 +12138,7 @@ function SOWDraftTab({
     Clarity: 20,
   }
   const aiScores = (Object.keys(AI_BASE_SCORES) as AIReviewFinding['criteria'][]).map((name) => {
-    const related = aiFindings.filter((f) => f.criteria === name)
+    const related = scoredFindings.filter((f) => f.criteria === name)
     const open = related.filter((f) => !f.resolved).length
     const value =
       related.length === 0 ? 100 : Math.round(100 - (100 - AI_BASE_SCORES[name]) * (open / related.length))
@@ -13565,7 +13569,7 @@ function SOWDraftTab({
                     <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>{f.name}</span>
                     <span
                       title={`${confidenceLevel(f.value)}: ${CONFIDENCE_RANGE[confidenceLevel(f.value)]}`}
-                      style={{ fontSize: 12, fontWeight: 700, color: scoreColor(f.value) }}
+                      style={{ fontSize: 12, fontWeight: 600, color: scoreColor(f.value) }}
                     >
                       {confidenceLevel(f.value)}
                     </span>
@@ -16447,6 +16451,8 @@ function SOWDraftTab({
           onAcknowledge={() => {
             setHasRunAICheck(true)
             setHasUnreviewedEdits(false)
+            // The check has just run: refresh the scores from the current state of the findings
+            setScoredFindings(aiFindingsRef.current)
           }}
           hasRunBefore={hasRunAICheck}
           findings={aiFindings}

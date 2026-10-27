@@ -17,7 +17,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light',
+  // 'only light' stops browsers and operating systems from applying a dark scheme
+  colorScheme: 'only light',
 }
 
 export default function RootLayout({
@@ -29,7 +30,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="light"
-      style={{ colorScheme: 'light' }}
+      style={{ colorScheme: 'only light' }}
       className={poppins.variable}
       suppressHydrationWarning
     >
