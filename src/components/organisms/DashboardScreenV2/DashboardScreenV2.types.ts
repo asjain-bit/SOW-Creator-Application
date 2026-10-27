@@ -71,9 +71,11 @@ export interface DashboardScreenV2Props {
   onNavHome?: () => void
   onNavAllSOWs?: () => void
   onNavAuditLog?: () => void
-  onOpenSOWV2?: () => void
-  onOpenSOWContributor?: () => void
+  onOpenSOWV2?: (id?: string) => void
+  onOpenSOWContributor?: (id?: string) => void
   onOpenSOWDeactivated?: () => void
+  /** Ids of SOWs the PMO has finalized (shown as Completed in the list) */
+  completedSOWIds?: string[]
   previewRole?: 'PMO' | 'Contributor' | 'Reviewer' | 'Client' | null
   onPreviewRoleChange?: (role: 'PMO' | 'Contributor' | 'Reviewer' | 'Client') => void
 }

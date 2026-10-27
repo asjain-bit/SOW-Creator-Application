@@ -77,6 +77,12 @@ export default function Home() {
   const [createdSowDeadline, setCreatedSowDeadline] = useState('2026-10-31')
   const [createdTokenConsumption, setCreatedTokenConsumption] = useState(20000)
   const [hasLoggedOut, setHasLoggedOut] = useState(false)
+  // The SOW that is open (set from the list) and the ones finalized so far
+  const [activeSowId, setActiveSowId] = useState<string | null>(null)
+  const [finalizedSowIds, setFinalizedSowIds] = useState<string[]>([])
+  const handleFinalized = () => {
+    if (activeSowId) setFinalizedSowIds((prev) => (prev.includes(activeSowId) ? prev : [...prev, activeSowId]))
+  }
   const [pmoPreviewRole, setPmoPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer' | 'Client'>('PMO')
 
   if (!isLoggedIn) {
@@ -182,7 +188,8 @@ export default function Home() {
         ) : view === 'sow-detail-v2' ? (
           <SOWDetailScreen
             sowName="Globex Corp — Digital Transformation"
-            sowStatus="In Progress"
+            sowStatus={finalizedSowIds.includes(activeSowId ?? '') ? 'Completed' : 'In Progress'}
+            onFinalized={handleFinalized}
             showGenerateDraft={!isParag}
             sowVariant="v2"
             viewerRole={detailViewerRole}
@@ -198,7 +205,8 @@ export default function Home() {
         ) : view === 'sow-detail-meridian' ? (
           <SOWDetailScreen
             sowName="Meridian Healthcare — Procurement Platform Modernization"
-            sowStatus="In Progress"
+            sowStatus={finalizedSowIds.includes(activeSowId ?? '') ? 'Completed' : 'In Progress'}
+            onFinalized={handleFinalized}
             sowVariant="meridian"
             viewerRole={detailViewerRole}
             initialActiveRole={activePMORoleForSOW}
@@ -239,8 +247,15 @@ export default function Home() {
       onNavHome={() => setView('dashboard')}
       onNavAllSOWs={() => setView('dashboard')}
       onNavAuditLog={() => setView('dashboard')}
-      onOpenSOWV2={() => setView('sow-detail-v2')}
-      onOpenSOWContributor={() => setView('sow-detail-meridian')}
+      completedSOWIds={finalizedSowIds}
+      onOpenSOWV2={(id) => {
+        setActiveSowId(id ?? null)
+        setView('sow-detail-v2')
+      }}
+      onOpenSOWContributor={(id) => {
+        setActiveSowId(id ?? null)
+        setView('sow-detail-meridian')
+      }}
       onOpenSOWDeactivated={() => setView('sow-detail-deactivated')}
     />
   )

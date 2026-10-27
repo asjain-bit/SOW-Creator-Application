@@ -104,4 +104,6 @@ export interface SOWDetailScreenProps {
   onReactivateSOW?: () => void
   initialActiveRole?: 'pmo' | 'contributor' | 'reviewer' | 'client'
   onActiveViewerRoleChange?: (role: 'pmo' | 'contributor' | 'reviewer' | 'client') => void
+  /** Called when the PMO finalizes the SOW */
+  onFinalized?: () => void
 }

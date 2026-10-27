@@ -273,8 +273,18 @@ function FilePreviewModal({ file, onClose }: { file: UploadedFile; onClose: () =
   )
 }
 
-function SOWWorkflowStepper({ isDraftGenerated = false }: { isDraftGenerated?: boolean }) {
-  const steps = [
+function SOWWorkflowStepper({ isDraftGenerated = false, isFinalized = false }: { isDraftGenerated?: boolean; isFinalized?: boolean }) {
+  const steps = isFinalized
+    ? [
+        { label: 'Context', status: 'done', sublabel: 'Completed', stepIndex: 1 },
+        { label: 'Planning', status: 'done', sublabel: 'Completed', stepIndex: 2 },
+        { label: 'Questions', status: 'done', sublabel: 'Completed', stepIndex: 3 },
+        { label: 'Draft', status: 'done', sublabel: 'Completed', stepIndex: 4 },
+        { label: 'Review', status: 'done', sublabel: 'Completed', stepIndex: 5 },
+        { label: 'Approval', status: 'done', sublabel: 'Completed', stepIndex: 6 },
+        { label: 'Finalized', status: 'done', sublabel: 'Completed', stepIndex: 7 },
+      ]
+    : [
     { label: 'Context', status: 'done', sublabel: 'Completed', stepIndex: 1 },
     { label: 'Planning', status: 'done', sublabel: 'Completed', stepIndex: 2 },
     {
@@ -294,7 +304,7 @@ function SOWWorkflowStepper({ isDraftGenerated = false }: { isDraftGenerated?: b
     { label: 'Finalized', status: 'pending', sublabel: 'Not Started', stepIndex: 7 },
   ];
 
-  const greenLineIdx = isDraftGenerated ? 3 : 2;
+  const greenLineIdx = isFinalized ? steps.length - 1 : isDraftGenerated ? 3 : 2;
 
   return (
     <div style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: '16px 8px 12px' }}>
@@ -624,6 +634,7 @@ function OverviewTab({
   isPMO = false,
   canEditDetails = false,
   conflictCount = 0,
+  isFinalized = false,
   isSubmitted = false,
   onAddFiles,
   onRemoveFile,
@@ -641,6 +652,8 @@ function OverviewTab({
   /** SOW details can be edited (false once the Context is submitted, until Edit is clicked there) */
   canEditDetails?: boolean
   conflictCount?: number
+  /** The SOW was finalized: the workflow shows every stage, including Finalized, as completed */
+  isFinalized?: boolean
   /** The Context was already submitted, so new uploads change it and need confirmation */
   isSubmitted?: boolean
   onAddFiles?: (files: UploadedFile[]) => void
@@ -683,7 +696,7 @@ function OverviewTab({
     <div style={{ padding: '20px 16px' }}>
       {/* ── SOW Workflow Stepper (Above Uploaded Documents) ── */}
       <div style={{ marginBottom: 24 }}>
-        <SOWWorkflowStepper isDraftGenerated={isDraftGenerated} />
+        <SOWWorkflowStepper isDraftGenerated={isDraftGenerated} isFinalized={isFinalized} />
       </div>
 
       {/* ── SOW Details (read-only; edited from a popup) ── */}
@@ -13157,26 +13170,7 @@ function SOWDraftTab({
             {/* PMO Approve SOW / Withdraw Approval + Finalize on right side */}
             {isPMO && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {isFinalized ? (
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 14px',
-                      borderRadius: 8,
-                      background: 'rgba(22,163,74,0.1)',
-                      border: '1.5px solid #16a34a',
-                      color: '#15803d',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Check size={13} strokeWidth={3} />
-                    Finalized
-                  </span>
-                ) : !isPMOApproved ? (
+                {isFinalized ? null : !isPMOApproved ? (
                   <button
                     type="button"
                     disabled={isReadOnly}
@@ -17134,12 +17128,13 @@ export function SOWDetailScreen({
   initialActiveRole,
   onActiveViewerRoleChange,
   tokenConsumption = 1200,
+  onFinalized,
 }: SOWDetailScreenProps) {
   const [activeSOWStatus, setActiveSOWStatus] = useState(sowStatus)
   const isDeactivated = isDeactivatedProp || activeSOWStatus === 'Deactivated' || sowStatus === 'Deactivated'
   // Deactivated SOWs and the Admin profile are view-only everywhere
   // A finalized SOW is locked for everyone
-  const [isFinalized, setIsFinalized] = useState(false)
+  const [isFinalized, setIsFinalized] = useState(sowStatus === 'Completed')
   const isViewOnly = isDeactivated || viewerRole === 'admin' || isFinalized
   const [activeViewerRole, setActiveViewerRole] = useState<'pmo' | 'contributor' | 'reviewer' | 'client'>(
     initialActiveRole ??
@@ -17424,12 +17419,12 @@ export function SOWDetailScreen({
               borderRadius: 20,
               fontSize: 11.5,
               fontWeight: 600,
-              background: STATUS_BG[sowStatus] ?? '#f1f5f9',
-              color: STATUS_TEXT[sowStatus] ?? '#64748b',
+              background: STATUS_BG[activeSOWStatus] ?? '#f1f5f9',
+              color: STATUS_TEXT[activeSOWStatus] ?? '#64748b',
               flexShrink: 0,
             }}
           >
-            {sowStatus}
+            {activeSOWStatus}
           </span>
           <div style={{ flex: 1 }} />
           {/* Tokens consumed indicator */}
@@ -17852,6 +17847,7 @@ export function SOWDetailScreen({
               conflictCount={
                 buildDocumentQuestions(docFiles.map((d) => d.name)).filter((q) => q.kind === 'conflict').length
               }
+              isFinalized={isFinalized}
               isSubmitted={isStructureUnlocked}
               onAddFiles={handleAddFiles}
               onRemoveFile={handleRemoveFile}
@@ -17917,6 +17913,8 @@ export function SOWDetailScreen({
                   isFinalized={isFinalized}
                   onFinalize={() => {
                     setIsFinalized(true)
+                    setActiveSOWStatus('Completed')
+                    onFinalized?.()
                     showToast('SOW finalized. It is now locked for editing.', 'success')
                     addGlobalAuditLog('SOW Finalized', 'The SOW was finalized and locked for editing.', 'Ashika Jain (PMO)', 'draft', 'approval')
                   }}

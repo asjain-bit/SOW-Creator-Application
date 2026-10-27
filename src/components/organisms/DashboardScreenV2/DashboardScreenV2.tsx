@@ -444,8 +444,8 @@ function AllSOWsView({
   notificationButton,
 }: {
   sows: SOWItem[]
-  onOpenSOWV2?: () => void
-  onOpenSOWContributor?: () => void
+  onOpenSOWV2?: (id?: string) => void
+  onOpenSOWContributor?: (id?: string) => void
   onOpenSOWDeactivated?: () => void
   isContributor?: boolean
   isPMO?: boolean
@@ -740,16 +740,16 @@ function AllSOWsView({
                       }
                       if (isContributor) {
                         if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
-                          onOpenSOWContributor?.()
+                          onOpenSOWContributor?.(row.id)
                         }
                         return
                       }
                       if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
-                        onOpenSOWContributor?.()
+                        onOpenSOWContributor?.(row.id)
                       } else if (idx === 1 || row.name.includes('Digital Workplace Enablement')) {
-                        onOpenSOWV2?.()
+                        onOpenSOWV2?.(row.id)
                       } else {
-                        onOpenSOWV2?.()
+                        onOpenSOWV2?.(row.id)
                       }
                     }}
                     style={{
@@ -913,9 +913,9 @@ function AllSOWsView({
                                 if (row.status === 'Deactivated') {
                                   onOpenSOWDeactivated?.()
                                 } else if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
-                                  onOpenSOWContributor?.()
+                                  onOpenSOWContributor?.(row.id)
                                 } else {
-                                  onOpenSOWV2?.()
+                                  onOpenSOWV2?.(row.id)
                                 }
                               }}
                               style={{
@@ -4968,6 +4968,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   onOpenSOWV2,
   onOpenSOWContributor,
   onOpenSOWDeactivated,
+  completedSOWIds,
 }) => {
   const [internalPreviewRole, setInternalPreviewRole] = useState<'PMO' | 'Contributor' | 'Reviewer' | 'Client' | null>(null)
   const previewRole = controlledPreviewRole !== undefined ? controlledPreviewRole : internalPreviewRole
@@ -4999,6 +5000,13 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
   useEffect(() => {
     setSowList(initialSOWs)
   }, [initialSOWs])
+  // SOWs finalized by the PMO show as Completed
+  useEffect(() => {
+    if (!completedSOWIds || completedSOWIds.length === 0) return
+    setSowList((prev) =>
+      prev.map((s) => (completedSOWIds.includes(s.id) ? { ...s, status: 'Completed', workflowStage: 'Finalized' } : s))
+    )
+  }, [completedSOWIds, initialSOWs])
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [dueTimeframe, setDueTimeframe] = useState('Next Week')
@@ -6628,18 +6636,18 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                 }
                                 if (isContributor || isClient || isReviewer) {
                                   if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
-                                    onOpenSOWContributor?.()
+                                    onOpenSOWContributor?.(row.id)
                                   } else {
-                                    onOpenSOWV2?.()
+                                    onOpenSOWV2?.(row.id)
                                   }
                                   return
                                 }
                                 if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
-                                  onOpenSOWContributor?.()
+                                  onOpenSOWContributor?.(row.id)
                                 } else if (idx === 1 || row.name.includes('Digital Workplace Enablement')) {
-                                  onOpenSOWV2?.()
+                                  onOpenSOWV2?.(row.id)
                                 } else {
-                                  onOpenSOWV2?.()
+                                  onOpenSOWV2?.(row.id)
                                 }
                               }}
                               style={{
@@ -6789,9 +6797,9 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                                           if (row.status === 'Deactivated') {
                                             onOpenSOWDeactivated?.()
                                           } else if (row.name.includes('Meridian Healthcare') || row.name.includes('Procurement Platform')) {
-                                            onOpenSOWContributor?.()
+                                            onOpenSOWContributor?.(row.id)
                                           } else {
-                                            onOpenSOWV2?.()
+                                            onOpenSOWV2?.(row.id)
                                           }
                                         }}
                                         style={{
