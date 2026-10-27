@@ -12126,10 +12126,12 @@ function SOWDraftTab({
     setShowAIReviewModal(true)
   }
   const AI_BASE_SCORES: Record<AIReviewFinding['criteria'], number> = {
-    Completeness: 82,
-    Consistency: 74,
-    Traceability: 81,
-    Clarity: 75,
+    // Starting scores while the findings are open (Low 0-30, Medium 31-60); each resolved finding lifts the
+    // criterion towards 100, so it reads High once all of its findings are resolved
+    Completeness: 25,
+    Consistency: 48,
+    Traceability: 55,
+    Clarity: 20,
   }
   const aiScores = (Object.keys(AI_BASE_SCORES) as AIReviewFinding['criteria'][]).map((name) => {
     const related = aiFindings.filter((f) => f.criteria === name)
