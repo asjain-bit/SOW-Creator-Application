@@ -11892,7 +11892,12 @@ function SOWDraftTab({
   planningSections = [],
   generatedScore = 100,
   unresolvedContextIssues = 0,
+  isFinalized = false,
+  onFinalize,
 }: {
+  /** The SOW has been finalized by the PMO: nobody can edit it any more */
+  isFinalized?: boolean
+  onFinalize?: () => void
   planningSections?: SOWSection[]
   generatedScore?: number
   unresolvedContextIssues?: number
@@ -12104,6 +12109,7 @@ function SOWDraftTab({
 
   // PMO Approval state
   const [isPMOApproved, setIsPMOApproved] = useState(false)
+  const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false)
   const [showApproveConfirmModal, setShowApproveConfirmModal] = useState(false)
 
   // Send for approval popup (Reviewer / Contributor / Client)
@@ -13148,10 +13154,29 @@ function SOWDraftTab({
         Export
       </button>
 
-            {/* PMO Approve SOW / Withdraw Approval on right side */}
+            {/* PMO Approve SOW / Withdraw Approval + Finalize on right side */}
             {isPMO && (
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                {!isPMOApproved ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {isFinalized ? (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      background: 'rgba(22,163,74,0.1)',
+                      border: '1.5px solid #16a34a',
+                      color: '#15803d',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Check size={13} strokeWidth={3} />
+                    Finalized
+                  </span>
+                ) : !isPMOApproved ? (
                   <button
                     type="button"
                     disabled={isReadOnly}
@@ -13176,33 +13201,54 @@ function SOWDraftTab({
                     Approve
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    disabled={isReadOnly}
-                    onClick={() => {
-                      if (isReadOnly) return
-                      setIsPMOApproved(false)
-                      showToast('SOW approval withdrawn. Editing is unlocked.', 'info')
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '6px 14px',
-                      borderRadius: 8,
-                      border: '1.5px solid #f59e0b',
-                      background: 'rgba(245,158,11,0.1)',
-                      color: '#b45309',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: isReadOnly ? 'not-allowed' : 'pointer',
-                      whiteSpace: 'nowrap',
-                    }}
-                    title="Click to withdraw PMO approval"
-                  >
-                    <RotateCcw size={13} />
-                    Withdraw Approval
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      disabled={isReadOnly}
+                      onClick={() => {
+                        if (isReadOnly) return
+                        setIsPMOApproved(false)
+                        showToast('SOW approval withdrawn. Editing is unlocked.', 'info')
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        border: '1.5px solid #f59e0b',
+                        background: 'rgba(245,158,11,0.1)',
+                        color: '#b45309',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title="Click to withdraw PMO approval"
+                    >
+                      Withdraw Approval
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isReadOnly}
+                      onClick={() => setShowFinalizeConfirm(true)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: isReadOnly ? '#94a3b8' : '#16a34a',
+                        color: '#ffffff',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: isReadOnly ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                        boxShadow: isReadOnly ? 'none' : '0 2px 8px rgba(22,163,74,0.3)',
+                      }}
+                    >
+                      Finalize
+                    </button>
+                  </>
                 )}
               </div>
             )}
@@ -16593,6 +16639,50 @@ function SOWDraftTab({
         </div>
       )}
 
+      {/* ── Finalize SOW Confirmation Modal (PMO) ── */}
+      {showFinalizeConfirm && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowFinalizeConfirm(false)
+          }}
+        >
+          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 28px', width: 460, maxWidth: '90vw', textAlign: 'center', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+            <button
+              onClick={() => setShowFinalizeConfirm(false)}
+              aria-label="Close"
+              style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4, display: 'flex' }}
+            >
+              <X size={18} />
+            </button>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(22,163,74,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Check size={28} color="#16a34a" strokeWidth={2.5} />
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Finalize SOW?</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+              Once finalized, this SOW is locked and marked as final. No one will be able to edit its context, planning or draft after this, and the action cannot be undone.
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setShowFinalizeConfirm(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1.5px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowFinalizeConfirm(false)
+                  onFinalize?.()
+                }}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#16a34a', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(22,163,74,0.3)' }}
+              >
+                Finalize SOW
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Send for Approval Confirmation Modal (Reviewer / Contributor / Client) ── */}
       {showSendForApprovalPopup && (
         <div
@@ -17048,7 +17138,9 @@ export function SOWDetailScreen({
   const [activeSOWStatus, setActiveSOWStatus] = useState(sowStatus)
   const isDeactivated = isDeactivatedProp || activeSOWStatus === 'Deactivated' || sowStatus === 'Deactivated'
   // Deactivated SOWs and the Admin profile are view-only everywhere
-  const isViewOnly = isDeactivated || viewerRole === 'admin'
+  // A finalized SOW is locked for everyone
+  const [isFinalized, setIsFinalized] = useState(false)
+  const isViewOnly = isDeactivated || viewerRole === 'admin' || isFinalized
   const [activeViewerRole, setActiveViewerRole] = useState<'pmo' | 'contributor' | 'reviewer' | 'client'>(
     initialActiveRole ??
       (viewerRole === 'contributor'
@@ -17822,6 +17914,12 @@ export function SOWDetailScreen({
                   isReviewer={isReviewer}
                   viewerRole={effectiveViewerRole}
                   isReadOnly={isViewOnly || sentLock}
+                  isFinalized={isFinalized}
+                  onFinalize={() => {
+                    setIsFinalized(true)
+                    showToast('SOW finalized. It is now locked for editing.', 'success')
+                    addGlobalAuditLog('SOW Finalized', 'The SOW was finalized and locked for editing.', 'Ashika Jain (PMO)', 'draft', 'approval')
+                  }}
                   assignedSectionTitles={assignedSectionTitles}
                   planningSections={savedSections ?? sourceSectionsForRole}
                   generatedScore={generatedScore}
