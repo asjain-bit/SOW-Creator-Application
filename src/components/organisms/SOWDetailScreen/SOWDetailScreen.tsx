@@ -2481,7 +2481,7 @@ export function ReviewerAndParticipantsModal({
   canManage?: boolean
 }) {
   const [modalTab, setModalTab] = useState<'reviewers' | 'participants'>(canManage ? initialTab : 'participants')
-  const [activeCategory, setActiveCategory] = useState<'all' | 'reviewers' | 'contributors' | 'clients' | 'pmo'>('all')
+  const [activeCategory, setActiveCategory] = useState<'all' | 'reviewers' | 'contributors' | 'pmo'>('all')
   const [reviewers, setReviewers] = useState(REVIEWERS_DEFAULT)
   const [selectedIds, setSelectedIds] = useState<string[]>(REVIEWERS_DEFAULT.map((r) => r.id))
   const [newEmail, setNewEmail] = useState('')
@@ -2510,8 +2510,6 @@ export function ReviewerAndParticipantsModal({
     { id: '4', name: 'Mike Chen', role: 'Solutions Architect', type: 'contributors', email: 'mike.chen@hippocratic.ai', initials: 'MC', color: '#10b981', status: 'Active' },
     { id: '5', name: 'Emily Davis', role: 'Senior Cloud Engineer', type: 'contributors', email: 'emily.davis@hippocratic.ai', initials: 'ED', color: '#f59e0b', status: 'Active' },
     { id: '6', name: 'David Kim', role: 'Integration Lead', type: 'contributors', email: 'david.kim@hippocratic.ai', initials: 'DK', color: '#6366f1', status: 'Active' },
-    { id: '7', name: 'Dr. Sultan Al Hashimi', role: 'M42 Healthcare Director', type: 'clients', email: 'sultan.hashimi@m42.ae', initials: 'SH', color: '#0ea5e9', status: 'Client Stakeholder' },
-    { id: '8', name: 'Fatima Al Mansoori', role: 'Head of Procurement', type: 'clients', email: 'fatima.mansoori@m42.ae', initials: 'FM', color: '#14b8a6', status: 'Client Stakeholder' },
     { id: '9', name: 'Ashika Jain', role: 'Lead PMO Manager', type: 'pmo', email: 'ashika.jain@organization.com', initials: 'AJ', color: '#00C4C4', status: 'Owner / PMO' },
   ]
   type ParticipantAccess = 'edit' | 'view'
@@ -2902,13 +2900,12 @@ export function ReviewerAndParticipantsModal({
                 { id: 'all', label: `All (${PARTICIPANTS.length})` },
                 { id: 'reviewers', label: `Reviewers (${PARTICIPANTS.filter((p) => p.type === 'reviewers').length})` },
                 { id: 'contributors', label: `Contributors (${PARTICIPANTS.filter((p) => p.type === 'contributors').length})` },
-                { id: 'clients', label: `Clients (${PARTICIPANTS.filter((p) => p.type === 'clients').length})` },
                 { id: 'pmo', label: `PMO (${PARTICIPANTS.filter((p) => p.type === 'pmo').length})` },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveCategory(tab.id as 'all' | 'reviewers' | 'contributors' | 'clients' | 'pmo')}
+                  onClick={() => setActiveCategory(tab.id as 'all' | 'reviewers' | 'contributors' | 'pmo')}
                   style={{
                     padding: '5px 12px',
                     borderRadius: 20,
