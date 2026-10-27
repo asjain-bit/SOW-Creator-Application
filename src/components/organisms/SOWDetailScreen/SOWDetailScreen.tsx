@@ -11657,6 +11657,11 @@ function AIReviewModal({
   )
 }
 
+/** Confidence is shown as a level, not a percentage: 0–30 Low, 31–60 Medium, 61–100 High */
+type ConfidenceLevel = 'Low' | 'Medium' | 'High'
+const confidenceLevel = (score: number): ConfidenceLevel => (score >= 61 ? 'High' : score >= 31 ? 'Medium' : 'Low')
+const CONFIDENCE_RANGE: Record<ConfidenceLevel, string> = { Low: '0–30', Medium: '31–60', High: '61–100' }
+
 /* ── Draft risks (Risk tab in the draft side panel) ─────────────────────── */
 
 type DraftRiskSeverity = 'High' | 'Medium' | 'Low'
@@ -13043,11 +13048,15 @@ function SOWDraftTab({
     SECTION_MEMBERS.find((m) => m.name === name)?.id ?? SECTION_MEMBERS[0].id
 
   // ── Score color ─────────────────────────────────────────────────────────────
-  const scoreColor = (s: number) => (s >= 90 ? '#16a34a' : s >= 60 ? '#d97706' : '#ef4444')
-  const scoreBg = (s: number) =>
-    s >= 90 ? 'rgba(22,163,74,0.1)' : s >= 60 ? 'rgba(217,119,6,0.1)' : 'rgba(239,68,68,0.1)'
-  const scoreLabel = (s: number) =>
-    s >= 90 ? 'High Confidence' : s >= 60 ? 'Medium Confidence' : 'Low Confidence'
+  const scoreColor = (s: number) => {
+    const l = confidenceLevel(s)
+    return l === 'High' ? '#16a34a' : l === 'Medium' ? '#d97706' : '#ef4444'
+  }
+  const scoreBg = (s: number) => {
+    const l = confidenceLevel(s)
+    return l === 'High' ? 'rgba(22,163,74,0.1)' : l === 'Medium' ? 'rgba(217,119,6,0.1)' : 'rgba(239,68,68,0.1)'
+  }
+  const scoreLabel = (s: number) => `${confidenceLevel(s)} Confidence`
 
   // ── Export the draft as a Word document ────────────────────────────────────
   const exportAsWord = () => {
@@ -13552,7 +13561,12 @@ function SOWDraftTab({
                 {aiScores.map((f) => (
                   <div key={f.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>{f.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor(f.value) }}>{f.value}%</span>
+                    <span
+                      title={`${confidenceLevel(f.value)}: ${CONFIDENCE_RANGE[confidenceLevel(f.value)]}`}
+                      style={{ fontSize: 12, fontWeight: 700, color: scoreColor(f.value) }}
+                    >
+                      {confidenceLevel(f.value)}
+                    </span>
                   </div>
                 ))}
                 {(isPMO || isReviewer || isContributor) && !isReadOnly && (
@@ -13824,7 +13838,7 @@ function SOWDraftTab({
                               color: scoreColor(item.score),
                             }}
                           >
-                            {item.score}%
+                            {confidenceLevel(item.score)}
                           </span>
                           {hoveredScoreIdx === idx && (
                             <div
@@ -13853,11 +13867,14 @@ function SOWDraftTab({
                               >
                                 {scoreLabel(item.score)}
                               </div>
-                              {item.score >= 90
+                              {confidenceLevel(item.score) === 'High'
                                 ? 'Strong alignment with RFP requirements and thorough detail.'
-                                : item.score >= 60
+                                : confidenceLevel(item.score) === 'Medium'
                                   ? 'Partial alignment with RFP. Some requirements may need elaboration.'
                                   : 'Weak alignment or missing critical details. Thorough review required.'}
+                              <div style={{ marginTop: 4, color: '#94a3b8' }}>
+                                Range: {CONFIDENCE_RANGE[confidenceLevel(item.score)]}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -18300,76 +18317,9 @@ function ClientQueueModal({
   removeOnly?: boolean
   currentUserLabel?: string
 }) {
-  const canAssign = !readOnly && !removeOnly
-  const { showToast } = useToast()
-  const defaultClients = [
-    'client.reviewer@m42.ae',
-    'sarah.chen@acme-health.org',
-    'david.miller@acme-health.org',
-    'amira.khalil@clevelandclinicabudhabi.ae',
-  ]
-  const [availableClients, setAvailableClients] = useState<string[]>(defaultClients)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [newClientInput, setNewClientInput] = useState('')
-  const [newClientError, setNewClientError] = useState('')
-  const [clientList, setClientList] = useState<string[]>(['client.reviewer@m42.ae'])
-  const [selectedClientToAssign, setSelectedClientToAssign] = useState(defaultClients[0])
-
-  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
-
+  // Assigning to clients is not done here any more: the queue is reviewed and downloaded as an Excel sheet
+  const canManageAll = !readOnly && !removeOnly
   const allQueueItems = sections.flatMap((s) => s.items.filter((i) => i.inClientQueue))
-  const [selectedQueueItemIds, setSelectedQueueItemIds] = useState<Set<string>>(
-    () => new Set(allQueueItems.map((i) => i.id))
-  )
-
-  const toggleSelectItem = (id: string) => {
-    setSelectedQueueItemIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const allQueueSelected = allQueueItems.length > 0 && allQueueItems.every((i) => selectedQueueItemIds.has(i.id))
-
-  const handleAddNewClientFromDropdown = () => {
-    const val = newClientInput.trim()
-    if (!val) return
-    if (!emailRegex.test(val)) {
-      setNewClientError('Please enter a valid email address.')
-      return
-    }
-    if (!availableClients.includes(val)) {
-      setAvailableClients((prev) => [...prev, val])
-    }
-    setSelectedClientToAssign(val)
-    if (!clientList.includes(val)) {
-      setClientList((prev) => [...prev, val])
-    }
-    setNewClientInput('')
-    setNewClientError('')
-    setIsDropdownOpen(false)
-    showToast(`Added and selected ${val}`, 'success')
-  }
-
-  const handleSelectClient = (client: string) => {
-    setSelectedClientToAssign(client)
-    if (!clientList.includes(client)) {
-      setClientList((prev) => [...prev, client])
-    }
-    setIsDropdownOpen(false)
-  }
-
-  const handleSendInvite = () => {
-    if (selectedQueueItemIds.size === 0) {
-      showToast('Please select at least one question or assumption to assign to the client.', 'error')
-      return
-    }
-    const recipients = clientList.length > 0 ? clientList : [selectedClientToAssign || 'client.reviewer@m42.ae']
-    showToast(`Successfully assigned ${selectedQueueItemIds.size} selected item(s) to ${recipients.join(', ')}!`, 'success')
-    onClose()
-  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
@@ -18378,280 +18328,16 @@ function ClientQueueModal({
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
         </button>
         <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Client Queue</div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-          {readOnly
-            ? 'Questions and assumptions currently in the client queue.'
-            : removeOnly
-            ? 'Questions and assumptions currently in the client queue. You can remove only the items you added.'
-            : 'Select questions and assumptions with the checkboxes to assign them to designated clients.'}
-        </div>
-        
+        {(readOnly || removeOnly) && (
+          <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+            {readOnly
+              ? 'Questions and assumptions currently in the client queue.'
+              : 'Questions and assumptions currently in the client queue. You can remove only the items you added.'}
+          </div>
+        )}
+
         {/* Horizontal Line Separator below title & subtitle */}
-        <div style={{ height: 1, background: '#f1f5f9', marginBottom: 18 }} />
-
-        {canAssign && (
-        <>
-        {/* Custom Dropdown: Assign To Client (Light Theme + Add Client Inside) */}
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
-            Assign to Client
-          </label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ flex: 1, position: 'relative' }}>
-              <button
-                type="button"
-                onClick={() => setIsDropdownOpen((prev) => !prev)}
-                style={{
-                  width: '100%',
-                  padding: '9px 12px',
-                  borderRadius: 8,
-                  border: '1.5px solid #e2e8f0',
-                  background: '#ffffff',
-                  fontSize: 13,
-                  color: selectedClientToAssign ? '#0d212c' : '#94a3b8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <span>{selectedClientToAssign || 'Select client...'}</span>
-                <ChevronDown size={15} color="#64748b" />
-              </button>
-
-              {/* Custom Dropdown Menu */}
-              {isDropdownOpen && (
-                <>
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 100 }}
-                    onClick={() => setIsDropdownOpen(false)}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 4px)',
-                      left: 0,
-                      right: 0,
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 10,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-                      zIndex: 101,
-                      padding: '10px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                    }}
-                  >
-                    {/* Field inside dropdown menu to add new client by valid email */}
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <input
-                        type="email"
-                        placeholder="Add new client email..."
-                        value={newClientInput}
-                        onChange={(e) => {
-                          setNewClientInput(e.target.value)
-                          if (newClientError) setNewClientError('')
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleAddNewClientFromDropdown()
-                          }
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: '7px 10px',
-                          borderRadius: 8,
-                          border: '1px solid ' + (newClientError ? '#ef4444' : '#cbd5e1'),
-                          background: '#ffffff',
-                          fontSize: 12,
-                          color: '#0d212c',
-                          outline: 'none',
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddNewClientFromDropdown}
-                        style={{
-                          padding: '7px 12px',
-                          borderRadius: 8,
-                          background: '#00C4C4',
-                          border: 'none',
-                          color: '#ffffff',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        Add
-                      </button>
-                    </div>
-                    {newClientError && (
-                      <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 500, paddingLeft: 2 }}>
-                        {newClientError}
-                      </div>
-                    )}
-
-                    <div style={{ height: 1, background: '#f1f5f9', margin: '4px 0' }} />
-
-                    {/* Available Clients Options */}
-                    <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {availableClients.map((client) => {
-                        const isSelected = selectedClientToAssign === client
-                        return (
-                          <div
-                            key={client}
-                            onClick={() => handleSelectClient(client)}
-                            style={{
-                              padding: '8px 10px',
-                              borderRadius: 6,
-                              fontSize: 12.5,
-                              color: isSelected ? '#007a7a' : '#334155',
-                              background: isSelected ? 'rgba(0,196,196,0.08)' : 'transparent',
-                              fontWeight: isSelected ? 600 : 400,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              transition: 'background 0.12s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              if (!isSelected) e.currentTarget.style.background = '#f8fafc'
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!isSelected) e.currentTarget.style.background = 'transparent'
-                            }}
-                          >
-                            <span>{client}</span>
-                            {isSelected && <span style={{ color: '#00a0a0', fontSize: 12 }}>✓</span>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Assigned clients badges */}
-          {clientList.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-              {clientList.map((em) => (
-                <span
-                  key={em}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '3px 10px',
-                    borderRadius: 16,
-                    background: '#e0f2fe',
-                    border: '1px solid #bae6fd',
-                    color: '#0369a1',
-                    fontSize: 12,
-                    fontWeight: 500,
-                  }}
-                >
-                  {em}
-                  <button
-                    type="button"
-                    onClick={() => setClientList((prev) => prev.filter((c) => c !== em))}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: 0,
-                      cursor: 'pointer',
-                      color: '#0284c7',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-        </>
-        )}
-
-        {/* Selection Subheader */}
-        {canAssign && allQueueItems.length > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '6px 4px 10px',
-              borderBottom: '1px solid #e2e8f0',
-              marginBottom: 10,
-            }}
-          >
-            {canAssign ? (
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  cursor: 'pointer',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  color: '#334155',
-                  userSelect: 'none',
-                }}
-                onClick={() => {
-                  if (allQueueSelected) setSelectedQueueItemIds(new Set())
-                  else setSelectedQueueItemIds(new Set(allQueueItems.map((i) => i.id)))
-                }}
-              >
-                <div
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: 4,
-                    border: allQueueSelected ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
-                    background: allQueueSelected ? '#00C4C4' : '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.12s ease',
-                  }}
-                >
-                  {allQueueSelected && <Check size={11} strokeWidth={3} color="#ffffff" />}
-                </div>
-                Select all items to assign
-              </label>
-            ) : (
-              <span />
-            )}
-            <button
-              type="button"
-              onClick={() => downloadClientQueueExcel(sections)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: '#00C4C4',
-                cursor: 'pointer',
-              }}
-            >
-              <Download size={14} color="#00C4C4" />
-              Download Excel
-            </button>
-          </div>
-        )}
+        <div style={{ height: 1, background: '#f1f5f9', margin: '12px 0 18px' }} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 340, overflowY: 'auto', marginBottom: 20 }}>
           {sections.every(s => !s.items.some(i => i.inClientQueue)) ? (
@@ -18670,13 +18356,12 @@ function ClientQueueModal({
                        key={it.id}
                        item={it}
                        label={it.type === 'question' ? 'Question' : 'Assumption'}
-                       isSelected={selectedQueueItemIds.has(it.id)}
-                       hasAnySelected={selectedQueueItemIds.size > 0}
-                       showCheckboxAlways={canAssign}
-                       onToggle={() => toggleSelectItem(it.id)}
+                       isSelected={false}
+                       hasAnySelected={false}
+                       onToggle={() => undefined}
                        disableAnswer={true}
                        hideAssigneesAndQueue={true}
-                       canEdit={!readOnly && (canAssign || (it.queuedBy ?? '') === currentUserLabel)}
+                       canEdit={!readOnly && (canManageAll || (it.queuedBy ?? '') === currentUserLabel)}
                        hideTrace
                        queuedByLabel={it.queuedBy ?? 'Ashika Jain (PMO)'}
                        onDelete={() => onRemoveFromQueue(it.id)}
@@ -18687,76 +18372,42 @@ function ClientQueueModal({
              )
           })}
         </div>
-        {(() => {
-          const isAssignDisabled = allQueueItems.length === 0 || selectedQueueItemIds.size === 0
-          return (
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button
-                  onClick={onClose}
-                  style={{
-                    padding: '12px 24px',
-                    borderRadius: 12,
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    color: '#0d212c',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {canAssign ? 'Cancel' : 'Close'}
-                </button>
-                {!canAssign && (
-                  <button
-                    type="button"
-                    disabled={allQueueItems.length === 0}
-                    onClick={() => downloadClientQueueExcel(sections)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '12px 24px',
-                      borderRadius: 12,
-                      background: allQueueItems.length === 0 ? '#cbd5e1' : '#00C4C4',
-                      border: 'none',
-                      color: allQueueItems.length === 0 ? '#64748b' : '#ffffff',
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: allQueueItems.length === 0 ? 'not-allowed' : 'pointer',
-                      boxShadow: allQueueItems.length === 0 ? 'none' : '0 8px 20px rgba(0,196,196,0.25)',
-                    }}
-                  >
-                    <Download size={15} color={allQueueItems.length === 0 ? '#64748b' : '#ffffff'} />
-                    Download Excel
-                  </button>
-                )}
-                {canAssign && (
-                  <button
-                    onClick={handleSendInvite}
-                    disabled={isAssignDisabled}
-                    style={{
-                      padding: '12px 28px',
-                      borderRadius: 12,
-                      background: isAssignDisabled ? '#cbd5e1' : '#00C4C4',
-                      border: 'none',
-                      color: isAssignDisabled ? '#64748b' : '#fff',
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: isAssignDisabled ? 'not-allowed' : 'pointer',
-                      boxShadow: isAssignDisabled ? 'none' : '0 8px 20px rgba(0,196,196,0.25)',
-                      opacity: isAssignDisabled ? 0.65 : 1,
-                    }}
-                  >
-                    Assign
-                  </button>
-                )}
-              </div>
-            </div>
-          )
-        })()}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '12px 24px',
+              borderRadius: 12,
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              color: '#0d212c',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            disabled={allQueueItems.length === 0}
+            onClick={() => downloadClientQueueExcel(sections)}
+            style={{
+              padding: '12px 24px',
+              borderRadius: 12,
+              background: allQueueItems.length === 0 ? '#cbd5e1' : '#00C4C4',
+              border: 'none',
+              color: allQueueItems.length === 0 ? '#64748b' : '#ffffff',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: allQueueItems.length === 0 ? 'not-allowed' : 'pointer',
+              boxShadow: allQueueItems.length === 0 ? 'none' : '0 8px 20px rgba(0,196,196,0.25)',
+            }}
+          >
+            Download Excel
+          </button>
+        </div>
       </div>
     </div>
   )
 }
-
