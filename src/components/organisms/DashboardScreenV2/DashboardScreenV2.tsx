@@ -46,6 +46,7 @@ import {
   Building2,
   ArrowRight,
   BarChart3,
+  History,
 } from 'lucide-react'
 import type { UploadedFile } from '@/components/molecules/CreateSOWModal'
 import { AuditLogView } from '../AuditLogView'
@@ -1085,14 +1086,333 @@ function AllSOWsView({
 
 
 
+interface AgentVersion {
+  version: number
+  note: string
+  author: string
+  createdAt: string
+  deployment: string
+  temperature: string
+}
+
 interface AgentItem {
   id: string
   name: string
   description: string
   status: 'Active' | 'Deactivated'
+  deployment?: string
+  temperature?: string
+  versions?: AgentVersion[]
 }
 
-function AgentsView({ notificationButton }: { notificationButton?: React.ReactNode }) {
+const AGENT_SEED_DATE = '6 Aug 2026, 23:28'
+
+function formatAgentDate(d: Date) {
+  const day = d.getDate()
+  const mon = d.toLocaleString('en-GB', { month: 'short' })
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${day} ${mon} ${d.getFullYear()}, ${hh}:${mm}`
+}
+
+/* ─── Agent detail (editable for Admin, view-only otherwise) ─────────────── */
+function AgentDetailView({
+  agent,
+  canEdit,
+  onBack,
+  onSave,
+  onRestore,
+  notificationButton,
+}: {
+  agent: AgentItem
+  canEdit: boolean
+  onBack: () => void
+  onSave: (agentId: string, deployment: string, temperature: string, note: string) => void
+  onRestore: (agentId: string, version: AgentVersion) => void
+  notificationButton?: React.ReactNode
+}) {
+  const versions = agent.versions ?? []
+  const activeVersion = versions[0]
+  const [deployment, setDeployment] = useState(agent.deployment ?? '')
+  const [temperature, setTemperature] = useState(agent.temperature ?? '0')
+  const [note, setNote] = useState('')
+  const [showVersions, setShowVersions] = useState(false)
+
+  // Keep the form in step with the active version (e.g. after a restore)
+  useEffect(() => {
+    setDeployment(agent.deployment ?? '')
+    setTemperature(agent.temperature ?? '0')
+  }, [agent.deployment, agent.temperature])
+
+  const prompt = `You are the ${agent.name}. ${agent.description}. Follow the structured inputs provided for each run, cite the source documents you rely on, and never fabricate information that is not supported by the supplied context.`
+
+  // Same translucent card treatment as the tables on the other admin pages
+  const card: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.6)',
+    border: '1px solid rgba(255,255,255,0.85)',
+    borderRadius: 14,
+    boxShadow: '0 2px 12px rgba(0,196,196,0.06)',
+  }
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: '#0d212c', marginBottom: 8 }
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    height: 44,
+    padding: '0 16px',
+    borderRadius: 999,
+    border: '1px solid #e2e8f0',
+    fontSize: 13.5,
+    color: '#0d212c',
+    background: canEdit ? '#ffffff' : '#f8fafc',
+    outline: 'none',
+    boxSizing: 'border-box',
+    cursor: canEdit ? 'text' : 'default',
+  }
+  const helpStyle: React.CSSProperties = { fontSize: 13, color: '#64748b', margin: '10px 0 0', lineHeight: 1.5 }
+  const warnStyle: React.CSSProperties = { fontSize: 13, color: '#94a3b8', fontStyle: 'italic', margin: '4px 0 0', lineHeight: 1.5 }
+  const defaultStyle: React.CSSProperties = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5, color: '#64748b', margin: '4px 0 0' }
+
+  const dirty = deployment !== (agent.deployment ?? '') || temperature !== (agent.temperature ?? '0')
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', overflowY: 'auto', paddingBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
+        <nav aria-label="Breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 500 }}>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#475569', fontSize: 13.5, fontWeight: 500 }}
+          >
+            Agents
+          </button>
+          <span style={{ color: '#94a3b8' }}>/</span>
+          <span style={{ color: '#00A0A0' }}>{agent.name}</span>
+        </nav>
+        {notificationButton}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 14, marginBottom: 20, borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 600, color: '#0d212c', margin: 0, lineHeight: 1.15 }}>{agent.name}</h1>
+        <span style={{ fontSize: 13, color: '#475569' }}>Background</span>
+        <span style={{ fontSize: 12, fontWeight: 500, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 999, padding: '3px 12px' }}>
+          Default
+        </span>
+        {!canEdit && (
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 999, padding: '3px 10px' }}>
+            View only
+          </span>
+        )}
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setShowVersions(true)}
+            style={{
+              marginLeft: 'auto',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '7px 14px',
+              borderRadius: 8,
+              border: '1.5px solid rgba(0,196,196,0.5)',
+              background: 'rgba(0,196,196,0.12)',
+              color: '#007a7a',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <History size={14} color="#007a7a" />
+            Version history
+          </button>
+        )}
+      </div>
+
+      {/* Prompt */}
+      <div style={{ ...card, marginBottom: 20, overflow: 'hidden', flexShrink: 0 }}>
+        <div style={{ padding: '18px 24px', fontSize: 15, fontWeight: 600, color: '#0d212c', borderBottom: '1px solid #e2e8f0' }}>Prompt</div>
+        <div
+          style={{
+            padding: '12px 24px',
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            fontSize: 11.5,
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            color: '#475569',
+            background: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          LOCKED — SAFETY CORE
+        </div>
+        <div
+          style={{
+            padding: '20px 24px 44px',
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            fontSize: 13,
+            lineHeight: 1.85,
+            color: '#0d212c',
+          }}
+        >
+          {prompt}
+        </div>
+      </div>
+
+      <div>
+        {/* Configuration */}
+        <form
+          style={{ ...card, padding: 28 }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!canEdit || !dirty) return
+            onSave(agent.id, deployment.trim(), temperature.trim() || '0', note.trim())
+            setNote('')
+          }}
+        >
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: '#0d212c', margin: '0 0 22px' }}>Configuration</h2>
+
+          <div style={{ marginBottom: 24 }}>
+            <label htmlFor="agent-deployment" style={labelStyle}>Model deployment</label>
+            <input
+              id="agent-deployment"
+              type="text"
+              value={deployment}
+              readOnly={!canEdit}
+              onChange={(e) => setDeployment(e.target.value)}
+              style={inputStyle}
+            />
+            <p style={helpStyle}>Azure OpenAI chat deployment this agent runs on. Empty = the environment default.</p>
+            <p style={warnStyle}>A wrong name makes this agent&apos;s runs fail (features degrade fail-soft; calls continue).</p>
+            <p style={defaultStyle}>default: (empty)</p>
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <label htmlFor="agent-temperature" style={labelStyle}>Temperature</label>
+            <input
+              id="agent-temperature"
+              type="number"
+              step="0.1"
+              min="0"
+              max="2"
+              value={temperature}
+              readOnly={!canEdit}
+              onChange={(e) => setTemperature(e.target.value)}
+              style={inputStyle}
+            />
+            <p style={helpStyle}>Sampling temperature. 0 keeps runs deterministic for identical inputs.</p>
+            <p style={warnStyle}>Raising it makes results vary run-to-run; ignored on reasoning deployments.</p>
+            <p style={defaultStyle}>default: 0</p>
+          </div>
+
+          {canEdit && (
+            <>
+              <div style={{ marginBottom: 28 }}>
+                <label htmlFor="agent-note" style={labelStyle}>Note</label>
+                <input
+                  id="agent-note"
+                  type="text"
+                  placeholder="What changed and why"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!dirty}
+                style={{
+                  height: 44,
+                  padding: '0 24px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: '#00C4C4',
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: dirty ? 'pointer' : 'not-allowed',
+                  opacity: dirty ? 1 : 0.5,
+                  boxShadow: dirty ? '0 4px 14px rgba(0,196,196,0.3)' : 'none',
+                }}
+              >
+                Save as new version
+              </button>
+            </>
+          )}
+        </form>
+
+      </div>
+
+      {showVersions && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowVersions(false)
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Version history"
+            style={{ background: '#ffffff', borderRadius: 24, padding: '28px', width: 540, maxWidth: '90vw', maxHeight: '80vh', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowVersions(false)}
+              aria-label="Close"
+              style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4, display: 'flex' }}
+            >
+              <X size={18} />
+            </button>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Version history</div>
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 18 }}>
+              Every save creates a new version. Restoring a version makes its settings active again as a new version.
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+              {versions.map((v) => {
+                const isActive = v.version === activeVersion?.version
+                return (
+                  <div key={v.version} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: '14px 16px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: '#0d212c' }}>v{v.version}</span>
+                        {isActive && (
+                          <span style={{ fontSize: 11.5, fontWeight: 600, color: '#475569', background: '#e2e8f0', borderRadius: 8, padding: '2px 9px' }}>Active</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 13.5, color: '#334155', marginBottom: 2 }}>{v.note}</div>
+                      <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                        {v.author} · {v.createdAt}
+                      </div>
+                    </div>
+                    {!isActive && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onRestore(agent.id, v)
+                          setShowVersions(false)
+                        }}
+                        style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 10, border: 'none', background: '#00C4C4', color: '#ffffff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,196,196,0.3)' }}
+                      >
+                        Restore version
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AgentsView({
+  notificationButton,
+  canEdit = false,
+}: {
+  notificationButton?: React.ReactNode
+  canEdit?: boolean
+}) {
   const { showToast } = useToast()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -1108,7 +1428,13 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
     { id: '8', name: 'Reviewer Supervisor', description: 'Manages the review workflow and aggregates feedback from review agents', status: 'Active' },
     { id: '9', name: 'Change Impact Agent', description: 'Assesses the impact of changes and updates to SOW scope or requirements', status: 'Active' },
     { id: '11', name: 'Quality Gate Agent', description: 'Validates SOW against quality standards and compliance requirements', status: 'Active' },
-  ])
+  ].map((a): AgentItem => ({
+    ...(a as AgentItem),
+    deployment: '',
+    temperature: '0',
+    versions: [{ version: 1, note: 'seeded from code defaults', author: 'system', createdAt: AGENT_SEED_DATE, deployment: '', temperature: '0' }],
+  })))
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
   const [actionMenuAgentId, setActionMenuAgentId] = useState<string | null>(null)
   const [editModalAgent, setEditModalAgent] = useState<AgentItem | null>(null)
@@ -1122,6 +1448,44 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paginatedRows = filtered.slice((page - 1) * pageSize, page * pageSize)
 
+  const handleSaveAgentVersion = (agentId: string, deployment: string, temperature: string, note: string) => {
+    setAgentsList((prev) =>
+      prev.map((a) => {
+        if (a.id !== agentId) return a
+        const existing = a.versions ?? []
+        const next: AgentVersion = {
+          version: (existing[0]?.version ?? 0) + 1,
+          note: note || 'configuration updated',
+          author: 'admin',
+          createdAt: formatAgentDate(new Date()),
+          deployment,
+          temperature,
+        }
+        return { ...a, deployment, temperature, versions: [next, ...existing] }
+      })
+    )
+    showToast('Saved as new version', 'success')
+  }
+
+  const handleRestoreAgentVersion = (agentId: string, target: AgentVersion) => {
+    setAgentsList((prev) =>
+      prev.map((a) => {
+        if (a.id !== agentId) return a
+        const existing = a.versions ?? []
+        const next: AgentVersion = {
+          version: (existing[0]?.version ?? 0) + 1,
+          note: `Restored from v${target.version}`,
+          author: 'admin',
+          createdAt: formatAgentDate(new Date()),
+          deployment: target.deployment,
+          temperature: target.temperature,
+        }
+        return { ...a, deployment: target.deployment, temperature: target.temperature, versions: [next, ...existing] }
+      })
+    )
+    showToast(`Restored v${target.version} as a new version`, 'success')
+  }
+
   const handleUpdateAgent = (e: React.FormEvent) => {
     e.preventDefault()
     if (!editModalAgent || !editAgentName.trim()) return
@@ -1134,6 +1498,21 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
     )
     setEditModalAgent(null)
     showToast('Agent Updated', 'success')
+  }
+
+  const selectedAgent = selectedAgentId ? agentsList.find((a) => a.id === selectedAgentId) : undefined
+  if (selectedAgent) {
+    return (
+      <AgentDetailView
+        key={selectedAgent.id}
+        agent={selectedAgent}
+        canEdit={canEdit}
+        onBack={() => setSelectedAgentId(null)}
+        onSave={handleSaveAgentVersion}
+        onRestore={handleRestoreAgentVersion}
+        notificationButton={notificationButton}
+      />
+    )
   }
 
   return (
@@ -1187,7 +1566,15 @@ function AgentsView({ notificationButton }: { notificationButton?: React.ReactNo
             {paginatedRows.map((a, idx) => (
               <tr
                 key={a.id}
-                style={{ borderBottom: idx < paginatedRows.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined, transition: 'background 0.12s', height: 52 }}
+                style={{ borderBottom: idx < paginatedRows.length - 1 ? '1px solid rgba(0,196,196,0.07)' : undefined, transition: 'background 0.12s', height: 52, cursor: 'pointer' }}
+                onClick={() => setSelectedAgentId(a.id)}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelectedAgentId(a.id)
+                  }
+                }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = '')}
               >
@@ -1680,6 +2067,8 @@ export interface SectionTemplateItem {
   id: string
   name: string
   requirement: 'Required' | 'Recommended' | 'Conditional'
+  /** Name of the section this one depends on — only set when requirement is 'Conditional' */
+  conditionalOn?: string
   description: string
   status: 'Active' | 'Deactivated'
 }
@@ -1761,6 +2150,7 @@ export function SectionTemplatesView({
       id: 'sec-8',
       name: 'Change Control & Variation Procedure',
       requirement: 'Conditional',
+      conditionalOn: 'Scope of Work & Requirements',
       description: 'Formal process for scope amendments, impact evaluation, change request approvals, and budget adjustments.',
       status: 'Active',
     },
@@ -1772,12 +2162,14 @@ export function SectionTemplatesView({
   const [newSecName, setNewSecName] = useState('')
   const [newSecReq, setNewSecReq] = useState<'Required' | 'Recommended' | 'Conditional'>('Required')
   const [newSecDesc, setNewSecDesc] = useState('')
+  const [newSecCondOn, setNewSecCondOn] = useState('')
 
   const [templateFilterDropdownOpen, setTemplateFilterDropdownOpen] = useState(false)
   const [editingSection, setEditingSection] = useState<SectionTemplateItem | null>(null)
   const [editSecName, setEditSecName] = useState('')
   const [editSecReq, setEditSecReq] = useState<'Required' | 'Recommended' | 'Conditional'>('Required')
   const [editSecDesc, setEditSecDesc] = useState('')
+  const [editSecCondOn, setEditSecCondOn] = useState('')
 
   const [deactivateSectionModal, setDeactivateSectionModal] = useState<SectionTemplateItem | null>(null)
   const [reactivateSectionModal, setReactivateSectionModal] = useState<SectionTemplateItem | null>(null)
@@ -1809,10 +2201,12 @@ export function SectionTemplatesView({
   const handleCreateSection = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newSecName.trim() || !newSecDesc.trim()) return
+    if (newSecReq === 'Conditional' && !newSecCondOn.trim()) return
     const newSec: SectionTemplateItem = {
       id: 'sec-' + Date.now(),
       name: newSecName.trim(),
       requirement: newSecReq,
+      conditionalOn: newSecReq === 'Conditional' ? newSecCondOn.trim() : undefined,
       description: newSecDesc.trim(),
       status: 'Active',
     }
@@ -1820,6 +2214,7 @@ export function SectionTemplatesView({
     setNewSecName('')
     setNewSecDesc('')
     setNewSecReq('Required')
+    setNewSecCondOn('')
     setIsAddSectionOpen(false)
     showToast('Section Created', 'success')
   }
@@ -1827,6 +2222,7 @@ export function SectionTemplatesView({
   const handleUpdateSection = (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingSection || !editSecName.trim() || !editSecDesc.trim()) return
+    if (editSecReq === 'Conditional' && !editSecCondOn.trim()) return
     setSectionTemplates((prev) =>
       prev.map((s) =>
         s.id === editingSection.id
@@ -1834,6 +2230,7 @@ export function SectionTemplatesView({
               ...s,
               name: editSecName.trim(),
               requirement: editSecReq,
+              conditionalOn: editSecReq === 'Conditional' ? editSecCondOn.trim() : undefined,
               description: editSecDesc.trim(),
             }
           : s
@@ -1909,7 +2306,7 @@ export function SectionTemplatesView({
             lineHeight: 1.15,
           }}
         >
-          Templates
+          Sections
         </h1>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -2079,6 +2476,7 @@ export function SectionTemplatesView({
             <table
               style={{
                 width: '100%',
+                tableLayout: 'fixed',
                 borderCollapse: 'separate',
                 borderSpacing: 0,
                 textAlign: 'left',
@@ -2087,14 +2485,17 @@ export function SectionTemplatesView({
             >
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
-                  <th style={{ padding: '12px 16px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '24%' }}>
+                  <th style={{ padding: '12px 16px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '22%' }}>
                     Section Name
                   </th>
-                  <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '14%' }}>
+                  <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '25%' }}>
+                    Description
+                  </th>
+                  <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '16%' }}>
                     Requirement
                   </th>
-                  <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '42%' }}>
-                    Description
+                  <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '17%' }}>
+                    Conditional On
                   </th>
                   <th style={{ padding: '12px 14px', fontSize: 11.5, fontWeight: 500, textTransform: 'uppercase', color: '#64748b', borderBottom: '1px solid #e2e8f0', width: '10%' }}>
                     Status
@@ -2121,11 +2522,17 @@ export function SectionTemplatesView({
                       <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 500, color: '#0d212c' }}>
                         {sec.name}
                       </td>
+                      <td
+                        title={sec.description}
+                        style={{ padding: '12px 14px', fontSize: 12.5, color: '#64748b', lineHeight: 1.45, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {sec.description}
+                      </td>
                       <td style={{ padding: '12px 14px' }}>
                         {renderRequirementBadge(sec.requirement)}
                       </td>
-                      <td style={{ padding: '12px 14px', fontSize: 12.5, color: '#64748b', lineHeight: 1.45 }}>
-                        {sec.description}
+                      <td style={{ padding: '12px 14px', fontSize: 12.5, color: '#475569', lineHeight: 1.45 }}>
+                        {sec.requirement === 'Conditional' && sec.conditionalOn ? sec.conditionalOn : '–'}
                       </td>
                       <td style={{ padding: '12px 14px' }}>
                         <span
@@ -2197,6 +2604,7 @@ export function SectionTemplatesView({
                                   setEditingSection(sec)
                                   setEditSecName(sec.name)
                                   setEditSecReq(sec.requirement)
+                                  setEditSecCondOn(sec.conditionalOn ?? '')
                                   setEditSecDesc(sec.description)
                                   setMenuOpenId(null)
                                 }}
@@ -2305,7 +2713,7 @@ export function SectionTemplatesView({
             }}
           >
             <span style={{ fontSize: 12, color: '#64748b' }}>
-              Showing {filteredSections.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredSections.length)} of {filteredSections.length} Templates
+              Showing {filteredSections.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredSections.length)} of {filteredSections.length} Sections
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
@@ -2403,7 +2811,7 @@ export function SectionTemplatesView({
             </button>
 
             <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>
-              Add SOW Section Template
+              Add SOW Section
             </div>
             <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
               Define a standardized section requirement for all future SOW generation runs.
@@ -2462,6 +2870,31 @@ export function SectionTemplatesView({
                   <option value="Conditional">Conditional</option>
                 </select>
               </div>
+
+              {newSecReq === 'Conditional' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                    Conditional Section Name <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Section this one is conditional on"
+                    value={newSecCondOn}
+                    onChange={(e) => setNewSecCondOn(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #e2e8f0',
+                      fontSize: 13,
+                      color: '#0d212c',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              )}
 
               <div>
                 <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
@@ -2579,7 +3012,7 @@ export function SectionTemplatesView({
             </button>
 
             <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 20 }}>
-              Edit Template
+              Edit Section
             </div>
 
             <form onSubmit={handleUpdateSection} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -2634,6 +3067,31 @@ export function SectionTemplatesView({
                   <option value="Conditional">Conditional</option>
                 </select>
               </div>
+
+              {editSecReq === 'Conditional' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
+                    Conditional Section Name <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Section this one is conditional on"
+                    value={editSecCondOn}
+                    onChange={(e) => setEditSecCondOn(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #e2e8f0',
+                      fontSize: 13,
+                      color: '#0d212c',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              )}
 
               <div>
                 <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c', marginBottom: 6 }}>
@@ -2974,23 +3432,18 @@ export function UserDirectoryView({
     { id: 'u-1', name: 'Ashika Jain', email: 'ashika.jain@company.com', roles: ['PMO', 'Reviewer'], assignedSOWs: 16, status: 'Active', lastActive: 'Just now' },
     { id: 'u-2', name: 'Narendra Patel', email: 'npatel@gmail.com', roles: ['Contributor'], assignedSOWs: 4, status: 'Active', lastActive: '25 mins ago' },
     { id: 'u-3', name: 'Dr. Fatima Al Nuaimi', email: 'dr.fatima@m42.ae', roles: ['Reviewer', 'Contributor'], assignedSOWs: 6, status: 'Active', lastActive: '1 hour ago' },
-    { id: 'u-4', name: 'Cleveland Clinic Abu Dhabi', email: 'procurement@ccad.ae', roles: ['Client'], assignedSOWs: 3, status: 'Active', lastActive: '3 hours ago' },
     { id: 'u-5', name: 'Tariq Mansoor', email: 'tmansoor@m42.ae', roles: ['PMO'], assignedSOWs: 8, status: 'Active', lastActive: 'Yesterday' },
     { id: 'u-6', name: 'Sarah Jenkins', email: 'sjenkins@m42.ae', roles: ['Contributor', 'Reviewer'], assignedSOWs: 5, status: 'Active', lastActive: '2 days ago' },
     { id: 'u-8', name: 'Marcus Vance', email: 'mvance@m42.ae', roles: ['Reviewer'], assignedSOWs: 4, status: 'Active', lastActive: '3 days ago' },
     { id: 'u-9', name: 'Ishita Sharma', email: 'ishitawork@gmail.com', roles: ['Reviewer', 'Contributor'], assignedSOWs: 7, status: 'Active', lastActive: '2 hours ago' },
-    { id: 'u-10', name: 'Riza Khan', email: 'riza@gmail.com', roles: ['Client'], assignedSOWs: 2, status: 'Active', lastActive: 'Yesterday' },
     { id: 'u-11', name: 'David Chen', email: 'david.chen@globex.com', roles: ['Contributor'], assignedSOWs: 3, status: 'Active', lastActive: '3 days ago' },
     { id: 'u-12', name: 'Sarah Al-Mansoor', email: 'sarah.m@m42.ae', roles: ['Reviewer', 'PMO'], assignedSOWs: 5, status: 'Active', lastActive: 'Yesterday' },
     { id: 'u-13', name: 'Amina Al Zaabi', email: 'azaabi@m42.ae', roles: ['PMO'], assignedSOWs: 9, status: 'Active', lastActive: '4 hours ago' },
     { id: 'u-14', name: 'Vikram Malhotra', email: 'vmalhotra@techcorp.com', roles: ['Contributor', 'Reviewer'], assignedSOWs: 6, status: 'Active', lastActive: '1 day ago' },
-    { id: 'u-15', name: 'Healthpoint Hospital Procurement', email: 'procurement@healthpoint.ae', roles: ['Client'], assignedSOWs: 2, status: 'Active', lastActive: 'Yesterday' },
     { id: 'u-16', name: 'Dr. Zaid Qureshi', email: 'zqureshi@m42.ae', roles: ['Reviewer'], assignedSOWs: 8, status: 'Active', lastActive: '6 hours ago' },
     { id: 'u-17', name: 'Rashid Al Dhaheri', email: 'rdhaheri@m42.ae', roles: ['PMO'], assignedSOWs: 11, status: 'Active', lastActive: '2 days ago' },
     { id: 'u-18', name: 'Elena Rostova', email: 'erostova@biomed.com', roles: ['Contributor'], assignedSOWs: 4, status: 'Active', lastActive: '3 days ago' },
-    { id: 'u-19', name: 'Mubadala Health Contracts', email: 'contracts@mubadalahealth.ae', roles: ['Client'], assignedSOWs: 5, status: 'Active', lastActive: '12 hours ago' },
     { id: 'u-20', name: 'Priya Sharma', email: 'psharma@m42.ae', roles: ['Contributor', 'PMO'], assignedSOWs: 7, status: 'Active', lastActive: 'Just now' },
-    { id: 'u-22', name: 'National Reference Laboratory', email: 'admin@nrl.ae', roles: ['Client'], assignedSOWs: 1, status: 'Active', lastActive: '4 days ago' },
     { id: 'u-23', name: 'Kareem Mansour', email: 'kmansour@techcloud.ae', roles: ['Contributor'], assignedSOWs: 5, status: 'Active', lastActive: 'Yesterday' },
     { id: 'u-24', name: 'Sophia Sterling', email: 'ssterling@m42.ae', roles: ['Reviewer', 'Contributor'], assignedSOWs: 6, status: 'Active', lastActive: '2 hours ago' },
   ])
@@ -3292,7 +3745,7 @@ export function UserDirectoryView({
                     Filter by Role
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {['All', 'PMO', 'Contributor', 'Reviewer', 'Client'].map((r) => (
+                    {['All', 'PMO', 'Contributor', 'Reviewer'].map((r) => (
                       <button
                         key={r}
                         onClick={() => {
@@ -3878,7 +4331,7 @@ export function UserDirectoryView({
                         gap: 2,
                       }}
                     >
-                      {(['PMO', 'Contributor', 'Reviewer', 'Client'] as UserRole[]).map((r) => {
+                      {(['PMO', 'Contributor', 'Reviewer'] as UserRole[]).map((r) => {
                         const isSelected = newUserRoles.includes(r)
                         return (
                           <div
@@ -4134,7 +4587,7 @@ export function UserDirectoryView({
                         gap: 2,
                       }}
                     >
-                      {(['PMO', 'Contributor', 'Reviewer', 'Client'] as UserRole[]).map((r) => {
+                      {(['PMO', 'Contributor', 'Reviewer'] as UserRole[]).map((r) => {
                         const isSelected = editUserRoles.includes(r)
                         return (
                           <div
@@ -4450,7 +4903,7 @@ function AdminHomeView({
 
       {/* ─── 4 Top KPI Cards (Exact PMO Card Layout & Structure) ────────── */}
       <div className="grid grid-cols-4 gap-3.5 mb-5" style={{ flexShrink: 0 }}>
-        {/* KPI 1: Total Templates */}
+        {/* KPI 1: Total Sections */}
         <div
           onClick={() => onNavigate?.('section-templates')}
           style={{
@@ -4470,7 +4923,7 @@ function AdminHomeView({
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              TOTAL TEMPLATES
+              TOTAL SECTIONS
             </span>
             <div style={{ width: 32, height: 32, borderRadius: 10, background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <LayoutTemplate size={16} color="#ef4444" strokeWidth={1.8} />
@@ -4589,7 +5042,7 @@ function AdminHomeView({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: '#0d212c', margin: 0 }}>
-              Template Overview
+              Section Overview
             </h2>
             <button
               onClick={() => onNavigate?.('section-templates')}
@@ -4605,7 +5058,7 @@ function AdminHomeView({
                 cursor: 'pointer',
               }}
             >
-              View all templates →
+              View all sections →
             </button>
           </div>
 
@@ -4649,7 +5102,7 @@ function AdminHomeView({
                     8
                   </div>
                   <div style={{ fontSize: 11.5, fontWeight: 500, color: '#64748b', marginTop: 3 }}>
-                    Total Templates
+                    Total Sections
                   </div>
                 </div>
               </div>
@@ -4660,7 +5113,6 @@ function AdminHomeView({
                   { label: 'Required', count: 4, color: '#4ECCA3' },
                   { label: 'Recommended', count: 3, color: '#38BDF8' },
                   { label: 'Conditional', count: 1, color: '#FACC15' },
-                  { label: 'Other', count: 0, color: '#C084FC' },
                 ].map((item) => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13.5 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -4740,7 +5192,7 @@ function AdminHomeView({
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
                   gap: 18,
                   flex: 1,
                   height: 160,
@@ -4754,7 +5206,6 @@ function AdminHomeView({
                   { role: 'Contributor', val: 9, max: 10, color: '#38BDF8' },
                   { role: 'Reviewer', val: 7, max: 10, color: '#A78BFA' },
                   { role: 'PMO', val: 4, max: 10, color: '#34D399' },
-                  { role: 'Client', val: 4, max: 10, color: '#FBBF24' },
                 ].map((bar) => {
                   const heightPct = (bar.val / bar.max) * 100
                   return (
@@ -5204,7 +5655,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       },
                       {
                         id: 'section-templates' as ActiveNav,
-                        label: 'Templates',
+                        label: 'Sections',
                         icon: <LayoutTemplate size={20} />,
                       },
                       {
@@ -5466,7 +5917,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             </div>
           ) : homeView === 'agents' && (isPMO || isAdmin) ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-              <AgentsView notificationButton={renderNotificationButton()} />
+              <AgentsView notificationButton={renderNotificationButton()} canEdit={isAdmin} />
             </div>
           ) : homeView === 'usage' && isAdmin ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">

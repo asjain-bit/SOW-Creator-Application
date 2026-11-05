@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronUp,
   PanelLeft,
+  PanelLeftClose,
   ChevronRight,
   Paperclip,
   Database,
@@ -12040,9 +12041,12 @@ function DraftRiskPanel({
   )
 }
 
+/** The Draft quality & timing card above the section list is hidden for now */
+const SHOW_DRAFT_QUALITY_CARD = false
+
 /* ── Review items (Draft side drawer) ───────────────────────────────────── */
 
-type ReviewCategory = 'Ambiguous' | 'Missing information' | 'Conflict'
+type ReviewCategory = 'Assumption' | 'Missing information' | 'Conflict'
 interface ReviewItem {
   id: string
   category: ReviewCategory
@@ -12052,7 +12056,7 @@ interface ReviewItem {
 
 /** Same colours as the Review Highlights chips above the draft */
 const REVIEW_CATEGORY_STYLES: Record<ReviewCategory, { color: string; bg: string; border: string }> = {
-  Ambiguous: { color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe' },
+  Assumption: { color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe' },
   'Missing information': { color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
   Conflict: { color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' },
 }
@@ -12060,10 +12064,10 @@ const REVIEW_CATEGORY_STYLES: Record<ReviewCategory, { color: string; bg: string
 const REVIEW_ITEM_SECTIONS = ['Scope of Work', 'Deliverables', 'Timeline & Milestones', 'Assumptions', 'Commercials']
 
 const REVIEW_ITEMS_SEED: ReviewItem[] = [
-  ['Ambiguous', 'Identity of the nine strategic providers not specified'],
-  ['Ambiguous', 'Go-live definition not specified'],
-  ['Ambiguous', 'SLA requirements referenced but not defined (values/targets unclear)'],
-  ['Ambiguous', 'Acceptance criteria referenced but not provided per deliverable'],
+  ['Assumption', 'Identity of the nine strategic providers not specified'],
+  ['Assumption', 'Go-live definition not specified'],
+  ['Assumption', 'SLA requirements referenced but not defined (values/targets unclear)'],
+  ['Assumption', 'Acceptance criteria referenced but not provided per deliverable'],
   ['Missing information', 'No delivery schedule/milestone dates (start, go-live, end dates absent)'],
   ['Missing information', 'Hypercare duration after go-live not stated'],
   ['Missing information', 'Named client stakeholders for sign-off not provided'],
@@ -12073,17 +12077,17 @@ const REVIEW_ITEMS_SEED: ReviewItem[] = [
   ['Conflict', 'Expected wait-time reduction is 20% in one document and 30% in another'],
   ['Conflict', 'Project duration is 12 weeks in the RFP and 14 weeks in the plan'],
   ['Conflict', 'Payment terms differ between the MSA and the commercial proposal'],
-  ['Ambiguous', 'Client will provide environment access within five working days'],
-  ['Ambiguous', 'Existing integrations remain unchanged during the engagement'],
-  ['Ambiguous', 'Training is delivered remotely for up to 120 users'],
-  ['Ambiguous', 'Security review is completed by the client before go-live'],
-  ['Ambiguous', 'Third-party licences are procured by the client'],
-  ['Ambiguous', 'Scope of “regional rollout” not defined'],
-  ['Ambiguous', 'Reporting frequency for steering committee unclear'],
+  ['Assumption', 'Client will provide environment access within five working days'],
+  ['Assumption', 'Existing integrations remain unchanged during the engagement'],
+  ['Assumption', 'Training is delivered remotely for up to 120 users'],
+  ['Assumption', 'Security review is completed by the client before go-live'],
+  ['Assumption', 'Third-party licences are procured by the client'],
+  ['Assumption', 'Scope of “regional rollout” not defined'],
+  ['Assumption', 'Reporting frequency for steering committee unclear'],
   ['Missing information', 'Out-of-hours support coverage not specified'],
   ['Missing information', 'Disaster recovery targets (RTO/RPO) not provided'],
-  ['Ambiguous', 'Data is hosted in-region for the life of the engagement'],
-  ['Ambiguous', 'Responsibility for UAT environment setup not assigned'],
+  ['Assumption', 'Data is hosted in-region for the life of the engagement'],
+  ['Assumption', 'Responsibility for UAT environment setup not assigned'],
   ['Conflict', 'Governance cadence differs between the RFP and the draft'],
 ].map(([category, title], i) => ({
   id: `rv-${i + 1}`,
@@ -12290,6 +12294,11 @@ function SOWDraftTab({
   const [dragTocIdx, setDragTocIdx] = useState<number | null>(null)
   const [dragOverTocIdx, setDragOverTocIdx] = useState<number | null>(null)
   const [showDraftSectionInfoTooltip, setShowDraftSectionInfoTooltip] = useState(false)
+  const [draftSectionsOpen, setDraftSectionsOpen] = useState(true)
+  // Citations are visible in the draft by default; the Review Highlights row can hide them
+  const [showDraftCitations, setShowDraftCitations] = useState(true)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportWithCitations, setExportWithCitations] = useState(true)
 
   // ── Inline document comments ────────────────────────────────────────────────
   type CommentReply = { id: string; author: string; text: string; timestamp: string }
@@ -12865,7 +12874,7 @@ function SOWDraftTab({
     items
       .map((item, idx) => {
         const pageNum = (idx % 4) + 1
-        const citationTag = `<span class="sow-inline-citation" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:3.5px 10px;font-size:12px;font-weight:500;color:#475569;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;vertical-align:baseline;transition:all 0.15s ease;" title="Click to preview citation in ${item.fileName}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Attachment A: Clinical Safety Case (Page ${pageNum} • Section 5)</span>`
+        const citationTag = `<span class="sow-inline-citation" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:3.5px 10px;font-size:12px;font-weight:500;color:#475569;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;vertical-align:baseline;transition:all 0.15s ease;" title="Click to preview citation in ${item.fileName}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Attachment A · p.${pageNum}</span>`
         let body = ''
         switch (item.title) {
           case 'Project Introduction':
@@ -13132,7 +13141,7 @@ function SOWDraftTab({
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <button type="button" class="sow-draft-citation-btn" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:6px;padding:3.5px 10px;font-size:12px;font-weight:500;color:#475569;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;transition:all 0.15s ease;" title="Click to view citation in ${item.fileName}">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              Attachment A: Clinical Safety Case (Page ${pageNum} • Section 5)
+              Attachment A · p.${pageNum}
             </button>
           </div>
           <button type="button" class="sow-draft-trace-btn" data-section="${item.title}" data-secidx="${idx}" style="display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:#008b8b;font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 4px;transition:opacity 0.15s ease;">
@@ -13436,11 +13445,20 @@ function SOWDraftTab({
   const scoreLabel = (s: number) => `${confidenceLevel(s)} Confidence`
 
   // ── Export the draft as a Word document ────────────────────────────────────
-  const exportAsWord = () => {
+  const exportAsWord = (includeCitations: boolean) => {
     const source = editorRef.current
     if (!source) return
     const clone = source.cloneNode(true) as HTMLElement
-    clone.querySelectorAll('.sow-draft-trace-btn, .sow-draft-citation-btn, .sow-inline-citation').forEach((n) => n.remove())
+    clone
+      .querySelectorAll(includeCitations ? '.sow-draft-trace-btn' : '.sow-draft-trace-btn, .sow-draft-citation-btn, .sow-inline-citation')
+      .forEach((n) => n.remove())
+    if (includeCitations) {
+      // Citations stay in the document as plain text, not clickable controls
+      clone.querySelectorAll('.sow-draft-citation-btn, .sow-inline-citation').forEach((n) => {
+        ;(n as HTMLElement).style.display = 'inline-block'
+        n.removeAttribute('title')
+      })
+    }
     clone.querySelectorAll('[contenteditable]').forEach((n) => n.removeAttribute('contenteditable'))
     const html =
       '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
@@ -13456,7 +13474,7 @@ function SOWDraftTab({
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    showToast('SOW exported as a Word document', 'success')
+    showToast(includeCitations ? 'SOW exported with citations' : 'SOW exported without citations', 'success')
   }
 
   // ── Header actions (rendered into the tab strip via portal) ──────────────────
@@ -13490,7 +13508,10 @@ function SOWDraftTab({
       {/* Export (secondary) */}
       <button
         type="button"
-        onClick={exportAsWord}
+        onClick={() => {
+          setExportWithCitations(true)
+          setShowExportModal(true)
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -13952,6 +13973,7 @@ function SOWDraftTab({
 
       <div style={{ display: 'flex', height: '100%', minHeight: 0, overflow: 'hidden' }}>
         {/* ── Left TOC sidebar ──────────────────────────────────────────────── */}
+        {draftSectionsOpen && (
         <div
           style={{
             width: 264,
@@ -13963,7 +13985,8 @@ function SOWDraftTab({
             background: 'rgba(248,252,252,0.6)',
           }}
         >
-          {/* Draft quality & timing */}
+          {/* Draft quality & timing (hidden for now) */}
+          {SHOW_DRAFT_QUALITY_CARD && (
           <div
             style={{
               margin: '10px 10px 4px',
@@ -14019,6 +14042,7 @@ function SOWDraftTab({
               </button>
             )}
           </div>
+          )}
 
           {/* Sections subheader */}
           <div
@@ -14086,6 +14110,15 @@ function SOWDraftTab({
               </div>
               )}
             </div>
+            <button
+              type="button"
+              onClick={() => setDraftSectionsOpen(false)}
+              aria-label="Collapse sections panel"
+              title="Collapse sections"
+              style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: '#64748b', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6 }}
+            >
+              <PanelLeftClose size={16} />
+            </button>
           </div>
 
           {/* Section list */}
@@ -14564,6 +14597,7 @@ function SOWDraftTab({
           })}
           </div>
         </div>
+        )}
 
         {/* ── Right editor area ──────────────────────────────────────────────── */}
         <div
@@ -14590,6 +14624,18 @@ function SOWDraftTab({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {!draftSectionsOpen && (
+                <button
+                  type="button"
+                  onClick={() => setDraftSectionsOpen(true)}
+                  aria-label="Expand sections panel"
+                  title="Expand sections"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#00C4C4', background: 'rgba(0,196,196,0.10)', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 10, cursor: 'pointer', marginRight: 4, pointerEvents: 'auto', flexShrink: 0 }}
+                >
+                  <PanelLeft size={14} />
+                  Sections
+                </button>
+              )}
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
                   SOW Draft {isReviewer ? 'Review' : ''}
                 </span>
@@ -14617,6 +14663,18 @@ function SOWDraftTab({
               opacity: isReadOnly ? 0.5 : 1,
             }}
           >
+            {!draftSectionsOpen && (
+              <button
+                type="button"
+                onClick={() => setDraftSectionsOpen(true)}
+                aria-label="Expand sections panel"
+                title="Expand sections"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#00C4C4', background: 'rgba(0,196,196,0.10)', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 10, cursor: 'pointer', marginRight: 4, pointerEvents: 'auto', flexShrink: 0 }}
+              >
+                <PanelLeft size={14} />
+                Sections
+              </button>
+            )}
             {/* Undo / Redo */}
             <TBtn
               title="Undo"
@@ -15089,7 +15147,7 @@ function SOWDraftTab({
               flexWrap: 'wrap',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span
                 style={{
                   fontSize: 12,
@@ -15129,7 +15187,7 @@ function SOWDraftTab({
                         pointerEvents: 'none',
                       }}
                     >
-                      Highlight conflicts, missing information and ambiguous statements in the draft.
+                      Highlight conflicts, missing information and assumptions in the draft.
                     </span>
                   )}
                 </span>
@@ -15138,7 +15196,7 @@ function SOWDraftTab({
               {([
                 { key: 'conflicts', label: 'Conflicts', fg: '#b91c1c', bg: '#fef2f2', border: '#fecaca', activeBg: '#fee2e2', ring: '#fee2e2', strong: '#dc2626' },
                 { key: 'missing', label: 'Missing information', fg: '#b45309', bg: '#fffbeb', border: '#fde68a', activeBg: '#fef3c7', ring: '#fef3c7', strong: '#d97706' },
-                { key: 'assumptions', label: 'Ambiguous', fg: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe', activeBg: '#ede9fe', ring: '#ede9fe', strong: '#7c3aed' },
+                { key: 'assumptions', label: 'Assumption', fg: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe', activeBg: '#ede9fe', ring: '#ede9fe', strong: '#7c3aed' },
               ] as const).map((c) => {
                 const active = activeHighlight === c.key
                 return (
@@ -15206,7 +15264,14 @@ function SOWDraftTab({
               )}
             </div>
 
-
+            <button
+              type="button"
+              onClick={() => setShowDraftCitations((v) => !v)}
+              aria-pressed={showDraftCitations}
+              style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              {showDraftCitations ? 'Hide Sources' : 'View Sources'}
+            </button>
           </div>
 
           {/* Unreviewed edits notice */}
@@ -15257,7 +15322,7 @@ function SOWDraftTab({
             <div
               ref={scrollAreaRef}
               id="sow-editor-scroll-area"
-              className={`sow-editor-scroll-area highlight-mode-${activeHighlight}`}
+              className={`sow-editor-scroll-area highlight-mode-${activeHighlight}${showDraftCitations ? '' : ' sow-hide-citations'}`}
               style={{
                 flex: 1,
                 overflowY: 'auto',
@@ -15314,6 +15379,10 @@ function SOWDraftTab({
                   background: rgba(0,196,196,0.08);
                   box-shadow: 0 0 0 2px rgba(0,196,196,0.45);
                   border-radius: 8px;
+                }
+                .sow-hide-citations .sow-draft-citation-btn,
+                .sow-hide-citations .sow-inline-citation {
+                  display: none !important;
                 }
                 .sow-draft-citation-btn:hover, .sow-inline-citation:hover {
                   background: #f1f5f9 !important;
@@ -16833,6 +16902,74 @@ function SOWDraftTab({
             setAiSuggestion(firstAi ? { finding: firstAi.finding, sectionIdx: firstAi.sectionIdx } : null)
           }}
         />
+      )}
+
+      {/* ── Export options modal ── */}
+      {showExportModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowExportModal(false)
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Export SOW"
+            style={{ background: '#ffffff', borderRadius: 24, padding: '32px 32px', width: 560, maxWidth: '90vw', textAlign: 'center', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}
+          >
+            <button
+              onClick={() => setShowExportModal(false)}
+              aria-label="Close"
+              style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4, display: 'flex' }}
+            >
+              <X size={18} />
+            </button>
+
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(0,196,196,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Download size={26} color="#00C4C4" strokeWidth={2.2} />
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Export SOW</div>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 20, lineHeight: 1.5 }}>
+              This document will be exported in Word format.
+            </div>
+
+            <label
+              style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginBottom: 26, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#0d212c' }}
+            >
+              <input
+                type="checkbox"
+                checked={exportWithCitations}
+                onChange={(e) => setExportWithCitations(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: '#00C4C4', cursor: 'pointer' }}
+              />
+              Include citations in the document
+            </label>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setShowExportModal(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1.5px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s ease' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowExportModal(false)
+                  exportAsWord(exportWithCitations)
+                }}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#00C4C4', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,196,196,0.3)', transition: 'background 0.15s ease' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#00a8a8')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#00C4C4')}
+              >
+                Export
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── PMO Approve Confirmation Modal ── */}
