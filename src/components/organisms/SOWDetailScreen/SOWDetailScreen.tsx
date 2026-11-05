@@ -12298,6 +12298,30 @@ function SOWDraftTab({
   // Citations are visible in the draft by default; the Review Highlights row can hide them
   const [showDraftCitations, setShowDraftCitations] = useState(true)
   const [showExportModal, setShowExportModal] = useState(false)
+  // Left offset that lines the Review Highlights row up with the left edge of the document
+  const highlightsBarRef = useRef<HTMLDivElement>(null)
+  const [highlightsOffset, setHighlightsOffset] = useState(0)
+  useEffect(() => {
+    const measure = () => {
+      const bar = highlightsBarRef.current
+      const card = editorRef.current?.parentElement
+      if (!bar || !card) return
+      const cs = getComputedStyle(bar)
+      const left = card.getBoundingClientRect().left - bar.getBoundingClientRect().left - parseFloat(cs.paddingLeft || '0')
+      setHighlightsOffset(Math.max(0, Math.round(left)))
+    }
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    if (ro) {
+      if (scrollAreaRef.current) ro.observe(scrollAreaRef.current)
+      if (highlightsBarRef.current) ro.observe(highlightsBarRef.current)
+    }
+    window.addEventListener('resize', measure)
+    return () => {
+      ro?.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [draftSectionsOpen])
   const [exportWithCitations, setExportWithCitations] = useState(true)
 
   // ── Inline document comments ────────────────────────────────────────────────
@@ -15135,6 +15159,7 @@ function SOWDraftTab({
 
           {/* Provenance Highlighting Toolbar (AI 42%, Questions 35%, Review 23%) */}
           <div
+            ref={highlightsBarRef}
             style={{
               flexShrink: 0,
               display: 'flex',
@@ -15147,7 +15172,7 @@ function SOWDraftTab({
               flexWrap: 'wrap',
             }}
           >
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8, flexWrap: 'wrap', paddingLeft: highlightsOffset }}>
               <span
                 style={{
                   fontSize: 12,
@@ -16932,20 +16957,23 @@ function SOWDraftTab({
 
             <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Export SOW</div>
             <div style={{ fontSize: 14, color: '#64748b', marginBottom: 20, lineHeight: 1.5 }}>
-              This document will be exported in Word format.
+              This document will be exported in Word format. Please confirm whether you want to include the citations in the document or not.
             </div>
 
-            <label
-              style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginBottom: 26, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#0d212c' }}
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={exportWithCitations}
+              onClick={() => setExportWithCitations((v) => !v)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 26, cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontSize: 14, fontWeight: 600, color: '#0d212c' }}
             >
-              <input
-                type="checkbox"
-                checked={exportWithCitations}
-                onChange={(e) => setExportWithCitations(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#00C4C4', cursor: 'pointer' }}
-              />
+              <span
+                style={{ width: 20, height: 20, borderRadius: 6, boxSizing: 'border-box', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: exportWithCitations ? '#00C4C4' : '#ffffff', border: exportWithCitations ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1', transition: 'all 0.15s ease' }}
+              >
+                {exportWithCitations && <Check size={14} color="#ffffff" strokeWidth={3} />}
+              </span>
               Include citations in the document
-            </label>
+            </button>
 
             <div style={{ display: 'flex', gap: 12 }}>
               <button

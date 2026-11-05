@@ -1196,11 +1196,6 @@ function AgentDetailView({
         <span style={{ fontSize: 12, fontWeight: 500, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 999, padding: '3px 12px' }}>
           Default
         </span>
-        {!canEdit && (
-          <span style={{ fontSize: 11.5, fontWeight: 600, color: '#64748b', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 999, padding: '3px 10px' }}>
-            View only
-          </span>
-        )}
         {canEdit && (
           <button
             type="button"
@@ -1212,16 +1207,16 @@ function AgentDetailView({
               gap: 6,
               padding: '7px 14px',
               borderRadius: 8,
-              border: '1.5px solid rgba(0,196,196,0.5)',
-              background: 'rgba(0,196,196,0.12)',
-              color: '#007a7a',
+              border: '1.5px solid #e2e8f0',
+              background: '#ffffff',
+              color: '#0d212c',
               fontSize: 12.5,
               fontWeight: 600,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
             }}
           >
-            <History size={14} color="#007a7a" />
+            <History size={14} color="#475569" />
             Version history
           </button>
         )}
