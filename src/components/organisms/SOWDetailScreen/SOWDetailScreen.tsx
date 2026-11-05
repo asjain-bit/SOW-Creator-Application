@@ -3605,6 +3605,14 @@ function ScopeSection({
           )
           const traceAndRemove = (
             <>
+                  {signed && (
+                    <span
+                      title="Signed off"
+                      style={{ width: 18, height: 18, borderRadius: '50%', background: '#16a34a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Check size={11} color="#ffffff" strokeWidth={3.5} />
+                    </span>
+                  )}
                   <TraceIconButton onClick={() => onOpenItemTrace(item, idx)} />
                   {isEditable && !signed && (
                     <button
@@ -3632,14 +3640,13 @@ function ScopeSection({
                 // Alternate rows for a clear visual hierarchy
                 background: idx % 2 === 1 ? '#f1f5f9' : '#ffffff',
                 padding: '10px 12px',
+                margin: '0 -12px',
                 borderRadius: 10,
               }}
             >
-              {(!inline || item.manuallyEdited || showSources) && (
+              {(item.manuallyEdited || showSources) && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, paddingLeft: inline ? 30 + (onToggleSelect ? 24 : 0) : 0 }}>
-                  {!inline && selectBox}
-                  {!inline && numberBadge}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, paddingLeft: 30 }}>
                   {item.manuallyEdited ? (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: 5 }}>
                       <Edit2 size={10} />
@@ -3657,25 +3664,13 @@ function ScopeSection({
                     </button>
                   ) : null}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                  {signed && (
-                    <span
-                      title="Signed off"
-                      style={{ width: 18, height: 18, borderRadius: '50%', background: '#16a34a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <Check size={11} color="#ffffff" strokeWidth={3.5} />
-                    </span>
-                  )}
-                  {!inline && traceAndRemove}
-                </div>
               </div>
               )}
 
               {isEditable && !signed ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {selectBox || (onToggleSelect ? <span style={{ width: 16, flexShrink: 0 }} /> : null)}
-                    {numberBadge}
+                    {selectBox || numberBadge}
                     <input
                       type="text"
                       value={item.text}
@@ -3762,12 +3757,16 @@ function ScopeSection({
                   )}
                 </div>
               ) : (
-                <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
-                  <div style={{ fontSize: 14, color: '#0d212c', lineHeight: 1.5 }}>{item.text}</div>
-                  <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 4 }}>
-                    Scope: {item.scope === 'included' ? 'Included' : 'Excluded'}
-                    {item.qualifiers.length > 0 && ` · Qualifiers: ${item.qualifiers.join(', ')}`}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {selectBox || numberBadge}
+                  <div style={{ flex: 1, minWidth: 0, padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
+                    <div style={{ fontSize: 14, color: '#0d212c', lineHeight: 1.5 }}>{item.text}</div>
+                    <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 4 }}>
+                      Scope: {item.scope === 'included' ? 'Included' : 'Excluded'}
+                      {item.qualifiers.length > 0 && ` · Qualifiers: ${item.qualifiers.join(', ')}`}
+                    </div>
                   </div>
+                  {traceAndRemove}
                 </div>
               )}
             </div>
