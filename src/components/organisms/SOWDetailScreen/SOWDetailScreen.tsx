@@ -8756,7 +8756,8 @@ function StructureTab({
               const doneItems = doneQ + doneA
               // Deadline breach
               const deadline = sectionDeadlines[sec.id] || sowDeadline || '2026-10-31'
-              const isDeadlineBreached = deadline && new Date(deadline) < new Date(new Date().toDateString())
+              // Only sections with their own (non-default) past deadline are flagged overdue
+              const isDeadlineBreached = deadline !== (sowDeadline || '2026-10-31') && new Date(deadline) < new Date(new Date().toDateString())
               return (
                 <div
                   key={sec.id}
@@ -8863,7 +8864,8 @@ function StructureTab({
                           fontSize: 13,
                           fontWeight: isActive ? 600 : 500,
                           lineHeight: 1.3,
-                          flex: 1,
+                          flex: '0 1 auto',
+                          minWidth: 0,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -8872,8 +8874,8 @@ function StructureTab({
                         {sec.title}
                       </span>
                     )}
-                    {/* Deadline breached chip */}
-                    {isDeadlineBreached && (
+                    {/* Overdue marker — only on hover, next to the title */}
+                    {isDeadlineBreached && isHovered && (
                       <span title="Overdue" aria-label="Overdue" style={{ display: 'inline-flex', flexShrink: 0 }}>
                         <AlertCircle size={14} color="#ef4444" />
                       </span>
@@ -9752,6 +9754,7 @@ function ItemRow({
   }
   const [isResolved, setIsResolved] = useState(false)
   const [isPinned, setIsPinned] = useState(false)
+  const [showLabelTip, setShowLabelTip] = useState(false)
   const isAssumption = item.type === 'assumption'
   const showCheckbox = hovered || isSelected || hasAnySelected || showCheckboxAlways
   const showOverlay = (hovered || isPinned) && Boolean(pendingStatus) && !isResolved
@@ -9811,22 +9814,34 @@ function ItemRow({
         </div>
       )}
 
-      {/* Label tag — short form (Q1 / A1), full name on hover */}
+      {/* Label tag — short form (Q1 / A1), full name shown instantly on hover */}
       <span
-        title={label}
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: '#00a0a0',
-          background: 'rgba(0,196,196,0.12)',
-          padding: '2px 7px',
-          borderRadius: 5,
-          flexShrink: 0,
-          whiteSpace: 'nowrap',
-          marginTop: 1,
-        }}
+        style={{ position: 'relative', display: 'inline-flex', flexShrink: 0, marginTop: 1 }}
+        onMouseEnter={() => setShowLabelTip(true)}
+        onMouseLeave={() => setShowLabelTip(false)}
       >
-        {label.replace(/^Question /, 'Q').replace(/^Assumption /, 'A')}
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: '#00a0a0',
+            background: 'rgba(0,196,196,0.12)',
+            padding: '2px 7px',
+            borderRadius: 5,
+            whiteSpace: 'nowrap',
+            cursor: 'default',
+          }}
+        >
+          {label.replace(/^Question /, 'Q').replace(/^Assumption /, 'A')}
+        </span>
+        {showLabelTip && (
+          <span
+            role="tooltip"
+            style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 9999, background: '#0d212c', color: '#ffffff', fontSize: 11, fontWeight: 500, padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.18)', pointerEvents: 'none' }}
+          >
+            {label}
+          </span>
+        )}
       </span>
 
 
@@ -14120,7 +14135,8 @@ function SOWDraftTab({
               const isDragOver = dragOverTocIdx === idx && dragTocIdx !== idx
               const isDragging = dragTocIdx === idx
               const secDeadline = sectionDeadlines[idx] || sowDeadline || '2026-10-31'
-              const isOverdue = secDeadline && new Date(secDeadline) < new Date(new Date().toDateString())
+              // Only sections with their own past deadline are flagged overdue
+              const isOverdue = !!sectionDeadlines[idx] && new Date(secDeadline) < new Date(new Date().toDateString())
               return (
                 <div
                   key={idx}
@@ -14208,7 +14224,7 @@ function SOWDraftTab({
                       >
                         {item.title}
                       </span>
-                      {isOverdue && (
+                      {isOverdue && hoveredTocIdx === idx && (
                         <span title="Overdue" aria-label="Overdue" style={{ display: 'inline-flex', flexShrink: 0 }}>
                           <AlertCircle size={14} color="#ef4444" />
                         </span>
