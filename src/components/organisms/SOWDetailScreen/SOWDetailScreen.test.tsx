@@ -33,13 +33,15 @@ describe('SOWDetailScreen', () => {
     expect(screen.getByText('Audit Log')).toBeTruthy()
   })
 
-  it('Overview tab is active by default', () => {
+  it('opens on the Draft tab and shows Overview when selected', () => {
     render(<SOWDetailScreen uploadedFiles={mockFiles} />)
+    fireEvent.click(screen.getByText('Overview'))
     expect(screen.getByText('Documents')).toBeTruthy()
   })
 
   it('shows uploaded file name in Overview tab', () => {
     render(<SOWDetailScreen uploadedFiles={mockFiles} />)
+    fireEvent.click(screen.getByText('Overview'))
     expect(screen.getByText('test.pdf')).toBeTruthy()
   })
 

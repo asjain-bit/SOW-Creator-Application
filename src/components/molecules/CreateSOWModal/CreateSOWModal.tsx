@@ -24,7 +24,9 @@ const ACCEPTED_TYPES: Record<string, string> = {
 }
 
 const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',')
-const MAX_SIZE_MB = 10
+const MAX_TOTAL_MB = 200
+const PREP_STEP_MS = 2500
+const PREP_STEPS = ['Read documents', 'Identify requirements', 'Draft the SOW', 'Check source support', 'Prepare draft']
 const UPLOAD_DURATION_MS = 2200
 
 function fileLabel(file: UploadedFile): string {
@@ -288,7 +290,11 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [clientName, setClientName] = useState('')
   const [sowDeadline, setSowDeadline] = useState('')
-  const [tokenConsumption, setTokenConsumption] = useState<number | ''>(20000)
+  const [instructions, setInstructions] = useState('')
+  const [phase, setPhase] = useState<'form' | 'preparing'>('form')
+  const [prepMs, setPrepMs] = useState(0)
+  const totalBytesRef = useRef(0)
+  const bytesById = useRef<Record<string, number>>({})
   const [isDragOver, setIsDragOver] = useState(false)
   const [isDropzoneHovered, setIsDropzoneHovered] = useState(false)
   const [sizeError, setSizeError] = useState('')
@@ -304,7 +310,11 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
       setFiles([])
       setClientName('')
       setSowDeadline('')
-      setTokenConsumption(20000)
+      setInstructions('')
+      setPhase('form')
+      setPrepMs(0)
+      totalBytesRef.current = 0
+      bytesById.current = {}
       setIsDragOver(false)
       setIsDropzoneHovered(false)
       setSizeError('')
@@ -351,15 +361,18 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
   const addFiles = useCallback(
     (rawFiles: File[]) => {
       setSizeError('')
-      const oversized = rawFiles.filter((f) => f.size > MAX_SIZE_MB * 1024 * 1024)
-      if (oversized.length > 0) {
-        setSizeError(
-          `${oversized.map((f) => f.name).join(', ')} exceed${oversized.length === 1 ? 's' : ''} the ${MAX_SIZE_MB} MB limit.`
-        )
+      const supported = rawFiles.filter((f) => ACCEPTED_TYPES[f.type])
+      const valid: File[] = []
+      let running = totalBytesRef.current
+      for (const f of supported) {
+        if (running + f.size <= MAX_TOTAL_MB * 1024 * 1024) {
+          valid.push(f)
+          running += f.size
+        }
       }
-      const valid = rawFiles.filter(
-        (f) => f.size <= MAX_SIZE_MB * 1024 * 1024 && ACCEPTED_TYPES[f.type]
-      )
+      if (valid.length < supported.length) {
+        setSizeError(`Files can be up to ${MAX_TOTAL_MB} MB combined.`)
+      }
       const newFiles: UploadedFile[] = valid.map((f) => ({
         id: `${f.name}-${Date.now()}-${Math.random()}`,
         name: f.name,
@@ -372,6 +385,10 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
         progress: 0,
       }))
       if (newFiles.length === 0) return
+      newFiles.forEach((nf, i) => {
+        bytesById.current[nf.id] = valid[i].size
+        totalBytesRef.current += valid[i].size
+      })
       setFiles((prev) => [...prev, ...newFiles])
       newFiles.forEach((nf) => simulateUpload(nf))
     },
@@ -400,21 +417,176 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
     addFiles(Array.from(e.dataTransfer.files))
   }
 
-  const removeFile = (id: string) => setFiles((prev) => prev.filter((f) => f.id !== id))
+  const removeFile = (id: string) => {
+    totalBytesRef.current -= bytesById.current[id] ?? 0
+    delete bytesById.current[id]
+    setFiles((prev) => prev.filter((f) => f.id !== id))
+  }
+
+  const canCreate = allUploaded && !anyUploading && !!clientName.trim() && !!sowDeadline
 
   const handleProceed = () => {
-    if (!allUploaded) return
+    if (!canCreate) return
+    // The SOW opens straight away; its detail page shows the preparing animation below the tabs
     onProceed(files, {
       clientName: clientName.trim(),
       sowDeadline: sowDeadline || '',
-      tokenConsumption: typeof tokenConsumption === 'number' ? tokenConsumption : 20000,
+      tokenConsumption: 20000,
+      instructions: instructions.trim(),
     })
   }
+
+  // "Preparing your SOW draft": steps advance on a timer, then the SOW opens on its Draft tab
+  const doneRef = useRef(false)
+  useEffect(() => {
+    if (phase !== 'preparing') return
+    doneRef.current = false
+    const start = Date.now()
+    const id = setInterval(() => {
+      const ms = Date.now() - start
+      setPrepMs(ms)
+      if (ms >= PREP_STEPS.length * PREP_STEP_MS && !doneRef.current) {
+        doneRef.current = true
+        clearInterval(id)
+        onProceed(files, {
+          clientName: clientName.trim(),
+          sowDeadline: sowDeadline || '',
+          tokenConsumption: 20000,
+          instructions: instructions.trim(),
+        })
+      }
+    }, 250)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
 
   // Dropzone is "active" when dragging over OR mouse hovering
   const dropzoneActive = isDragOver || isDropzoneHovered
 
   if (!isOpen) return null
+
+  if (phase === 'preparing') {
+    const step = Math.min(Math.floor(prepMs / PREP_STEP_MS), PREP_STEPS.length - 1)
+    const stepSeconds = Math.floor((prepMs - step * PREP_STEP_MS) / 1000)
+    return (
+      <div
+        className="fixed inset-0 z-50 overflow-y-auto"
+        style={{ background: 'linear-gradient(180deg, #f8fcfc 0%, #f1f8f8 100%)' }}
+      >
+        <style>{`
+          @keyframes sow-prep-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+          @keyframes sow-prep-pulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+        `}</style>
+        <div
+          className="mx-auto flex flex-col items-center"
+          style={{ maxWidth: 640, padding: '40px 24px' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Preparing your SOW draft"
+        >
+          <div style={{ position: 'relative', width: 120, height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ animation: 'sow-prep-float 2.8s ease-in-out infinite' }}>
+              <svg width="84" height="110" viewBox="0 0 100 130" fill="none">
+                <rect x="12" y="8" width="68" height="96" rx="10" fill="rgba(0,196,196,0.08)" stroke="#00C4C4" strokeWidth="2" />
+                <rect x="22" y="22" width="28" height="5" rx="2" fill="rgba(0,196,196,0.4)" />
+                <rect x="22" y="32" width="48" height="12" rx="3" fill="rgba(0,196,196,0.15)" stroke="rgba(0,196,196,0.3)" strokeWidth="0.8" />
+                <rect x="22" y="50" width="28" height="5" rx="2" fill="rgba(0,196,196,0.4)" />
+                <rect x="22" y="60" width="48" height="12" rx="3" fill="rgba(0,196,196,0.15)" stroke="rgba(0,196,196,0.3)" strokeWidth="0.8" />
+                <rect x="22" y="78" width="28" height="5" rx="2" fill="rgba(0,196,196,0.4)" />
+                <rect x="22" y="88" width="48" height="12" rx="3" fill="rgba(0,196,196,0.15)" stroke="rgba(0,196,196,0.3)" strokeWidth="0.8" />
+              </svg>
+            </div>
+            <div style={{ position: 'absolute', top: 6, right: 14, animation: 'sow-prep-pulse 1.6s ease-in-out infinite' }}>
+              <svg width="18" height="18" viewBox="0 0 18 18">
+                <path d="M9 1l2 6h6l-5 3.5 2 6L9 13l-5 3.5 2-6L1 7h6z" fill="#00C4C4" opacity=".7" />
+              </svg>
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', margin: 0 }}>Preparing your SOW draft</h2>
+            <p style={{ fontSize: 13.5, color: '#64748b', margin: '8px 0 0', lineHeight: 1.6 }}>
+              You can review the draft and resolve open questions when it is ready.
+            </p>
+          </div>
+          <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12.5, color: '#475569', marginBottom: 10 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16a34a' }} />
+              Live updates connected
+            </span>
+            <span>Elapsed: {Math.floor(prepMs / 1000)}s</span>
+          </div>
+          <div style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 12, background: '#ffffff' }}>
+            {PREP_STEPS.map((label, i) => {
+              const done = i < step
+              const active = i === step
+              return (
+                <div
+                  key={label}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 14,
+                    padding: '14px 18px',
+                    borderTop: i === 0 ? 'none' : '1px solid #f1f5f9',
+                    background: active ? 'rgba(0,196,196,0.06)' : '#ffffff',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: done ? '#00C4C4' : '#ffffff',
+                      border: done ? 'none' : `2px solid ${active ? '#00C4C4' : '#e2e8f0'}`,
+                    }}
+                  >
+                    {done && (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12l5 5L20 7" />
+                      </svg>
+                    )}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c' }}>{label}</div>
+                    {i === 0 && (
+                      <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 3 }}>
+                        {files.length} {files.length === 1 ? 'file' : 'files'} uploaded
+                        {files.map((f) => (
+                          <div key={f.id} style={{ marginTop: 3, paddingLeft: 12 }}>
+                            {f.name}: {done ? 'read' : active ? 'reading' : 'waiting to be read'}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#64748b', textAlign: 'right', flexShrink: 0 }}>
+                    {done ? 'Done' : active ? (<>In progress<div>{stepSeconds} s</div></>) : 'Up next'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 20 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setPhase('form')
+                setPrepMs(0)
+              }}
+              className="px-6 py-2.5 text-sm font-bold rounded-xl cursor-pointer"
+              style={{ background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -501,7 +673,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
             {/* SOW Deadline Input */}
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                SOW Deadline <span style={{ color: '#ef4444' }}>*</span>
+                SOW Due Date <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input
                 type="date"
@@ -523,16 +695,16 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
               />
             </div>
 
-            {/* Token Consumption Input */}
+            {/* Instructions Input */}
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                Token Consumption <span style={{ color: '#ef4444' }}>*</span>
+                Instructions
               </label>
-              <input
-                type="number"
-                placeholder="0"
-                value={tokenConsumption}
-                onChange={(e) => setTokenConsumption(e.target.value === '' ? '' : Number(e.target.value))}
+              <textarea
+                rows={4}
+                placeholder="Tell us what the draft should emphasise, e.g. key risks, delivery approach, compliance needs or the tone to use."
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '10px 14px',
@@ -542,11 +714,17 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   outline: 'none',
                   color: '#0d212c',
                   background: '#fff',
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#94a3b8'}
-                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                onFocus={(e) => (e.target.style.borderColor = '#94a3b8')}
+                onBlur={(e) => (e.target.style.borderColor = '#cbd5e1')}
               />
             </div>
+
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: -6 }}>
+              Supporting files <span style={{ color: '#ef4444' }}>*</span>
+            </label>
 
             {/* Drop zone */}
             <div
@@ -599,7 +777,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   </span>
                 </p>
                 <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
-                Supports PDF, DOCX and PPT · Max 10 documents · Max {MAX_SIZE_MB} MB
+                Supports PDF, DOCX, PPT and TXT · Max 10 documents · Max {MAX_TOTAL_MB} MB combined
                 </p>
               </div>
             </div>
@@ -662,24 +840,18 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
           >
             <button
               onClick={handleProceed}
-              disabled={!allUploaded || anyUploading || !clientName.trim() || tokenConsumption === '' || !sowDeadline}
+              disabled={!canCreate}
               className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-xl transition-all cursor-pointer border-0 disabled:cursor-not-allowed"
               style={{
-                background: allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline
-                  ? 'var(--action-primary-bg-default)'
-                  : 'var(--bg-surface-3)',
-                color: allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline ? 'var(--action-primary-text)' : 'var(--text-disabled)',
-                boxShadow: allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
+                background: canCreate ? 'var(--action-primary-bg-default)' : 'var(--bg-surface-3)',
+                color: canCreate ? 'var(--action-primary-text)' : 'var(--text-disabled)',
+                boxShadow: canCreate ? '0 2px 8px rgba(0,196,196,0.3)' : 'none',
               }}
               onMouseEnter={(e) => {
-                if (allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline)
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    'var(--action-primary-bg-hover)'
+                if (canCreate) (e.currentTarget as HTMLButtonElement).style.background = 'var(--action-primary-bg-hover)'
               }}
               onMouseLeave={(e) => {
-                if (allUploaded && clientName.trim() && tokenConsumption !== '' && sowDeadline)
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    'var(--action-primary-bg-default)'
+                if (canCreate) (e.currentTarget as HTMLButtonElement).style.background = 'var(--action-primary-bg-default)'
               }}
             >
               Create SOW

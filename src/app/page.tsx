@@ -175,6 +175,7 @@ export default function Home() {
       contentOverride={
         view === 'sow-detail' ? (
           <SOWDetailScreen
+            prepareOnOpen
             sowName={createdSowName}
             sowDeadline={createdSowDeadline}
             tokenConsumption={createdTokenConsumption}

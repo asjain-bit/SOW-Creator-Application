@@ -45,3 +45,18 @@ if (typeof window !== 'undefined') {
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
+
+// jsdom has no IntersectionObserver (used by the SOW Draft tab)
+if (typeof globalThis.IntersectionObserver === 'undefined') {
+  globalThis.IntersectionObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return []
+    }
+    root = null
+    rootMargin = ''
+    thresholds = []
+  } as unknown as typeof IntersectionObserver
+}

@@ -19,6 +19,6 @@ export interface CreateSOWModalProps {
   /** Called with the uploaded files and metadata when user clicks the proceed CTA */
   onProceed: (
     files: UploadedFile[],
-    details?: { clientName: string; sowDeadline: string; tokenConsumption: number }
+    details?: { clientName: string; sowDeadline: string; tokenConsumption: number; instructions?: string }
   ) => void
 }

@@ -63,7 +63,7 @@ export interface DashboardScreenV2Props {
   onCreateSOW?: () => void
   onProceedToSOW?: (
     files: UploadedFile[],
-    details?: { clientName: string; sowDeadline: string; tokenConsumption: number }
+    details?: { clientName: string; sowDeadline: string; tokenConsumption: number; instructions?: string }
   ) => void
   activeNav?: ActiveNav
   contentOverride?: React.ReactNode

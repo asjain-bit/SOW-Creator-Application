@@ -421,7 +421,7 @@ export const UsageInsightsView: React.FC<UsageInsightsViewProps> = ({ sows, noti
                 aria-haspopup="listbox"
                 aria-expanded={weekMenuOpen}
                 onClick={() => setWeekMenuOpen((o) => !o)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', fontSize: 13, fontWeight: 500, color: '#0d212c', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 32, padding: '0 14px 0 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', fontSize: 13, fontWeight: 500, color: '#0d212c', cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 <CalendarDays size={15} color={PRIMARY} />
                 {week.start} – {week.end}

@@ -1923,8 +1923,8 @@ export function SectionTemplatesView({
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
-                padding: '7px 14px',
+                gap: 8,
+                padding: '7px 16px 7px 14px',
                 borderRadius: 8,
                 background: sectionFilter !== 'All' ? 'rgba(0,196,196,0.1)' : '#ffffff',
                 color: sectionFilter !== 'All' ? '#008a8a' : '#0d212c',
@@ -3252,8 +3252,8 @@ export function UserDirectoryView({
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
-                padding: '7px 14px',
+                gap: 8,
+                padding: '7px 16px 7px 14px',
                 borderRadius: 8,
                 background: (roleFilter || statusFilter) ? 'rgba(0,196,196,0.1)' : '#ffffff',
                 color: (roleFilter || statusFilter) ? '#008a8a' : '#0d212c',
@@ -3831,7 +3831,7 @@ export function UserDirectoryView({
                     }}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
+                      padding: '10px 16px 10px 12px',
                       borderRadius: 8,
                       border: '1.5px solid #e2e8f0',
                       background: '#ffffff',
@@ -4096,7 +4096,7 @@ export function UserDirectoryView({
                     }}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
+                      padding: '10px 16px 10px 12px',
                       borderRadius: 8,
                       border: '1.5px solid #e2e8f0',
                       background: '#ffffff',
@@ -5223,12 +5223,16 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       },
                     ]
                   : []),
-                // Usage Insights is open to every profile; only the Admin can recalculate the Value/ROI
-                {
-                  id: 'usage' as ActiveNav,
-                  label: 'Usage',
-                  icon: <BarChart3 size={20} />,
-                },
+                // Usage Insights is visible to the Admin profile only
+                ...(isAdmin
+                  ? [
+                      {
+                        id: 'usage' as ActiveNav,
+                        label: 'Usage',
+                        icon: <BarChart3 size={20} />,
+                      },
+                    ]
+                  : []),
               ] as { id: ActiveNav; label: string; icon: React.ReactNode; badge?: number }[]
             ).map(({ id, label, icon }) => {
               const isActive = contentOverride
@@ -5464,7 +5468,7 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <AgentsView notificationButton={renderNotificationButton()} />
             </div>
-          ) : homeView === 'usage' ? (
+          ) : homeView === 'usage' && isAdmin ? (
             <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <UsageInsightsView sows={sowList} canRecalculate={isAdmin} notificationButton={renderNotificationButton()} />
             </div>
@@ -5518,10 +5522,10 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                           background: 'rgba(0,196,196,0.08)',
                           border: '1px solid rgba(0,196,196,0.25)',
                           borderRadius: 8,
-                          padding: '4px 8px',
+                          padding: '4px 10px 4px 8px',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: 6,
+                          gap: 8,
                           cursor: 'pointer',
                           fontSize: 12,
                           fontWeight: 600,
@@ -6984,8 +6988,8 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 6,
-                          padding: '5px 12px',
+                          gap: 8,
+                          padding: '5px 14px 5px 12px',
                           background: '#ffffff',
                           border: '1px solid rgba(0,0,0,0.1)',
                           borderRadius: 8,

@@ -89,6 +89,8 @@ export interface SOWFormData {
 }
 
 export interface SOWDetailScreenProps {
+  /** Show the "Preparing your SOW draft" animation below the tabs when the screen opens (newly created SOW) */
+  prepareOnOpen?: boolean
   sowName?: string
   sowStatus?: SOWStatus
   isDeactivated?: boolean
