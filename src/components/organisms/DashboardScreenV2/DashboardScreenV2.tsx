@@ -1171,7 +1171,7 @@ function AgentDetailView({
   const warnStyle: React.CSSProperties = { fontSize: 13, color: '#94a3b8', fontStyle: 'italic', margin: '4px 0 0', lineHeight: 1.5 }
   const defaultStyle: React.CSSProperties = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5, color: '#64748b', margin: '4px 0 0' }
 
-  const dirty = deployment !== (agent.deployment ?? '') || temperature !== (agent.temperature ?? '0')
+  const dirty = deployment !== (agent.deployment ?? '') || temperature !== (agent.temperature ?? '0') || note.trim() !== ''
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box', overflowY: 'auto', paddingBottom: 24 }}>
@@ -5705,14 +5705,19 @@ export const DashboardScreenV2: React.FC<DashboardScreenV2Props> = ({
                       onNavHome?.()
                     } else if (id === 'my-sows') {
                       setHomeView('all-sows')
+                      onNavAllSOWs?.()
                     } else if (id === 'user-directory') {
                       setHomeView('user-directory')
+                      onNavAllSOWs?.()
                     } else if (id === 'section-templates') {
                       setHomeView('section-templates')
+                      onNavAllSOWs?.()
                     } else if (id === 'agents') {
                       setHomeView('agents')
+                      onNavAllSOWs?.()
                     } else if (id === 'usage') {
                       setHomeView('usage')
+                      onNavAllSOWs?.()
                     }
                   }}
                   className="flex flex-col items-center justify-center w-full py-2.5 px-1 rounded-xl cursor-pointer transition-all gap-1.5 relative border-0"

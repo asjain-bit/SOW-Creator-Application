@@ -48,6 +48,7 @@ import {
   Shield,
   Info,
   AlertTriangle,
+  AlertCircle,
   Eye,
   Plus,
   ArrowRight,
@@ -8873,16 +8874,9 @@ function StructureTab({
                     )}
                     {/* Deadline breached chip */}
                     {isDeadlineBreached && (
-                      <span style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        color: '#ef4444',
-                        background: 'rgba(239,68,68,0.1)',
-                        padding: '1px 5px',
-                        borderRadius: 4,
-                        flexShrink: 0,
-                        whiteSpace: 'nowrap',
-                      }}>Overdue</span>
+                      <span title="Overdue" aria-label="Overdue" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                        <AlertCircle size={14} color="#ef4444" />
+                      </span>
                     )}
                   </button>
                   {/* Three-dot menu — PMO can edit; every other role sees the deadline only */}
@@ -9338,10 +9332,6 @@ function StructureTab({
                 >
                   {/* Section header */}
                   {(() => {
-                    const secDeadline = sectionDeadlines[sec.id] || sowDeadline || '2026-10-31'
-                    const secDeadlineBreached = secDeadline && new Date(secDeadline) < new Date(new Date().toDateString())
-                    const totalSecQ = sec.items.filter(i => i.type === 'question').length
-                    const doneSecQ = sec.items.filter(i => i.type === 'question' && i.answered).length
                     return (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: isCollapsed ? 0 : 18 }}>
                         <button
@@ -9357,30 +9347,6 @@ function StructureTab({
                         </button>
                         <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
                           {sec.title}
-                          {totalSecQ > 0 && (
-                            <span style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              color: doneSecQ === totalSecQ ? '#16a34a' : '#64748b',
-                              background: doneSecQ === totalSecQ ? 'rgba(22,163,74,0.1)' : '#f1f5f9',
-                              padding: '2px 8px',
-                              borderRadius: 12,
-                              whiteSpace: 'nowrap',
-                            }}>
-                              {doneSecQ}/{totalSecQ} questions
-                            </span>
-                          )}
-                          {secDeadlineBreached && (
-                            <span style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              color: '#ef4444',
-                              background: 'rgba(239,68,68,0.1)',
-                              padding: '2px 7px',
-                              borderRadius: 5,
-                              whiteSpace: 'nowrap',
-                            }}>Overdue</span>
-                          )}
                         </span>
                         {/* Add item CTA - contributors can add new questions in their assigned sections */}
                         {!disableAnswer && !isReviewer && !isClient && (!isContributor || isSectionAssignedToContributor(sec)) && (
@@ -9845,8 +9811,9 @@ function ItemRow({
         </div>
       )}
 
-      {/* Label tag */}
+      {/* Label tag — short form (Q1 / A1), full name on hover */}
       <span
+        title={label}
         style={{
           fontSize: 11,
           fontWeight: 600,
@@ -9859,7 +9826,7 @@ function ItemRow({
           marginTop: 1,
         }}
       >
-        {label}
+        {label.replace(/^Question /, 'Q').replace(/^Assumption /, 'A')}
       </span>
 
 
@@ -10370,7 +10337,7 @@ function ItemRow({
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: '4px 2px', fontSize: 13, fontWeight: 600, color: '#00a0a0', cursor: 'pointer' }}
                 >
                   <Plus size={14} />
-                  Actions
+                  Answer with AI
                 </button>
                 {actionsOpen && (
                   <>
@@ -10392,7 +10359,6 @@ function ItemRow({
                           key: 'internal',
                           icon: <Database size={16} />,
                           title: 'Check Internal Sources',
-                          sub: '10 tokens',
                           disabled: !!checking,
                           run: () =>
                             runCheck('internal', () => {
@@ -10414,7 +10380,6 @@ function ItemRow({
                           key: 'online',
                           icon: <Globe size={16} />,
                           title: 'Check Online',
-                          sub: '10 tokens',
                           disabled: !!checking,
                           run: () =>
                             runCheck('online', () => {
@@ -10446,7 +10411,7 @@ function ItemRow({
                           </span>
                           <span style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>{o.title}</span>
-                            <span style={{ fontSize: 11.5, color: '#64748b' }}>{o.sub}</span>
+                            {o.sub && <span style={{ fontSize: 11.5, color: '#64748b' }}>{o.sub}</span>}
                           </span>
                         </button>
                       ))}
@@ -10488,7 +10453,7 @@ function ItemRow({
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
-                    Save Answer
+                    Save
                   </button>
                 )}
                 {!hideTrace && <TraceIconButton onClick={() => onOpenTrace?.(item, label)} />}
@@ -14244,16 +14209,9 @@ function SOWDraftTab({
                         {item.title}
                       </span>
                       {isOverdue && (
-                        <span style={{
-                          fontSize: 9,
-                          fontWeight: 700,
-                          color: '#ef4444',
-                          background: 'rgba(239,68,68,0.1)',
-                          padding: '1px 5px',
-                          borderRadius: 4,
-                          flexShrink: 0,
-                          whiteSpace: 'nowrap',
-                        }}>Overdue</span>
+                        <span title="Overdue" aria-label="Overdue" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                          <AlertCircle size={14} color="#ef4444" />
+                        </span>
                       )}
                     </div>
 
