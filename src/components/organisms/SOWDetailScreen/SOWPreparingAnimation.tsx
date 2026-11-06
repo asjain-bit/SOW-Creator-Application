@@ -135,6 +135,9 @@ export function SOWPreparingAnimation({
         @keyframes sowp-pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
         @keyframes sowp-sheen{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
         @keyframes sowp-pulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+        @keyframes sowp-bob{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-2px) rotate(-6deg)}75%{transform:translateY(-2px) rotate(6deg)}}
+        @keyframes sowp-halo{0%{transform:scale(.9);opacity:.55}100%{transform:scale(1.7);opacity:0}}
+        @keyframes sowp-dot{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-3px);opacity:1}}
         @keyframes sowp-glow{0%,100%{box-shadow:0 0 0 0 rgba(0,196,196,0)}50%{box-shadow:0 0 0 4px rgba(0,196,196,0.14)}}
         @media (prefers-reduced-motion: reduce){
           .sowp-anim,.sowp-anim *{animation-duration:0.01ms !important;animation-iteration-count:1 !important}
@@ -405,8 +408,8 @@ function DraftSections({ progress }: { progress: number }) {
         {CORE_SECTIONS.map((name, i) => {
           const c = all[i]
           return (
-            <span key={name} style={{ position: 'relative', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, padding: '0 12px', borderRadius: 999, background: '#f1f5f9', fontSize: 12.5, fontWeight: 600, color: c > 0 ? '#0d212c' : '#94a3b8' }}>
-              <span style={{ position: 'absolute', inset: 0, width: `${c * 100}%`, background: c >= 1 ? 'rgba(0,196,196,0.18)' : 'rgba(0,196,196,0.28)', transition: 'width 0.25s linear' }} />
+            <span key={name} style={{ position: 'relative', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, padding: '0 12px', borderRadius: 999, background: '#f8fafc', border: '1px solid #eef2f6', fontSize: 12.5, fontWeight: 600, color: c > 0 ? '#0d212c' : '#94a3b8' }}>
+              <span style={{ position: 'absolute', inset: 0, width: `${c * 100}%`, background: c >= 1 ? 'rgba(0,196,196,0.07)' : 'linear-gradient(90deg, rgba(0,196,196,0.07), rgba(0,196,196,0.07) 70%, rgba(0,196,196,0))', transition: 'width 0.25s linear' }} />
               <span style={{ position: 'relative' }}>{name}</span>
               {c >= 1 && <CheckCircle2 size={13} color="#00a0a0" style={{ position: 'relative' }} />}
             </span>
@@ -419,15 +422,28 @@ function DraftSections({ progress }: { progress: number }) {
           const c = all[CORE_SECTIONS.length + k]
           return (
             <div key={o.scope} style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 12, background: '#f8fafc', border: '1px solid #eef2f6' }}>
-              <span style={{ position: 'absolute', inset: 0, width: `${c * 100}%`, background: c >= 1 ? 'rgba(0,196,196,0.1)' : 'rgba(0,196,196,0.18)', transition: 'width 0.25s linear' }} />
-              <span style={{ position: 'relative', width: 26, height: 26, borderRadius: '50%', background: '#ffffff', color: '#00a0a0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 2px rgba(15,23,42,0.08)' }}>
-                {c >= 1 ? <CheckCircle2 size={14} /> : <Bot size={14} />}
+              <span style={{ position: 'absolute', inset: 0, width: `${c * 100}%`, background: c >= 1 ? 'rgba(0,196,196,0.05)' : 'linear-gradient(90deg, rgba(0,196,196,0.06), rgba(0,196,196,0.06) 70%, rgba(0,196,196,0))', transition: 'width 0.25s linear' }} />
+              {/* The working agent bobs and sends out a soft ring so it draws the eye */}
+              <span style={{ position: 'relative', width: 26, height: 26, flexShrink: 0, display: 'inline-flex' }}>
+                {c > 0 && c < 1 && (
+                  <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1.5px solid rgba(0,196,196,0.55)', animation: 'sowp-halo 1.4s ease-out infinite' }} />
+                )}
+                <span style={{ position: 'relative', width: 26, height: 26, borderRadius: '50%', background: '#ffffff', color: '#00a0a0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 2px rgba(15,23,42,0.08)', animation: c > 0 && c < 1 ? 'sowp-bob 1.2s ease-in-out infinite' : undefined }}>
+                  {c >= 1 ? <CheckCircle2 size={14} /> : <Bot size={14} />}
+                </span>
               </span>
               <span style={{ position: 'relative', minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#008b8b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Optional section {k + 1}</span>
                 <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>{o.agent}</span>
                 <span style={{ display: 'block', fontSize: 11.5, color: '#64748b' }}>{o.scope}</span>
               </span>
+              {c > 0 && c < 1 && (
+                <span aria-hidden="true" style={{ position: 'relative', marginLeft: 'auto', display: 'inline-flex', gap: 3, flexShrink: 0 }}>
+                  {[0, 1, 2].map((d) => (
+                    <span key={d} style={{ width: 4, height: 4, borderRadius: '50%', background: '#00C4C4', animation: 'sowp-dot 1s ease-in-out infinite', animationDelay: `${d * 0.15}s` }} />
+                  ))}
+                </span>
+              )}
             </div>
           )
         })}
