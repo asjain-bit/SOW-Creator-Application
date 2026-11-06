@@ -17691,8 +17691,14 @@ export function SOWDetailScreen({
       ),
     }))
   }
-  const handleAddFiles = (newDocs: UploadedFile[]) => syncDocumentQuestions([...docFiles, ...newDocs])
-  const handleRemoveFile = (id: string) => syncDocumentQuestions(docFiles.filter((d) => d.id !== id))
+  const handleAddFiles = (newDocs: UploadedFile[]) => {
+    setContextChanged(true)
+    syncDocumentQuestions([...docFiles, ...newDocs])
+  }
+  const handleRemoveFile = (id: string) => {
+    setContextChanged(true)
+    syncDocumentQuestions(docFiles.filter((d) => d.id !== id))
+  }
   const [sendApprovalTipPos, setSendApprovalTipPos] = useState<{ top: number; right: number } | null>(null)
   // Once the draft has been generated, Context and Planning become view-only for everyone
   const contentFrozen = isViewOnly
@@ -17735,9 +17741,27 @@ export function SOWDetailScreen({
     (n, sec) => n + sec.items.filter((i) => i.type === 'question' && i.answered).length,
     0
   )
-  // New answers were added in Planning after the draft was generated
+  // Changes made in Context or Planning after the draft was generated (or after the SOW was opened)
+  const [contextChanged, setContextChanged] = useState(false)
+  const ctxUserSig = JSON.stringify([contextIssueState.updates, contextIssueState.signedOffIds])
+  const ctxBaseRef = useRef(ctxUserSig)
+  useEffect(() => {
+    if (ctxUserSig !== ctxBaseRef.current) setContextChanged(true)
+  }, [ctxUserSig])
+  const planningSig = JSON.stringify(
+    (savedSections ?? sourceSectionsForRole).map((sec) => [
+      sec.id,
+      sec.title,
+      sec.items.map((i) => [i.id, i.text, i.answered, i.response ?? '']),
+    ])
+  )
+  const planningBaseRef = useRef<string | null>(null)
+  if (planningBaseRef.current === null) planningBaseRef.current = planningSig
+  const planningChanged = planningSig !== planningBaseRef.current
+  const hasChangesSinceDraft = contextChanged || planningChanged
+  // The PMO can regenerate once something changed in Context or Planning
   const needsRegen =
-    isDraftUnlocked && !isViewOnly && isPMORole && canGenerateDraft && generatedAnswered !== null && answeredNow > generatedAnswered
+    isDraftUnlocked && !isViewOnly && isPMORole && canGenerateDraft && hasChangesSinceDraft
 
   // Below 80% completeness the user must confirm before the draft is generated
   const requestGenerateDraft = () => {
@@ -17751,6 +17775,10 @@ export function SOWDetailScreen({
     setGenerateTip(null)
     setGeneratedScore(completionScore)
     setGeneratedAnswered(answeredNow)
+    // The new draft covers everything changed so far
+    planningBaseRef.current = planningSig
+    ctxBaseRef.current = ctxUserSig
+    setContextChanged(false)
     setIsDraftUnlocked(true)
     setActiveTab('sow-draft')
     setDraftGenState('generating')
@@ -17800,6 +17828,7 @@ export function SOWDetailScreen({
     if (isStructureUnlocked) {
       setFormVersions(prev => [...prev, { id: `v${prev.length + 1}`, timestamp: new Date().toISOString() }])
       setHasPendingStructureChanges(true)
+      setContextChanged(true)
     }
     setIsGenerating(false)
     setIsStructureUnlocked(true)
@@ -18159,11 +18188,14 @@ export function SOWDetailScreen({
                 </button>
                 </div>
               )}
-              {(activeTab === 'structure' || activeTab === 'sow-draft') && needsRegen && draftGenState === 'ready' && (
+              {(activeTab === 'structure' || activeTab === 'sow-draft') &&
+                isPMORole && canGenerateDraft && !isViewOnly && isDraftUnlocked &&
+                draftGenState !== 'generating' && draftGenState !== 'shimmer' && (
                 <div style={{ order: 2, display: 'flex' }}>
                   <button
                     onClick={requestGenerateDraft}
-                    title="You answered more questions after the draft was generated"
+                    disabled={!needsRegen}
+                    title={needsRegen ? 'You changed Context or Planning after the draft was generated' : 'Available once something changes in Context or Planning'}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -18171,13 +18203,13 @@ export function SOWDetailScreen({
                       padding: '6px 14px',
                       borderRadius: 8,
                       border: 'none',
-                      background: '#00C4C4',
+                      background: needsRegen ? '#00C4C4' : '#cbd5e1',
                       fontSize: 12,
                       fontWeight: 700,
-                      color: '#ffffff',
-                      cursor: 'pointer',
+                      color: needsRegen ? '#ffffff' : '#64748b',
+                      cursor: needsRegen ? 'pointer' : 'not-allowed',
                       whiteSpace: 'nowrap',
-                      boxShadow: '0 2px 8px rgba(0,196,196,0.25)',
+                      boxShadow: needsRegen ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
                     }}
                   >
                     <RefreshCw size={13} />
@@ -18295,7 +18327,7 @@ export function SOWDetailScreen({
           {activeTab === 'overview' && (
             <OverviewTab
               files={docFiles}
-              canEditDetails={isPMORole && !contentFrozen && (isStructureUnlocked ? isFormEditable : true)}
+              canEditDetails={isPMORole && !contentFrozen}
               conflictCount={
                 buildDocumentQuestions(docFiles.map((d) => d.name)).filter((q) => q.kind === 'conflict').length
               }
@@ -18320,7 +18352,10 @@ export function SOWDetailScreen({
               onReady={() => setIsFormReady(true)}
               onSubmit={handleFormSubmit}
               skipLoading={isContributor || isStructureUnlocked}
-              onDirtyChange={(dirty) => setIsFormDirty(dirty)}
+              onDirtyChange={(dirty) => {
+                setIsFormDirty(dirty)
+                if (dirty) setContextChanged(true)
+              }}
               formVersions={formVersions}
               ctx={contextIssueState}
               onCtxChange={setContextIssueState}
@@ -18434,7 +18469,7 @@ export function SOWDetailScreen({
           title="Regenerate the draft"
           body={
             <>
-              You have answered more questions in Planning. Please regenerate the draft to update the draft version.
+              You have made changes in Context or Planning. Please regenerate the draft to update the draft version.
               {completionScore < 80 && ` Your completeness score is ${completionScore}%, which is below 80% and will directly impact the quality of the draft.`}
             </>
           }
