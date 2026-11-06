@@ -16440,21 +16440,26 @@ function SOWDraftTab({
                       }}
                     >
                       <t.Icon size={17} />
-                      {hoveredDrawerTab === t.key && (
-                        <span
-                          role="tooltip"
-                          style={{ position: 'absolute', top: 'calc(100% + 2px)', left: '50%', transform: 'translateX(-50%)', zIndex: 60, background: '#0d212c', color: '#ffffff', fontSize: 11, fontWeight: 500, padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.18)', pointerEvents: 'none' }}
-                        >
-                          {t.label}
-                        </span>
-                      )}
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          maxWidth: hoveredDrawerTab === t.key ? 70 : 0,
+                          opacity: hoveredDrawerTab === t.key ? 1 : 0,
+                          marginLeft: hoveredDrawerTab === t.key ? 2 : 0,
+                          transition: 'max-width 0.22s ease, opacity 0.18s ease, margin 0.22s ease',
+                        }}
+                      >
+                        {t.label}
+                      </span>
                       {t.key === 'review' && (
                         <span style={{ fontSize: 10.5, fontWeight: 700, color: '#00a0a0', background: 'rgba(0,196,196,0.12)', borderRadius: 9999, padding: '0 6px', lineHeight: '16px' }}>
                           {REVIEW_ITEMS_SEED.length - resolvedReviewIds.length}
                         </span>
                       )}
                       {t.key === 'risk' && openRisks.length > 0 && (
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: '#ffffff', background: openRisks.some((r) => r.severity === 'High') ? '#dc2626' : '#d97706', borderRadius: 9999, padding: '0 6px', lineHeight: '16px' }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 700, color: '#ffffff', background: '#dc2626', borderRadius: 9999, padding: '0 6px', lineHeight: '16px' }}>
                           {openRisks.length}
                         </span>
                       )}
@@ -18963,10 +18968,16 @@ export function SOWDetailScreen({
             <div style={{ position: 'absolute', inset: 0, zIndex: 110, background: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
               <SOWPreparingAnimation
                 fileNames={uploadedFiles.map((f) => f.name)}
+                stats={{
+                  reviewItems: REVIEW_ITEMS_SEED.length,
+                  missingInfo: REVIEW_ITEMS_SEED.filter((r) => r.category === 'Missing information').length,
+                  riskSuggestions: 7,
+                }}
                 onDone={() => {
                   applyGeneratedAnswers()
                   setIsPreparing(false)
                 }}
+                onCancel={onBack}
               />
             </div>
           )}
