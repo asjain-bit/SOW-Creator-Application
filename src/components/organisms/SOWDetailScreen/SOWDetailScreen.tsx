@@ -12453,7 +12453,7 @@ const REVIEW_ITEMS_SEED: ReviewItem[] = [
       : category === 'Missing information'
         ? `${title}. The uploaded documents do not give this detail, so the section cannot state it with confidence.`
         : `The draft relies on this assumption: ${title.toLowerCase()}. Confirm it with the client or replace it with a confirmed value.`,
-  evidence: [`[RFP p.${3 + (i % 5)}]`, `[RFP p.${7 - (i % 3)}]`, ...(i % 2 === 0 ? [`[RFP p.${4 + (i % 4)}]`] : [])],
+  evidence: [`Doc ${(i % 3) + 1}`, `Doc ${((i + 1) % 3) + 1}`, ...(i % 2 === 0 ? [`Doc ${((i + 2) % 3) + 1}`] : [])],
 }))
 
 function DraftReviewPanel({
