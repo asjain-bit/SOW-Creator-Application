@@ -591,21 +591,18 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        style={{ background: 'var(--bg-overlay)' }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose()
-        }}
+        className="fixed inset-0 z-50 overflow-y-auto flex"
+        style={{ background: 'linear-gradient(180deg, #f8fcfc 0%, #f1f8f8 100%)', padding: 24 }}
       >
         <div
-          className="relative w-full rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-          style={{ background: 'var(--bg-modal)', maxHeight: '90vh', maxWidth: 700 }}
+          className="relative w-full flex flex-col m-auto rounded-2xl"
+          style={{ background: 'var(--bg-modal)', maxWidth: 960, border: '1px solid #e2e8f0', boxShadow: '0 12px 40px rgba(13,33,44,0.08)' }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="create-sow-modal-title"
         >
           {/* Header */}
-          <div className="flex items-start justify-between px-7 pt-6 pb-5 shrink-0">
+          <div className="flex items-start justify-between shrink-0 w-full" style={{ padding: '32px 40px 20px' }}>
             <div>
               <h2
                 id="create-sow-modal-title"
@@ -643,7 +640,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-7 pb-7 flex flex-col gap-4">
+          <div className="flex-1 flex flex-col gap-4 w-full" style={{ padding: '0 40px 8px' }}>
             
             {/* SOW Name Input */}
             <div>
@@ -834,10 +831,16 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
           </div>
 
           {/* Footer */}
-          <div
-            className="flex items-center justify-end gap-3 px-7 py-4 shrink-0"
-            style={{ borderTop: '1px solid var(--border-subtle)' }}
-          >
+          <div className="shrink-0 w-full">
+          <div className="flex items-center justify-end gap-3 w-full" style={{ padding: '20px 40px 32px' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2.5 text-sm font-semibold rounded-xl cursor-pointer"
+              style={{ background: '#ffffff', color: 'var(--text-title)', border: '1.5px solid var(--border-subtle)' }}
+            >
+              Cancel
+            </button>
             <button
               onClick={handleProceed}
               disabled={!canCreate}
@@ -865,6 +868,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
+          </div>
           </div>
         </div>
       </div>

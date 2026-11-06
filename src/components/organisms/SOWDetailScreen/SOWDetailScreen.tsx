@@ -60,6 +60,33 @@ import {
   History,
   Globe,
   FileSpreadsheet,
+  Minimize2,
+  Maximize2,
+  BookOpen,
+  Target,
+  Ban,
+  ListChecks,
+  Compass,
+  Package,
+  CalendarDays,
+  DollarSign,
+  Lightbulb,
+  ShieldAlert,
+  Lock,
+  Network,
+  ClipboardCheck,
+  Briefcase,
+  PlusCircle,
+  HelpCircle,
+  ArrowRightLeft,
+  HeartHandshake,
+  ShieldMinus,
+  ShieldCheck,
+  GitBranch,
+  ClipboardList,
+  PanelLeftOpen,
+  PanelRightOpen,
+  PanelRightClose,
 } from 'lucide-react'
 import { AuditLogView, addGlobalAuditLog } from '../AuditLogView'
 import type {
@@ -3205,7 +3232,7 @@ function TraceIconButton({ onClick, ariaLabel = 'View trace' }: { onClick: () =>
         aria-label={ariaLabel}
         onFocus={() => setHover(true)}
         onBlur={() => setHover(false)}
-        style={{ display: 'inline-flex', alignItems: 'center', background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: '#008b8b' }}
+        style={{ display: 'inline-flex', alignItems: 'center', background: 'none', border: 'none', padding: 9, margin: -5, cursor: 'pointer', color: '#008b8b' }}
       >
         <Clock size={15} />
       </button>
@@ -3453,10 +3480,249 @@ function ContextFieldHeader({
 /* ── In Scope / Out of Scope list (commitment-style points, edited in place) ── */
 
 /** Included / Excluded dropdown: the closed control shows only the filled icon of the current choice */
+/** What changed in Planning is judged from the questions, assumptions and answers */
+function planningSigOf(sections: SOWSection[]) {
+  return JSON.stringify(
+    sections.map((sec) => [sec.id, sec.title, sec.items.map((i) => [i.id, i.text, i.answered, i.response ?? ''])])
+  )
+}
+
+/** When the draft is generated every open question and assumption gets a pre-filled answer the PMO can edit or rewrite */
+function fillPlanningAnswers(sections: SOWSection[]): SOWSection[] {
+  return sections.map((sec) => ({
+    ...sec,
+    items: sec.items.map((it) =>
+      it.answered && it.response
+        ? it
+        : {
+            ...it,
+            answered: true,
+            response:
+              it.response ||
+              (it.type === 'assumption'
+                ? 'Confirmed: consistent with the uploaded documents and carried into the draft.'
+                : 'Yes. As described in the uploaded documents; the details are reflected in the draft.'),
+            isAiGenerated: true,
+            answerMode: 'internal' as const,
+          }
+    ),
+  }))
+}
+
+/**
+ * Side pane with the same behaviour everywhere: hovering highlights its edge and shows a collapse icon,
+ * the edge can be dragged to resize (or dragged in to collapse), and a collapsed pane leaves a slim rail
+ * with an always-visible expand icon.
+ */
+function SidePane({
+  side,
+  open,
+  onOpenChange,
+  width,
+  onWidthChange,
+  minWidth = 220,
+  maxWidth = 520,
+  label,
+  hidden = false,
+  collapsible = true,
+  railWhenClosed = true,
+  style,
+  children,
+}: {
+  side: 'left' | 'right'
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  width: number
+  onWidthChange: (w: number) => void
+  minWidth?: number
+  maxWidth?: number
+  /** Used in the icon tooltips: "Collapse <label>" / "Expand <label>" */
+  label: string
+  hidden?: boolean
+  collapsible?: boolean
+  railWhenClosed?: boolean
+  style?: React.CSSProperties
+  children: React.ReactNode
+}) {
+  const [hover, setHover] = useState(false)
+  const [edgeHover, setEdgeHover] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  if (hidden) return null
+  const isLeft = side === 'left'
+  const OpenIcon = isLeft ? PanelLeftOpen : PanelRightOpen
+  const CloseIcon = isLeft ? PanelLeftClose : PanelRightClose
+  if (!open) {
+    if (!railWhenClosed || !collapsible) return null
+    return (
+      <div
+        style={{
+          width: 44,
+          flexShrink: 0,
+          [isLeft ? 'borderRight' : 'borderLeft']: '1px solid rgba(0,196,196,0.15)',
+          background: '#f8fafc',
+          display: 'flex',
+          justifyContent: 'center',
+          paddingTop: 12,
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => onOpenChange(true)}
+          aria-label={`Expand ${label}`}
+          title={`Expand ${label}`}
+          style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(0,196,196,0.3)', background: 'rgba(0,196,196,0.08)', color: '#00a0a0', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <OpenIcon size={16} />
+        </button>
+      </div>
+    )
+  }
+  const startDrag = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = width
+    setDragging(true)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    const move = (ev: MouseEvent) => {
+      const dx = isLeft ? ev.clientX - startX : startX - ev.clientX
+      const w = startW + dx
+      if (w < minWidth - 60) {
+        stop()
+        onOpenChange(false)
+        return
+      }
+      onWidthChange(Math.min(maxWidth, Math.max(minWidth, w)))
+    }
+    const stop = () => {
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseup', stop)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      setDragging(false)
+    }
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseup', stop)
+  }
+  const edgeColor = dragging || edgeHover ? 'rgba(0,196,196,0.45)' : 'transparent'
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ position: 'relative', width, flexShrink: 0, display: 'flex', minHeight: 0 }}
+    >
+      <div style={{ ...style, flex: 1, minWidth: 0 }}>{children}</div>
+      {collapsible && (
+        <>
+          <div
+            aria-hidden="true"
+            onMouseDown={startDrag}
+            onMouseEnter={() => setEdgeHover(true)}
+            onMouseLeave={() => setEdgeHover(false)}
+            onDoubleClick={() => onOpenChange(false)}
+            style={{ position: 'absolute', top: 0, bottom: 0, [isLeft ? 'right' : 'left']: -4, width: 8, cursor: 'col-resize', zIndex: 20, display: 'flex', justifyContent: 'center' }}
+          >
+            <div style={{ width: 1, height: '100%', background: edgeColor, transition: 'background 0.15s ease' }} />
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            aria-label={`Collapse ${label}`}
+            title={`Collapse ${label}`}
+            style={{ position: 'absolute', top: 14, [isLeft ? 'right' : 'left']: -14, width: 28, height: 28, borderRadius: '50%', border: '1px solid #e2e8f0', background: '#ffffff', color: '#475569', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', opacity: hover || dragging ? 1 : 0, pointerEvents: hover || dragging ? 'auto' : 'none', transition: 'opacity 0.15s ease', zIndex: 25 }}
+          >
+            <CloseIcon size={15} />
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Planning instructions: what the icons mean, one short line each */
+function PlanningInstructions() {
+  const chip = (text: string) => (
+    <span style={{ fontSize: 11, fontWeight: 600, color: '#00a0a0', background: 'rgba(0,196,196,0.12)', padding: '2px 7px', borderRadius: 5 }}>{text}</span>
+  )
+  const rows: { icon: React.ReactNode; title: string; text: string }[] = [
+    { icon: <span style={{ display: 'inline-flex', gap: 3 }}>{chip('Q1')}{chip('A1')}</span>, title: 'Q and A', text: 'Q is a question, A is an assumption. Hover to see the full name.' },
+    { icon: <AlertCircle size={18} color="#ef4444" />, title: 'Overdue', text: 'The section is past its deadline. Shows when you hover over the section.' },
+    { icon: <InternalSourceIcon size={18} color="#7c3aed" />, title: 'Answered using AI', text: 'The answer came from your internal documents.' },
+    { icon: <Globe size={18} color="#2563eb" />, title: 'Answered using AI', text: 'The answer came from an online search.' },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+          <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+        </svg>
+      ),
+      title: 'Client queue',
+      text: 'Adds the item to the client queue, so it can be sent to the client in an Excel file.',
+    },
+    { icon: <Edit2 size={17} color="#00a0a0" />, title: 'Edit', text: 'Edit or rewrite the answer.' },
+    { icon: <Clock size={17} color="#008b8b" />, title: 'View trace', text: 'See where the answer came from and how it changed.' },
+    { icon: <span style={{ width: 16, height: 16, borderRadius: 4, border: '1.5px solid #cbd5e1', display: 'inline-block' }} />, title: 'Select', text: 'Tick items to assign or delete several at once.' },
+    { icon: <ChevronDown size={18} color="#0d212c" />, title: 'Open or close', text: 'Hover over a section to open or close it.' },
+    { icon: <RefreshCw size={16} color="#00a0a0" />, title: 'Regenerate Draft', text: 'Appears after you change Context or Planning. It updates the draft.' },
+  ]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>Instructions</div>
+        <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>What the icons on this page mean.</div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '6px 18px 20px' }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderTop: i === 0 ? 'none' : '1px solid #f1f5f9' }}>
+            <span style={{ width: 52, flexShrink: 0, display: 'inline-flex', justifyContent: 'center', alignItems: 'center', minHeight: 22 }}>{r.icon}</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>{r.title}</div>
+              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginTop: 1 }}>{r.text}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Icon for answers produced from internal sources (same icon in the Answer with AI menu and on the answered item) */
+function InternalSourceIcon({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
+    </svg>
+  )
+}
+
+/** Icon shown next to each Planning section title */
+function sectionIconFor(title: string) {
+  const t = title.toLowerCase()
+  if (t.includes('out of scope')) return Ban
+  if (t.includes('background')) return BookOpen
+  if (t.includes('executive')) return FileText
+  if (t.includes('objective')) return Target
+  if (t.includes('scope')) return Layers
+  if (t.includes('requirement')) return ListChecks
+  if (t.includes('approach') || t.includes('method')) return Compass
+  if (t.includes('role') || t.includes('governance')) return Users
+  if (t.includes('deliverable')) return Package
+  if (t.includes('timeline') || t.includes('milestone')) return CalendarDays
+  if (t.includes('commercial') || t.includes('pricing')) return DollarSign
+  if (t.includes('assumption')) return Lightbulb
+  if (t.includes('risk')) return ShieldAlert
+  if (t.includes('security') || t.includes('compliance')) return Lock
+  if (t.includes('architecture')) return Network
+  if (t.includes('acceptance')) return ClipboardCheck
+  if (t.includes('change')) return ArrowRightLeft
+  if (t.includes('support') || t.includes('handover')) return HeartHandshake
+  return Briefcase
+}
+
 function ScopeDropdown({ value, onChange }: { value: ScopeItem['scope']; onChange: (v: ScopeItem['scope']) => void }) {
   const [open, setOpen] = useState(false)
   const opts = [
-    { val: 'included' as const, name: 'Included', fill: '#00C4C4', Icon: CheckCircle2 },
+    { val: 'included' as const, name: 'Included', fill: '#00C4C4', Icon: PlusCircle },
     { val: 'excluded' as const, name: 'Excluded', fill: '#ef4444', Icon: XCircle },
   ]
   const current = opts.find((o) => o.val === value) ?? opts[0]
@@ -3764,7 +4030,10 @@ function ScopeSection({
                   <div style={{ flex: 1, minWidth: 0, padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
                     <div style={{ fontSize: 14, color: '#0d212c', lineHeight: 1.5 }}>{item.text}</div>
                     <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 4 }}>
-                      Scope: {item.scope === 'included' ? 'Included' : 'Excluded'}
+                      Scope:{' '}
+                      <span style={{ fontWeight: 600, color: item.scope === 'included' ? '#16a34a' : '#dc2626' }}>
+                        {item.scope === 'included' ? 'Included' : 'Excluded'}
+                      </span>
                       {item.qualifiers.length > 0 && ` · Qualifiers: ${item.qualifiers.join(', ')}`}
                     </div>
                   </div>
@@ -7141,21 +7410,6 @@ function AssigneesDisplay({
 }) {
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-      {inClientQueue && (
-        <span
-          style={{
-            fontSize: 11,
-            color: '#10b981',
-            fontWeight: 600,
-            background: 'rgba(16, 185, 129, 0.1)',
-            padding: '2px 8px',
-            borderRadius: 4,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Client Queue
-        </span>
-      )}
       <AssigneesList assignedTo={assignedTo} onReassign={onReassign} isContributor={isContributor} itemType={itemType} />
     </div>
   )
@@ -8120,9 +8374,23 @@ function StructureTab({
   readOnly = false,
   onSectionsChange,
   excelImport = null,
+  onUploadExcel,
+  sectionsPanelOpenProp,
+  onSectionsPanelOpenChange,
+  instructionsShown = false,
+  instructionsOpen = true,
+  onInstructionsOpenChange,
 }: {
   /** An uploaded Excel file whose answers should be filled into open questions / assumptions */
   excelImport?: { id: number; fileName: string } | null
+  /** Opens the Excel file picker (Client Queue menu) */
+  onUploadExcel?: () => void
+  sectionsPanelOpenProp?: boolean
+  onSectionsPanelOpenChange?: (open: boolean) => void
+  /** Instructions pane (opened from the Instructions button in the header) */
+  instructionsShown?: boolean
+  instructionsOpen?: boolean
+  onInstructionsOpenChange?: (open: boolean) => void
   onSectionsChange?: (sections: SOWSection[]) => void
   initialSections?: SOWSection[]
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
@@ -8223,6 +8491,7 @@ function StructureTab({
     onConfirm: (reason: string, text: string) => void
   } | null>(null)
   const [clientQueueModalOpen, setClientQueueModalOpen] = useState(false)
+  const [clientQueueMenuOpen, setClientQueueMenuOpen] = useState(false)
   const [activeTraceItem, setActiveTraceItem] = useState<{ item: SectionItem; label: string } | null>(null)
   const [showSectionInfoTooltip, setShowSectionInfoTooltip] = useState(false)
   const assignDropdownRef = useRef<HTMLDivElement>(null)
@@ -8276,20 +8545,39 @@ function StructureTab({
   }, [sections])
 
   // Sections the user has collapsed in the list (all start expanded)
-  const [collapsedSectionIds, setCollapsedSectionIds] = useState<string[]>([])
+  // Section whose header the pointer is over (controls reveal on hover)
+  const [hoveredPaneSection, setHoveredPaneSection] = useState<string | null>(null)
+  // Only the section selected in the left pane is open; the rest start collapsed
+  const [collapsedSectionIds, setCollapsedSectionIds] = useState<string[]>(() => initialSections.slice(1).map((x) => x.id))
   // Left sections panel (KPIs + section list) starts collapsed; clients have no toggle so it stays open for them
-  const [sectionsPanelOpen, setSectionsPanelOpen] = useState(isClient)
+  // The sections list starts collapsed; the choice is kept by the parent while the user moves between tabs
+  const [sectionsOpenLocal, setSectionsOpenLocal] = useState(false)
+  const sectionsPanelOpen = sectionsPanelOpenProp ?? sectionsOpenLocal
+  const setSectionsPanelOpen = (o: boolean) => {
+    setSectionsOpenLocal(o)
+    onSectionsPanelOpenChange?.(o)
+  }
+  const [planPaneWidth, setPlanPaneWidth] = useState(330)
+  const [instructionsWidth, setInstructionsWidth] = useState(340)
   const scrollToSection = useCallback((id: string) => {
     const el = sectionRefs.current[id]
     if (!el || !rightPaneRef.current) return
-    setCollapsedSectionIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev))
+    setCollapsedSectionIds(sections.filter((x) => x.id !== id).map((x) => x.id))
     isUserScrolling.current = true
     setActiveId(id)
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
     if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
     scrollTimeout.current = setTimeout(() => {
       isUserScrolling.current = false
     }, 800)
+  }, [sections])
+
+  // Whatever sections this role can see, the first one is open by default
+  useEffect(() => {
+    if (visibleSections.length === 0) return
+    setCollapsedSectionIds(visibleSections.slice(1).map((x) => x.id))
+    setActiveId(visibleSections[0].id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const addSection = (title: string) => {
@@ -8577,18 +8865,24 @@ function StructureTab({
       )}
       {/* ── Two-pane layout ── */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          {sectionsPanelOpen && (
-          <div
+          <SidePane
+            side="left"
+            open={isClient || sectionsPanelOpen}
+            onOpenChange={setSectionsPanelOpen}
+            width={planPaneWidth}
+            onWidthChange={setPlanPaneWidth}
+            minWidth={240}
+            maxWidth={480}
+            label="sections"
+            collapsible={!isClient}
             style={{
-              width: 330,
-              flexShrink: 0,
-            borderRight: '1px solid rgba(0,196,196,0.15)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            background: 'rgba(248,252,252,0.6)',
-          }}
-        >
+              borderRight: '1px solid rgba(0,196,196,0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              background: 'rgba(248,252,252,0.6)',
+            }}
+          >
           {/* Mini KPIs — card style matching SOW Draft */}
           <div
             style={{
@@ -8711,7 +9005,7 @@ function StructureTab({
                     color: '#64748b',
                   }}
                 >
-                  <Info size={14} color="#64748b" />
+                  <HelpCircle size={14} color="#64748b" />
                 </button>
                 {showSectionInfoTooltip && (
                   <div
@@ -8966,41 +9260,15 @@ function StructureTab({
               </button>
             </div>
           )}
-        </div>
-          )}
+        </SidePane>
 
         {/* ── Right pane ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           {/* Top Actions & Bulk-action bar combined */}
           {!isClient && (
             <div style={{ padding: '8px 28px', borderBottom: '1px solid rgba(0,196,196,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
-              {(readOnly || isReviewer) && (
-              <button
-                  type="button"
-                  onClick={() => setSectionsPanelOpen((v) => !v)}
-                  aria-pressed={sectionsPanelOpen}
-                  aria-label={sectionsPanelOpen ? 'Collapse sections panel' : 'Expand sections panel'}
-                  title={sectionsPanelOpen ? 'Collapse sections' : 'Expand sections'}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#00C4C4', background: 'rgba(0,196,196,0.10)', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 10, cursor: 'pointer' }}
-                >
-                  <PanelLeft size={16} />
-                  Sections
-                </button>
-              )}
               {!readOnly && !isReviewer && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => setSectionsPanelOpen((v) => !v)}
-                  aria-pressed={sectionsPanelOpen}
-                  aria-label={sectionsPanelOpen ? 'Collapse sections panel' : 'Expand sections panel'}
-                  title={sectionsPanelOpen ? 'Collapse sections' : 'Expand sections'}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#00C4C4', background: 'rgba(0,196,196,0.10)', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 10, cursor: 'pointer' }}
-                >
-                  <PanelLeft size={16} />
-                  Sections
-                </button>
-                <div style={{ height: 16, width: 1, background: '#e2e8f0' }} />
                 <label
                   style={{
                     display: 'flex',
@@ -9226,17 +9494,19 @@ function StructureTab({
                       message: `Are you sure you want to delete ${selected.size} selected items?`,
                       onConfirm: (reason, text) => bulkDelete()
                     })}
+                    title="Delete"
+                    aria-label="Delete selected items"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 5,
+                      gap: 0,
                       fontSize: 12,
                       fontWeight: 600,
                       color: hasSelection ? '#ef4444' : '#94a3b8',
                       background: hasSelection ? '#fef2f2' : '#f8fafc',
                       border: 'none',
                       borderRadius: 7,
-                      padding: '4px 10px',
+                      padding: '6px 9px',
                       cursor: hasSelection ? 'pointer' : 'not-allowed',
                     }}
                   >
@@ -9251,7 +9521,6 @@ function StructureTab({
                     >
                       <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    Delete
                   </button>
                 </div>
                 
@@ -9278,9 +9547,11 @@ function StructureTab({
               {/* Client Queue button on right (not for Admin) */}
               {!isAdmin && (
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
                   <button
-                    onClick={() => setClientQueueModalOpen(true)}
+                    onClick={() => setClientQueueMenuOpen((v) => !v)}
+                    aria-haspopup="menu"
+                    aria-expanded={clientQueueMenuOpen}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -9307,8 +9578,51 @@ function StructureTab({
                         </div>
                       )}
                     </div>
-                    {queuedCount} in Client Queue
+                    Client Queue
                   </button>
+                  {clientQueueMenuOpen && (
+                    <>
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setClientQueueMenuOpen(false)} />
+                      <div
+                        role="menu"
+                        style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 41, width: 200, background: '#ffffff', borderRadius: 12, boxShadow: '0 8px 24px rgba(13,33,44,0.16)', border: '1px solid #e2e8f0', padding: 6, display: 'flex', flexDirection: 'column', gap: 2 }}
+                      >
+                        {([
+                          ...(onUploadExcel && !readOnly && !isReviewer
+                            ? [{ key: 'upload', icon: <UploadCloud size={16} />, label: 'Upload Excel', run: () => onUploadExcel() }]
+                            : []),
+                          {
+                            key: 'download',
+                            icon: <Download size={16} />,
+                            label: 'Download Excel',
+                            run: () => {
+                              if (queuedCount === 0) {
+                                showToast('No items in the client queue yet.', 'info')
+                                return
+                              }
+                              downloadClientQueueExcel(sections)
+                            },
+                          },
+                        ]).map((o) => (
+                          <button
+                            key={o.key}
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setClientQueueMenuOpen(false)
+                              o.run()
+                            }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 8, border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <span style={{ display: 'inline-flex', color: '#475569' }}>{o.icon}</span>
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -9326,32 +9640,38 @@ function StructureTab({
                     sectionRefs.current[sec.id] = el
                   }}
                   data-section-id={sec.id}
+                  onMouseEnter={() => setHoveredPaneSection(sec.id)}
+                  onMouseLeave={() => setHoveredPaneSection((h) => (h === sec.id ? null : h))}
                   style={{
-                    padding: '24px 28px',
-                    borderBottom:
-                      idx < visibleSections.length - 1 ? '1px solid rgba(0,196,196,0.1)' : 'none',
+                    margin: '16px 28px 0',
+                    padding: '16px 20px',
+                    background: idx % 2 === 1 ? 'rgba(148,163,184,0.07)' : 'rgba(255,255,255,0.7)',
+                    border: '1px solid rgba(0,196,196,0.15)',
+                    borderRadius: 14,
                   }}
                 >
                   {/* Section header */}
                   {(() => {
                     return (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: isCollapsed ? 0 : 18 }}>
-                        <button
-                          type="button"
+                        {(() => {
+                          const SecIcon = sectionIconFor(sec.title)
+                          return (
+                            <span style={{ color: '#0d212c', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <SecIcon size={18} />
+                            </span>
+                          )
+                        })()}
+                        <span
                           onClick={() =>
                             setCollapsedSectionIds((prev) => (prev.includes(sec.id) ? prev.filter((x) => x !== sec.id) : [...prev, sec.id]))
                           }
-                          aria-expanded={!isCollapsed}
-                          aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${sec.title}`}
-                          style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#0d212c', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}
+                          style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', flex: 1, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}
                         >
-                          {isCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
-                        </button>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
                           {sec.title}
                         </span>
                         {/* Add item CTA - contributors can add new questions in their assigned sections */}
-                        {!disableAnswer && !isReviewer && !isClient && (!isContributor || isSectionAssignedToContributor(sec)) && (
+                        {!isCollapsed && !disableAnswer && !isReviewer && !isClient && (!isContributor || isSectionAssignedToContributor(sec)) && (
                           <button
                             onClick={() => setAddItemFor(sec.id)}
                             style={{
@@ -9374,6 +9694,17 @@ function StructureTab({
                             Add
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCollapsedSectionIds((prev) => (prev.includes(sec.id) ? prev.filter((x) => x !== sec.id) : [...prev, sec.id]))
+                          }
+                          aria-expanded={!isCollapsed}
+                          aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${sec.title}`}
+                          style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#0d212c', display: 'inline-flex', alignItems: 'center', flexShrink: 0, opacity: hoveredPaneSection === sec.id ? 1 : 0, transition: 'opacity 0.15s ease' }}
+                        >
+                          {isCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
+                        </button>
                       </div>
                     )
                   })()}
@@ -9485,6 +9816,21 @@ function StructureTab({
             })}
           </div>
         </div>
+        {instructionsShown && (
+          <SidePane
+            side="right"
+            open={instructionsOpen}
+            onOpenChange={(o) => onInstructionsOpenChange?.(o)}
+            width={instructionsWidth}
+            onWidthChange={setInstructionsWidth}
+            minWidth={280}
+            maxWidth={520}
+            label="instructions"
+            style={{ borderLeft: '1px solid rgba(0,196,196,0.15)', background: '#ffffff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          >
+            <PlanningInstructions />
+          </SidePane>
+        )}
       </div>
       {/* end two-pane layout */}
 
@@ -9542,7 +9888,7 @@ function StructureTab({
                   {isContributor ? 'Reassign' : 'Change contributor'}
                 </button>
               </div>
-            </div>
+      </div>
           </div>,
           document.body
         )
@@ -9755,6 +10101,7 @@ function ItemRow({
   const [isResolved, setIsResolved] = useState(false)
   const [isPinned, setIsPinned] = useState(false)
   const [showLabelTip, setShowLabelTip] = useState(false)
+  const [showAiTip, setShowAiTip] = useState(false)
   const isAssumption = item.type === 'assumption'
   const showCheckbox = hovered || isSelected || hasAnySelected || showCheckboxAlways
   const showOverlay = (hovered || isPinned) && Boolean(pendingStatus) && !isResolved
@@ -9992,34 +10339,26 @@ function ItemRow({
         <div style={{ display: 'inline', alignItems: 'center' }}>
           <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, marginRight: 8 }}>{item.text}</span>
           {item.isAiGenerated && (() => {
-            // Chip colour follows the button used: purple for internal sources, blue for online
+            // Icon follows the button used: purple for internal sources, blue for online
             const online = item.answerMode === 'online'
-            const chipColor = online ? '#2563eb' : '#7c3aed'
+            const iconColor = online ? '#2563eb' : '#7c3aed'
             return (
               <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: chipColor,
-                  background: online ? 'rgba(59,130,246,0.07)' : 'rgba(139,92,246,0.1)',
-                  border: online ? '1px solid rgba(59,130,246,0.35)' : '1px solid rgba(139,92,246,0.25)',
-                  padding: '2px 7px',
-                  borderRadius: 5,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 3.5,
-                  verticalAlign: 'middle',
-                  whiteSpace: 'nowrap',
-                }}
+                style={{ position: 'relative', display: 'inline-flex', verticalAlign: 'middle' }}
+                onMouseEnter={() => setShowAiTip(true)}
+                onMouseLeave={() => setShowAiTip(false)}
               >
-                {online ? (
-                  <Globe size={10} />
-                ) : (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={chipColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3v3m0 12v3m9-9h-3M6 12H3m14.36-6.36l-2.12 2.12M8.76 15.24l-2.12 2.12m10.72 0l-2.12-2.12M8.76 8.76L6.64 6.64" />
-                  </svg>
+                <span role="img" aria-label="Answered using AI" style={{ display: 'inline-flex', padding: 4, color: iconColor }}>
+                  {online ? <Globe size={14} /> : <InternalSourceIcon size={14} color={iconColor} />}
+                </span>
+                {showAiTip && (
+                  <span
+                    role="tooltip"
+                    style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, zIndex: 9999, background: '#0d212c', color: '#ffffff', fontSize: 11, fontWeight: 500, padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.18)', pointerEvents: 'none' }}
+                  >
+                    Answered using AI
+                  </span>
                 )}
-                {online ? 'Answered with Online Sources' : item.answerMode === 'internal' ? 'Answered with Internal Sources' : 'Answered with AI'}
               </span>
             )
           })()}
@@ -10096,7 +10435,8 @@ function ItemRow({
                   color: '#00a0a0',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  padding: 4,
+                  padding: 9,
+                  margin: -5,
                   flexShrink: 0,
                 }}
               >
@@ -10372,7 +10712,7 @@ function ItemRow({
                         },
                         {
                           key: 'internal',
-                          icon: <Database size={16} />,
+                          icon: <InternalSourceIcon size={16} />,
                           title: 'Check Internal Sources',
                           disabled: !!checking,
                           run: () =>
@@ -10561,13 +10901,15 @@ function ItemRow({
       {/* Assigned to & Delete */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 2 }}>
         {!hideAssigneesAndQueue && (
-          <AssigneesDisplay
-            assignedTo={item.assignedTo}
-            inClientQueue={item.inClientQueue}
-            onReassign={canEdit ? onReassign : undefined}
-            isContributor={isContributor}
-            itemType={item.type}
-          />
+          <div style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s ease' }}>
+            <AssigneesDisplay
+              assignedTo={item.assignedTo}
+              inClientQueue={item.inClientQueue}
+              onReassign={canEdit ? onReassign : undefined}
+              isContributor={isContributor}
+              itemType={item.type}
+            />
+          </div>
         )}
         {canEdit && !hideAssigneesAndQueue && (
           <button
@@ -10577,7 +10919,8 @@ function ItemRow({
               border: 'none',
               cursor: 'pointer',
               color: item.inClientQueue ? '#22c55e' : '#cbd5e1',
-              padding: 4,
+              padding: 9,
+              margin: -5,
               opacity: item.inClientQueue || hovered ? 1 : 0,
               transition: 'all 0.15s',
               display: 'flex',
@@ -10618,7 +10961,8 @@ function ItemRow({
               border: 'none',
               cursor: 'pointer',
               color: '#ef4444',
-              padding: 2,
+              padding: 9,
+              margin: -7,
               opacity: hovered ? 1 : 0,
               transition: 'opacity 0.1s',
             }}
@@ -11858,11 +12202,14 @@ function DraftRiskPanel({
   statuses: Record<string, DraftRiskStatus>
   canInsert: boolean
   onJump: (section: string) => void
-  onInsert: (risk: DraftRisk) => void
+  onInsert: (risk: DraftRisk, text: string) => void
   onDismiss: (id: string) => void
   onRestore: (id: string) => void
 }) {
   const [view, setView] = useState<DraftRiskStatus>('suggested')
+  // The AI suggestion can be edited before it is inserted into the draft
+  const [editedTexts, setEditedTexts] = useState<Record<string, string>>({})
+  const suggestionOf = (r: DraftRisk) => editedTexts[r.id] ?? `${r.title}. Mitigation: ${r.action}`
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const statusOf = (r: DraftRisk): DraftRiskStatus => statuses[r.id] ?? 'suggested'
   const visible = risks.filter((r) => statusOf(r) === view)
@@ -11972,14 +12319,26 @@ function DraftRiskPanel({
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: '#475569', lineHeight: 1.55 }}>
                   <li>{r.action}</li>
                 </ul>
+                {view === 'suggested' && canInsert && (
+                  <div style={{ marginTop: 12 }}>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Text for the draft</label>
+                    <textarea
+                      rows={4}
+                      value={suggestionOf(r)}
+                      onChange={(e) => setEditedTexts((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#0d212c', fontFamily: 'inherit', resize: 'vertical', outline: 'none', lineHeight: 1.5 }}
+                    />
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>You can edit this suggestion before inserting it.</div>
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   {view === 'suggested' && (
                     <>
                       {canInsert && (
                         <button
                           type="button"
-                          onClick={() => onInsert(r)}
-                          style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#00A3A3', color: '#ffffff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+                          onClick={() => onInsert(r, suggestionOf(r).trim() || r.title)}
+                          style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#00C4C4', color: '#ffffff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
                         >
                           Insert into draft
                         </button>
@@ -12032,6 +12391,18 @@ interface ReviewItem {
   category: ReviewCategory
   title: string
   section: string
+  priority: 'High' | 'Medium' | 'Low'
+  /** Short reference shown under the category, e.g. fnd-3cd30235d2 */
+  ref: string
+  description: string
+  evidence: string[]
+}
+
+/** A recorded decision on a review item: resolved, or dismissed (the SOW text stays as it is) */
+interface ReviewDecision {
+  status: 'resolved' | 'dismissed'
+  wording: string
+  note: string
 }
 
 /** Same colours as the Review Highlights chips above the draft */
@@ -12074,23 +12445,43 @@ const REVIEW_ITEMS_SEED: ReviewItem[] = [
   category: category as ReviewCategory,
   title,
   section: REVIEW_ITEM_SECTIONS[i % REVIEW_ITEM_SECTIONS.length],
+  priority: (['High', 'Medium', 'Low'] as const)[i % 3],
+  ref: `fnd-${((i + 1) * 2654435761).toString(16).slice(0, 10)}`,
+  description:
+    category === 'Conflict'
+      ? `The uploaded documents disagree on this point: ${title.toLowerCase()}. Confirm which source applies before the section is finalised.`
+      : category === 'Missing information'
+        ? `${title}. The uploaded documents do not give this detail, so the section cannot state it with confidence.`
+        : `The draft relies on this assumption: ${title.toLowerCase()}. Confirm it with the client or replace it with a confirmed value.`,
+  evidence: [`[RFP p.${3 + (i % 5)}]`, `[RFP p.${7 - (i % 3)}]`, ...(i % 2 === 0 ? [`[RFP p.${4 + (i % 4)}]`] : [])],
 }))
 
 function DraftReviewPanel({
   items,
-  resolvedIds,
+  decisions,
+  canDecide,
   onJump,
+  onDecide,
 }: {
   items: ReviewItem[]
-  resolvedIds: string[]
+  decisions: Record<string, ReviewDecision>
+  canDecide: boolean
   onJump: (section: string) => void
+  onDecide: (id: string, decision: ReviewDecision, draftText: string) => void
 }) {
   const [view, setView] = useState<'open' | 'resolved'>('open')
-  const shown = items.filter((i) => (view === 'open') !== resolvedIds.includes(i.id))
+  const [draftText, setDraftText] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [wording, setWording] = useState('')
+  const [note, setNote] = useState('')
+  const shown = items.filter((i) => (view === 'open') !== Boolean(decisions[i.id]))
   const subTab = (key: 'open' | 'resolved', label: string) => (
     <button
       type="button"
-      onClick={() => setView(key)}
+      onClick={() => {
+        setView(key)
+        setExpandedId(null)
+      }}
       style={{
         padding: '8px 2px',
         border: 'none',
@@ -12106,6 +12497,7 @@ function DraftReviewPanel({
       {label}
     </button>
   )
+  const fieldStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#0d212c', fontFamily: 'inherit', resize: 'vertical', outline: 'none', background: '#ffffff' }
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', gap: 18, borderBottom: '1px solid #e2e8f0', marginBottom: 6 }}>
@@ -12119,27 +12511,140 @@ function DraftReviewPanel({
       )}
       {shown.map((it, idx) => {
         const st = REVIEW_CATEGORY_STYLES[it.category]
+        const open = expandedId === it.id
+        const decision = decisions[it.id]
+        const toggle = () => {
+          if (open) {
+            setExpandedId(null)
+            return
+          }
+          setExpandedId(it.id)
+          setWording(decision?.wording ?? '')
+          setNote(decision?.note ?? '')
+          setDraftText(`Resolved: ${it.title}.`)
+          onJump(it.section)
+        }
         return (
-          <div
-            key={it.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => onJump(it.section)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onJump(it.section)
-              }
-            }}
-            style={{ padding: '12px 4px', borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0', cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', lineHeight: 1.4 }}>{it.title}</div>
-              <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: st.color, background: st.bg, border: `1px solid ${st.border}`, padding: '1px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
-                {it.category}
-              </span>
+          <div key={it.id} style={{ padding: '12px 4px', borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0' }}>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-expanded={open}
+              onClick={toggle}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  toggle()
+                }
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', lineHeight: 1.4 }}>{it.title}</div>
+                <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: st.color, background: st.bg, border: `1px solid ${st.border}`, padding: '1px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
+                  {it.category}
+                </span>
+              </div>
+              <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 4 }}>
+                {it.section}
+                {decision && (
+                  <span style={{ marginLeft: 8, fontWeight: 600, color: decision.status === 'resolved' ? '#16a34a' : '#64748b' }}>
+                    · {decision.status === 'resolved' ? 'Resolved' : 'Dismissed'}
+                  </span>
+                )}
+              </div>
             </div>
-            <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 4 }}>{it.section}</div>
+            {open && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#475569', background: '#f1f5f9', padding: '3px 10px', borderRadius: 8 }}>{it.category}</span>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>
+                    <strong style={{ color: '#0d212c' }}>{it.priority}</strong> priority · {decision ? (decision.status === 'resolved' ? 'resolved' : 'dismissed') : 'open'}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Review item · {it.ref}</div>
+                <button
+                  type="button"
+                  onClick={() => onJump(it.section)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, padding: 0, background: 'none', border: 'none', borderBottom: '1px solid #5eead4', color: '#008b8b', fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}
+                >
+                  <ListChecks size={13} />
+                  View affected section: {it.section}
+                </button>
+                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.55, marginTop: 10 }}>{it.description}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                  <span style={{ fontSize: 11.5, color: '#475569' }}>Evidence:</span>
+                  {it.evidence.map((ev) => (
+                    <span key={ev} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#008b8b', background: 'rgba(0,196,196,0.08)', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 6, padding: '2px 8px' }}>
+                      <FileText size={11} />
+                      {ev}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ borderTop: '1px solid #e2e8f0', margin: '14px 0 12px' }} />
+                {decision || !canDecide ? (
+                  decision && (
+                    <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.55 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Your decision</div>
+                      {decision.wording && (
+                        <div style={{ marginBottom: 6 }}>
+                          <strong style={{ color: '#0d212c' }}>Chosen wording: </strong>
+                          {decision.wording}
+                        </div>
+                      )}
+                      {decision.note && (
+                        <div>
+                          <strong style={{ color: '#0d212c' }}>Decision note: </strong>
+                          {decision.note}
+                        </div>
+                      )}
+                      {!decision.wording && !decision.note && <div>No wording or note was recorded.</div>}
+                    </div>
+                  )
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c' }}>Record your decision</div>
+                    <div style={{ fontSize: 11.5, color: '#94a3b8', lineHeight: 1.5, margin: '4px 0 10px' }}>
+                      Resolve or dismiss this review item. This records your decision; it does not change the SOW text.
+                    </div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Chosen wording</label>
+                    <textarea rows={3} value={wording} onChange={(e) => setWording(e.target.value)} placeholder="Record agreed wording for this decision" style={fieldStyle} />
+                    <div style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 10px', lineHeight: 1.45 }}>
+                      Saved in decision history. To apply it to the SOW, edit the affected section separately.
+                    </div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Decision note</label>
+                    <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why is this resolved or not applicable?" style={fieldStyle} />
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', margin: '12px 0 4px' }}>Text for the draft section</label>
+                    <textarea rows={3} value={draftText} onChange={(e) => setDraftText(e.target.value)} placeholder="Text to add to the section when you resolve this item" style={fieldStyle} />
+                    <div style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0', lineHeight: 1.45 }}>
+                      Added to the section and highlighted when you resolve. Dismissing leaves the draft as it is.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDecide(it.id, { status: 'resolved', wording: wording.trim(), note: note.trim() }, draftText.trim() || wording.trim() || it.title)
+                          setExpandedId(null)
+                        }}
+                        style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: '#00C4C4', color: '#ffffff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Resolve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDecide(it.id, { status: 'dismissed', wording: wording.trim(), note: note.trim() }, '')
+                          setExpandedId(null)
+                        }}
+                        style={{ padding: '7px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: '#0d212c', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )
       })}
@@ -12275,6 +12780,41 @@ function SOWDraftTab({
   const [dragOverTocIdx, setDragOverTocIdx] = useState<number | null>(null)
   const [showDraftSectionInfoTooltip, setShowDraftSectionInfoTooltip] = useState(false)
   const [draftSectionsOpen, setDraftSectionsOpen] = useState(true)
+  const [draftPaneWidth, setDraftPaneWidth] = useState(280)
+  const [drawerOpen, setDrawerOpen] = useState(true)
+  const [drawerWidth, setDrawerWidth] = useState(380)
+  // Preview: only the draft, in a wider space
+  const [draftPreview, setDraftPreview] = useState(false)
+  const [showPreviewTip, setShowPreviewTip] = useState(false)
+  // The toolbar and Review Highlights strip slide away while reading down the draft
+  const [barsHidden, setBarsHidden] = useState(false)
+  const barsHiddenRef = useRef(false)
+  useEffect(() => {
+    const el = scrollAreaRef.current
+    if (!el) return
+    let last = el.scrollTop
+    let lockUntil = 0
+    const apply = (hide: boolean) => {
+      if (barsHiddenRef.current === hide) return
+      barsHiddenRef.current = hide
+      lockUntil = Date.now() + 350
+      setBarsHidden(hide)
+    }
+    const onScroll = () => {
+      const top = el.scrollTop
+      if (Date.now() < lockUntil) {
+        last = top
+        return
+      }
+      const delta = top - last
+      if (top < 24) apply(false)
+      else if (delta > 14) apply(true)
+      else if (delta < -14) apply(false)
+      if (Math.abs(delta) > 14 || top < 24) last = top
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
   // Citations are visible in the draft by default; the Review Highlights row can hide them
   const [showDraftCitations, setShowDraftCitations] = useState(true)
   const [showExportModal, setShowExportModal] = useState(false)
@@ -12353,7 +12893,9 @@ function SOWDraftTab({
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
   const [editingReplyText, setEditingReplyText] = useState('')
   const [drawerTab, setDrawerTab] = useState<'review' | 'comments' | 'history' | 'trace' | 'risk'>('review')
-  const [resolvedReviewIds] = useState<string[]>([])
+  const [hoveredDrawerTab, setHoveredDrawerTab] = useState<string | null>(null)
+  const [reviewDecisions, setReviewDecisions] = useState<Record<string, ReviewDecision>>({})
+  const resolvedReviewIds = Object.keys(reviewDecisions)
   const [riskStatuses, setRiskStatuses] = useState<Record<string, DraftRiskStatus>>({})
   const [showQuality, setShowQuality] = useState(false)
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
@@ -12878,7 +13420,7 @@ function SOWDraftTab({
     items
       .map((item, idx) => {
         const pageNum = (idx % 4) + 1
-        const citationTag = `<span class="sow-inline-citation" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:3.5px 10px;font-size:12px;font-weight:500;color:#475569;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;vertical-align:baseline;transition:all 0.15s ease;" title="Click to preview citation in ${item.fileName}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Attachment A · p.${pageNum}</span>`
+        const citationTag = `<span class="sow-inline-citation" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:3.5px 10px;font-size:12px;font-weight:500;color:#475569;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;vertical-align:baseline;transition:all 0.15s ease;" title="Click to preview citation in ${item.fileName}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Doc ${(idx % 3) + 1}</span>`
         let body = ''
         switch (item.title) {
           case 'Project Introduction':
@@ -13145,12 +13687,11 @@ function SOWDraftTab({
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <button type="button" class="sow-draft-citation-btn" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" style="display:inline-flex;align-items:center;gap:6px;padding:3.5px 10px;font-size:12px;font-weight:500;color:#475569;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;transition:all 0.15s ease;" title="Click to view citation in ${item.fileName}">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              Attachment A · p.${pageNum}
+              Doc ${(idx % 3) + 1}
             </button>
           </div>
-          <button type="button" class="sow-draft-trace-btn" data-section="${item.title}" data-secidx="${idx}" style="display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:#008b8b;font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 4px;transition:opacity 0.15s ease;">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
-            View trace
+          <button type="button" class="sow-draft-trace-btn" aria-label="View trace" title="View trace" data-section="${item.title}" data-secidx="${idx}" style="display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:#008b8b;font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 4px;transition:opacity 0.15s ease;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
           </button>
         </div>
       </div>`
@@ -13695,23 +14236,70 @@ function SOWDraftTab({
     document.getElementById(`sow-section-${idx}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  /** Adds the risk and its mitigation to the end of the related section, then takes the user there */
-  const insertRiskIntoDraft = (risk: DraftRisk) => {
+  /** Adds the (possibly edited) risk as a highlighted block at the end of the related section, then takes the user there */
+  const insertRiskIntoDraft = (risk: DraftRisk, text: string) => {
     const sectionTitle = risk.section ?? 'Risks & Mitigations'
     const idx = findSectionIdxForAffected(sectionTitle)
     const el = idx === -1 ? null : document.getElementById(`sow-section-${idx}`)
+    let box: HTMLElement | null = null
     if (el) {
-      const p = document.createElement('p')
-      const label = document.createElement('strong')
-      label.textContent = `Risk (${risk.severity}): `
-      p.appendChild(label)
-      p.appendChild(document.createTextNode(`${risk.title}. Mitigation: ${risk.action}`))
-      el.appendChild(p)
+      const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      box = document.createElement('div')
+      box.className = 'sow-inserted-risk sow-risk-highlight sow-risk-pulse'
+      box.setAttribute('data-risk-id', risk.id)
+      box.innerHTML =
+        `<h3 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#0d212c;">Risk assessment</h3>` +
+        `<p style="margin:0 0 6px;font-size:13px;color:#475569;line-height:1.6;">All risks below are PROPOSALS for PMO assessment; ratings are Low / Medium / High.</p>` +
+        `<p style="margin:0 0 10px;font-size:12px;color:#008b8b;font-weight:600;">Inserted from the Risks panel · PMO confirmation required</p>` +
+        `<p style="margin:0 0 6px;font-size:13px;color:#374151;line-height:1.65;"><strong>PROPOSAL</strong> – ${esc(text)} · ${risk.severity}</p>` +
+        `<p style="margin:0;font-size:12.5px;color:#64748b;line-height:1.6;">Affected section: ${esc(sectionTitle)}</p>`
+      el.appendChild(box)
       setHasUnsaved(true)
       if (isPMO || isReviewer || isContributor) setHasUnreviewedEdits(true)
     }
     setRiskStatuses((prev) => ({ ...prev, [risk.id]: 'draft' }))
-    jumpToSection(sectionTitle)
+    if (idx !== -1) setActiveSectionIdx(idx)
+    const target = box
+    setTimeout(() => {
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 60)
+    setTimeout(() => target?.classList.remove('sow-risk-pulse'), 2800)
+    // The highlight goes away as soon as the user clicks anywhere else
+    setTimeout(() => {
+      const clear = () => {
+        target?.classList.remove('sow-risk-highlight', 'sow-risk-pulse')
+        document.removeEventListener('mousedown', clear, true)
+      }
+      document.addEventListener('mousedown', clear, true)
+    }, 400)
+  }
+
+  /** Adds the resolution to the related section as a highlighted block; the highlight clears on the next click elsewhere */
+  const insertResolvedReviewIntoDraft = (item: ReviewItem, text: string) => {
+    const idx = findSectionIdxForAffected(item.section)
+    const el = idx === -1 ? null : document.getElementById(`sow-section-${idx}`)
+    if (!el) return
+    const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const box = document.createElement('div')
+    box.className = 'sow-inserted-risk sow-risk-highlight sow-risk-pulse'
+    box.setAttribute('data-review-id', item.id)
+    box.innerHTML =
+      `<p style="margin:0 0 6px;font-size:12px;color:#008b8b;font-weight:600;">Review item resolved · ${esc(item.category)}</p>` +
+      `<p style="margin:0 0 6px;font-size:13px;color:#374151;line-height:1.65;">${esc(text)}</p>` +
+      `<p style="margin:0;font-size:12px;color:#64748b;line-height:1.6;">Resolved from the Review panel: ${esc(item.title)}</p>`
+    el.appendChild(box)
+    setHasUnsaved(true)
+    if (isPMO || isReviewer || isContributor) setHasUnreviewedEdits(true)
+    setActiveSectionIdx(idx)
+    setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
+    setTimeout(() => box.classList.remove('sow-risk-pulse'), 2800)
+    setTimeout(() => {
+      const clear = () => {
+        box.classList.remove('sow-risk-highlight', 'sow-risk-pulse')
+        document.removeEventListener('mousedown', clear, true)
+      }
+      document.addEventListener('mousedown', clear, true)
+    }, 400)
   }
 
   // Move on to the next AI option once one has been answered
@@ -13977,11 +14565,17 @@ function SOWDraftTab({
 
       <div style={{ display: 'flex', height: '100%', minHeight: 0, overflow: 'hidden' }}>
         {/* ── Left TOC sidebar ──────────────────────────────────────────────── */}
-        {draftSectionsOpen && (
-        <div
+        <SidePane
+          side="left"
+          open={draftSectionsOpen}
+          onOpenChange={setDraftSectionsOpen}
+          width={draftPaneWidth}
+          onWidthChange={setDraftPaneWidth}
+          minWidth={220}
+          maxWidth={460}
+          label="sections"
+          hidden={draftPreview}
           style={{
-            width: 264,
-            flexShrink: 0,
             borderRight: '1px solid rgba(0,196,196,0.15)',
             display: 'flex',
             flexDirection: 'column',
@@ -14086,7 +14680,7 @@ function SOWDraftTab({
                     color: '#64748b',
                   }}
                 >
-                  <Info size={14} color="#64748b" />
+                  <HelpCircle size={14} color="#64748b" />
                 </button>
                 {showDraftSectionInfoTooltip && (
                   <div
@@ -14114,15 +14708,6 @@ function SOWDraftTab({
               </div>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setDraftSectionsOpen(false)}
-              aria-label="Collapse sections panel"
-              title="Collapse sections"
-              style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: '#64748b', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6 }}
-            >
-              <PanelLeftClose size={16} />
-            </button>
           </div>
 
           {/* Section list */}
@@ -14235,20 +14820,9 @@ function SOWDraftTab({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                     {/* Status icon */}
                     {isApproved ? (
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#16a34a"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <title>Approved</title>
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
+                      <span title="Approved" style={{ display: 'inline-flex' }}>
+                        <CheckCircle2 size={17} fill="#16a34a" stroke="#ffffff" aria-label="Approved" />
+                      </span>
                     ) : isRejected ? (
                       <svg
                         width="16"
@@ -14269,7 +14843,7 @@ function SOWDraftTab({
                       <>
                         {/* Score badge */}
                         <div
-                          style={{ position: 'relative' }}
+                          style={{ position: 'relative', opacity: hoveredTocIdx === idx || hoveredScoreIdx === idx ? 1 : 0, transition: 'opacity 0.15s ease' }}
                           onMouseEnter={() => setHoveredScoreIdx(idx)}
                           onMouseLeave={() => setHoveredScoreIdx(null)}
                         >
@@ -14277,13 +14851,19 @@ function SOWDraftTab({
                             style={{
                               fontSize: 11,
                               fontWeight: 700,
-                              padding: '2px 7px',
-                              borderRadius: 12,
-                              background: scoreBg(item.score),
+                              padding: '3px 2px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'help',
                               color: scoreColor(item.score),
                             }}
                           >
-                            {confidenceLevel(item.score)}
+                            {(() => {
+                              const lvl = confidenceLevel(item.score)
+                              const ConfIcon = lvl === 'High' ? ShieldCheck : lvl === 'Medium' ? ShieldMinus : ShieldAlert
+                              return <ConfIcon size={15} strokeWidth={2} aria-label={scoreLabel(item.score)} style={{ display: 'block' }} />
+                            })()}
                           </span>
                           {hoveredScoreIdx === idx && (
                             <div
@@ -14594,8 +15174,7 @@ function SOWDraftTab({
             )
           })}
           </div>
-        </div>
-        )}
+        </SidePane>
 
         {/* ── Right editor area ──────────────────────────────────────────────── */}
         <div
@@ -14607,6 +15186,19 @@ function SOWDraftTab({
             overflow: 'hidden',
           }}
         >
+          {/* Toolbar + Review Highlights: hidden while scrolling down, back as soon as the user scrolls up */}
+          <div
+            aria-hidden={barsHidden}
+            style={{
+              flexShrink: 0,
+              display: draftPreview ? 'none' : undefined,
+              maxHeight: barsHidden ? 0 : 260,
+              opacity: barsHidden ? 0 : 1,
+              overflow: barsHidden ? 'hidden' : 'visible',
+              pointerEvents: barsHidden ? 'none' : undefined,
+              transition: 'max-height 0.28s ease, opacity 0.2s ease',
+            }}
+          >
           {/* Toolbar */}
           {!showFormattingToolbar ? (
             <div
@@ -14622,18 +15214,6 @@ function SOWDraftTab({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {!draftSectionsOpen && (
-                <button
-                  type="button"
-                  onClick={() => setDraftSectionsOpen(true)}
-                  aria-label="Expand sections panel"
-                  title="Expand sections"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#00C4C4', background: 'rgba(0,196,196,0.10)', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 10, cursor: 'pointer', marginRight: 4, pointerEvents: 'auto', flexShrink: 0 }}
-                >
-                  <PanelLeft size={14} />
-                  Sections
-                </button>
-              )}
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
                   SOW Draft {isReviewer ? 'Review' : ''}
                 </span>
@@ -14661,18 +15241,6 @@ function SOWDraftTab({
               opacity: isReadOnly ? 0.5 : 1,
             }}
           >
-            {!draftSectionsOpen && (
-              <button
-                type="button"
-                onClick={() => setDraftSectionsOpen(true)}
-                aria-label="Expand sections panel"
-                title="Expand sections"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#00C4C4', background: 'rgba(0,196,196,0.10)', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 10, cursor: 'pointer', marginRight: 4, pointerEvents: 'auto', flexShrink: 0 }}
-              >
-                <PanelLeft size={14} />
-                Sections
-              </button>
-            )}
             {/* Undo / Redo */}
             <TBtn
               title="Undo"
@@ -15263,14 +15831,18 @@ function SOWDraftTab({
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowDraftCitations((v) => !v)}
-              aria-pressed={showDraftCitations}
-              style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-            >
-              {showDraftCitations ? 'Hide Sources' : 'View Sources'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => setShowDraftCitations((v) => !v)}
+                aria-pressed={showDraftCitations}
+                style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                {showDraftCitations ? 'Hide Sources' : 'View Sources'}
+              </button>
+            </div>
+          </div>
+
           </div>
 
           {/* Unreviewed edits notice */}
@@ -15383,15 +15955,28 @@ function SOWDraftTab({
                 .sow-hide-citations .sow-inline-citation {
                   display: none !important;
                 }
+                .sow-inserted-risk {
+                  margin: 18px 0 6px;
+                  padding: 14px 18px;
+                  border: 1.5px solid transparent;
+                  border-radius: 4px;
+                }
+                .sow-inserted-risk.sow-risk-highlight {
+                  border-color: #3fb8b0;
+                  background: #f6fafa;
+                }
+                .sow-inserted-risk.sow-risk-pulse {
+                  animation: sowRiskPulse 1.1s ease-in-out 2;
+                }
+                @keyframes sowRiskPulse {
+                  0%, 100% { box-shadow: 0 0 0 0 rgba(0,196,196,0); }
+                  50% { box-shadow: 0 0 0 6px rgba(0,196,196,0.28); }
+                }
                 .sow-draft-citation-btn:hover, .sow-inline-citation:hover {
                   background: #f1f5f9 !important;
                   border-color: #94a3b8 !important;
                   color: #1e293b !important;
                   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-                }
-                .sow-draft-trace-btn:hover {
-                  background: #f1f5f9 !important;
-                  border-color: #94a3b8 !important;
                 }
                 /* Review Highlights: conflicts, missing information, assumptions */
                 .highlight-mode-conflicts .review-conflict {
@@ -15538,7 +16123,8 @@ function SOWDraftTab({
               }}
               style={{
                 margin: '0 auto',
-                maxWidth: 820,
+                maxWidth: draftPreview ? 1080 : draftSectionsOpen ? 820 : 980,
+                transition: 'max-width 0.25s ease',
                 background: '#fff',
                 minHeight: 900,
                 borderRadius: 4,
@@ -15547,6 +16133,45 @@ function SOWDraftTab({
                 position: 'relative',
               }}
             >
+              <div style={{ position: 'sticky', top: 10, height: 0, zIndex: 30, display: 'flex', justifyContent: 'flex-end', pointerEvents: 'none' }}>
+                <div style={{ pointerEvents: 'auto', transform: 'translate(46px, -38px)' }}>
+            {draftPreview ? (
+              <button
+                type="button"
+                onClick={() => setDraftPreview(false)}
+                aria-label="Exit preview"
+                title="Exit preview"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 9999, border: '1px solid #e2e8f0', background: '#ffffff', color: '#0d212c', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+              >
+                <Minimize2 size={13} />
+                Exit preview
+              </button>
+            ) : (
+              <div
+                style={{ position: 'relative' }}
+                onMouseEnter={() => setShowPreviewTip(true)}
+                onMouseLeave={() => setShowPreviewTip(false)}
+              >
+                <button
+                  type="button"
+                  onClick={() => setDraftPreview(true)}
+                  aria-label="View preview"
+                  style={{ width: 30, height: 30, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: '#008b8b', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+                >
+                  <Maximize2 size={15} />
+                </button>
+                {showPreviewTip && (
+                  <span
+                    role="tooltip"
+                    style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#0d212c', color: '#ffffff', fontSize: 11, fontWeight: 500, padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.18)', pointerEvents: 'none' }}
+                  >
+                    View preview
+                  </span>
+                )}
+              </div>
+            )}
+                </div>
+              </div>
               <div
                 ref={editorRef}
                 contentEditable={canEditAll}
@@ -15750,11 +16375,17 @@ function SOWDraftTab({
           </div>
 
           {/* ── Right panel: 2-tab side drawer (Comments & Version History) ── */}
-          {(
-          <div
+          <SidePane
+            side="right"
+            open={drawerOpen}
+            onOpenChange={setDrawerOpen}
+            width={drawerWidth}
+            onWidthChange={setDrawerWidth}
+            minWidth={240}
+            maxWidth={520}
+            label="review panel"
+            hidden={draftPreview}
             style={{
-              width: 380,
-              flexShrink: 0,
               borderLeft: '1px solid rgba(0,196,196,0.15)',
               display: 'flex',
               flexDirection: 'column',
@@ -15776,11 +16407,11 @@ function SOWDraftTab({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {([
-                  { key: 'review', label: 'Review' },
-                  { key: 'risk', label: 'Risks' },
-                  { key: 'comments', label: 'Comments' },
-                  { key: 'history', label: 'Versions' },
-                  { key: 'trace', label: 'Trace' },
+                  { key: 'review', label: 'Review', Icon: ClipboardList },
+                  { key: 'risk', label: 'Risks', Icon: AlertTriangle },
+                  { key: 'comments', label: 'Comments', Icon: MessageSquare },
+                  { key: 'history', label: 'Versions', Icon: History },
+                  { key: 'trace', label: 'Trace', Icon: GitBranch },
                 ] as const).map((t) => {
                   const openRisks = allRisks.filter((r) => (riskStatuses[r.id] ?? 'suggested') === 'suggested')
                   return (
@@ -15788,8 +16419,12 @@ function SOWDraftTab({
                       key={t.key}
                       type="button"
                       onClick={() => setDrawerTab(t.key)}
+                      onMouseEnter={() => setHoveredDrawerTab(t.key)}
+                      onMouseLeave={() => setHoveredDrawerTab(null)}
+                      aria-label={t.label}
                       style={{
-                        padding: '12px 2px 10px',
+                        position: 'relative',
+                        padding: '12px 6px 10px',
                         border: 'none',
                         borderBottom: drawerTab === t.key ? '2.5px solid #00C4C4' : '2.5px solid transparent',
                         background: 'transparent',
@@ -15804,7 +16439,15 @@ function SOWDraftTab({
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      <span>{t.label}</span>
+                      <t.Icon size={17} />
+                      {hoveredDrawerTab === t.key && (
+                        <span
+                          role="tooltip"
+                          style={{ position: 'absolute', top: 'calc(100% + 2px)', left: '50%', transform: 'translateX(-50%)', zIndex: 60, background: '#0d212c', color: '#ffffff', fontSize: 11, fontWeight: 500, padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.18)', pointerEvents: 'none' }}
+                        >
+                          {t.label}
+                        </span>
+                      )}
                       {t.key === 'review' && (
                         <span style={{ fontSize: 10.5, fontWeight: 700, color: '#00a0a0', background: 'rgba(0,196,196,0.12)', borderRadius: 9999, padding: '0 6px', lineHeight: '16px' }}>
                           {REVIEW_ITEMS_SEED.length - resolvedReviewIds.length}
@@ -15819,7 +16462,6 @@ function SOWDraftTab({
                   )
                 })}
               </div>
-
             </div>
 
             {drawerTab === 'comments' && (
@@ -16265,8 +16907,17 @@ function SOWDraftTab({
               ) : drawerTab === 'review' ? (
                 <DraftReviewPanel
                   items={REVIEW_ITEMS_SEED}
-                  resolvedIds={resolvedReviewIds}
+                  decisions={reviewDecisions}
+                  canDecide={canEditAny}
                   onJump={jumpToSection}
+                  onDecide={(id, d, text) => {
+                    setReviewDecisions((prev) => ({ ...prev, [id]: d }))
+                    if (d.status === 'resolved') {
+                      const it = REVIEW_ITEMS_SEED.find((x) => x.id === id)
+                      if (it) insertResolvedReviewIntoDraft(it, text)
+                    }
+                    showToast(d.status === 'resolved' ? 'Review item resolved' : 'Review item dismissed', 'success')
+                  }}
                 />
               ) : drawerTab === 'risk' ? (
                 <DraftRiskPanel
@@ -16419,9 +17070,7 @@ function SOWDraftTab({
                 )
               )}
             </div>
-          </div>
-        )}
-
+          </SidePane>
         {/* Center Floating FAB: AI Review & Summary */}
         {false && (isPMO || isReviewer || isContributor) && !isReadOnly && !isDraftGenerating && (
           <button
@@ -17664,6 +18313,10 @@ export function SOWDetailScreen({
   // Answered questions when the draft was last generated (null = unknown), to detect new answers afterwards
   const [generatedAnswered, setGeneratedAnswered] = useState<number | null>(null)
   const [showRegenPrompt, setShowRegenPrompt] = useState(false)
+  // Planning opens with the sections list collapsed and the Instructions pane open
+  const [instructionsShown, setInstructionsShown] = useState(true)
+  const [planSectionsOpen, setPlanSectionsOpen] = useState(false)
+  const [instructionsOpen, setInstructionsOpen] = useState(true)
   const [isFormReady, setIsFormReady] = useState(false)
   const [isFormEditable, setIsFormEditable] = useState(false)
   const [hasInvitedParticipants, setHasInvitedParticipants] = useState(false)
@@ -17748,13 +18401,7 @@ export function SOWDetailScreen({
   useEffect(() => {
     if (ctxUserSig !== ctxBaseRef.current) setContextChanged(true)
   }, [ctxUserSig])
-  const planningSig = JSON.stringify(
-    (savedSections ?? sourceSectionsForRole).map((sec) => [
-      sec.id,
-      sec.title,
-      sec.items.map((i) => [i.id, i.text, i.answered, i.response ?? '']),
-    ])
-  )
+  const planningSig = planningSigOf(savedSections ?? sourceSectionsForRole)
   const planningBaseRef = useRef<string | null>(null)
   if (planningBaseRef.current === null) planningBaseRef.current = planningSig
   const planningChanged = planningSig !== planningBaseRef.current
@@ -17771,12 +18418,18 @@ export function SOWDetailScreen({
     else handleGenerateDraft()
   }
 
+  const applyGeneratedAnswers = () => {
+    const filled = fillPlanningAnswers(savedSections ?? sourceSectionsForRole)
+    setSavedSections(filled)
+    planningBaseRef.current = planningSigOf(filled)
+  }
+
   const handleGenerateDraft = () => {
     setGenerateTip(null)
     setGeneratedScore(completionScore)
     setGeneratedAnswered(answeredNow)
-    // The new draft covers everything changed so far
-    planningBaseRef.current = planningSig
+    // The new draft covers everything changed so far, and every open question now has a pre-filled answer
+    applyGeneratedAnswers()
     ctxBaseRef.current = ctxUserSig
     setContextChanged(false)
     setIsDraftUnlocked(true)
@@ -18134,15 +18787,6 @@ export function SOWDetailScreen({
                       setExcelImport({ id: Date.now(), fileName: file.name })
                     }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => excelInputRef.current?.click()}
-                    title="Upload an Excel file to autofill questions and assumptions"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 8px', border: 'none', background: 'none', fontSize: 12.5, fontWeight: 600, color: '#00C4C4', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                  >
-                    <FileSpreadsheet size={14} />
-                    Upload Excel
-                  </button>
                 </div>
               )}
               {(activeTab === 'structure' || activeTab === 'sow-draft') && canGenerateDraft && !sentLock && draftGenState === 'idle' && !isDraftUnlocked && (
@@ -18188,14 +18832,33 @@ export function SOWDetailScreen({
                 </button>
                 </div>
               )}
-              {(activeTab === 'structure' || activeTab === 'sow-draft') &&
-                isPMORole && canGenerateDraft && !isViewOnly && isDraftUnlocked &&
-                draftGenState !== 'generating' && draftGenState !== 'shimmer' && (
+              {activeTab === 'structure' && (
+                <div style={{ order: 1, display: 'flex' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!instructionsShown) {
+                        setInstructionsShown(true)
+                        setInstructionsOpen(true)
+                      } else if (!instructionsOpen) {
+                        setInstructionsOpen(true)
+                      } else {
+                        setInstructionsShown(false)
+                      }
+                    }}
+                    aria-pressed={instructionsShown && instructionsOpen}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', border: 'none', background: 'none', fontSize: 12.5, fontWeight: 600, color: '#007a7a', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    <HelpCircle size={14} color="#00a0a0" />
+                    Instructions
+                  </button>
+                </div>
+              )}
+              {activeTab === 'structure' && needsRegen && draftGenState !== 'generating' && draftGenState !== 'shimmer' && (
                 <div style={{ order: 2, display: 'flex' }}>
                   <button
                     onClick={requestGenerateDraft}
-                    disabled={!needsRegen}
-                    title={needsRegen ? 'You changed Context or Planning after the draft was generated' : 'Available once something changes in Context or Planning'}
+                    title="You changed Context or Planning after the draft was generated"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -18203,13 +18866,13 @@ export function SOWDetailScreen({
                       padding: '6px 14px',
                       borderRadius: 8,
                       border: 'none',
-                      background: needsRegen ? '#00C4C4' : '#cbd5e1',
+                      background: '#00C4C4',
                       fontSize: 12,
                       fontWeight: 700,
-                      color: needsRegen ? '#ffffff' : '#64748b',
-                      cursor: needsRegen ? 'pointer' : 'not-allowed',
+                      color: '#ffffff',
+                      cursor: 'pointer',
                       whiteSpace: 'nowrap',
-                      boxShadow: needsRegen ? '0 2px 8px rgba(0,196,196,0.25)' : 'none',
+                      boxShadow: '0 2px 8px rgba(0,196,196,0.25)',
                     }}
                   >
                     <RefreshCw size={13} />
@@ -18300,7 +18963,10 @@ export function SOWDetailScreen({
             <div style={{ position: 'absolute', inset: 0, zIndex: 110, background: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
               <SOWPreparingAnimation
                 fileNames={uploadedFiles.map((f) => f.name)}
-                onDone={() => setIsPreparing(false)}
+                onDone={() => {
+                  applyGeneratedAnswers()
+                  setIsPreparing(false)
+                }}
               />
             </div>
           )}
@@ -18379,6 +19045,12 @@ export function SOWDetailScreen({
                 onOpenParticipantsModal={() => setShowParticipantsModal(true)}
                 sowDeadline={sowDeadline || '2026-10-31'}
                 excelImport={excelImport}
+                onUploadExcel={isPMORole && !isViewOnly ? () => excelInputRef.current?.click() : undefined}
+                sectionsPanelOpenProp={planSectionsOpen}
+                onSectionsPanelOpenChange={setPlanSectionsOpen}
+                instructionsShown={instructionsShown}
+                instructionsOpen={instructionsOpen}
+                onInstructionsOpenChange={setInstructionsOpen}
               />
             ) : (
               <LockedTabState
