@@ -60,3 +60,12 @@ select:not([multiple]) {
   background-size: 16px 16px !important;
   padding-right: 36px !important;
 }
+
+/* Focused fields: one subtle grey stroke instead of the browser's heavy ring.
+   Fields that set their own outline or border colour keep their own. */
+input:not([type='checkbox']):not([type='radio']):focus,
+textarea:focus,
+select:focus {
+  outline: 1px solid var(--border-strong);
+  outline-offset: 0;
+}

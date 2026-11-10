@@ -371,7 +371,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       className={`w-full pl-11 pr-4 py-3 text-sm font-normal text-[#0d212c] bg-white border rounded-xl outline-none transition-all placeholder:text-gray-400 ${
                         emailError
                           ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                          : 'border-[#cbd5e1] hover:border-gray-300 focus:border-[#94a3b8] focus:ring-2 focus:ring-slate-100'
+                          : 'border-[#cbd5e1] hover:border-gray-300 focus:border-[#cbd5e1] focus:ring-2 focus:ring-slate-100'
                       }`}
                     />
                   </div>
@@ -484,7 +484,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                             ? 'border-red-500 bg-red-50/20'
                             : digit
                             ? 'border-slate-300 bg-slate-50'
-                            : 'border-[#cbd5e1] bg-white hover:border-slate-400 focus:border-[#94a3b8] focus:bg-[#f8fafc] focus:ring-2 focus:ring-slate-200/60'
+                            : 'border-[#cbd5e1] bg-white hover:border-slate-400 focus:border-[#cbd5e1] focus:bg-[#f8fafc] focus:ring-2 focus:ring-slate-200/60'
                         }`}
                         data-testid={`otp-input-${index}`}
                       />

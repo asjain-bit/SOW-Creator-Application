@@ -76,6 +76,7 @@ export default function Home() {
   const [createdSowName, setCreatedSowName] = useState('Meridian Healthcare — Procurement Platform')
   const [createdSowDeadline, setCreatedSowDeadline] = useState('2026-10-31')
   const [createdTokenConsumption, setCreatedTokenConsumption] = useState(20000)
+  const [createdInstructions, setCreatedInstructions] = useState<string | undefined>(undefined)
   const [hasLoggedOut, setHasLoggedOut] = useState(false)
   // The SOW that is open (set from the list) and the ones finalized so far
   const [activeSowId, setActiveSowId] = useState<string | null>(null)
@@ -179,6 +180,7 @@ export default function Home() {
             sowName={createdSowName}
             sowDeadline={createdSowDeadline}
             tokenConsumption={createdTokenConsumption}
+            sowInstructions={createdInstructions}
             uploadedFiles={sowFiles}
             showGenerateDraft={!isParag}
             viewerRole={detailViewerRole}
@@ -243,6 +245,7 @@ export default function Home() {
         if (details?.clientName) setCreatedSowName(details.clientName)
         if (details?.sowDeadline) setCreatedSowDeadline(details.sowDeadline)
         if (details?.tokenConsumption) setCreatedTokenConsumption(details.tokenConsumption)
+        setCreatedInstructions(details?.instructions)
         setView('sow-detail')
       }}
       onNavHome={() => setView('dashboard')}

@@ -423,7 +423,9 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
     setFiles((prev) => prev.filter((f) => f.id !== id))
   }
 
-  const canCreate = allUploaded && !anyUploading && !!clientName.trim() && !!sowDeadline
+  const INSTRUCTIONS_LIMIT = 2000
+  const instructionsTooLong = instructions.length > INSTRUCTIONS_LIMIT
+  const canCreate = allUploaded && !anyUploading && !!clientName.trim() && !!sowDeadline && !instructionsTooLong
 
   const handleProceed = () => {
     if (!canCreate) return
@@ -662,8 +664,8 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   color: '#0d212c',
                   background: '#fff',
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#94a3b8'}
-                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                onFocus={(e) => e.target.style.borderColor = '#cbd5e1'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               />
             </div>
 
@@ -687,8 +689,8 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   color: '#0d212c',
                   background: '#fff',
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#94a3b8'}
-                onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                onFocus={(e) => e.target.style.borderColor = '#cbd5e1'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               />
             </div>
 
@@ -706,7 +708,7 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   width: '100%',
                   padding: '10px 14px',
                   borderRadius: 8,
-                  border: '1px solid #e2e8f0',
+                  border: instructionsTooLong ? '1px solid #ef4444' : '1px solid #e2e8f0',
                   fontSize: 13,
                   outline: 'none',
                   color: '#0d212c',
@@ -714,9 +716,20 @@ export const CreateSOWModal: React.FC<CreateSOWModalProps> = ({ isOpen, onClose,
                   resize: 'vertical',
                   fontFamily: 'inherit',
                 }}
-                onFocus={(e) => (e.target.style.borderColor = '#94a3b8')}
-                onBlur={(e) => (e.target.style.borderColor = '#cbd5e1')}
+                onFocus={(e) => (e.target.style.borderColor = instructionsTooLong ? '#ef4444' : '#cbd5e1')}
+                onBlur={(e) => (e.target.style.borderColor = instructionsTooLong ? '#ef4444' : '#e2e8f0')}
+                aria-invalid={instructionsTooLong}
               />
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 6, fontSize: 12 }}>
+                <span role={instructionsTooLong ? 'alert' : undefined} style={{ color: '#dc2626' }}>
+                  {instructionsTooLong
+                    ? `Instructions can be up to ${INSTRUCTIONS_LIMIT} characters. Remove ${instructions.length - INSTRUCTIONS_LIMIT} to continue.`
+                    : ''}
+                </span>
+                <span style={{ color: instructionsTooLong ? '#dc2626' : '#94a3b8', marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
+                  {instructions.length}/{INSTRUCTIONS_LIMIT}
+                </span>
+              </div>
             </div>
 
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: -6 }}>

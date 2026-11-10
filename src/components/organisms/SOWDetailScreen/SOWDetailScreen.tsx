@@ -20,6 +20,8 @@ interface ContextIssueState {
   updates: ContextUpdate[]
   /** In Scope items that have been signed off */
   signedOffIds: string[]
+  /** Context fields and sections that have been signed off */
+  signedFields?: string[]
   clientName?: string
 }
 import {
@@ -191,9 +193,16 @@ function SectionTitleIcon({ icon }: { icon: React.ReactNode }) {
   )
 }
 
-function SectionCard({ title, children }: { title?: React.ReactNode; children: React.ReactNode }) {
+function SectionCard({ title, children, padLeft = 20 }: { title?: React.ReactNode; children: React.ReactNode; /** Left padding of the body, widened where checkboxes sit in the margin */ padLeft?: number }) {
+  const [collapsed, setCollapsed] = useState(false)
+  const [hover, setHover] = useState(false)
+  const [focus, setFocus] = useState(false)
+  // Hidden until the section is hovered; shows "collapse" when open and "expand" when closed
+  const Chevron = collapsed ? ChevronDown : ChevronUp
   return (
     <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
         background: 'rgba(255,255,255,0.7)',
         border: '1px solid rgba(0,196,196,0.15)',
@@ -204,23 +213,41 @@ function SectionCard({ title, children }: { title?: React.ReactNode; children: R
     >
       {title && (
         <div
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest('button,input,a')) return
+            setCollapsed((v) => !v)
+          }}
           style={{
             padding: '14px 20px 12px',
-            borderBottom: '1px solid rgba(0,196,196,0.12)',
+            borderBottom: collapsed ? 'none' : '1px solid rgba(0,196,196,0.12)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: 12,
+            cursor: 'pointer',
           }}
         >
           {title}
+          <button
+            type="button"
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expand section' : 'Collapse section'}
+            title={collapsed ? 'Expand' : 'Collapse'}
+            onClick={() => setCollapsed((v) => !v)}
+            onFocus={() => setFocus(true)}
+            onBlur={() => setFocus(false)}
+            style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#64748b', opacity: hover || focus ? 1 : 0, transition: 'opacity 0.12s' }}
+          >
+            <Chevron size={20} />
+          </button>
         </div>
       )}
-      <div style={{ padding: '16px 20px' }}>{children}</div>
+      <div style={{ padding: `16px 20px 16px ${padLeft}px`, display: collapsed ? 'none' : 'block' }}>{children}</div>
     </div>
   )
 }
 
-/* ── Overview Tab ────────────────────────────────────────────────────────── */
+/* ── Overview Tab ── */
 
 function FilePreviewModal({ file, onClose }: { file: UploadedFile; onClose: () => void }) {
   useEffect(() => {
@@ -521,22 +548,43 @@ function OverviewConfirmModal({
   )
 }
 
+/** Prompt shown for SOWs that were not created through the Create SOW popup */
+const DEFAULT_SOW_INSTRUCTIONS =
+  'Prepare a Statement of Work for the Meridian Healthcare procurement platform. Emphasise the key delivery risks, a phased delivery approach with clear milestones, data residency and security compliance (ISO 27001, GDPR), integration with the existing ERP and CRM systems, and the acceptance criteria used to sign off each deliverable. Use a formal, concise tone suitable for the client steering committee. Keep commercial terms in line with the Master Services Agreement, call out all assumptions explicitly, and flag anything that needs the client to confirm before the draft is finalised. Where the source documents disagree, prefer the most recent version and note the conflict in the relevant section.'
+
 /** Popup to edit the SOW details (name, deadline, token consumption); changes apply only on Save */
 function EditSOWDetailsModal({
   sowName,
   sowDeadline,
   tokenConsumption,
+  instructions: savedInstructions,
   onSave,
   onClose,
 }: {
   sowName: string
   sowDeadline: string
   tokenConsumption: number
-  onSave: (v: { name: string; deadline: string; tokens: number }) => void
+  instructions: string
+  onSave: (v: { name: string; deadline: string; tokens: number; instructions: string }) => void
   onClose: () => void
 }) {
   const [name, setName] = useState(sowName)
   const [deadline, setDeadline] = useState(sowDeadline)
+  const [instructions, setInstructions] = useState(savedInstructions)
+  const [instrExpanded, setInstrExpanded] = useState(false)
+  const [instrOverflows, setInstrOverflows] = useState(false)
+  const instrRef = useRef<HTMLTextAreaElement>(null)
+  const INSTR_LINE = 20
+  // Measure the text at its full height to know whether more than 15 lines are needed
+  useEffect(() => {
+    const el = instrRef.current
+    if (!el) return
+    const prev = el.style.height
+    el.style.height = 'auto'
+    const full = el.scrollHeight
+    el.style.height = prev
+    setInstrOverflows(full > INSTR_LINE * 15 + 20)
+  }, [instructions, instrExpanded])
     const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 12px',
@@ -551,7 +599,7 @@ function EditSOWDetailsModal({
   }
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', marginBottom: 6 }
   const hasChanges =
-    name.trim() !== sowName.trim() || deadline !== sowDeadline || false
+    name.trim() !== sowName.trim() || deadline !== sowDeadline || instructions.trim() !== savedInstructions.trim()
   const canSave = name.trim().length > 0 && deadline.length > 0 && hasChanges
   return (
     <div
@@ -560,7 +608,7 @@ function EditSOWDetailsModal({
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div style={{ background: '#ffffff', borderRadius: 24, padding: '28px 28px 24px', width: 480, maxWidth: '90vw', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+      <div style={{ background: '#ffffff', borderRadius: 24, padding: '28px 28px 24px', width: 480, maxWidth: '90vw', maxHeight: '94vh', overflowY: 'auto', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
         <button
           onClick={onClose}
           aria-label="Close"
@@ -568,7 +616,7 @@ function EditSOWDetailsModal({
         >
           <X size={20} />
         </button>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 18 }}>Edit SOW Details</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#0d212c', marginBottom: 18 }}>SOW Details</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 22 }}>
           <div>
             <label style={labelStyle}>SOW Name</label>
@@ -577,6 +625,43 @@ function EditSOWDetailsModal({
           <div>
             <label style={labelStyle}>SOW Due Date</label>
             <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Instructions</label>
+            <textarea
+              ref={instrRef}
+              placeholder="Tell us what the draft should emphasise, e.g. key risks, delivery approach, compliance needs or the tone to use."
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              style={{
+                width: '100%',
+                height: instrExpanded ? 'min(60vh, 560px)' : INSTR_LINE * 15 + 20,
+                overflowY: instrExpanded ? 'auto' : 'hidden',
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: '1px solid #e2e8f0',
+                fontSize: 13,
+                lineHeight: `${INSTR_LINE}px`,
+                outline: 'none',
+                color: '#0d212c',
+                background: '#fff',
+                resize: 'none',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+              }}
+              onFocus={(e) => (e.target.style.borderColor = '#cbd5e1')}
+              onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+            />
+            {(instrOverflows || instrExpanded) && (
+              <button
+                type="button"
+                onClick={() => setInstrExpanded((v) => !v)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#0891b2' }}
+              >
+                {instrExpanded ? 'Show less' : 'Show more'}
+                <ChevronDown size={14} style={{ transform: instrExpanded ? 'rotate(180deg)' : undefined }} />
+              </button>
+            )}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
@@ -588,7 +673,7 @@ function EditSOWDetailsModal({
           </button>
           <button
             disabled={!canSave}
-            onClick={() => onSave({ name: name.trim(), deadline, tokens: tokenConsumption })}
+            onClick={() => onSave({ name: name.trim(), deadline, tokens: tokenConsumption, instructions: instructions.trim() })}
             style={{ flex: 1, padding: '12px', borderRadius: 12, background: canSave ? '#00C4C4' : '#cbd5e1', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed' }}
           >
             Save
@@ -660,6 +745,8 @@ function OverviewTab({
   onSowNameChange,
   sowDeadline,
   onSowDeadlineChange,
+  sowInstructions = '',
+  onSowInstructionsChange,
   tokenConsumption,
   onTokenConsumptionChange,
   isPMO = false,
@@ -676,6 +763,9 @@ function OverviewTab({
   onSowNameChange?: (val: string) => void
   sowDeadline?: string
   onSowDeadlineChange?: (val: string) => void
+  /** The prompt the SOW was generated from */
+  sowInstructions?: string
+  onSowInstructionsChange?: (val: string) => void
   tokenConsumption?: number
   onTokenConsumptionChange?: (val: number) => void
   /** PMO who can still change the SOW (uploads, deletes; confirmed first once the Context is submitted) */
@@ -695,6 +785,7 @@ function OverviewTab({
   const [uploadConfirm, setUploadConfirm] = useState<{ proceed: () => void } | null>(null)
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null)
   const [uploadTipOpen, setUploadTipOpen] = useState(false)
+  const [instructionsTipOpen, setInstructionsTipOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const toUploaded = (list: File[]): UploadedFile[] =>
@@ -785,6 +876,28 @@ function OverviewTab({
               </div>
             </div>
           ))}
+          <div
+            style={{ position: 'relative' }}
+            onMouseEnter={() => setInstructionsTipOpen(true)}
+            onMouseLeave={() => setInstructionsTipOpen(false)}
+          >
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b', marginBottom: 6 }}>Instructions</div>
+            <div
+              style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: 13, fontWeight: 400, color: '#0d212c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minHeight: 20 }}
+            >
+              {sowInstructions || '—'}
+            </div>
+            {instructionsTipOpen && sowInstructions && (
+              <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 60, paddingTop: 6 }}>
+                <div
+                  role="tooltip"
+                  style={{ width: 420, maxWidth: '80vw', maxHeight: 8 * 21 + 24, overflowY: 'auto', padding: '12px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.12)', fontSize: 13, lineHeight: '21px', fontWeight: 400, color: '#334155', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxSizing: 'border-box' }}
+                >
+                  {sowInstructions}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -908,10 +1021,12 @@ function OverviewTab({
           sowName={sowName || ''}
           sowDeadline={sowDeadline || ''}
           tokenConsumption={tokenConsumption ?? 1200}
+          instructions={sowInstructions}
           onClose={() => setEditOpen(false)}
-          onSave={({ name, deadline, tokens }) => {
+          onSave={({ name, deadline, tokens, instructions }) => {
             onSowNameChange?.(name)
             onSowDeadlineChange?.(deadline)
+            onSowInstructionsChange?.(instructions)
             onTokenConsumptionChange?.(tokens)
             setEditOpen(false)
           }}
@@ -1779,49 +1894,35 @@ export function FieldTraceDrawer({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const historyItems: {
-    id: string
-    when: string
-    who: string
-    role: string
-    content: string
-    isLatest: boolean
-    canViewPage?: boolean
-  }[] = []
-
-  if (traceData.isManuallyEdited) {
-    historyItems.push({
-      id: 'manual',
-      when: traceData.manualEditTimestamp || 'Oct 06, 2026, 11:20 AM',
-      who: traceData.manualEditBy || 'Ashika Jain (PMO)',
-      role: 'Manual Edit',
-      content: traceData.draftStatement?.statement || traceData.contextItem?.summary || 'Updated field content directly during review.',
-      isLatest: true,
-    })
-  }
-
-  if (traceData.contextItem) {
-    historyItems.push({
-      id: 'context',
-      when: traceData.contextItem.timestamp || 'Oct 05, 2026, 04:15 PM',
-      who: traceData.contextItem.addedBy || 'AI Extraction System',
-      role: 'Context Extraction',
-      content: traceData.contextItem.summary || traceData.contextItem.title,
-      isLatest: !traceData.isManuallyEdited,
-    })
-  }
-
-  if (traceData.sourceDoc) {
-    historyItems.push({
-      id: 'source',
-      when: traceData.sourceDoc.timestamp || 'Oct 05, 2026, 09:30 AM',
-      who: traceData.sourceDoc.addedBy || 'Source Document',
-      role: `Source Citation (${traceData.sourceDoc.fileName}, p. ${traceData.sourceDoc.page})`,
-      content: traceData.sourceDoc.quote || `Extracted from ${traceData.sourceDoc.fileName}`,
-      isLatest: false,
-      canViewPage: true,
-    })
-  }
+  // Version 1: taken from the documents. A manual edit makes Version 2, which is then the current one.
+  const sourceQuote = traceData.sourceDoc?.quote || ''
+  const extracted = traceData.contextItem?.summary || sourceQuote || traceData.draftStatement?.statement || ''
+  const currentText = traceData.draftStatement?.statement || extracted
+  const mk = (n: number, author: string, role: string, time: string, summary: string, before: string, after: string) => ({ n, author, role, time, summary, before, after })
+  const fieldVersions: TraceVersion[] = [
+    {
+      version: traceData.isManuallyEdited ? 2 : 1,
+      isCurrent: true,
+      iterations: traceData.isManuallyEdited
+        ? [mk(3, (traceData.manualEditBy || 'Ashika Jain (PMO)').replace(/\s*\(.*\)$/, ''), 'PMO', traceData.manualEditTimestamp || 'Just now', 'Edited the field by hand.', extracted, currentText)]
+        : [
+            mk(2, traceData.contextItem?.addedBy || 'AI SOW Agent', 'AI', traceData.contextItem?.timestamp || '', 'Summarised the source text into the field.', sourceQuote, extracted),
+            mk(1, traceData.sourceDoc?.addedBy || 'AI SOW Agent', 'AI', traceData.sourceDoc?.timestamp || '', traceData.sourceDoc ? `Taken from ${traceData.sourceDoc.fileName}, page ${traceData.sourceDoc.page}.` : 'Taken from the uploaded documents.', '', sourceQuote),
+          ],
+    },
+    ...(traceData.isManuallyEdited
+      ? [
+          {
+            version: 1,
+            isCurrent: false,
+            iterations: [
+              mk(2, traceData.contextItem?.addedBy || 'AI SOW Agent', 'AI', traceData.contextItem?.timestamp || '', 'Summarised the source text into the field.', sourceQuote, extracted),
+              mk(1, traceData.sourceDoc?.addedBy || 'AI SOW Agent', 'AI', traceData.sourceDoc?.timestamp || '', traceData.sourceDoc ? `Taken from ${traceData.sourceDoc.fileName}, page ${traceData.sourceDoc.page}.` : 'Taken from the uploaded documents.', '', sourceQuote),
+            ],
+          },
+        ]
+      : []),
+  ]
 
   return (
     <div
@@ -1878,98 +1979,15 @@ export function FieldTraceDrawer({
         </button>
       </div>
 
-      {/* Minimal Context History List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#fafbfc' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, position: 'relative' }}>
-          {/* Subtle timeline track */}
-          <div
-            style={{
-              position: 'absolute',
-              left: 7,
-              top: 14,
-              bottom: 14,
-              width: 1.5,
-              background: '#e2e8f0',
-              zIndex: 1,
-            }}
-          />
-
-          {historyItems.map((item) => (
-            <div key={item.id} style={{ display: 'flex', gap: 14, position: 'relative', zIndex: 2 }}>
-              {/* Timeline node */}
-              <div
-                style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: '50%',
-                  background: '#ffffff',
-                  border: item.isLatest ? '2.5px solid #00a0a0' : '2px solid #cbd5e1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  marginTop: 2,
-                }}
-              />
-
-              {/* Content Details */}
-              <div
-                style={{
-                  flex: 1,
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 8,
-                  padding: '12px 14px',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: 6,
-                    gap: 8,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>
-                      {item.who}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: '#64748b',
-                        background: '#f1f5f9',
-                        padding: '1px 6px',
-                        borderRadius: 4,
-                      }}
-                    >
-                      {item.role}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: 11.5, color: '#94a3b8' }}>
-                    {item.when}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 12.5,
-                    color: '#334155',
-                    lineHeight: 1.55,
-                    background: '#f8fafc',
-                    padding: '8px 10px',
-                    borderRadius: 6,
-                    border: '1px solid #f1f5f9',
-                  }}
-                >
-                  {item.content}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Versions: what changed in this field, word by word */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 20px', background: '#ffffff' }}>
+        <SectionTraceVersions
+          key={traceData.fieldKey}
+          title={traceData.fieldLabel}
+          versions={fieldVersions}
+          fieldLabel={traceData.fieldLabel}
+          heading={false}
+        />
       </div>
     </div>
   )
@@ -2033,12 +2051,12 @@ export function ItemTraceModal({
       isCurrent: false,
       tag: 'Initial AI Extraction',
       author: 'AI Extraction Agent',
-      role: 'RFP Parser v2.4',
+      role: 'Requirements Parser v2.4',
       avatarColor: '#8b5cf6',
       initials: 'AI',
       timestamp: 'Oct 2, 2026, 09:30',
-      changeReason: 'Initial extraction from Scope_Requirements_RFP.pdf (Section 3.2)',
-      content: item.text.length > 55 ? item.text.slice(0, 50) + '... [Original RFP extract]' : item.text,
+      changeReason: 'Initial extraction from Scope_Requirements.pdf (Section 3.2)',
+      content: item.text.length > 55 ? item.text.slice(0, 50) + '... [Original source extract]' : item.text,
       sourceDoc: 'Clinical Safety Case & Hazard Log Attachment A.pdf',
       page: 1,
       response: undefined,
@@ -2350,7 +2368,7 @@ const DRAFT_SECTION_REVISIONS = [
     initials: 'IR',
     avatarColor: '#8b5cf6',
     timestamp: 'Yesterday, 14:02',
-    summary: 'Reviewed against RFP specifications and added cross-reference to Attachment A.',
+    summary: 'Reviewed against requirement specifications and added cross-reference to Attachment A.',
     diffSummary: 'Resolved comment c1 and confirmed Phase 1 milestones.',
   },
   {
@@ -2362,7 +2380,7 @@ const DRAFT_SECTION_REVISIONS = [
     initials: 'AI',
     avatarColor: '#0284c7',
     timestamp: 'Oct 3, 2026, 10:15',
-    summary: 'Synthesized initial draft from RFP_Document.pdf & Project_Plan.pdf.',
+    summary: 'Synthesized initial draft from Scope_Requirements.pdf & Project_Plan.pdf.',
     diffSummary: 'Initial section generation (1,420 words).',
   },
 ]
@@ -2440,16 +2458,33 @@ function buildSectionVersions(title: string) {
   ]
 }
 
-function SectionTraceVersions({ title }: { title: string }) {
-  const versions = buildSectionVersions(title)
+type TraceVersion = {
+  version: number
+  isCurrent: boolean
+  iterations: { n: number; author: string; role: string; time: string; summary: string; before: string; after: string }[]
+}
+
+function SectionTraceVersions({
+  title,
+  versions: givenVersions,
+  fieldLabel,
+  heading = true,
+}: {
+  title: string
+  versions?: TraceVersion[]
+  /** Context page: the field every change was made to */
+  fieldLabel?: string
+  heading?: boolean
+}) {
+  const versions: TraceVersion[] = givenVersions ?? buildSectionVersions(title)
   // The current version is open; older versions stay collapsed until opened
-  const [open, setOpen] = useState<number[]>([3])
+  const [open, setOpen] = useState<number[]>([versions.find((v) => v.isCurrent)?.version ?? 3])
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ marginBottom: 6 }}>
+      {heading && <div style={{ marginBottom: 6 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>Trace: {title}</div>
         <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>What changed in each version, word by word.</div>
-      </div>
+      </div>}
       {versions.map((v, vi) => {
         const isOpen = open.includes(v.version)
         return (
@@ -2479,7 +2514,24 @@ function SectionTraceVersions({ title }: { title: string }) {
                         </span>
                         <span style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' }}>{iter.time}</span>
                       </div>
+                      {fieldLabel && (
+                        <span style={{ display: 'inline-block', marginTop: 4, fontSize: 10.5, fontWeight: 600, color: '#64748b', background: '#f1f5f9', borderRadius: 4, padding: '1px 6px' }}>Field: {fieldLabel}</span>
+                      )}
                       <div style={{ fontSize: 12, color: '#475569', margin: '3px 0 6px', lineHeight: 1.45 }}>{iter.summary}</div>
+                      {fieldLabel ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {iter.before && (
+                            <div>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#94a3b8', marginBottom: 2 }}>Previously</div>
+                              <div style={{ fontSize: 12.5, lineHeight: 1.55, color: '#64748b' }}>{iter.before}</div>
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#94a3b8', marginBottom: 2 }}>{iter.before ? 'Now' : 'Added'}</div>
+                            <div style={{ fontSize: 12.5, lineHeight: 1.55, color: '#0d212c' }}>{iter.after}</div>
+                          </div>
+                        </div>
+                      ) : (
                       <div style={{ fontSize: 12.5, lineHeight: 1.75, color: '#334155' }}>
                         {tokens.map((t, i) => (
                           <span
@@ -2496,6 +2548,7 @@ function SectionTraceVersions({ title }: { title: string }) {
                           </span>
                         ))}
                       </div>
+                      )}
                     </div>
                   )
                 })}
@@ -3513,6 +3566,115 @@ function TraceIconButton({ onClick, ariaLabel = 'View trace' }: { onClick: () =>
   )
 }
 
+const signOffBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 5,
+  fontSize: 12,
+  fontWeight: 500,
+  color: '#15803d',
+  background: '#f0fdf4',
+  border: '1px solid #86efac',
+  padding: '4px 12px',
+  borderRadius: 8,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+}
+
+/** 16px checkbox used to pick items for a sign-off */
+function SelectBox({ checked, onToggle, label }: { checked: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      aria-pressed={checked}
+      style={{
+        width: 16,
+        height: 16,
+        padding: 0,
+        borderRadius: 4,
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        border: checked ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
+        background: checked ? '#00C4C4' : '#ffffff',
+      }}
+    >
+      {checked && <Check size={11} color="#ffffff" strokeWidth={3.5} />}
+    </button>
+  )
+}
+
+/** Green tick shown on something that has been signed off */
+function SignedCheck() {
+  return (
+    <span
+      title="Signed off"
+      aria-label="Signed off"
+      role="img"
+      style={{ width: 18, height: 18, borderRadius: '50%', background: '#16a34a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+    >
+      <Check size={11} color="#ffffff" strokeWidth={3.5} />
+    </span>
+  )
+}
+
+/** Select all + Sign off for a group: same controls as the In Scope header */
+function SignOffGroupControls({
+  signedOff,
+  allSelected,
+  onToggleAll,
+  disabled,
+  onSignOff,
+  tooltip,
+}: {
+  signedOff: boolean
+  allSelected: boolean
+  onToggleAll: () => void
+  disabled: boolean
+  onSignOff: () => void
+  tooltip: string
+}) {
+  const [tip, setTip] = useState(false)
+  if (signedOff) return <SignedOffChip />
+  return (
+    <>
+      <SelectBox checked={allSelected} onToggle={onToggleAll} label={allSelected ? 'Deselect all' : 'Select all'} />
+      <span style={{ width: 1, height: 16, background: '#e2e8f0' }} />
+      <span style={{ position: 'relative', display: 'inline-flex' }} onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onSignOff}
+          style={{ ...signOffBtnStyle, ...(disabled ? { opacity: 0.55, cursor: 'not-allowed' } : {}) }}
+        >
+          <FileCheck size={13} />
+          Sign off
+        </button>
+        {tip && (
+          <span
+            role="tooltip"
+            style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50, width: 240, padding: '8px 12px', borderRadius: 8, background: '#0d212c', color: '#ffffff', fontSize: 12, fontWeight: 500, lineHeight: 1.45, textAlign: 'left' }}
+          >
+            {tooltip}
+          </span>
+        )}
+      </span>
+    </>
+  )
+}
+
+function SignedOffChip() {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11.5, fontWeight: 600, padding: '3px 12px', borderRadius: 8, whiteSpace: 'nowrap', color: '#166534', background: '#dcfce7', border: '1px solid #bbf7d0' }}>
+      Signed off
+    </span>
+  )
+}
+
 function ContextFieldHeader({
   label,
   citation,
@@ -3523,8 +3685,14 @@ function ContextFieldHeader({
   issueKind,
   onResolve,
   signOff,
+  count,
+  fieldSelect,
 }: {
   label: string
+  /** Number of items, shown after the label */
+  count?: number
+  /** A single field that can be ticked for sign-off (box shows on hover or once something is ticked) */
+  fieldSelect?: { selected: boolean; signed: boolean; showBox: boolean; onToggle: () => void }
   required?: boolean
   citation?: {
     sourceDoc: string
@@ -3542,6 +3710,7 @@ function ContextFieldHeader({
   signOff?: { signedOff: boolean; onSignOff: () => void; disabled?: boolean; allSelected?: boolean; onToggleAll?: () => void }
 }) {
   const [signOffTip, setSignOffTip] = useState(false)
+  const [headHover, setHeadHover] = useState(false)
   // Citations stay hidden until the user clicks View Sources in the Context Fields row
   const showSources = React.useContext(SourcesVisibleContext)
   // Secondary action (green fill and stroke)
@@ -3561,7 +3730,10 @@ function ContextFieldHeader({
   }
   return (
     <div
+      onMouseEnter={() => setHeadHover(true)}
+      onMouseLeave={() => setHeadHover(false)}
       style={{
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -3570,6 +3742,15 @@ function ContextFieldHeader({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+        {fieldSelect && !fieldSelect.signed && (
+          <span style={{ position: 'absolute', left: -22, display: 'inline-flex', opacity: headHover || fieldSelect.showBox ? 1 : 0, transition: 'opacity 0.12s' }}>
+            <SelectBox
+              checked={fieldSelect.selected}
+              onToggle={fieldSelect.onToggle}
+              label={fieldSelect.selected ? `Deselect ${label} for sign-off` : `Select ${label} for sign-off`}
+            />
+          </span>
+        )}
         <label
           style={{
             fontSize: 13,
@@ -3579,6 +3760,7 @@ function ContextFieldHeader({
           }}
         >
           {label}
+          {count !== undefined && <span style={{ marginLeft: 6, fontWeight: 600, color: '#64748b' }}>({count})</span>}
           {required && <span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>}
         </label>
 
@@ -3678,6 +3860,7 @@ function ContextFieldHeader({
 
       {/* Right Actions: icon-only View trace */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {fieldSelect?.signed && <SignedCheck />}
         {onOpenTrace && <TraceIconButton onClick={onOpenTrace} />}
         {issueKind && onResolve && (
           <button type="button" onClick={onResolve} style={textActionBtn}>
@@ -3726,7 +3909,7 @@ function ContextFieldHeader({
               <FileCheck size={13} />
               Sign off
             </button>
-            {signOffTip && (
+            {signOffTip && signOff.onToggleAll && (
               <span
                 role="tooltip"
                 style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50, width: 240, padding: '8px 12px', borderRadius: 8, background: '#0d212c', color: '#ffffff', fontSize: 11.5, lineHeight: 1.5, fontWeight: 400, boxShadow: '0 6px 18px rgba(0,0,0,0.2)', pointerEvents: 'none' }}
@@ -3893,7 +4076,7 @@ function SidePane({
             onClick={() => onOpenChange(false)}
             aria-label={`Collapse ${label}`}
             title={`Collapse ${label}`}
-            style={{ position: 'absolute', top: 14, [isLeft ? 'right' : 'left']: -14, width: 28, height: 28, borderRadius: '50%', border: '1px solid #e2e8f0', background: '#ffffff', color: '#475569', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', opacity: hover || dragging ? 1 : 0, pointerEvents: hover || dragging ? 'auto' : 'none', transition: 'opacity 0.15s ease', zIndex: 25 }}
+            style={{ position: 'absolute', top: 14, [isLeft ? 'right' : 'left']: -14, width: 28, height: 28, borderRadius: '50%', border: '1px solid #e2e8f0', background: '#ffffff', color: '#475569', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', opacity: hover || dragging ? 1 : 0, pointerEvents: hover || dragging ? 'auto' : 'none', transition: 'opacity 0.15s ease', zIndex: 60 }}
           >
             <CloseIcon size={15} />
           </button>
@@ -3903,32 +4086,7 @@ function SidePane({
   )
 }
 
-/** Planning instructions: what the icons mean, one short line each */
-function PlanningInstructions() {
-  const chip = (text: string) => (
-    <span style={{ fontSize: 11, fontWeight: 600, color: '#00a0a0', background: 'rgba(0,196,196,0.12)', padding: '2px 7px', borderRadius: 5 }}>{text}</span>
-  )
-  const rows: { icon: React.ReactNode; title: string; text: string }[] = [
-    { icon: <span style={{ display: 'inline-flex', gap: 3 }}>{chip('Q1')}{chip('A1')}</span>, title: 'Q and A', text: 'Q is a question, A is an assumption. Hover to see the full name.' },
-    { icon: <AlertCircle size={18} color="#ef4444" />, title: 'Overdue', text: 'The section is past its deadline. Shows when you hover over the section.' },
-    { icon: <InternalSourceIcon size={18} color="#7c3aed" />, title: 'Answered using AI', text: 'The answer came from your internal documents.' },
-    { icon: <Globe size={18} color="#2563eb" />, title: 'Answered using AI', text: 'The answer came from an online search.' },
-    {
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
-          <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-        </svg>
-      ),
-      title: 'Client queue',
-      text: 'Adds the item to the client queue, so it can be sent to the client in an Excel file.',
-    },
-    { icon: <Edit2 size={17} color="#00a0a0" />, title: 'Edit', text: 'Edit or rewrite the answer.' },
-    { icon: <Clock size={17} color="#008b8b" />, title: 'View trace', text: 'See where the answer came from and how it changed.' },
-    { icon: <span style={{ width: 16, height: 16, borderRadius: 4, border: '1.5px solid #cbd5e1', display: 'inline-block' }} />, title: 'Select', text: 'Tick items to assign or delete several at once.' },
-    { icon: <ChevronDown size={18} color="#0d212c" />, title: 'Open or close', text: 'Hover over a section to open or close it.' },
-    { icon: <RefreshCw size={16} color="#00a0a0" />, title: 'Regenerate Draft', text: 'Appears after you change Context or Planning. It updates the draft.' },
-  ]
+function InstructionsPanel({ rows }: { rows: { icon: React.ReactNode; title: string; text: string }[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
@@ -3948,6 +4106,83 @@ function PlanningInstructions() {
       </div>
     </div>
   )
+}
+
+/** Context instructions: what the icons on the Context page mean, one short line each */
+function ContextInstructions() {
+  const chip = (text: string, color: string, bg: string) => (
+    <span style={{ fontSize: 10.5, fontWeight: 600, color, background: bg, padding: '2px 6px', borderRadius: 5, whiteSpace: 'nowrap' }}>{text}</span>
+  )
+  const rows: { icon: React.ReactNode; title: string; text: string }[] = [
+    { icon: <ChevronDown size={18} color="#0d212c" />, title: 'Open or close', text: 'Hover over a section to show its open or close icon.' },
+    { icon: <Clock size={17} color="#008b8b" />, title: 'View trace', text: 'See where the content came from and how it changed, version by version.' },
+    { icon: <FileText size={16} color="#64748b" />, title: 'Source', text: 'The document and page the content was taken from. Use View Sources to show or hide it.' },
+    { icon: chip('Edited', '#b45309', '#fef3c7'), title: 'Manually Edited', text: 'Someone changed the AI-extracted content by hand.' },
+    { icon: chip('Conflict', '#dc2626', '#fee2e2'), title: 'Conflict', text: 'The uploaded documents disagree about this field.' },
+    { icon: chip('Clarify', '#b45309', '#fef3c7'), title: 'Clarification needed', text: 'More information is needed from you for this field.' },
+    { icon: <CheckCircle2 size={16} color="#15803d" />, title: 'Resolve', text: 'Opens the questions that settle a conflict or clarification.' },
+    { icon: <FileCheck size={16} color="#15803d" />, title: 'Sign off', text: 'Signs off the items or fields you ticked. It stays off until something is ticked.' },
+    { icon: <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#16a34a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Check size={11} color="#ffffff" strokeWidth={3.5} /></span>, title: 'Signed off', text: 'The item or field is validated. Signed-off items are locked.' },
+    { icon: <span style={{ width: 16, height: 16, borderRadius: 4, border: '1.5px solid #cbd5e1', display: 'inline-block' }} />, title: 'Select', text: 'Tick items or fields, or use the top box to tick all, then sign them off together.' },
+    { icon: <PlusCircle size={19} fill="#00C4C4" stroke="#ffffff" />, title: 'Included', text: 'The item is in scope. Use the dropdown to change it.' },
+    { icon: <XCircle size={19} fill="#ef4444" stroke="#ffffff" />, title: 'Excluded', text: 'The item is out of scope. Use the dropdown to change it.' },
+    { icon: <Plus size={17} color="#00a0a0" />, title: 'Add', text: 'Adds a new commitment, scope item or tag.' },
+    { icon: <X size={16} color="#94a3b8" />, title: 'Remove', text: 'Removes the commitment, scope item or tag.' },
+  ]
+  return <InstructionsPanel rows={rows} />
+}
+
+/** Planning instructions: what the icons mean, one short line each */
+/** Inbox tray icon used for the Client Queue */
+function ClientQueueGlyph({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+      <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </svg>
+  )
+}
+
+function PlanningInstructions() {
+  const chip = (text: string) => (
+    <span style={{ fontSize: 11, fontWeight: 600, color: '#00a0a0', background: 'rgba(0,196,196,0.12)', padding: '2px 7px', borderRadius: 5 }}>{text}</span>
+  )
+  const rows: { icon: React.ReactNode; title: string; text: string }[] = [
+    { icon: <span style={{ display: 'inline-flex', gap: 3 }}>{chip('Q1')}{chip('A1')}</span>, title: 'Q and A', text: 'Q is a question, A is an assumption. Hover to see the full name.' },
+    { icon: <AlertCircle size={18} color="#ef4444" />, title: 'Overdue', text: 'The section is past its deadline. Shows when you hover over the section.' },
+    { icon: <InternalSourceIcon size={18} color="#7c3aed" />, title: 'Answered using AI', text: 'The answer came from your internal documents.' },
+    { icon: <Globe size={18} color="#2563eb" />, title: 'Answered using AI', text: 'The answer came from an online search.' },
+    {
+      icon: <ClientQueueGlyph size={18} color="#475569" />,
+      title: 'Client queue',
+      text: 'Adds the item to the client queue, so it can be sent to the client in an Excel file.',
+    },
+    { icon: <Plus size={17} color="#00a0a0" />, title: 'Add question or assumption', text: 'Adds a new question or assumption to the section.' },
+    { icon: <Paperclip size={17} color="#475569" />, title: 'Upload document', text: 'Attaches one supporting document to the question or assumption.' },
+    { icon: <Edit2 size={17} color="#00a0a0" />, title: 'Edit', text: 'Edit or rewrite the answer.' },
+    { icon: <Check size={17} color="#16a34a" strokeWidth={2.5} />, title: 'Save', text: 'Saves the answer you edited or wrote.' },
+    { icon: <Clock size={17} color="#008b8b" />, title: 'View trace', text: 'See where the answer came from and how it changed.' },
+    { icon: <MessageSquare size={16} color="#3b82f6" />, title: 'Client response', text: 'Shows the answer received from the client.' },
+    { icon: <Trash2 size={16} color="#ef4444" />, title: 'Delete', text: 'Deletes a question or assumption. Use the one in the toolbar to delete the selected items.' },
+    { icon: <Users size={16} color="#00a0a0" />, title: 'Assign to', text: 'Assigns the selected items to a contributor.' },
+    { icon: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#0d212c' }}><ClientQueueGlyph size={16} /><ChevronDown size={12} color="#0d212c" /></span>, title: 'Client Queue menu', text: 'Opens the menu to upload or download the client queue Excel file.' },
+    { icon: <UploadCloud size={17} color="#475569" />, title: 'Upload Excel', text: 'Uploads the Excel file with the client answers.' },
+    { icon: <Download size={17} color="#475569" />, title: 'Download Excel', text: 'Downloads the items in the client queue as an Excel file.' },
+    { icon: <span style={{ width: 16, height: 16, borderRadius: 4, border: '1.5px solid #cbd5e1', display: 'inline-block' }} />, title: 'Select', text: 'Tick items to assign or delete several at once.' },
+    {
+      icon: (
+        <svg width="10" height="14" viewBox="0 0 10 14" fill="#64748b" aria-hidden="true">
+          {[2, 7, 12].flatMap((y) => [3, 7].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" />))}
+        </svg>
+      ),
+      title: 'Drag handle',
+      text: 'Drag a section to change its order. Shows when you hover over the section.',
+    },
+    { icon: <ChevronDown size={18} color="#0d212c" />, title: 'Open or close', text: 'Hover over a section to open or close it.' },
+    { icon: <HelpCircle size={16} color="#64748b" />, title: 'Help', text: 'Hover to see what a section can do.' },
+    { icon: <RefreshCw size={16} color="#00a0a0" />, title: 'Regenerate Draft', text: 'Appears after you change Context or Planning. It updates the draft.' },
+  ]
+  return <InstructionsPanel rows={rows} />
 }
 
 /** Icon for answers produced from internal sources (same icon in the Answer with AI menu and on the answered item) */
@@ -4052,8 +4287,10 @@ function ScopeSection({
   onChangeItem,
   onRemoveItem,
   onAddItem,
+  count,
 }: {
   label: string
+  count?: number
   kind: ScopeItem['scope']
   items: ScopeItem[]
   isEditable: boolean
@@ -4094,6 +4331,7 @@ function ScopeSection({
     <div style={{ marginBottom: 18 }}>
       <ContextFieldHeader
         label={label}
+        count={count}
         required={required}
         signOff={signOff}
       />
@@ -4359,10 +4597,12 @@ function ContextRichTextField({
   issueKind,
   onResolve,
   signOff,
+  fieldSelect,
 }: {
   issueKind?: QuestionKind
   onResolve?: () => void
   signOff?: { signedOff: boolean; onSignOff: () => void }
+  fieldSelect?: { selected: boolean; signed: boolean; showBox: boolean; onToggle: () => void }
   label: string
   required?: boolean
   value: string
@@ -4401,6 +4641,7 @@ function ContextRichTextField({
         issueKind={issueKind}
         onResolve={onResolve}
         signOff={signOff}
+        fieldSelect={fieldSelect}
       />
       <textarea
         value={value}
@@ -4452,6 +4693,8 @@ function DocumentUploaderCard({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const [headHover, setHeadHover] = useState(false)
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -4490,6 +4733,8 @@ function DocumentUploaderCard({
 
   return (
     <div
+      onMouseEnter={() => setHeadHover(true)}
+      onMouseLeave={() => setHeadHover(false)}
       style={{
         marginTop: 24,
         background: '#ffffff',
@@ -4499,11 +4744,15 @@ function DocumentUploaderCard({
         boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      <div
+        onClick={() => setCollapsed((v) => !v)}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: collapsed ? 0 : 14, cursor: 'pointer' }}
+      >
         <div>
           <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center' }}>
             <SectionTitleIcon icon={isEditable ? <UploadCloud size={14} /> : <FileText size={14} />} />
             {isEditable ? 'Reference Document Repository' : 'Uploaded Documents'}
+            <span style={{ marginLeft: 6, fontSize: 14, fontWeight: 600, color: '#64748b' }}>({files.length})</span>
           </div>
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
             {isEditable
@@ -4511,9 +4760,12 @@ function DocumentUploaderCard({
               : 'Documents used for this context. Upload or delete documents from the Overview tab.'}
           </div>
         </div>
+        <span style={{ flexShrink: 0, display: 'inline-flex', color: '#64748b', opacity: headHover ? 1 : 0, transition: 'opacity 0.12s' }} aria-hidden="true" title={collapsed ? 'Expand' : 'Collapse'}>
+          {collapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+        </span>
       </div>
 
-      {isEditable && (
+      {!collapsed && isEditable && (
         <div
           onDragOver={(e) => {
             e.preventDefault()
@@ -4584,7 +4836,7 @@ function DocumentUploaderCard({
         </div>
       )}
 
-      {files.length > 0 && (
+      {!collapsed && files.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginTop: 12 }}>
           {files.map((file) => (
             <div
@@ -4692,6 +4944,132 @@ const MOCK_FORM_DATA: SOWFormData = {
       text: 'Deliver role-based training sessions for all 120 clinical and procurement staff.',
       citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
       citationSnippet: 'Phase 2 – Output testing. U.S.-licensed clinicians evaluate the agent by posing as patients; the company reports 7.7K+ clinicians and 775K+ test calls.',
+      citationPage: 1,
+    },
+    {
+      id: '7',
+      text: 'Maintain a clinical safety case and hazard log reviewed at every release.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Maintain a clinical safety case and hazard log reviewed at every release.',
+      citationPage: 1,
+    },
+    {
+      id: '8',
+      text: 'Provide 24/7 incident escalation to a named clinical safety officer.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Provide 24/7 incident escalation to a named clinical safety officer.',
+      citationPage: 1,
+    },
+    {
+      id: '9',
+      text: 'Complete data migration validation with a signed reconciliation report.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Complete data migration validation with a signed reconciliation report.',
+      citationPage: 1,
+    },
+    {
+      id: '10',
+      text: 'Deliver a security and penetration test summary before go-live.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Deliver a security and penetration test summary before go-live.',
+      citationPage: 1,
+    },
+    {
+      id: '11',
+      text: 'Run user acceptance testing with the client\'s clinical leads for each release.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Run user acceptance testing with the client\'s clinical leads for each release.',
+      citationPage: 1,
+    },
+    {
+      id: '12',
+      text: 'Provide monthly service reports covering uptime, incidents and safety events.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Provide monthly service reports covering uptime, incidents and safety events.',
+      citationPage: 1,
+    },
+    {
+      id: '13',
+      text: 'Keep all patient data hosted in-region for the life of the engagement.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Keep all patient data hosted in-region for the life of the engagement.',
+      citationPage: 1,
+    },
+    {
+      id: '14',
+      text: 'Document and hand over runbooks for every production service.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Document and hand over runbooks for every production service.',
+      citationPage: 1,
+    },
+    {
+      id: '15',
+      text: 'Support integration with the client\'s existing identity and access systems.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Support integration with the client\'s existing identity and access systems.',
+      citationPage: 1,
+    },
+    {
+      id: '16',
+      text: 'Deliver an agreed rollout plan for each clinical site before deployment.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Deliver an agreed rollout plan for each clinical site before deployment.',
+      citationPage: 1,
+    },
+    {
+      id: '17',
+      text: 'Provide a named delivery lead and escalation path for the full engagement.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Provide a named delivery lead and escalation path for the full engagement.',
+      citationPage: 1,
+    },
+    {
+      id: '18',
+      text: 'Complete a post-go-live safety review within 90 days of launch.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Complete a post-go-live safety review within 90 days of launch.',
+      citationPage: 1,
+    },
+    {
+      id: '19',
+      text: 'Maintain a change-control log for every scope or timeline variation.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Maintain a change-control log for every scope or timeline variation.',
+      citationPage: 1,
+    },
+    {
+      id: '20',
+      text: 'Train the client\'s administrators to manage content and configuration.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Train the client\'s administrators to manage content and configuration.',
+      citationPage: 1,
+    },
+    {
+      id: '21',
+      text: 'Provide a disaster recovery plan with agreed recovery time targets.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Provide a disaster recovery plan with agreed recovery time targets.',
+      citationPage: 1,
+    },
+    {
+      id: '22',
+      text: 'Share a risk register with the client and update it every fortnight.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Share a risk register with the client and update it every fortnight.',
+      citationPage: 1,
+    },
+    {
+      id: '23',
+      text: 'Confirm accessibility conformance for all patient-facing screens.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 1)',
+      citationSnippet: 'Confirm accessibility conformance for all patient-facing screens.',
+      citationPage: 1,
+    },
+    {
+      id: '24',
+      text: 'Hand over all source documentation at the end of the engagement.',
+      citation: 'Attachment A: Clinical Safety Case (Page 1 • Section 2)',
+      citationSnippet: 'Hand over all source documentation at the end of the engagement.',
       citationPage: 1,
     },
   ],
@@ -4928,7 +5306,13 @@ function FormTab({
   ctx,
   onCtxChange,
   isSubmitted = false,
+  instructionsShown = false,
+  instructionsOpen = true,
+  onInstructionsOpenChange,
 }: {
+  instructionsShown?: boolean
+  instructionsOpen?: boolean
+  onInstructionsOpenChange?: (open: boolean) => void
   /** The context was already submitted, so new uploads change it and need confirmation */
   isSubmitted?: boolean
   /** The first-visit questions were already answered (or dismissed) for this SOW */
@@ -4952,6 +5336,26 @@ function FormTab({
   const [showSources, setShowSources] = useState(false)
   const [showCommitmentSources, setShowCommitmentSources] = useState(false)
   const [customTagInput, setCustomTagInput] = useState('')
+  const [instructionsWidth, setInstructionsWidth] = useState(380)
+  // Commitments shown so far: 10 upfront, 10 more each time View more is clicked
+  const [commitmentsShown, setCommitmentsShown] = useState(10)
+  // Sign-off works the same everywhere: tick what you want to sign off, then Sign off.
+  // Lists (Commitments, In Scope, Out of Scope) sign off item by item; single fields sign off by key.
+  const [commitSelected, setCommitSelected] = useState<string[]>([])
+  const [fieldSelected, setFieldSelected] = useState<string[]>([])
+  const [tagsHover, setTagsHover] = useState(false)
+  const [hoveredCommitId, setHoveredCommitId] = useState<string | null>(null)
+  const [signOffConfirm, setSignOffConfirm] = useState<null | 'inScope' | 'outScope' | 'commitments' | 'fields'>(null)
+  const isSigned = (key: string) => !!ctx.signedFields?.includes(key)
+  const clearSigned = (key: string) => {
+    if (ctx.signedFields?.includes(key)) onCtxChange((p) => ({ ...p, signedFields: (p.signedFields || []).filter((k) => k !== key) }))
+  }
+  const toggleIn = (setter: React.Dispatch<React.SetStateAction<string[]>>, id: string) =>
+    setter((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  const fieldSelectProps = (key: string) =>
+    isEditable
+      ? { fieldSelect: { selected: fieldSelected.includes(key), signed: isSigned(key), showBox: fieldSelected.length > 0, onToggle: () => toggleIn(setFieldSelected, key) } }
+      : {}
 
   const [loadingState, setLoadingState] = useState<'generating' | 'shimmer' | 'ready'>(
     skipLoading ? 'ready' : 'generating'
@@ -4972,7 +5376,6 @@ function FormTab({
   const [activeIssue, setActiveIssue] = useState<DocumentQuestion | null>(null)
   // In Scope items ticked for sign-off, and the confirmation popup
   const [scopeSelected, setScopeSelected] = useState<string[]>([])
-  const [signOffConfirmOpen, setSignOffConfirmOpen] = useState(false)
   const generatedUpdatesRef = useRef<ContextUpdate[]>(ctx.updates)
   useEffect(() => {
     if (ctx.init) return
@@ -5042,6 +5445,7 @@ function FormTab({
 
   // Field change handlers that set manuallyEdited flag
   const handleFieldChange = (key: keyof SOWFormData, val: string) => {
+    clearSigned(String(key))
     setFormData((prev) => ({
       ...prev,
       [key]: val,
@@ -5109,6 +5513,18 @@ function FormTab({
   const unsignedIncluded = includedItems.filter((i) => !ctx.signedOffIds.includes(i.id))
   const allSignedOff = includedItems.length > 0 && unsignedIncluded.length === 0
   const selectedForSignOff = scopeSelected.filter((id) => unsignedIncluded.some((i) => i.id === id))
+  const excludedItems = formData.scopeItems.filter((i) => i.scope === 'excluded')
+  const unsignedExcluded = excludedItems.filter((i) => !ctx.signedOffIds.includes(i.id))
+  const allExcludedSigned = excludedItems.length > 0 && unsignedExcluded.length === 0
+  const selectedExcluded = scopeSelected.filter((id) => unsignedExcluded.some((i) => i.id === id))
+  const commitKey = (id: string) => `c:${id}`
+  const unsignedCommitments = formData.commitments.filter((c: CommitmentItem) => !ctx.signedOffIds.includes(commitKey(c.id)))
+  const allCommitmentsSigned = formData.commitments.length > 0 && unsignedCommitments.length === 0
+  const selectedCommitments = commitSelected.filter((id) => unsignedCommitments.some((c: CommitmentItem) => c.id === id))
+  // Single fields: Context Fields card controls (Client Name ... Any Other Relevant Context, Context Tags)
+  const SIGN_OFF_FIELDS = ['clientName', 'description', 'businessOutcome', 'importanceValue', 'tags', 'otherContext']
+  const unsignedFields = SIGN_OFF_FIELDS.filter((k) => !isSigned(k))
+  const selectedFields = fieldSelected.filter((k) => unsignedFields.includes(k))
   const openScopeItemTrace = (item: ScopeItem, index: number, label: string) =>
     setActiveTraceTarget({
       fieldKey: `scope-${item.id}`,
@@ -5147,16 +5563,18 @@ function FormTab({
       manualEditTimestamp: 'Just now',
     })
 
-  const removeCommitment = (id: string) =>
+  const removeCommitment = (id: string) => {
     setFormData((prev) => ({
       ...prev,
       commitments: prev.commitments.filter((c: CommitmentItem) => c.id !== id),
     }))
+  }
 
   const handleAddCustomTag = () => {
     if (!customTagInput.trim()) return
     const tag = customTagInput.trim()
     if (!formData.tags.includes(tag)) {
+      clearSigned('tags')
       setFormData((prev) => ({
         ...prev,
         tags: [...prev.tags, tag],
@@ -5166,6 +5584,7 @@ function FormTab({
   }
 
   const handleRemoveTag = (tagToRemove: string) => {
+    clearSigned('tags')
     setFormData((prev) => ({
       ...prev,
       tags: prev.tags.filter((t) => t !== tagToRemove),
@@ -5278,32 +5697,47 @@ function FormTab({
       <SectionCard
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
               <SectionTitleIcon icon={<CheckSquare size={14} />} />
               <span style={{ fontSize: 18, fontWeight: 700, color: '#0d212c' }}>
-                Commitments<span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>
-              </span>
-              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
-                Deliverables &amp; safety requirements (each with dedicated citation).
+                Commitments<span style={{ marginLeft: 6, fontSize: 14, fontWeight: 600, color: '#64748b' }}>({formData.commitments.length})</span><span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowCommitmentSources((v) => !v)}
-              aria-pressed={showCommitmentSources}
-              style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-            >
-              {showCommitmentSources ? 'Hide Sources' : 'View Sources'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => setShowCommitmentSources((v) => !v)}
+                aria-pressed={showCommitmentSources}
+                style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                {showCommitmentSources ? 'Hide Sources' : 'View Sources'}
+              </button>
+              {isEditable && (
+                <SignOffGroupControls
+                  signedOff={allCommitmentsSigned}
+                  allSelected={unsignedCommitments.length > 0 && selectedCommitments.length === unsignedCommitments.length}
+                  onToggleAll={() =>
+                    setCommitSelected(selectedCommitments.length === unsignedCommitments.length ? [] : unsignedCommitments.map((c: CommitmentItem) => c.id))
+                  }
+                  disabled={selectedCommitments.length === 0}
+                  onSignOff={() => selectedCommitments.length > 0 && setSignOffConfirm('commitments')}
+                  tooltip="Select the commitments on which you want to give the sign-off, then click here."
+                />
+              )}
+            </div>
           </div>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
-          {formData.commitments.map((c: CommitmentItem, idx: number) => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16, ...(commitmentsShown > 10 ? { maxHeight: 10 * 84, overflowY: 'auto', paddingRight: 4 } : {}) }}>
+          {formData.commitments.slice(0, commitmentsShown).map((c: CommitmentItem, idx: number) => {
             const isEdited = !!c.manuallyEdited
+            const commitSigned = ctx.signedOffIds.includes(commitKey(c.id))
+            const showCommitBox = isEditable && !commitSigned && (hoveredCommitId === c.id || selectedCommitments.length > 0)
             return (
               <div
                 key={c.id}
+                onMouseEnter={() => setHoveredCommitId(c.id)}
+                onMouseLeave={() => setHoveredCommitId((h) => (h === c.id ? null : h))}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -5315,28 +5749,35 @@ function FormTab({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ flexShrink: 0 }}>
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: idx % 2 === 1 ? '#ffffff' : 'rgba(0,196,196,0.15)',
-                        color: '#00a0a0',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {idx + 1}
-                    </span>
-
+                  <div style={{ flexShrink: 0, width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {showCommitBox ? (
+                      <SelectBox
+                        checked={selectedCommitments.includes(c.id)}
+                        onToggle={() => toggleIn(setCommitSelected, c.id)}
+                        label={selectedCommitments.includes(c.id) ? 'Deselect for sign-off' : 'Select for sign-off'}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: '50%',
+                          background: idx % 2 === 1 ? '#ffffff' : 'rgba(0,196,196,0.15)',
+                          color: '#00a0a0',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {idx + 1}
+                      </span>
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                 {/* Editable In-Place Input for Commitment — Same design as client name input field */}
-                {isEditable ? (
+                {isEditable && !commitSigned ? (
                   <input
                     type="text"
                     value={c.text}
@@ -5376,6 +5817,7 @@ function FormTab({
                 )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {commitSigned && <SignedCheck />}
                     <TraceIconButton
                       onClick={() =>
                         setActiveTraceTarget({
@@ -5417,7 +5859,7 @@ function FormTab({
                       }
                     />
 
-                    {isEditable && (
+                    {isEditable && !commitSigned && (
                       <button
                         type="button"
                         onClick={() => removeCommitment(c.id)}
@@ -5508,6 +5950,16 @@ function FormTab({
           })}
         </div>
 
+        {formData.commitments.length > commitmentsShown && (
+          <button
+            type="button"
+            onClick={() => setCommitmentsShown((n) => n + 10)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 14, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#0891b2' }}
+          >
+            View more
+            <ChevronDown size={14} />
+          </button>
+        )}
         {isEditable && (
           <div style={{ display: 'flex', gap: 8 }}>
             <input
@@ -5557,23 +6009,33 @@ function FormTab({
 
       {/* ── Context Fields Card ── */}
       <SectionCard
+        padLeft={36}
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 12 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#0d212c', display: 'flex', alignItems: 'center', minWidth: 0, flex: 1, whiteSpace: 'nowrap' }}>
               <SectionTitleIcon icon={<Layers size={14} />} />
               Context Fields
-              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: '#64748b' }}>
-                Review, edit, and trace AI-extracted fields.
-              </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowSources((v) => !v)}
-              aria-pressed={showSources}
-              style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-            >
-              {showSources ? 'Hide Sources' : 'View Sources'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => setShowSources((v) => !v)}
+                aria-pressed={showSources}
+                style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                {showSources ? 'Hide Sources' : 'View Sources'}
+              </button>
+              {isEditable && (
+                <SignOffGroupControls
+                  signedOff={unsignedFields.length === 0}
+                  allSelected={unsignedFields.length > 0 && selectedFields.length === unsignedFields.length}
+                  onToggleAll={() => setFieldSelected(selectedFields.length === unsignedFields.length ? [] : unsignedFields)}
+                  disabled={selectedFields.length === 0}
+                  onSignOff={() => selectedFields.length > 0 && setSignOffConfirm('fields')}
+                  tooltip="Select the fields on which you want to give the sign-off, then click here."
+                />
+              )}
+            </div>
           </div>
         }
       >
@@ -5600,6 +6062,7 @@ function FormTab({
             }
             onOpenTrace={() => openTraceForField('clientName')}
             {...issueProps('clientName')}
+            {...fieldSelectProps('clientName')}
           />
           <input
             value={formData.clientName}
@@ -5645,6 +6108,7 @@ function FormTab({
           onOpenCitation={setCitationModalTarget}
           onOpenTrace={openTraceForField}
           {...issueProps('description')}
+          {...fieldSelectProps('description')}
         />
 
         {/* Business Outcome */}
@@ -5665,6 +6129,7 @@ function FormTab({
           onOpenCitation={setCitationModalTarget}
           onOpenTrace={openTraceForField}
           {...issueProps('businessOutcome')}
+          {...fieldSelectProps('businessOutcome')}
         />
 
         {/* Importance & Value of Solution */}
@@ -5685,11 +6150,13 @@ function FormTab({
           onOpenCitation={setCitationModalTarget}
           onOpenTrace={openTraceForField}
           {...issueProps('importanceValue')}
+          {...fieldSelectProps('importanceValue')}
         />
 
         {/* In Scope */}
         <ScopeSection
           label="In Scope"
+          count={includedItems.length}
           kind="included"
           required
           items={includedItems}
@@ -5699,7 +6166,7 @@ function FormTab({
               ? {
                   signedOff: allSignedOff,
                   disabled: selectedForSignOff.length === 0,
-                  onSignOff: () => selectedForSignOff.length > 0 && setSignOffConfirmOpen(true),
+                  onSignOff: () => selectedForSignOff.length > 0 && setSignOffConfirm('inScope'),
                   allSelected: unsignedIncluded.length > 0 && selectedForSignOff.length === unsignedIncluded.length,
                   onToggleAll: () =>
                     setScopeSelected(
@@ -5733,10 +6200,25 @@ function FormTab({
         {/* Out of Scope */}
         <ScopeSection
           label="Out of Scope"
+          count={excludedItems.length}
           kind="excluded"
           required
-          items={formData.scopeItems.filter((i) => i.scope === 'excluded')}
+          items={excludedItems}
           isEditable={isEditable}
+          signOff={
+            isEditable
+              ? {
+                  signedOff: allExcludedSigned,
+                  disabled: selectedExcluded.length === 0,
+                  onSignOff: () => selectedExcluded.length > 0 && setSignOffConfirm('outScope'),
+                  allSelected: unsignedExcluded.length > 0 && selectedExcluded.length === unsignedExcluded.length,
+                  onToggleAll: () => setScopeSelected(selectedExcluded.length === unsignedExcluded.length ? [] : unsignedExcluded.map((i) => i.id)),
+                }
+              : undefined
+          }
+          signedOffIds={ctx.signedOffIds}
+          selectedIds={selectedExcluded}
+          onToggleSelect={isEditable ? (id) => toggleIn(setScopeSelected, id) : undefined}
           onOpenItemTrace={(item, idx) => openScopeItemTrace(item, idx, 'Out of Scope')}
           onOpenCitation={(item, idx) =>
             setCitationModalTarget({
@@ -5754,20 +6236,37 @@ function FormTab({
 
         {/* AI Generated Tags (With Delete Cross & Input Field to Add New Tags) */}
         <div style={{ marginBottom: 18 }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#0d212c',
-              marginBottom: 8,
-            }}
+          <div
+            style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}
+            onMouseEnter={() => setTagsHover(true)}
+            onMouseLeave={() => setTagsHover(false)}
           >
-            Context Tags<span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>{' '}
-            <span style={{ fontWeight: 400, color: '#94a3b8' }}>
-              (AI-extracted tags — add or remove as needed)
-            </span>
-          </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            {isEditable && !isSigned('tags') && (
+              <span style={{ position: 'absolute', left: -22, display: 'inline-flex', opacity: tagsHover || fieldSelected.length > 0 ? 1 : 0, transition: 'opacity 0.12s' }}>
+                <SelectBox
+                  checked={fieldSelected.includes('tags')}
+                  onToggle={() => toggleIn(setFieldSelected, 'tags')}
+                  label={fieldSelected.includes('tags') ? 'Deselect Context Tags for sign-off' : 'Select Context Tags for sign-off'}
+                />
+              </span>
+            )}
+            <label
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#0d212c',
+              }}
+            >
+              Context Tags<span style={{ color: '#ef4444', marginLeft: 3 }}>*</span>{' '}
+              <span style={{ fontWeight: 400, color: '#94a3b8' }}>
+                (AI-extracted tags — add or remove as needed)
+              </span>
+            </label>
+            </div>
+            {isEditable && isSigned('tags') && <SignedCheck />}
+          </div>
 
           {/* Tags List */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: isEditable ? 10 : 0 }}>
@@ -5878,6 +6377,7 @@ function FormTab({
           isEditable={isEditable}
           onOpenCitation={setCitationModalTarget}
           onOpenTrace={openTraceForField}
+          {...fieldSelectProps('otherContext')}
         />
       </SectionCard>
 
@@ -5903,48 +6403,56 @@ function FormTab({
         />
       )}
 
-      {/* Sign off the In Scope items */}
-      {signOffConfirmOpen && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setSignOffConfirmOpen(false)
-          }}
-        >
-          <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 500, maxWidth: '90vw', maxHeight: '86vh', display: 'flex', flexDirection: 'column', position: 'relative', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <button
-              onClick={() => setSignOffConfirmOpen(false)}
-              aria-label="Close"
-              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
-            >
-              <X size={20} />
-            </button>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>Sign off scope?</div>
-            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
-              By signing off, you confirm that you have read and validated the In Scope items. These items will be treated as the approved scope when the SOW is generated.
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => setSignOffConfirmOpen(false)}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Cancel
+      {/* Confirm a sign-off (In Scope, Out of Scope, Commitments or Context fields) */}
+      {signOffConfirm && (() => {
+        const close = () => setSignOffConfirm(null)
+        const copy = {
+          inScope: { title: 'Sign off scope?', body: 'By signing off, you confirm that you have read and validated the In Scope items. These items will be treated as the approved scope when the SOW is generated.' },
+          outScope: { title: 'Sign off Out of Scope items?', body: 'By signing off, you confirm that you have read and validated the Out of Scope items.' },
+          commitments: { title: 'Sign off commitments?', body: 'By signing off, you confirm that you have read and validated the selected commitments.' },
+          fields: { title: 'Sign off fields?', body: 'By signing off, you confirm that you have read and validated the selected fields. Changing a field later withdraws its sign-off.' },
+        }[signOffConfirm]
+        const confirm = () => {
+          if (signOffConfirm === 'inScope' || signOffConfirm === 'outScope') {
+            const chosen = signOffConfirm === 'inScope' ? selectedForSignOff : selectedExcluded
+            setScopeSelected((prev) => prev.filter((id) => !chosen.includes(id)))
+            onCtxChange((p) => ({ ...p, signedOffIds: Array.from(new Set([...p.signedOffIds, ...chosen])) }))
+          } else if (signOffConfirm === 'commitments') {
+            const chosen = selectedCommitments.map(commitKey)
+            setCommitSelected([])
+            onCtxChange((p) => ({ ...p, signedOffIds: Array.from(new Set([...p.signedOffIds, ...chosen])) }))
+          } else {
+            const chosen = selectedFields
+            setFieldSelected([])
+            onCtxChange((p) => ({ ...p, signedFields: Array.from(new Set([...(p.signedFields || []), ...chosen])) }))
+          }
+          close()
+        }
+        return (
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) close()
+            }}
+          >
+            <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 24px', width: 500, maxWidth: '90vw', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+              <button onClick={close} aria-label="Close" style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                <X size={20} />
               </button>
-              <button
-                onClick={() => {
-                  const chosen = selectedForSignOff
-                  setSignOffConfirmOpen(false)
-                  setScopeSelected([])
-                  onCtxChange((p) => ({ ...p, signedOffIds: Array.from(new Set([...p.signedOffIds, ...chosen])) }))
-                }}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#16a34a', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Sign off
-              </button>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>{copy.title}</div>
+              <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>{copy.body}</div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button onClick={close} style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={confirm} style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#16a34a', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  Sign off
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Citation Preview Modal */}
       {citationModalTarget && (
@@ -5954,59 +6462,37 @@ function FormTab({
         />
       )}
 
-      {/* Field Provenance Trace Panel (always visible; shows empty state until a field is traced) */}
-      <div
-        style={{
-          width: 420,
-          flexShrink: 0,
-          position: 'relative',
-          borderLeft: '1px solid rgba(0,196,196,0.15)',
-          background: '#f8fafc',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {activeTraceTarget ? (
-          <FieldTraceDrawer
-            traceData={activeTraceTarget}
-            onClose={() => setActiveTraceTarget(null)}
-            onOpenCitation={(target) => {
-              setActiveTraceTarget(null)
-              setCitationModalTarget(target)
-            }}
-          />
-        ) : (
-          <>
-            <div
-              style={{
-                padding: '12px 16px 10px',
-                borderBottom: '1.5px solid #e2e8f0',
-                background: '#ffffff',
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#00a0a0',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <Clock size={14} />
-              Trace
-            </div>
-            <div
-              style={{
-                fontSize: 12.5,
-                color: '#94a3b8',
-                textAlign: 'center',
-                padding: '36px 14px',
-                lineHeight: 1.5,
-              }}
-            >
-              Click &ldquo;View trace&rdquo; on any commitment or field to see where its content came from.
-            </div>
-          </>
-        )}
-      </div>
+      {/* Instructions pane: open by default. View trace slides over it and closes back to it. */}
+      {instructionsShown && (
+        <SidePane
+          side="right"
+          open={instructionsOpen || !!activeTraceTarget}
+          onOpenChange={(o) => {
+            if (!o) setActiveTraceTarget(null)
+            onInstructionsOpenChange?.(o)
+          }}
+          width={instructionsWidth}
+          onWidthChange={setInstructionsWidth}
+          minWidth={300}
+          maxWidth={520}
+          label="instructions"
+          style={{ borderLeft: '1px solid rgba(0,196,196,0.15)', background: '#ffffff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+        >
+          <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <ContextInstructions />
+            {activeTraceTarget && (
+              <FieldTraceDrawer
+                traceData={activeTraceTarget}
+                onClose={() => setActiveTraceTarget(null)}
+                onOpenCitation={(target) => {
+                  setActiveTraceTarget(null)
+                  setCitationModalTarget(target)
+                }}
+              />
+            )}
+          </div>
+        </SidePane>
+      )}
     </div>
     </SourcesVisibleContext.Provider>
   )
@@ -6037,6 +6523,8 @@ function AddSectionModal({
   const [pendingUpload, setPendingUpload] = useState<{ name: string; type: string }[] | null>(null)
   const [sectionTitle, setSectionTitle] = useState('')
   const [isTitleListOpen, setIsTitleListOpen] = useState(false)
+  // The title field is focused when the popup opens; that first focus must not open the list
+  const skipFocusOpen = useRef(true)
   const titleComboRef = useRef<HTMLDivElement>(null)
   const [description, setDescription] = useState('')
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string}[]>([])
@@ -6150,7 +6638,13 @@ function AddSectionModal({
                 setSectionTitle(e.target.value)
                 setIsTitleListOpen(true)
               }}
-              onFocus={() => setIsTitleListOpen(true)}
+              onFocus={() => {
+                if (skipFocusOpen.current) {
+                  skipFocusOpen.current = false
+                  return
+                }
+                setIsTitleListOpen(true)
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   setIsTitleListOpen(false)
@@ -6326,7 +6820,7 @@ function AddSectionModal({
               <span style={{ color: '#00a0a0', fontWeight: 600 }}>Click to browse</span> or drag & drop documents here
             </div>
             <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-              Supports PDF, DOCX, XLSX (Max 1 document)
+              Supports PDF, DOCX, XLSX (Max 1 document, up to 20 MB)
             </div>
           </div>
           {uploadedFiles.length > 0 && (
@@ -6658,7 +7152,6 @@ function AssignContributorDialog({
         </button>
         <div style={{ padding: '26px 28px 18px' }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c' }}>Assign contributor</div>
-          <div style={{ fontSize: 13.5, color: '#64748b', marginTop: 4 }}>Assign one person to own this section.</div>
           <div style={{ fontSize: 13.5, color: '#64748b', marginTop: 14 }}>
             Section: <strong style={{ marginLeft: 6, color: '#0d212c' }}>{sectionTitle}</strong>
           </div>
@@ -6674,19 +7167,18 @@ function AssignContributorDialog({
                 aria-haspopup="listbox"
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((v) => !v)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#ffffff', cursor: 'pointer', textAlign: 'left' }}
+                style={{ width: '100%', height: 40, boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#ffffff', cursor: 'pointer', textAlign: 'left' }}
               >
                 {selected ? (
                   <>
-                    {avatar(selected, 40)}
-                    <span style={{ width: 1, alignSelf: 'stretch', background: '#e2e8f0' }} />
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: 'block', fontSize: 14.5, fontWeight: 600, color: '#0d212c' }}>{selected}</span>
-                      <span style={{ display: 'block', fontSize: 12.5, color: '#64748b' }}>{memberEmailByName(selected)}</span>
+                    {avatar(selected, 26)}
+                    <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 8, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0d212c' }}>{selected}</span>
+                      <span style={{ fontSize: 12.5, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis' }}>{memberEmailByName(selected)}</span>
                     </span>
                   </>
                 ) : (
-                  <span style={{ flex: 1, fontSize: 14, color: '#94a3b8', padding: '9px 0' }}>Select a contributor</span>
+                  <span style={{ flex: 1, fontSize: 14, color: '#94a3b8' }}>Select a contributor</span>
                 )}
                 <ChevronDown size={18} color="#64748b" />
               </button>
@@ -9015,7 +9507,7 @@ function StructureTab({
     setSectionsOpenLocal(o)
     onSectionsPanelOpenChange?.(o)
   }
-  const [planPaneWidth, setPlanPaneWidth] = useState(330)
+  const [planPaneWidth, setPlanPaneWidth] = useState(280)
   const [instructionsWidth, setInstructionsWidth] = useState(340)
   const scrollToSection = useCallback((id: string) => {
     const el = sectionRefs.current[id]
@@ -9398,31 +9890,6 @@ function StructureTab({
                 }}
               >
                 Assumptions
-              </div>
-            </div>
-            <div
-              style={{
-                flex: 1,
-                background: 'rgba(0,196,196,0.08)',
-                borderRadius: 6,
-                padding: '6px 10px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#00a0a0', lineHeight: 1 }}>
-                {completionScore}%
-              </div>
-              <div
-                style={{
-                  fontSize: 10,
-                  color: '#64748b',
-                  marginTop: 3,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                Completeness
               </div>
             </div>
           </div>
@@ -10037,6 +10504,7 @@ function StructureTab({
                       )}
                     </div>
                     Client Queue
+                    <ChevronDown size={12} color="currentColor" />
                   </button>
                   {clientQueueMenuOpen && (
                     <>
@@ -11633,7 +12101,7 @@ const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
     description: 'Implementation timeline differs: Section 3 says 8 weeks; Section 7 says 10 weeks.',
     affected: 'Scope · Timeline',
     evidence: 'Implementation timeline differs: Section 3 states "8 weeks" for rollout completion while Section 7 timeline schedule lists "10 weeks".',
-    suggestedFix: 'Standardize project timeline duration across all sections to 8 weeks as confirmed in RFP.',
+    suggestedFix: 'Standardize project timeline duration across all sections to 8 weeks as confirmed in the source documents.',
     resolved: false,
   },
   {
@@ -11644,7 +12112,7 @@ const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
     description: 'Two key statements have no linked requirement, source, or approved change.',
     affected: 'Executive Summary',
     evidence: 'Two key statements have no linked requirement, source, or approved change in the intake repository or validated stakeholder responses.',
-    suggestedFix: 'Link Executive Summary milestones to RFP Section 4.2 data source.',
+    suggestedFix: 'Link Executive Summary milestones to source Section 4.2 data source.',
     resolved: false,
   },
   {
@@ -11665,7 +12133,7 @@ const INITIAL_AI_FINDINGS: AIReviewFinding[] = [
     title: 'Deliverable 4 terminology mismatch',
     description: 'Deliverable 4 uses terminology that differs from the approved client input.',
     affected: 'Deliverables',
-    evidence: 'Deliverable 4 uses terminology that differs from the approved client input document "Scope_Requirements_RFP.pdf".',
+    evidence: 'Deliverable 4 uses terminology that differs from the approved client input document "Scope_Requirements.pdf".',
     suggestedFix: 'Align terminology to match approved "Clinical Decision Support" standard.',
     resolved: false,
   },
@@ -11809,7 +12277,7 @@ function AIReviewModal({
     {
       key: 'Completeness',
       name: 'Completeness',
-      description: 'Checks for mandatory section coverage, RFP requirements, and deliverable commitments.',
+      description: 'Checks for mandatory section coverage, requirements, and deliverable commitments.',
     },
     {
       key: 'Consistency',
@@ -11819,7 +12287,7 @@ function AIReviewModal({
     {
       key: 'Traceability',
       name: 'Traceability',
-      description: 'Confirms that statements, assumptions, and commitments link back to RFP or source citations.',
+      description: 'Confirms that statements, assumptions, and commitments link back to source citations.',
     },
     {
       key: 'Clarity',
@@ -12649,6 +13117,50 @@ const RISK_CATEGORY_LABELS: Record<DraftRiskKind, string> = {
 
 type DraftRiskStatus = 'suggested' | 'draft' | 'dismissed'
 
+/** Says where a risk came from: proposed by the agent, or added by the user with Add risk. Explained on hover. */
+function RiskOriginIcon({ manual }: { manual: boolean }) {
+  const [hover, setHover] = useState(false)
+  const label = manual ? 'Manually added' : 'Proposed by the agent'
+  const text = manual
+    ? 'You added this risk yourself.'
+    : "The agent suggests this risk. You don't have to agree with it. Dismiss it if it doesn't apply."
+  return (
+    <span
+      style={{ position: 'relative', display: 'inline-flex' }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <span
+        role="img"
+        aria-label={label}
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: '50%',
+          // Agent = blue, manual = slate, so neither reads as the primary teal
+          background: manual ? '#f1f5f9' : '#eff6ff',
+          border: `1px solid ${manual ? '#cbd5e1' : '#bfdbfe'}`,
+          color: manual ? '#475569' : '#2563eb',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {manual ? <Edit2 size={11} /> : <Sparkles size={11} />}
+      </span>
+      {hover && (
+        <span
+          role="tooltip"
+          style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50, width: 230, padding: '8px 10px', borderRadius: 8, background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 6px 18px rgba(15,23,42,0.14)', textAlign: 'left' }}
+        >
+          <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0d212c', marginBottom: 2 }}>{label}</span>
+          <span style={{ display: 'block', fontSize: 11.5, fontWeight: 400, color: '#475569', lineHeight: 1.45 }}>{text}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 function DraftRiskPanel({
   risks,
   statuses,
@@ -12660,7 +13172,12 @@ function DraftRiskPanel({
   members = [],
   sectionTitles = [],
   onAddRisk,
+  newIds = [],
+  onSeen,
 }: {
+  /** Risks raised by the user's own edits: marked with a dot until they are clicked */
+  newIds?: string[]
+  onSeen?: (id: string) => void
   risks: DraftRisk[]
   statuses: Record<string, DraftRiskStatus>
   canInsert: boolean
@@ -12862,35 +13379,49 @@ function DraftRiskPanel({
         const sev = RISK_SEVERITY_STYLES[r.severity]
         const open = expandedId === r.id
         return (
-          <div key={r.id} style={{ padding: '12px 4px', borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0' }}>
+          <div
+            key={r.id}
+            style={{
+              position: 'relative',
+              padding: '12px 4px',
+              borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0',
+              // New items: tint runs edge to edge; the dot sits in the drawer's side padding so the title stays aligned
+              ...(newIds.includes(r.id) ? { background: 'rgba(0,196,196,0.06)', margin: '0 -12px', padding: '12px 16px' } : {}),
+            }}
+          >
+            {newIds.includes(r.id) && <span role="img" aria-label="New" title="New" style={{ position: 'absolute', left: 3, top: 18, width: 6, height: 6, borderRadius: '50%', background: '#00C4C4' }} />}
             <div
               role="button"
               tabIndex={0}
               aria-expanded={open}
               aria-label={open ? `Collapse risk: ${r.title}` : `Expand risk: ${r.title}`}
-              onClick={() => setExpandedId(open ? null : r.id)}
+              onClick={() => {
+                onSeen?.(r.id)
+                setExpandedId(open ? null : r.id)
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
+                  onSeen?.(r.id)
                   setExpandedId(open ? null : r.id)
                 }
               }}
               style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                  {chip('Proposal', '#007a7a', 'rgba(0,196,196,0.10)', 'rgba(0,196,196,0.25)')}
-                </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', lineHeight: 1.4 }}>{r.title}</div>
                 <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5, marginTop: 2 }}>
                   {RISK_CATEGORY_LABELS[r.kind]}{r.area ? ` · ${r.area}` : ''} · {r.section ?? 'Not linked to a section'}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                <RiskOriginIcon manual={r.kind === 'custom'} />
                 {chip(r.severity, sev.color, sev.bg, sev.border)}
-                <span style={{ color: '#64748b', display: 'inline-flex' }} aria-hidden="true">
-                  {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                </span>
+                {open && (
+                  <span style={{ color: '#64748b', display: 'inline-flex' }} aria-hidden="true">
+                    <ChevronUp size={18} />
+                  </span>
+                )}
               </div>
             </div>
             {open && (
@@ -12925,7 +13456,7 @@ function DraftRiskPanel({
                     <select
                       value={contributors[r.id] ?? ''}
                       onChange={(e) => setContributors((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#0d212c', fontFamily: 'inherit', background: '#ffffff', cursor: 'pointer', marginBottom: 12 }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#0d212c', fontFamily: 'inherit', background: '#ffffff', cursor: 'pointer', marginBottom: 12, outline: 'none' }}
                     >
                       <option value="">Select a contributor</option>
                       {members.map((m) => (
@@ -13102,7 +13633,12 @@ function DraftReviewPanel({
   members,
   onJump,
   onDecide,
+  newIds = [],
+  onSeen,
 }: {
+  /** Items raised by the user's own edits: marked with a dot until they are clicked */
+  newIds?: string[]
+  onSeen?: (id: string) => void
   items: ReviewItem[]
   decisions: Record<string, ReviewDecision>
   canDecide: boolean
@@ -13159,6 +13695,7 @@ function DraftReviewPanel({
         const open = expandedId === it.id
         const decision = decisions[it.id]
         const toggle = () => {
+          onSeen?.(it.id)
           if (open) {
             setExpandedId(null)
             return
@@ -13180,7 +13717,16 @@ function DraftReviewPanel({
               : 'This detail is not in your documents. Add it so it can go into the section.'
         const finalText = (draftText.trim() + (docs.length > 0 && draftText.trim() ? ` (${docs.join(', ')})` : '')).trim()
         return (
-          <div key={it.id} style={{ padding: '12px 4px', borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0' }}>
+          <div
+            key={it.id}
+            style={{
+              position: 'relative',
+              padding: '12px 4px',
+              borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0',
+              ...(newIds.includes(it.id) ? { background: 'rgba(0,196,196,0.06)', margin: '0 -12px', padding: '12px 16px' } : {}),
+            }}
+          >
+            {newIds.includes(it.id) && <span role="img" aria-label="New" title="New" style={{ position: 'absolute', left: 3, top: 18, width: 6, height: 6, borderRadius: '50%', background: '#00C4C4' }} />}
             <div
               role="button"
               tabIndex={0}
@@ -13196,9 +13742,12 @@ function DraftReviewPanel({
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', lineHeight: 1.4 }}>{it.title}</div>
-                <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: st.color, background: st.bg, border: `1px solid ${st.border}`, padding: '1px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
+                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: st.color, background: st.bg, border: `1px solid ${st.border}`, padding: '1px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
                   {it.category}
                 </span>
+                  {open && <ChevronUp size={18} color="#64748b" aria-hidden="true" />}
+                </div>
               </div>
               <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 4 }}>
                 {it.section}
@@ -13229,22 +13778,26 @@ function DraftReviewPanel({
                       const v = it.conflict![k]
                       const picked = choice === k
                       return (
-                        <button
+                        <label
                           key={k}
-                          type="button"
-                          disabled={Boolean(decision) || !canDecide}
-                          onClick={() => {
-                            setChoice(k)
-                            setDraftText(v.value)
-                          }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: picked ? '1.5px solid #00C4C4' : '1px solid #e2e8f0', background: picked ? 'rgba(0,196,196,0.06)' : '#ffffff', cursor: decision || !canDecide ? 'default' : 'pointer' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', cursor: decision || !canDecide ? 'default' : 'pointer' }}
                         >
-                          <span style={{ width: 16, height: 16, borderRadius: '50%', flexShrink: 0, boxSizing: 'border-box', border: picked ? '5px solid #00C4C4' : '1.5px solid #cbd5e1' }} />
+                          <input
+                            type="radio"
+                            name={`conflict-${it.id}`}
+                            checked={picked}
+                            disabled={Boolean(decision) || !canDecide}
+                            onChange={() => {
+                              setChoice(k)
+                              setDraftText(v.value)
+                            }}
+                            style={{ margin: 0, flexShrink: 0, accentColor: '#00C4C4', cursor: 'inherit' }}
+                          />
                           <span>
                             <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b' }}>{v.doc} says</span>
                             <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>{v.value}</span>
                           </span>
-                        </button>
+                        </label>
                       )
                     })}
                   </div>
@@ -13785,6 +14338,80 @@ function SOWDraftTab({
     anchorText: string
     sectionTitle: string
   } | null>(null)
+  // Text the user selected in the draft: the Add comment pill appears next to it
+  const [selectionBtn, setSelectionBtn] = useState<{ top: number; text: string; sectionTitle: string } | null>(null)
+  const captureSelection = () => {
+    const sel = window.getSelection()
+    const editor = editorRef.current
+    const card = docCardRef.current
+    if (isReadOnly || !sel || sel.isCollapsed || sel.rangeCount === 0 || !editor || !card) {
+      setSelectionBtn(null)
+      return
+    }
+    const range = sel.getRangeAt(0)
+    const text = sel.toString().replace(/\s+/g, ' ').trim()
+    if (!editor.contains(range.commonAncestorContainer) || !text) {
+      setSelectionBtn(null)
+      return
+    }
+    const startEl = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement
+    const sectionTitle = startEl?.closest('.sow-section')?.querySelector('h2')?.textContent?.trim() ?? tocItems[activeSectionIdx]?.title ?? ''
+    setSelectionBtn({ top: range.getBoundingClientRect().top - card.getBoundingClientRect().top, text, sectionTitle })
+  }
+  useEffect(() => {
+    const onChange = () => {
+      const sel = window.getSelection()
+      if (!sel || sel.isCollapsed) setSelectionBtn(null)
+    }
+    document.addEventListener('selectionchange', onChange)
+    return () => document.removeEventListener('selectionchange', onChange)
+  }, [])
+  /** Finds the commented sentence in the draft, scrolls to it and highlights it until the next click */
+  const highlightCommentAnchor = (anchor: string, sectionTitle: string) => {
+    const editor = editorRef.current
+    if (!editor) return
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT)
+    const nodes: { node: Text; start: number }[] = []
+    let full = ''
+    while (walker.nextNode()) {
+      const n = walker.currentNode as Text
+      nodes.push({ node: n, start: full.length })
+      full += n.data
+    }
+    const pattern = anchor.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')
+    const m = pattern ? new RegExp(pattern, 'i').exec(full) : null
+    if (!m) {
+      const idx = tocItems.findIndex((t) => t.title === sectionTitle)
+      if (idx >= 0) document.getElementById(`sow-section-${idx}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    const locate = (offset: number) => {
+      for (let i = nodes.length - 1; i >= 0; i--) if (nodes[i].start <= offset) return { node: nodes[i].node, off: offset - nodes[i].start }
+      return { node: nodes[0].node, off: 0 }
+    }
+    const a = locate(m.index)
+    const b = locate(m.index + m[0].length)
+    const range = document.createRange()
+    range.setStart(a.node, Math.min(a.off, a.node.length))
+    range.setEnd(b.node, Math.min(b.off, b.node.length))
+    const registry = (CSS as unknown as { highlights?: Map<string, unknown> }).highlights
+    const HighlightCtor = (window as unknown as { Highlight?: new (r: Range) => unknown }).Highlight
+    if (registry && HighlightCtor) {
+      registry.set('sow-comment', new HighlightCtor(range))
+      setTimeout(() => {
+        const clear = () => {
+          registry.delete('sow-comment')
+          document.removeEventListener('mousedown', clear, true)
+        }
+        document.addEventListener('mousedown', clear, true)
+      }, 400)
+    } else {
+      const sel = window.getSelection()
+      sel?.removeAllRanges()
+      sel?.addRange(range)
+    }
+    a.node.parentElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
   const [newCommentText, setNewCommentText] = useState('')
   const [newCommentAssignee, setNewCommentAssignee] = useState('')
   const [newCommentTaggedEmails, setNewCommentTaggedEmails] = useState<string[]>([])
@@ -13849,7 +14476,7 @@ function SOWDraftTab({
     if (citationEl) {
       e.preventDefault()
       e.stopPropagation()
-      const fileName = citationEl.getAttribute('data-doc') || 'Scope_Requirements_RFP.pdf'
+      const fileName = citationEl.getAttribute('data-doc') || 'Scope_Requirements.pdf'
       const page = parseInt(citationEl.getAttribute('data-page') || '1', 10)
       const section = citationEl.getAttribute('data-section') || 'Section'
       setDraftCitationTarget({
@@ -13857,7 +14484,7 @@ function SOWDraftTab({
         sourceDoc: fileName,
         page,
         section,
-        highlightSnippet: `Validated RFP citation extracted for "${section}" from ${fileName} (Page ${page}).`
+        highlightSnippet: `Validated citation extracted for "${section}" from ${fileName} (Page ${page}).`
       })
       return
     }
@@ -13909,7 +14536,7 @@ function SOWDraftTab({
       isCurrent: false,
       timestamp: '2 days ago, 11:00',
       author: 'Intake AI Agent',
-      summary: 'Automated initial draft generated from uploaded RFP and MSA docs',
+      summary: 'Automated initial draft generated from uploaded requirements and MSA docs',
       changesCount: 45,
     },
   ])
@@ -13939,6 +14566,7 @@ function SOWDraftTab({
   >([])
   const [showSourceInfoTooltip, setShowSourceInfoTooltip] = useState(false)
   const [showCompletenessTip, setShowCompletenessTip] = useState(false)
+  const [showDocNamesTip, setShowDocNamesTip] = useState(false)
   // Delivery schedule is a separate page reached from the strip above the draft
   const [showSchedule, setShowSchedule] = useState(false)
   const [reviewCounts, setReviewCounts] = useState({ conflicts: 0, missing: 0, assumptions: 0 })
@@ -14022,7 +14650,7 @@ function SOWDraftTab({
       id: 'c1',
       sectionTitle: 'Background',
       anchorText: 'The client currently operates a fragmented technology landscape',
-      text: 'Can we cite the specific legacy systems named in the RFP here instead of speaking generally?',
+      text: 'Can we cite the specific legacy systems named in the source documents here instead of speaking generally?',
       assignee: 'Rohan Mehta',
       taggedEmails: ['rohan.mehta@acme.corp'],
       author: 'Ashika Jain',
@@ -14205,14 +14833,14 @@ function SOWDraftTab({
       score: 72,
       status: 'Pending',
       reviewers: [],
-      fileName: 'RFP_Document.pdf',
+      fileName: 'Scope_Requirements.pdf',
     },
     {
       title: 'Executive Summary',
       score: 88,
       status: 'Approved',
       reviewers: ['Ashika Jain'],
-      fileName: 'RFP_Document.pdf',
+      fileName: 'Scope_Requirements.pdf',
     },
     {
       title: 'Objectives',
@@ -14240,7 +14868,7 @@ function SOWDraftTab({
       score: 91,
       status: 'Approved',
       reviewers: ['Rohan Mehta'],
-      fileName: 'RFP_Document.pdf',
+      fileName: 'Scope_Requirements.pdf',
     },
     {
       title: 'Approach & Methodology',
@@ -14261,7 +14889,7 @@ function SOWDraftTab({
       score: 87,
       status: 'Pending',
       reviewers: ['Priya Sharma'],
-      fileName: 'RFP_Document.pdf',
+      fileName: 'Scope_Requirements.pdf',
     },
     {
       title: 'Timeline & Milestones',
@@ -14310,7 +14938,7 @@ function SOWDraftTab({
       score: 93,
       status: 'Approved',
       reviewers: ['Ashika Jain'],
-      fileName: 'RFP_Document.pdf',
+      fileName: 'Scope_Requirements.pdf',
     },
     {
       title: 'Change Management',
@@ -14337,7 +14965,7 @@ function SOWDraftTab({
         let body = ''
         switch (item.title) {
           case 'Project Introduction':
-            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated detailed content for the <strong>Project Introduction</strong> section based on the extracted requirements from your RFP document. ${citationTag} Our AI analysis indicates that this section aligns with industry standards. Please review and modify as needed to ensure it meets your exact specifications.</p>
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated detailed content for the <strong>Project Introduction</strong> section based on the extracted requirements from your requirements document. ${citationTag} Our AI analysis indicates that this section aligns with industry standards. Please review and modify as needed to ensure it meets your exact specifications.</p>
           <p class="provenance-block provenance-question" style="margin-bottom:12px;line-height:1.7;color:#374151;">The proposed engagement covers a comprehensive digital transformation initiative designed to modernize existing technology infrastructure, improve operational efficiency, and create a scalable foundation for future business growth. The delivery team will collaborate closely with all relevant stakeholders to validate requirements and confirm assumptions throughout the engagement lifecycle.</p>`
             break
           case 'Project Scope':
@@ -14356,12 +14984,12 @@ function SOWDraftTab({
             <ul style="margin-bottom:12px;padding-left:24px;line-height:1.7;color:#374151;">
               <li>Frontend application redesign or UI/UX modifications.</li>
               <li>Native mobile application development.</li>
-              <li>Integration with third-party legacy ERP/CRM systems not listed in the initial RFP.</li>
+              <li>Integration with third-party legacy ERP/CRM systems not listed in the initial requirements.</li>
             </ul>
           </div>`
             break
           case 'Business Requirements':
-            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The following business requirements have been extracted and validated from the submitted RFP documentation. ${citationTag} These requirements form the foundation of the proposed solution architecture and delivery approach.</p>
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The following business requirements have been extracted and validated from the submitted requirements documentation. ${citationTag} These requirements form the foundation of the proposed solution architecture and delivery approach.</p>
           <div class="provenance-block provenance-question" style="margin-bottom:14px;">
             <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
               <li><strong>Cost Optimization:</strong> Reduce operational expenditure by approximately 30% through dynamic cloud scaling and resource right-sizing.</li>
@@ -14438,7 +15066,7 @@ function SOWDraftTab({
           </div>`
             break
           case 'Background':
-            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This Statement of Work has been prepared in response to the Request for Proposal (RFP) issued by the client organization. ${citationTag} The engagement is aimed at addressing key technology modernization objectives identified through discovery workshops.</p>
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This Statement of Work has been prepared in response to the request issued by the client organization. ${citationTag} The engagement is aimed at addressing key technology modernization objectives identified through discovery workshops.</p>
           <p class="provenance-block provenance-question" style="margin-bottom:12px;line-height:1.7;color:#374151;">The client currently operates a fragmented technology landscape with multiple legacy systems that present challenges around scalability, data integrity, and operational efficiency. This engagement proposes a structured, phased approach to address these gaps while minimizing disruption to business-as-usual operations.</p>`
             break
           case 'Objectives':
@@ -14458,14 +15086,14 @@ function SOWDraftTab({
             <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
               <li>Frontend application redesign, web portal enhancements, or any UI/UX modifications.</li>
               <li>Native mobile application development or updates for iOS and Android platforms.</li>
-              <li>Integration with third-party legacy ERP/CRM systems not explicitly listed in the initial RFP documentation.</li>
+              <li>Integration with third-party legacy ERP/CRM systems not explicitly listed in the initial requirements documentation.</li>
               <li>Data cleansing or manual data remediation prior to database migration.</li>
               <li>Ongoing managed services or post-go-live support beyond the defined hypercare period.</li>
             </ul>
           </div>`
             break
           case 'Requirements':
-            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The following functional and non-functional requirements have been extracted and validated from the submitted RFP documentation. ${citationTag} These requirements form the foundation of the proposed solution architecture.</p>
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">The following functional and non-functional requirements have been extracted and validated from the submitted requirements documentation. ${citationTag} These requirements form the foundation of the proposed solution architecture.</p>
           <div class="provenance-block provenance-question" style="margin-bottom:14px;">
             <ul style="margin-bottom:16px;padding-left:24px;line-height:1.7;color:#374151;">
               <li><strong>FR-01:</strong> The system shall support concurrent access by a minimum of 5,000 active users without performance degradation.</li>
@@ -14576,7 +15204,7 @@ function SOWDraftTab({
           </div>`
             break
           default:
-            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated content for the <strong>${item.title}</strong> section based on extracted requirements from your RFP document. ${citationTag} Please review and modify as needed to ensure it meets your exact specifications.</p>`
+            body = `<p class="provenance-block provenance-ai" style="margin-bottom:12px;line-height:1.7;color:#374151;">This is auto-generated content for the <strong>${item.title}</strong> section based on extracted requirements from your requirements document. ${citationTag} Please review and modify as needed to ensure it meets your exact specifications.</p>`
         }
         // Review Highlights: questions/assumptions are tagged as assumptions; some sections also carry
         // a conflict or a missing-information note
@@ -15142,14 +15770,64 @@ function SOWDraftTab({
     openAiFindings: aiFindings.filter((f) => !f.resolved).length,
     openComments: comments.filter((c) => !c.resolved).length,
   })
-  const [customRisks, setCustomRisks] = useState<DraftRisk[]>([])
-  const allRisks = [...draftRisks, ...customRisks].sort((a, b) => ({ High: 0, Medium: 1, Low: 2 }[a.severity] - { High: 0, Medium: 1, Low: 2 }[b.severity]))
+  // Risks the user added, and reviews/risks raised by text typed into the draft: they sit at the top, newest first.
+  // Only the ones raised by typing get a dot until they are clicked.
+  const [generatedReviews, setGeneratedReviews] = useState<ReviewItem[]>([])
+  const [generatedRisks, setGeneratedRisks] = useState<DraftRisk[]>([])
+  const [newPointerIds, setNewPointerIds] = useState<string[]>([])
+  const newPointerIdsRef = useRef<string[]>([])
+  newPointerIdsRef.current = newPointerIds
+  const manualEditTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const generatedBySection = useRef<Record<string, string>>({})
+  const generatedSeq = useRef(0)
+  // Items raised by the user's own edits stay at the top, newest first
+  const reviewItemsAll = [...generatedReviews.slice().reverse(), ...REVIEW_ITEMS_SEED]
+  const markPointerSeen = (id: string) => setNewPointerIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev))
+  const raisePointersForEdit = (sectionIdx: number) => {
+    const title = tocItems[sectionIdx]?.title
+    if (!title) return
+    const existing = generatedBySection.current[title]
+    // Still unseen from the last edit in this section: do not raise another pair
+    if (existing && newPointerIdsRef.current.includes(existing)) return
+    const n = ++generatedSeq.current
+    const reviewId = `rv-new-${n}`
+    const riskId = `rk-new-${n}`
+    generatedBySection.current[title] = reviewId
+    setGeneratedReviews((prev) => [
+      ...prev,
+      {
+        id: reviewId,
+        category: 'Assumption',
+        title: `Text added by hand in ${title} has no source`,
+        section: title,
+        ai: 'No document supports this text yet. Confirm it is correct, or add the source.',
+        suggestion: '',
+      },
+    ])
+    setGeneratedRisks((prev) => [
+      ...prev,
+      {
+        id: riskId,
+        kind: 'ai-findings',
+        severity: 'Medium',
+        title: `Manual change in ${title} may not match the sources`,
+        description: 'Text was added to this section by hand and is not backed by a cited document.',
+        section: title,
+        action: 'Check the new text against the source documents and add a citation.',
+      },
+    ])
+    setNewPointerIds((prev) => [...prev, reviewId, riskId])
+  }
+  const allRisks = [
+    ...generatedRisks.slice().reverse(),
+    ...[...draftRisks].sort((a, b) => ({ High: 0, Medium: 1, Low: 2 }[a.severity] - { High: 0, Medium: 1, Low: 2 }[b.severity])),
+  ]
   const suggestedRiskCount = allRisks.filter((r) => (riskStatuses[r.id] ?? 'suggested') === 'suggested').length
 
   // Overall readiness out of 100: each category counts by the share of its items that are handled
   const completenessRows = (() => {
     const handledReview = (cat: ReviewCategory) => {
-      const list = REVIEW_ITEMS_SEED.filter((r) => r.category === cat)
+      const list = reviewItemsAll.filter((r) => r.category === cat)
       return { total: list.length, done: list.filter((r) => reviewDecisions[r.id]).length }
     }
     const handledRisk = (sev: DraftRiskSeverity) => {
@@ -15268,7 +15946,7 @@ function SOWDraftTab({
 
   return (
     <>
-      {headerActionsSlot && !isDraftGenerating && createPortal(draftHeaderActions, headerActionsSlot)}
+      {headerActionsSlot && !isDraftGenerating && !showSchedule && createPortal(draftHeaderActions, headerActionsSlot)}
       {actionQueue.length > 0 && (
         <div
           style={{
@@ -15847,9 +16525,9 @@ function SOWDraftTab({
                                 {scoreLabel(item.score)}
                               </div>
                               {confidenceLevel(item.score) === 'High'
-                                ? 'Strong alignment with RFP requirements and thorough detail.'
+                                ? 'Strong alignment with the requirements and thorough detail.'
                                 : confidenceLevel(item.score) === 'Medium'
-                                  ? 'Partial alignment with RFP. Some requirements may need elaboration.'
+                                  ? 'Partial alignment with the requirements. Some requirements may need elaboration.'
                                   : 'Weak alignment or missing critical details. Thorough review required.'}
                               <div style={{ marginTop: 4, color: '#94a3b8' }}>
                                 Range: {CONFIDENCE_RANGE[confidenceLevel(item.score)]}
@@ -16813,23 +17491,48 @@ function SOWDraftTab({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <div
+                style={{ position: 'relative', display: 'inline-flex' }}
+                onMouseEnter={() => setShowDocNamesTip(true)}
+                onMouseLeave={() => setShowDocNamesTip(false)}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowDraftCitations((v) => !v)}
+                  aria-pressed={showDraftCitations}
+                  style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                >
+                  {showDraftCitations ? 'Hide citations' : 'Show citations'}
+                </button>
+                {showDocNamesTip && (
+                  <div
+                    role="tooltip"
+                    style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50, minWidth: 260, padding: '10px 12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}
+                  >
+                    {[
+                      ['Doc 1', 'Scope_Requirements.pdf'],
+                      ['Doc 2', 'Vendor_MSA_Template.docx'],
+                      ['Doc 3', 'Technical_Specifications.pdf'],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', gap: 8, fontSize: 12, lineHeight: '20px', color: '#334155' }}>
+                        <span style={{ fontWeight: 600, color: '#0d212c', minWidth: 40 }}>{k}</span>
+                        <span>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <span aria-hidden="true" style={{ width: 1, height: 18, background: '#94a3b8', margin: '0 4px' }} />
               <button
                 type="button"
                 onClick={() => setShowSchedule(true)}
                 title="Open the delivery schedule"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 8, border: '1.5px solid rgba(0,196,196,0.5)', background: 'rgba(0,196,196,0.12)', color: '#007a7a', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 8, border: '1.5px solid rgba(0,196,196,0.5)', background: 'rgba(0,196,196,0.12)', color: '#007a7a', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s ease' }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,196,196,0.12)')}
               >
                 <CalendarDays size={13} color="#007a7a" />
                 Delivery schedule
-              </button>
-              <span aria-hidden="true" style={{ width: 1, height: 18, background: '#e2e8f0', margin: '0 4px' }} />
-              <button
-                type="button"
-                onClick={() => setShowDraftCitations((v) => !v)}
-                aria-pressed={showDraftCitations}
-                style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-              >
-                {showDraftCitations ? 'Hide citations' : 'Show citations'}
               </button>
             </div>
           </div>
@@ -16894,6 +17597,10 @@ function SOWDraftTab({
               }}
             >
               <style>{`
+                ::highlight(sow-comment) {
+                  background: #fef3c7;
+                  color: inherit;
+                }
                 .sow-viewonly-chip {
                   position: relative;
                   display: inline-flex;
@@ -17168,16 +17875,32 @@ function SOWDraftTab({
                 ref={editorRef}
                 contentEditable={canEditAll}
                 suppressContentEditableWarning
-                onInput={() => {
+                onInput={(e) => {
                   if (canEditAny) {
+                    // Typed or pasted text (not formatting) raises new review and risk pointers for its section
+                    if (((e.nativeEvent as InputEvent).inputType || '').startsWith('insert')) {
+                      const node = window.getSelection()?.anchorNode
+                      const secEl = (node instanceof Element ? node : node?.parentElement)?.closest('[id^="sow-section-"]')
+                      const secIdx = secEl ? Number(secEl.id.replace('sow-section-', '')) : -1
+                      if (secIdx >= 0) {
+                        if (manualEditTimer.current) clearTimeout(manualEditTimer.current)
+                        manualEditTimer.current = setTimeout(() => raisePointersForEdit(secIdx), 1200)
+                      }
+                    }
                     updateFormats()
                     setHasUnsaved(true)
                     if (isPMO || isReviewer || isContributor) setHasUnreviewedEdits(true)
                     ensureSectionBodies()
                   }
                 }}
-                onKeyUp={updateFormats}
-                onMouseUp={updateFormats}
+                onKeyUp={() => {
+                  updateFormats()
+                  captureSelection()
+                }}
+                onMouseUp={() => {
+                  updateFormats()
+                  captureSelection()
+                }}
                 style={{
                   outline: 'none',
                   fontSize: 14.5,
@@ -17188,7 +17911,41 @@ function SOWDraftTab({
               />
 
               {/* Hover: floating "Add comment" pill in the right gutter */}
-              {hoverBlock && !commentPopup && (
+              {selectionBtn && !commentPopup && (
+                <button
+                  type="button"
+                  data-comment-ui
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setCommentPopup({ top: selectionBtn.top, anchorText: selectionBtn.text, sectionTitle: selectionBtn.sectionTitle })
+                    setSelectionBtn(null)
+                  }}
+                  title="Add comment"
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: selectionBtn.top - 3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '7px 14px 7px 10px',
+                    borderRadius: 20,
+                    border: '1.5px solid rgba(0,196,196,0.5)',
+                    background: '#ffffff',
+                    color: '#00a0a0',
+                    cursor: 'pointer',
+                    boxShadow: '0 3px 12px rgba(0,0,0,0.14)',
+                    whiteSpace: 'nowrap',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    zIndex: 6,
+                  }}
+                >
+                  <MessageSquare size={15} />
+                  Add comment
+                </button>
+              )}
+              {hoverBlock && !commentPopup && !selectionBtn && (
                 <button
                   type="button"
                   data-comment-ui
@@ -17268,7 +18025,7 @@ function SOWDraftTab({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    &ldquo;{commentPopup.anchorText}&hellip;&rdquo;
+                    &ldquo;{commentPopup.anchorText}&rdquo;
                   </div>
                   <textarea
                     autoFocus
@@ -17382,7 +18139,7 @@ function SOWDraftTab({
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
-              background: '#f8fafc',
+              background: '#ffffff',
             }}
           >
             {/* Header with 3 tabs */}
@@ -17447,7 +18204,7 @@ function SOWDraftTab({
                       </span>
                       {t.key === 'review' && (
                         <span style={{ fontSize: 10.5, fontWeight: 700, color: '#00a0a0', background: 'rgba(0,196,196,0.12)', borderRadius: 9999, padding: '0 6px', lineHeight: '16px' }}>
-                          {REVIEW_ITEMS_SEED.length - resolvedReviewIds.length}
+                          {reviewItemsAll.length - resolvedReviewIds.length}
                         </span>
                       )}
                       {t.key === 'risk' && openRisks.length > 0 && (
@@ -17621,18 +18378,38 @@ function SOWDraftTab({
                           </div>
                         </div>
 
-                        <div
+                        <button
+                          type="button"
+                          title="Show this text in the draft"
+                          onClick={() => highlightCommentAnchor(c.anchorText, c.sectionTitle)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = '#00a0a0'
+                            e.currentTarget.style.borderLeftColor = '#00C4C4'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = '#64748b'
+                            e.currentTarget.style.borderLeftColor = '#cbd5e1'
+                          }}
                           style={{
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'left',
                             fontSize: 11,
                             color: '#64748b',
                             fontStyle: 'italic',
                             marginBottom: 8,
-                            paddingLeft: 8,
+                            padding: '0 0 0 8px',
+                            background: 'none',
+                            border: 'none',
                             borderLeft: '2px solid #cbd5e1',
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          &ldquo;{c.anchorText}&hellip;&rdquo;
-                        </div>
+                          &ldquo;{c.anchorText}&rdquo;
+                        </button>
 
                         {/* Inline Edit Form */}
                         {isEditing ? (
@@ -17903,7 +18680,9 @@ function SOWDraftTab({
                 )
               ) : drawerTab === 'review' ? (
                 <DraftReviewPanel
-                  items={REVIEW_ITEMS_SEED}
+                  items={reviewItemsAll}
+                  newIds={newPointerIds}
+                  onSeen={markPointerSeen}
                   decisions={reviewDecisions}
                   canDecide={canEditAny}
                   members={SECTION_MEMBERS.filter((m) => !m.pending).map((m) => m.name)}
@@ -17911,7 +18690,7 @@ function SOWDraftTab({
                   onDecide={(id, d, text) => {
                     setReviewDecisions((prev) => ({ ...prev, [id]: d }))
                     if (d.status === 'resolved') {
-                      const it = REVIEW_ITEMS_SEED.find((x) => x.id === id)
+                      const it = reviewItemsAll.find((x) => x.id === id)
                       if (it) insertResolvedReviewIntoDraft(it, text)
                     }
                     showToast(d.status === 'resolved' ? 'Review item resolved' : 'Review item dismissed', 'success')
@@ -17920,6 +18699,8 @@ function SOWDraftTab({
               ) : drawerTab === 'risk' ? (
                 <DraftRiskPanel
                   risks={allRisks}
+                  newIds={newPointerIds}
+                  onSeen={markPointerSeen}
                   statuses={riskStatuses}
                   canInsert={canEditAny}
                   onJump={jumpToSection}
@@ -17929,7 +18710,7 @@ function SOWDraftTab({
                   members={SECTION_MEMBERS.filter((m) => !m.pending).map((m) => m.name)}
                   sectionTitles={tocItems.map((t) => t.title)}
                   onAddRisk={(r) => {
-                    setCustomRisks((prev) => [...prev, r])
+                    setGeneratedRisks((prev) => [...prev, r])
                     showToast('Risk added', 'success')
                   }}
                 />
@@ -19053,6 +19834,7 @@ export function SOWDetailScreen({
   initialActiveRole,
   onActiveViewerRoleChange,
   tokenConsumption = 1200,
+  sowInstructions = DEFAULT_SOW_INSTRUCTIONS,
   onFinalized,
   prepareOnOpen = false,
 }: SOWDetailScreenProps) {
@@ -19077,6 +19859,10 @@ export function SOWDetailScreen({
   const [currentSowName, setCurrentSowName] = useState(sowName)
   const [currentSowDeadline, setCurrentSowDeadline] = useState(sowDeadline || '2026-10-31')
   const [currentTokenConsumption, setCurrentTokenConsumption] = useState(tokenConsumption ?? 1200)
+  const [currentSowInstructions, setCurrentSowInstructions] = useState(sowInstructions)
+  useEffect(() => {
+    setCurrentSowInstructions(sowInstructions)
+  }, [sowInstructions])
   const [consumedTokens, setConsumedTokens] = useState(200)
 
   useEffect(() => {
@@ -19132,6 +19918,9 @@ export function SOWDetailScreen({
   const [showRegenPrompt, setShowRegenPrompt] = useState(false)
   // Planning opens with the sections list collapsed and the Instructions pane open
   const [instructionsShown, setInstructionsShown] = useState(true)
+  // The Context page has its own Instructions pane, open by default
+  const [ctxInstructionsShown] = useState(true)
+  const [ctxInstructionsOpen, setCtxInstructionsOpen] = useState(true)
   const [planSectionsOpen, setPlanSectionsOpen] = useState(false)
   const [instructionsOpen, setInstructionsOpen] = useState(true)
   const [isFormReady, setIsFormReady] = useState(false)
@@ -19213,7 +20002,7 @@ export function SOWDetailScreen({
   )
   // Changes made in Context or Planning after the draft was generated (or after the SOW was opened)
   const [contextChanged, setContextChanged] = useState(false)
-  const ctxUserSig = JSON.stringify([contextIssueState.updates, contextIssueState.signedOffIds])
+  const ctxUserSig = JSON.stringify([contextIssueState.updates, contextIssueState.signedOffIds, contextIssueState.signedFields])
   const ctxBaseRef = useRef(ctxUserSig)
   useEffect(() => {
     if (ctxUserSig !== ctxBaseRef.current) setContextChanged(true)
@@ -19666,7 +20455,7 @@ export function SOWDetailScreen({
                     aria-pressed={instructionsShown && instructionsOpen}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', border: 'none', background: 'none', fontSize: 12.5, fontWeight: 600, color: '#007a7a', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
-                    <HelpCircle size={14} color="#00a0a0" />
+                    <BookOpen size={14} color="#00a0a0" />
                     Instructions
                   </button>
                 </div>
@@ -19829,6 +20618,8 @@ export function SOWDetailScreen({
               onSowNameChange={setCurrentSowName}
               sowDeadline={currentSowDeadline}
               onSowDeadlineChange={setCurrentSowDeadline}
+              sowInstructions={currentSowInstructions}
+              onSowInstructionsChange={setCurrentSowInstructions}
               tokenConsumption={currentTokenConsumption}
               onTokenConsumptionChange={setCurrentTokenConsumption}
               isPMO={isPMORole && !contentFrozen}
@@ -19836,6 +20627,9 @@ export function SOWDetailScreen({
           )}
           {activeTab === 'form' && (
             <FormTab
+              instructionsShown={ctxInstructionsShown}
+              instructionsOpen={ctxInstructionsOpen}
+              onInstructionsOpenChange={setCtxInstructionsOpen}
               files={docFiles}
               showUploadedDocs={isFormEditable && isStructureUnlocked}
               onReady={() => setIsFormReady(true)}
@@ -20272,8 +21066,8 @@ function DeleteConfirmModal({
                 color: '#0d212c',
                 resize: 'none',
               }}
-              onFocus={(e) => e.target.style.borderColor = '#e2e8f0'}
-              onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+              onFocus={(e) => e.target.style.borderColor = '#cbd5e1'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
             />
 
             {/* Reason Selection */}

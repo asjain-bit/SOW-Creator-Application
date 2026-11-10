@@ -103,6 +103,8 @@ export interface SOWDetailScreenProps {
   currentMemberId?: string
   sowDeadline?: string
   tokenConsumption?: number
+  /** The prompt the SOW was generated from */
+  sowInstructions?: string
   onReactivateSOW?: () => void
   initialActiveRole?: 'pmo' | 'contributor' | 'reviewer' | 'client'
   onActiveViewerRoleChange?: (role: 'pmo' | 'contributor' | 'reviewer' | 'client') => void
