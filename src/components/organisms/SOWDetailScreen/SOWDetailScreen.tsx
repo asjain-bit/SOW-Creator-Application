@@ -87,6 +87,10 @@ import {
   PanelLeftOpen,
   PanelRightOpen,
   PanelRightClose,
+  Search,
+  ChevronLeft,
+  ArrowLeft,
+  Mail,
 } from 'lucide-react'
 import { AuditLogView, addGlobalAuditLog } from '../AuditLogView'
 import type {
@@ -1245,6 +1249,75 @@ export function DocumentCitationPreviewModal({
     }
   }, [citation.page])
 
+  // Search inside the document, and page navigation along with the scroll
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [query, setQuery] = useState('')
+  const [matchCount, setMatchCount] = useState(0)
+  const matchIdx = useRef(0)
+  const [activePage, setActivePage] = useState(1)
+  const TOTAL_PAGES = 2
+
+  const clearMarks = () => {
+    bodyRef.current?.querySelectorAll('mark[data-sr]').forEach((m) => {
+      const parent = m.parentNode
+      if (!parent) return
+      parent.replaceChild(document.createTextNode(m.textContent ?? ''), m)
+      parent.normalize()
+    })
+  }
+  const focusMatch = (i: number) => {
+    const marks = Array.from(bodyRef.current?.querySelectorAll('mark[data-sr]') ?? []) as HTMLElement[]
+    if (marks.length === 0) return
+    const idx = ((i % marks.length) + marks.length) % marks.length
+    matchIdx.current = idx
+    marks.forEach((m, k) => (m.style.background = k === idx ? '#fb923c' : '#fde68a'))
+    marks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  useEffect(() => {
+    clearMarks()
+    const q = query.trim()
+    const root = bodyRef.current
+    if (!root || q.length < 2) {
+      setMatchCount(0)
+      return
+    }
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    const nodes: Text[] = []
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text)
+    const lower = q.toLowerCase()
+    nodes.forEach((node) => {
+      const text = node.nodeValue ?? ''
+      const low = text.toLowerCase()
+      if (!low.includes(lower)) return
+      const frag = document.createDocumentFragment()
+      let pos = 0
+      let at = low.indexOf(lower, pos)
+      while (at !== -1) {
+        if (at > pos) frag.appendChild(document.createTextNode(text.slice(pos, at)))
+        const mark = document.createElement('mark')
+        mark.setAttribute('data-sr', '1')
+        mark.style.cssText = 'background:#fde68a;color:inherit;border-radius:2px;padding:0 1px;'
+        mark.textContent = text.slice(at, at + q.length)
+        frag.appendChild(mark)
+        pos = at + q.length
+        at = low.indexOf(lower, pos)
+      }
+      if (pos < text.length) frag.appendChild(document.createTextNode(text.slice(pos)))
+      node.parentNode?.replaceChild(frag, node)
+    })
+    const n = root.querySelectorAll('mark[data-sr]').length
+    setMatchCount(n)
+    if (n > 0) focusMatch(0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
+
+  const goToPage = (n: number) => {
+    const target = Math.min(TOTAL_PAGES, Math.max(1, n))
+    document.getElementById(`citation-doc-page-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setActivePage(target)
+  }
+
   if (typeof document === 'undefined') return null
 
   return createPortal(
@@ -1297,6 +1370,22 @@ export function DocumentCitationPreviewModal({
             </div>
           </div>
 
+          {/* Search inside the document */}
+          <div style={{ marginLeft: 'auto', marginRight: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px', height: 34, borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc' }}>
+            <Search size={14} color="#94a3b8" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') focusMatch(matchIdx.current + (e.shiftKey ? -1 : 1))
+              }}
+              placeholder="Search in document"
+              aria-label="Search in document"
+              style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12.5, color: '#0d212c', width: 190 }}
+            />
+            {query.trim().length >= 2 && <span style={{ fontSize: 11.5, color: '#64748b', whiteSpace: 'nowrap' }}>{matchCount === 0 ? 'No matches' : `${matchCount} found`}</span>}
+          </div>
+
           {/* Cross icon only without hover animation */}
           <button
             onClick={onClose}
@@ -1320,6 +1409,12 @@ export function DocumentCitationPreviewModal({
 
         {/* Document Body View — Continuous Scroll of All Pages */}
         <div
+          ref={scrollRef}
+          onScroll={(e) => {
+            const p2 = document.getElementById('citation-doc-page-2')
+            const box = e.currentTarget.getBoundingClientRect()
+            if (p2) setActivePage(p2.getBoundingClientRect().top - box.top < box.height * 0.4 ? 2 : 1)
+          }}
           style={{
             flex: 1,
             overflowY: 'auto',
@@ -1328,6 +1423,7 @@ export function DocumentCitationPreviewModal({
           }}
         >
           <div
+            ref={bodyRef}
             style={{
               width: '100%',
               maxWidth: '980px',
@@ -1344,7 +1440,7 @@ export function DocumentCitationPreviewModal({
             }}
           >
             {/* ── PAGE 1 CONTENT ── */}
-            <div>
+            <div id="citation-doc-page-1">
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', borderBottom: '1px solid #e2e8f0', paddingBottom: 6, marginBottom: 20 }}>
                 <span>Hippocratic AI | Attachment A</span>
                 <span>Confidential – Prepared for M42 due diligence – Page 1</span>
@@ -1630,6 +1726,33 @@ export function DocumentCitationPreviewModal({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Page navigation */}
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '10px 16px', borderTop: '1px solid #e2e8f0', background: '#ffffff' }}>
+          <button
+            type="button"
+            onClick={() => goToPage(activePage - 1)}
+            disabled={activePage <= 1}
+            aria-label="Previous page"
+            title="Previous page"
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 32, borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: activePage <= 1 ? '#cbd5e1' : '#0d212c', fontSize: 12.5, fontWeight: 600, cursor: activePage <= 1 ? 'not-allowed' : 'pointer' }}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span style={{ fontSize: 12.5, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+            Page {activePage} of {TOTAL_PAGES}
+          </span>
+          <button
+            type="button"
+            onClick={() => goToPage(activePage + 1)}
+            disabled={activePage >= TOTAL_PAGES}
+            aria-label="Next page"
+            title="Next page"
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 32, borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: activePage >= TOTAL_PAGES ? '#cbd5e1' : '#0d212c', fontSize: 12.5, fontWeight: 600, cursor: activePage >= TOTAL_PAGES ? 'not-allowed' : 'pointer' }}
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       </div>
     </div>,
@@ -2243,6 +2366,147 @@ const DRAFT_SECTION_REVISIONS = [
     diffSummary: 'Initial section generation (1,420 words).',
   },
 ]
+
+/** Word-by-word difference between two texts */
+function diffWords(before: string, after: string): { type: 'same' | 'add' | 'del'; text: string }[] {
+  const a = before.split(/\s+/).filter(Boolean)
+  const b = after.split(/\s+/).filter(Boolean)
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0))
+  for (let i = a.length - 1; i >= 0; i--) {
+    for (let j = b.length - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+    }
+  }
+  const out: { type: 'same' | 'add' | 'del'; text: string }[] = []
+  let i = 0
+  let j = 0
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      out.push({ type: 'same', text: a[i] })
+      i++
+      j++
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      out.push({ type: 'del', text: a[i++] })
+    } else {
+      out.push({ type: 'add', text: b[j++] })
+    }
+  }
+  while (i < a.length) out.push({ type: 'del', text: a[i++] })
+  while (j < b.length) out.push({ type: 'add', text: b[j++] })
+  return out
+}
+
+/**
+ * Versions of one section. Each version groups several edits (iterations): who changed what and when,
+ * with the exact words that were added or removed.
+ */
+function buildSectionVersions(title: string) {
+  const s1 = `${title} will be delivered in line with the agreed scope and timeline. The delivery team will confirm the approach with the client.`
+  const s2 = `${title} will be delivered in line with the agreed scope, budget and timeline. The delivery team will confirm the approach with the client.`
+  const s3 = `${title} will be delivered in line with the agreed scope, budget and a 12-week timeline. The delivery team will confirm the approach with the client.`
+  const s4 = `${title} will be delivered in line with the agreed scope, budget and a 12-week timeline. The delivery team will confirm the approach with the client before kick-off.`
+  const s5 = `${title} will be delivered in line with the agreed scope, budget and a 12-week timeline. The delivery team will confirm the approach with the client before kick-off. Dependencies are tracked weekly.`
+  const s6 = `${title} will be delivered in line with the agreed scope, budget and a 12-week timeline. The delivery team will confirm the approach with the client before kick-off. Dependencies are reviewed every week.`
+  const s7 = `${title} will be delivered in line with the agreed scope and a 12-week timeline. The delivery team will confirm the approach with the client before kick-off. Dependencies are reviewed every week.`
+  const s8 = `${title} will be delivered in line with the agreed scope and a 12-week timeline. The delivery team will confirm the approach with the client before kick-off. Dependencies are reviewed every week and reported to the steering committee.`
+  const it = (n: number, author: string, role: string, time: string, summary: string, before: string, after: string) => ({ n, author, role, time, summary, before, after })
+  return [
+    {
+      version: 3,
+      isCurrent: true,
+      iterations: [
+        it(8, 'Ashika Jain', 'PMO', 'Today, 16:15', 'Added reporting to the steering committee.', s7, s8),
+        it(7, 'Ashika Jain', 'PMO', 'Today, 15:50', 'Removed budget from the wording.', s6, s7),
+        it(6, 'Narendra Patel', 'Contributor', 'Today, 11:20', 'Changed tracking to a weekly review.', s5, s6),
+      ],
+    },
+    {
+      version: 2,
+      isCurrent: false,
+      iterations: [
+        it(5, 'Narendra Patel', 'Contributor', 'Yesterday, 17:05', 'Added how dependencies are tracked.', s4, s5),
+        it(4, 'Ishita', 'Reviewer', 'Yesterday, 14:02', 'Added the kick-off condition.', s3, s4),
+        it(3, 'Ishita', 'Reviewer', 'Yesterday, 13:40', 'Set the timeline to 12 weeks.', s2, s3),
+      ],
+    },
+    {
+      version: 1,
+      isCurrent: false,
+      iterations: [
+        it(2, 'AI SOW Agent', 'AI', 'Oct 3, 10:22', 'Added budget after the consistency check.', s1, s2),
+        it(1, 'AI SOW Agent', 'AI', 'Oct 3, 10:15', 'First draft written from the uploaded documents.', '', s1),
+      ],
+    },
+  ]
+}
+
+function SectionTraceVersions({ title }: { title: string }) {
+  const versions = buildSectionVersions(title)
+  // The current version is open; older versions stay collapsed until opened
+  const [open, setOpen] = useState<number[]>([3])
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ marginBottom: 6 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>Trace: {title}</div>
+        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>What changed in each version, word by word.</div>
+      </div>
+      {versions.map((v, vi) => {
+        const isOpen = open.includes(v.version)
+        return (
+          <div key={v.version} style={{ borderTop: '1px solid #e2e8f0', borderBottom: vi === versions.length - 1 ? '1px solid #e2e8f0' : 'none', background: '#ffffff', padding: '0 8px', borderRadius: 8 }}>
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              onClick={() => setOpen((prev) => (prev.includes(v.version) ? prev.filter((x) => x !== v.version) : [...prev, v.version]))}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 2px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+            >
+              {isOpen ? <ChevronDown size={16} color="#64748b" /> : <ChevronRight size={16} color="#64748b" />}
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>Version {v.version}</span>
+              {v.isCurrent && <span style={{ fontSize: 10, fontWeight: 700, color: '#00a0a0', background: '#ffffff', border: '1px solid rgba(0,196,196,0.5)', padding: '1px 7px', borderRadius: 8 }}>Current</span>}
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: '#94a3b8' }}>
+                {v.iterations.length} {v.iterations.length === 1 ? 'change' : 'changes'}
+              </span>
+            </button>
+            {isOpen && (
+              <div style={{ paddingBottom: 10 }}>
+                {v.iterations.map((iter, ii) => {
+                  const tokens = diffWords(iter.before, iter.after)
+                  return (
+                    <div key={iter.n} style={{ padding: '10px 2px 10px 24px', borderTop: ii === 0 ? 'none' : '1px solid #f1f5f9' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#0d212c' }}>
+                          {iter.author} <span style={{ fontWeight: 400, color: '#64748b' }}>· {iter.role}</span>
+                        </span>
+                        <span style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' }}>{iter.time}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#475569', margin: '3px 0 6px', lineHeight: 1.45 }}>{iter.summary}</div>
+                      <div style={{ fontSize: 12.5, lineHeight: 1.75, color: '#334155' }}>
+                        {tokens.map((t, i) => (
+                          <span
+                            key={i}
+                            style={
+                              t.type === 'add'
+                                ? { background: '#dcfce7', color: '#166534', borderRadius: 3, padding: '0 2px' }
+                                : t.type === 'del'
+                                  ? { background: '#fee2e2', color: '#991b1b', textDecoration: 'line-through', borderRadius: 3, padding: '0 2px' }
+                                  : undefined
+                            }
+                          >
+                            {t.text}{' '}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export function DraftSectionTraceModal({
   sectionTitle,
@@ -6335,6 +6599,200 @@ function findOrRegisterMember(email: string): { member: SectionMember; isNew: bo
 }
 
 /** Email field shown under member lists: adds a listed member, or a pending one with an orange note */
+/** Assign one contributor to a section: pick from the list, or invite a new person by email */
+function AssignContributorDialog({
+  sectionTitle,
+  members,
+  selected,
+  onSelect,
+  onClose,
+  onConfirm,
+}: {
+  sectionTitle: string
+  members: string[]
+  selected: string
+  onSelect: (name: string) => void
+  onClose: () => void
+  onConfirm: () => void
+}) {
+  const [step, setStep] = useState<'select' | 'invite'>('select')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+  const [note, setNote] = useState('')
+  const initialsOf = (name: string) => SECTION_MEMBERS.find((m) => m.name === name)?.initials ?? name.slice(0, 2).toUpperCase()
+  const list = Array.from(new Set([...members, ...(selected ? [selected] : [])]))
+  const sendInvite = () => {
+    const value = email.trim()
+    if (!EMAIL_PATTERN.test(value)) {
+      setError('Enter a valid email address')
+      return
+    }
+    const { member } = findOrRegisterMember(value)
+    onSelect(member.name)
+    setNote(member.pending ? UNKNOWN_EMAIL_NOTE : '')
+    setError('')
+    setEmail('')
+    setStep('select')
+  }
+  const avatar = (name: string, size: number) => (
+    <span style={{ width: size, height: size, borderRadius: '50%', background: 'rgba(0,196,196,0.18)', color: '#007a7a', fontSize: size * 0.34, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      {initialsOf(name)}
+    </span>
+  )
+  const divider = <div style={{ height: 1, background: '#eef2f6', margin: '0 28px' }} />
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(13,33,44,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Assign contributor"
+        style={{ background: '#ffffff', borderRadius: 20, width: 460, maxWidth: '92vw', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', position: 'relative' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" onClick={onClose} aria-label="Close" style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}>
+          <X size={20} />
+        </button>
+        <div style={{ padding: '26px 28px 18px' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c' }}>Assign contributor</div>
+          <div style={{ fontSize: 13.5, color: '#64748b', marginTop: 4 }}>Assign one person to own this section.</div>
+          <div style={{ fontSize: 13.5, color: '#64748b', marginTop: 14 }}>
+            Section: <strong style={{ marginLeft: 6, color: '#0d212c' }}>{sectionTitle}</strong>
+          </div>
+        </div>
+        {divider}
+
+        {step === 'select' ? (
+          <div style={{ padding: '18px 28px 14px' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', marginBottom: 10 }}>Select contributor</div>
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((v) => !v)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#ffffff', cursor: 'pointer', textAlign: 'left' }}
+              >
+                {selected ? (
+                  <>
+                    {avatar(selected, 40)}
+                    <span style={{ width: 1, alignSelf: 'stretch', background: '#e2e8f0' }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', fontSize: 14.5, fontWeight: 600, color: '#0d212c' }}>{selected}</span>
+                      <span style={{ display: 'block', fontSize: 12.5, color: '#64748b' }}>{memberEmailByName(selected)}</span>
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ flex: 1, fontSize: 14, color: '#94a3b8', padding: '9px 0' }}>Select a contributor</span>
+                )}
+                <ChevronDown size={18} color="#64748b" />
+              </button>
+              {menuOpen && (
+                <div role="listbox" style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 5, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 10px 30px rgba(13,33,44,0.14)', maxHeight: 220, overflowY: 'auto', padding: 4 }}>
+                  {list.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      role="option"
+                      aria-selected={name === selected}
+                      onClick={() => {
+                        onSelect(name)
+                        setNote('')
+                        setMenuOpen(false)
+                      }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, border: 'none', background: name === selected ? '#f1f5f9' : 'transparent', cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      {avatar(name, 30)}
+                      <span>
+                        <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0d212c' }}>{name}</span>
+                        <span style={{ display: 'block', fontSize: 11.5, color: '#64748b' }}>{memberEmailByName(name)}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {note && (
+              <div style={{ marginTop: 10, padding: '8px 10px', fontSize: 12, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, lineHeight: 1.5 }}>{note}</div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+              <span style={{ fontSize: 13.5, color: '#64748b' }}>Can&apos;t find the person?</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('invite')
+                  setError('')
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#00a0a0', fontSize: 13.5, fontWeight: 600 }}
+              >
+                <Plus size={15} />
+                Invite by email
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: '18px 28px 14px' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#0d212c' }}>Invite a new contributor</div>
+            <div style={{ fontSize: 13, color: '#64748b', margin: '4px 0 12px' }}>Enter their work email address to send an invitation.</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', height: 46, borderRadius: 12, border: error ? '1px solid #ef4444' : '1px solid #e2e8f0' }}>
+              <Mail size={18} color="#64748b" />
+              <input
+                type="email"
+                autoFocus
+                value={email}
+                placeholder="name@company.com"
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (error) setError('')
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') sendInvite()
+                }}
+                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: '#0d212c', background: 'transparent' }}
+              />
+            </div>
+            {error && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 6 }}>{error}</div>}
+            <button
+              type="button"
+              onClick={() => {
+                setStep('select')
+                setError('')
+              }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#00a0a0', fontSize: 13, fontWeight: 600, padding: 0 }}
+            >
+              <ArrowLeft size={15} />
+              Back to selecting contributor
+            </button>
+          </div>
+        )}
+        {divider}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '16px 28px 24px' }}>
+          <button type="button" onClick={onClose} style={{ padding: '10px 22px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: '#ffffff', color: '#0d212c', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            Cancel
+          </button>
+          {step === 'select' ? (
+            <button
+              type="button"
+              disabled={!selected}
+              onClick={onConfirm}
+              style={{ padding: '10px 22px', borderRadius: 12, border: 'none', background: '#00C4C4', color: '#ffffff', fontSize: 14, fontWeight: 600, cursor: selected ? 'pointer' : 'not-allowed', opacity: selected ? 1 : 0.5 }}
+            >
+              Assign contributor
+            </button>
+          ) : (
+            <button type="button" onClick={sendInvite} style={{ padding: '10px 22px', borderRadius: 12, border: 'none', background: '#00C4C4', color: '#ffffff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              Send invitation
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MemberEmailInvite({ onAdded }: { onAdded: (member: SectionMember) => void }) {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
@@ -12078,6 +12536,8 @@ interface DraftRisk {
   /** Section the risk relates to (clicking it jumps there in the draft) */
   section?: string
   action: string
+  /** Area the risk belongs to (risks added by the user) */
+  area?: string
 }
 
 interface DraftRiskInputs {
@@ -12197,6 +12657,9 @@ function DraftRiskPanel({
   onInsert,
   onDismiss,
   onRestore,
+  members = [],
+  sectionTitles = [],
+  onAddRisk,
 }: {
   risks: DraftRisk[]
   statuses: Record<string, DraftRiskStatus>
@@ -12205,14 +12668,23 @@ function DraftRiskPanel({
   onInsert: (risk: DraftRisk, text: string) => void
   onDismiss: (id: string) => void
   onRestore: (id: string) => void
+  /** Contributors that can be assigned to a risk (one per risk) */
+  members?: string[]
+  /** Sections a risk can be related to, and the handler that adds a risk written by the user */
+  sectionTitles?: string[]
+  onAddRisk?: (risk: DraftRisk) => void
 }) {
   const [view, setView] = useState<DraftRiskStatus>('suggested')
+  const [addOpen, setAddOpen] = useState(false)
+  const [newRisk, setNewRisk] = useState({ title: '', severity: 'Medium' as DraftRiskSeverity, area: '', rationale: '', mitigations: '', section: '' })
+  const [severityFilter, setSeverityFilter] = useState<'All' | DraftRiskSeverity>('All')
+  const [contributors, setContributors] = useState<Record<string, string>>({})
   // The AI suggestion can be edited before it is inserted into the draft
   const [editedTexts, setEditedTexts] = useState<Record<string, string>>({})
   const suggestionOf = (r: DraftRisk) => editedTexts[r.id] ?? `${r.title}. Mitigation: ${r.action}`
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const statusOf = (r: DraftRisk): DraftRiskStatus => statuses[r.id] ?? 'suggested'
-  const visible = risks.filter((r) => statusOf(r) === view)
+  const visible = risks.filter((r) => statusOf(r) === view && (severityFilter === 'All' || r.severity === severityFilter))
   const subTabs: { key: DraftRiskStatus; label: string }[] = [
     { key: 'suggested', label: 'Suggested' },
     { key: 'draft', label: 'In draft' },
@@ -12229,8 +12701,101 @@ function DraftRiskPanel({
     </span>
   )
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>Delivery risks</div>
+    <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c' }}>Delivery risks</div>
+        {onAddRisk && (
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: '#0d212c', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+          >
+            + Add risk
+          </button>
+        )}
+      </div>
+      {addOpen && (
+        <div
+          role="dialog"
+          aria-label="Add risk"
+          style={{ position: 'absolute', top: 34, left: 0, right: 0, zIndex: 30, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 10px 30px rgba(13,33,44,0.18)', padding: 14 }}
+        >
+          {(() => {
+            const fld: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, fontWeight: 400, color: '#0d212c', fontFamily: 'inherit', outline: 'none', background: '#ffffff' }
+            const lab = (text: string, required = false) => (
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#334155', margin: '10px 0 4px' }}>
+                {text}
+                {required && <span style={{ color: '#dc2626' }}> *</span>}
+              </label>
+            )
+            const valid = newRisk.title.trim() !== '' && newRisk.rationale.trim() !== ''
+            const close = () => {
+              setAddOpen(false)
+              setNewRisk({ title: '', severity: 'Medium', area: '', rationale: '', mitigations: '', section: '' })
+            }
+            return (
+              <>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#0d212c' }}>Add risk</div>
+                {lab('Title', true)}
+                <input value={newRisk.title} onChange={(e) => setNewRisk((p) => ({ ...p, title: e.target.value }))} style={fld} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    {lab('Severity')}
+                    <select value={newRisk.severity} onChange={(e) => setNewRisk((p) => ({ ...p, severity: e.target.value as DraftRiskSeverity }))} style={{ ...fld, cursor: 'pointer' }}>
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    {lab('Area')}
+                    <input value={newRisk.area} onChange={(e) => setNewRisk((p) => ({ ...p, area: e.target.value }))} style={fld} />
+                  </div>
+                </div>
+                {lab('Severity rationale', true)}
+                <textarea rows={2} value={newRisk.rationale} onChange={(e) => setNewRisk((p) => ({ ...p, rationale: e.target.value }))} style={{ ...fld, resize: 'none' }} />
+                {lab('Mitigations (one per line)')}
+                <textarea rows={2} value={newRisk.mitigations} onChange={(e) => setNewRisk((p) => ({ ...p, mitigations: e.target.value }))} style={{ ...fld, resize: 'none' }} />
+                {lab('Related section')}
+                <select value={newRisk.section} onChange={(e) => setNewRisk((p) => ({ ...p, section: e.target.value }))} style={{ ...fld, cursor: 'pointer' }}>
+                  <option value="">None</option>
+                  {sectionTitles.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                  <button
+                    type="button"
+                    disabled={!valid}
+                    onClick={() => {
+                      onAddRisk?.({
+                        id: `custom-${Date.now()}`,
+                        kind: 'custom',
+                        severity: newRisk.severity,
+                        title: newRisk.title.trim(),
+                        description: newRisk.rationale.trim(),
+                        section: newRisk.section || undefined,
+                        area: newRisk.area.trim() || undefined,
+                        action: newRisk.mitigations.split('\n').map((l) => l.trim()).filter(Boolean).join('; ') || 'No mitigation added yet.',
+                      })
+                      setView('suggested')
+                      close()
+                    }}
+                    style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#00C4C4', color: '#ffffff', fontSize: 12.5, fontWeight: 700, cursor: valid ? 'pointer' : 'not-allowed', opacity: valid ? 1 : 0.5 }}
+                  >
+                    Add risk
+                  </button>
+                  <button type="button" onClick={close} style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: '#0d212c', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      )}
       <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5, margin: '6px 0 12px' }}>
         Review suggested risks. All risks are PROPOSAL content for PMO assessment.
       </div>
@@ -12269,6 +12834,25 @@ function DraftRiskPanel({
           )
         })}
       </div>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+        {(['All', 'High', 'Medium', 'Low'] as const).map((sv, i) => {
+          const on = severityFilter === sv
+          const color = sv === 'All' ? '#0d212c' : RISK_SEVERITY_STYLES[sv].color
+          return (
+            <React.Fragment key={sv}>
+              {i > 0 && <span aria-hidden="true" style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 4px' }} />}
+              <button
+                type="button"
+                onClick={() => setSeverityFilter(sv)}
+                aria-pressed={on}
+                style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: on ? 'rgba(0,196,196,0.14)' : 'transparent', color, fontSize: 12.5, fontWeight: on ? 700 : 600, cursor: 'pointer' }}
+              >
+                {sv}
+              </button>
+            </React.Fragment>
+          )
+        })}
+      </div>
       {visible.length === 0 && (
         <div style={{ fontSize: 12.5, color: '#94a3b8', textAlign: 'center', padding: '28px 14px', lineHeight: 1.5 }}>
           {emptyText[view]}
@@ -12299,7 +12883,7 @@ function DraftRiskPanel({
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c', lineHeight: 1.4 }}>{r.title}</div>
                 <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5, marginTop: 2 }}>
-                  {RISK_CATEGORY_LABELS[r.kind]} · {r.section ?? 'Not linked to a section'}
+                  {RISK_CATEGORY_LABELS[r.kind]}{r.area ? ` · ${r.area}` : ''} · {r.section ?? 'Not linked to a section'}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -12311,6 +12895,16 @@ function DraftRiskPanel({
             </div>
             {open && (
               <div style={{ marginTop: 10 }}>
+                {r.section && (
+                  <button
+                    type="button"
+                    onClick={() => onJump(r.section as string)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: '0 0 8px', padding: 0, background: 'none', border: 'none', borderBottom: '1px solid #5eead4', color: '#008b8b', fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}
+                  >
+                    <ListChecks size={13} />
+                    View affected section: {r.section}
+                  </button>
+                )}
                 <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.55 }}>
                   <strong style={{ color: '#0d212c' }}>Severity rationale: </strong>
                   {r.description}
@@ -12319,16 +12913,41 @@ function DraftRiskPanel({
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: '#475569', lineHeight: 1.55 }}>
                   <li>{r.action}</li>
                 </ul>
+                {view !== 'suggested' && contributors[r.id] && (
+                  <div style={{ fontSize: 12.5, color: '#475569', marginTop: 8 }}>
+                    <strong style={{ color: '#0d212c' }}>Assigned to: </strong>
+                    {contributors[r.id]}
+                  </div>
+                )}
                 {view === 'suggested' && canInsert && (
                   <div style={{ marginTop: 12 }}>
-                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Text for the draft</label>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Assign contributor</label>
+                    <select
+                      value={contributors[r.id] ?? ''}
+                      onChange={(e) => setContributors((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#0d212c', fontFamily: 'inherit', background: '#ffffff', cursor: 'pointer', marginBottom: 12 }}
+                    >
+                      <option value="">Select a contributor</option>
+                      {members.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Insert in draft</label>
                     <textarea
-                      rows={4}
+                      rows={2}
+                      ref={(el) => {
+                        // Show the whole text, no inner scroll
+                        if (el) {
+                          el.style.height = 'auto'
+                          el.style.height = `${el.scrollHeight}px`
+                        }
+                      }}
                       value={suggestionOf(r)}
                       onChange={(e) => setEditedTexts((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#0d212c', fontFamily: 'inherit', resize: 'vertical', outline: 'none', lineHeight: 1.5 }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12, color: '#0d212c', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.45, overflow: 'hidden' }}
                     />
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>You can edit this suggestion before inserting it.</div>
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
@@ -12391,18 +13010,28 @@ interface ReviewItem {
   category: ReviewCategory
   title: string
   section: string
-  priority: 'High' | 'Medium' | 'Low'
-  /** Short reference shown under the category, e.g. fnd-3cd30235d2 */
-  ref: string
-  description: string
-  evidence: string[]
+  /** Plain-language suggestion from the AI */
+  ai: string
+  /** Wording the AI proposes for the section (empty when nothing can be proposed) */
+  suggestion: string
+  /** Conflicts: the two values the documents give, and which one the AI recommends */
+  conflict?: { a: { doc: string; value: string }; b: { doc: string; value: string }; suggest: 'a' | 'b' }
 }
 
 /** A recorded decision on a review item: resolved, or dismissed (the SOW text stays as it is) */
 interface ReviewDecision {
   status: 'resolved' | 'dismissed'
-  wording: string
+  /** The one contributor assigned to follow this up */
+  contributor: string
   note: string
+}
+
+const REVIEW_CONFLICTS: Record<string, NonNullable<ReviewItem['conflict']>> = {
+  'Client name differs between Doc 1 and Doc 2': { a: { doc: 'Doc 1', value: 'Acme Corporation' }, b: { doc: 'Doc 2', value: 'Acme Corp Ltd.' }, suggest: 'a' },
+  'Expected wait-time reduction is 20% in one document and 30% in another': { a: { doc: 'Doc 1', value: '20% reduction' }, b: { doc: 'Doc 3', value: '30% reduction' }, suggest: 'a' },
+  'Project duration is 12 weeks in Doc 1 and 14 weeks in Doc 3': { a: { doc: 'Doc 1', value: '12 weeks' }, b: { doc: 'Doc 3', value: '14 weeks' }, suggest: 'b' },
+  'Payment terms differ between Doc 2 and Doc 3': { a: { doc: 'Doc 2', value: 'Net 30 days' }, b: { doc: 'Doc 3', value: 'Net 45 days' }, suggest: 'a' },
+  'Governance cadence differs between Doc 1 and Doc 3': { a: { doc: 'Doc 1', value: 'Weekly steering committee' }, b: { doc: 'Doc 3', value: 'Fortnightly steering committee' }, suggest: 'b' },
 }
 
 /** Same colours as the Review Highlights chips above the draft */
@@ -12445,35 +13074,50 @@ const REVIEW_ITEMS_SEED: ReviewItem[] = [
   category: category as ReviewCategory,
   title,
   section: REVIEW_ITEM_SECTIONS[i % REVIEW_ITEM_SECTIONS.length],
-  priority: (['High', 'Medium', 'Low'] as const)[i % 3],
-  ref: `fnd-${((i + 1) * 2654435761).toString(16).slice(0, 10)}`,
-  description:
-    category === 'Conflict'
-      ? `The uploaded documents disagree on this point: ${title.toLowerCase()}. Confirm which source applies before the section is finalised.`
-      : category === 'Missing information'
-        ? `${title}. The uploaded documents do not give this detail, so the section cannot state it with confidence.`
-        : `The draft relies on this assumption: ${title.toLowerCase()}. Confirm it with the client or replace it with a confirmed value.`,
-  evidence: [`Doc ${(i % 3) + 1}`, `Doc ${((i + 1) % 3) + 1}`, ...(i % 2 === 0 ? [`Doc ${((i + 2) % 3) + 1}`] : [])],
+  ...(category === 'Conflict'
+    ? (() => {
+        const c = REVIEW_CONFLICTS[title] ?? { a: { doc: 'Doc 1', value: 'Value in Doc 1' }, b: { doc: 'Doc 2', value: 'Value in Doc 2' }, suggest: 'a' as const }
+        const pick = c[c.suggest]
+        return {
+          conflict: c,
+          suggestion: pick.value,
+          ai: `Use ${pick.value} (${pick.doc}). ${pick.doc} is the more recent and more specific source.`,
+        }
+      })()
+    : category === 'Assumption'
+      ? {
+          suggestion: `${title.replace(/\.$/, '')}.`,
+          ai: `State this as an assumption in the ${REVIEW_ITEM_SECTIONS[i % REVIEW_ITEM_SECTIONS.length]} section, and confirm it with the client.`,
+        }
+      : {
+          suggestion: '',
+          ai: `This is not in your documents. Ask the client for it, then add the detail to the ${REVIEW_ITEM_SECTIONS[i % REVIEW_ITEM_SECTIONS.length]} section.`,
+        }),
 }))
 
 function DraftReviewPanel({
   items,
   decisions,
   canDecide,
+  members,
   onJump,
   onDecide,
 }: {
   items: ReviewItem[]
   decisions: Record<string, ReviewDecision>
   canDecide: boolean
+  /** Contributors that can be assigned (one per item) */
+  members: string[]
   onJump: (section: string) => void
   onDecide: (id: string, decision: ReviewDecision, draftText: string) => void
 }) {
   const [view, setView] = useState<'open' | 'resolved'>('open')
-  const [draftText, setDraftText] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [wording, setWording] = useState('')
+  const [contributor, setContributor] = useState('')
   const [note, setNote] = useState('')
+  const [draftText, setDraftText] = useState('')
+  const [docs, setDocs] = useState<string[]>(['Doc 1', 'Doc 2', 'Doc 3'])
+  const [choice, setChoice] = useState<'a' | 'b' | null>(null)
   const shown = items.filter((i) => (view === 'open') !== Boolean(decisions[i.id]))
   const subTab = (key: 'open' | 'resolved', label: string) => (
     <button
@@ -12498,6 +13142,7 @@ function DraftReviewPanel({
     </button>
   )
   const fieldStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12.5, color: '#0d212c', fontFamily: 'inherit', resize: 'vertical', outline: 'none', background: '#ffffff' }
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', margin: '12px 0 4px' }
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', gap: 18, borderBottom: '1px solid #e2e8f0', marginBottom: 6 }}>
@@ -12519,11 +13164,21 @@ function DraftReviewPanel({
             return
           }
           setExpandedId(it.id)
-          setWording(decision?.wording ?? '')
+          setContributor(decision?.contributor ?? '')
           setNote(decision?.note ?? '')
-          setDraftText(`Resolved: ${it.title}.`)
+          // The AI's proposed wording is the text that will be added, ready to edit
+          setDraftText(it.suggestion)
+          setDocs(['Doc 1', 'Doc 2', 'Doc 3'])
+          setChoice(it.conflict ? it.conflict.suggest : null)
           onJump(it.section)
         }
+        const guide =
+          it.category === 'Assumption'
+            ? 'The draft assumes this. Confirm it is correct, or change the wording.'
+            : it.category === 'Conflict'
+              ? 'Two documents disagree. Choose the value that is correct.'
+              : 'This detail is not in your documents. Add it so it can go into the section.'
+        const finalText = (draftText.trim() + (docs.length > 0 && draftText.trim() ? ` (${docs.join(', ')})` : '')).trim()
         return (
           <div key={it.id} style={{ padding: '12px 4px', borderTop: idx === 0 ? 'none' : '1px solid #e2e8f0' }}>
             <div
@@ -12550,46 +13205,58 @@ function DraftReviewPanel({
                 {decision && (
                   <span style={{ marginLeft: 8, fontWeight: 600, color: decision.status === 'resolved' ? '#16a34a' : '#64748b' }}>
                     · {decision.status === 'resolved' ? 'Resolved' : 'Dismissed'}
+                    {decision.contributor ? ` · ${decision.contributor}` : ''}
                   </span>
                 )}
               </div>
             </div>
             {open && (
               <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#475569', background: '#f1f5f9', padding: '3px 10px', borderRadius: 8 }}>{it.category}</span>
-                  <span style={{ fontSize: 12, color: '#64748b' }}>
-                    <strong style={{ color: '#0d212c' }}>{it.priority}</strong> priority · {decision ? (decision.status === 'resolved' ? 'resolved' : 'dismissed') : 'open'}
-                  </span>
-                </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Review item · {it.ref}</div>
+                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.55 }}>{guide}</div>
                 <button
                   type="button"
                   onClick={() => onJump(it.section)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, padding: 0, background: 'none', border: 'none', borderBottom: '1px solid #5eead4', color: '#008b8b', fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, padding: 0, background: 'none', border: 'none', borderBottom: '1px solid #5eead4', color: '#008b8b', fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}
                 >
                   <ListChecks size={13} />
                   View affected section: {it.section}
                 </button>
-                <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.55, marginTop: 10 }}>{it.description}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-                  <span style={{ fontSize: 11.5, color: '#475569' }}>Evidence:</span>
-                  {it.evidence.map((ev) => (
-                    <span key={ev} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#008b8b', background: 'rgba(0,196,196,0.08)', border: '1px solid rgba(0,196,196,0.25)', borderRadius: 6, padding: '2px 8px' }}>
-                      <FileText size={11} />
-                      {ev}
-                    </span>
-                  ))}
-                </div>
-                <div style={{ borderTop: '1px solid #e2e8f0', margin: '14px 0 12px' }} />
+
+                {/* Conflict: the two values, pick the correct one */}
+                {it.conflict && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 }}>
+                    {(['a', 'b'] as const).map((k) => {
+                      const v = it.conflict![k]
+                      const picked = choice === k
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          disabled={Boolean(decision) || !canDecide}
+                          onClick={() => {
+                            setChoice(k)
+                            setDraftText(v.value)
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: picked ? '1.5px solid #00C4C4' : '1px solid #e2e8f0', background: picked ? 'rgba(0,196,196,0.06)' : '#ffffff', cursor: decision || !canDecide ? 'default' : 'pointer' }}
+                        >
+                          <span style={{ width: 16, height: 16, borderRadius: '50%', flexShrink: 0, boxSizing: 'border-box', border: picked ? '5px solid #00C4C4' : '1.5px solid #cbd5e1' }} />
+                          <span>
+                            <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b' }}>{v.doc} says</span>
+                            <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>{v.value}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
                 {decision || !canDecide ? (
                   decision && (
-                    <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.55 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Your decision</div>
-                      {decision.wording && (
-                        <div style={{ marginBottom: 6 }}>
-                          <strong style={{ color: '#0d212c' }}>Chosen wording: </strong>
-                          {decision.wording}
+                    <div style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.55, marginTop: 12 }}>
+                      {decision.contributor && (
+                        <div style={{ marginBottom: 4 }}>
+                          <strong style={{ color: '#0d212c' }}>Assigned to: </strong>
+                          {decision.contributor}
                         </div>
                       )}
                       {decision.note && (
@@ -12598,32 +13265,56 @@ function DraftReviewPanel({
                           {decision.note}
                         </div>
                       )}
-                      {!decision.wording && !decision.note && <div>No wording or note was recorded.</div>}
                     </div>
                   )
                 ) : (
                   <>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0d212c' }}>Record your decision</div>
-                    <div style={{ fontSize: 11.5, color: '#94a3b8', lineHeight: 1.5, margin: '4px 0 10px' }}>
-                      Resolve or dismiss this review item. This records your decision; it does not change the SOW text.
+                    <label style={labelStyle}>Assign contributor</label>
+                    <select value={contributor} onChange={(e) => setContributor(e.target.value)} style={{ ...fieldStyle, resize: 'none', cursor: 'pointer' }}>
+                      <option value="">Select a contributor</option>
+                      {members.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label style={labelStyle}>Insert in draft</label>
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, background: '#ffffff', padding: '6px 8px' }}>
+                      <textarea
+                        rows={2}
+                        value={draftText}
+                        onChange={(e) => setDraftText(e.target.value)}
+                        placeholder={it.category === 'Missing information' ? 'Type the missing detail' : 'Text to add'}
+                        style={{ width: '100%', boxSizing: 'border-box', border: 'none', outline: 'none', resize: 'none', fontSize: 12, lineHeight: 1.45, color: '#0d212c', fontFamily: 'inherit', padding: 0 }}
+                      />
+                      {docs.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 6, borderTop: '1px solid #f1f5f9' }}>
+                          {docs.map((d) => (
+                            <span key={d} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#475569', background: '#f1f5f9', borderRadius: 6, padding: '2px 4px 2px 8px' }}>
+                              <FileText size={11} />
+                              {d}
+                              <button
+                                type="button"
+                                aria-label={`Remove ${d}`}
+                                onClick={() => setDocs((prev) => prev.filter((x) => x !== d))}
+                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: '#94a3b8' }}
+                              >
+                                <X size={12} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Chosen wording</label>
-                    <textarea rows={3} value={wording} onChange={(e) => setWording(e.target.value)} placeholder="Record agreed wording for this decision" style={fieldStyle} />
-                    <div style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 10px', lineHeight: 1.45 }}>
-                      Saved in decision history. To apply it to the SOW, edit the affected section separately.
-                    </div>
-                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', marginBottom: 4 }}>Decision note</label>
+
+                    <label style={labelStyle}>Decision note</label>
                     <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why is this resolved or not applicable?" style={fieldStyle} />
-                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#0d212c', margin: '12px 0 4px' }}>Text for the draft section</label>
-                    <textarea rows={3} value={draftText} onChange={(e) => setDraftText(e.target.value)} placeholder="Text to add to the section when you resolve this item" style={fieldStyle} />
-                    <div style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0', lineHeight: 1.45 }}>
-                      Added to the section and highlighted when you resolve. Dismissing leaves the draft as it is.
-                    </div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                       <button
                         type="button"
                         onClick={() => {
-                          onDecide(it.id, { status: 'resolved', wording: wording.trim(), note: note.trim() }, draftText.trim() || wording.trim() || it.title)
+                          onDecide(it.id, { status: 'resolved', contributor, note: note.trim() }, finalText)
                           setExpandedId(null)
                         }}
                         style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: '#00C4C4', color: '#ffffff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
@@ -12633,7 +13324,7 @@ function DraftReviewPanel({
                       <button
                         type="button"
                         onClick={() => {
-                          onDecide(it.id, { status: 'dismissed', wording: wording.trim(), note: note.trim() }, '')
+                          onDecide(it.id, { status: 'dismissed', contributor, note: note.trim() }, '')
                           setExpandedId(null)
                         }}
                         style={{ padding: '7px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: '#0d212c', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
@@ -12648,6 +13339,220 @@ function DraftReviewPanel({
           </div>
         )
       })}
+    </div>
+  )
+}
+
+/* ── Delivery schedule page (screens only: no functionality behind the buttons) ───────────── */
+
+const SCHEDULE_ROWS: { name: string; start: string; days: number; phase: boolean; proposal?: boolean }[] = [
+  { name: 'Project Management activities', start: '2027-03-01', days: 20, phase: true },
+  { name: 'D1 Project Charter and Plan', start: '2027-03-01', days: 20, phase: false },
+  { name: 'Design activities', start: '2027-03-21', days: 39, phase: true, proposal: true },
+  { name: 'D2 Business Requirements Document (BRD), High-Level Design (HLD), Low-Level Design (LLD)', start: '2027-03-21', days: 39, phase: false },
+  { name: 'Clinical Informatics activities', start: '2027-04-29', days: 58, phase: true, proposal: true },
+  { name: 'D3 HL7 Implementation Guide', start: '2027-04-29', days: 58, phase: false },
+  { name: 'D4 National Value Set Catalogue', start: '2027-04-29', days: 58, phase: false },
+  { name: 'Platform activities', start: '2027-04-29', days: 58, phase: true, proposal: true },
+  { name: 'D5 HIE Platform Configuration', start: '2027-04-29', days: 58, phase: false },
+  { name: 'D6 Provider Portal', start: '2027-04-29', days: 58, phase: false, proposal: true },
+  { name: 'D7 Admin Portal', start: '2027-04-29', days: 58, phase: false, proposal: true },
+  { name: 'D8 Data Quality (DQ) Dashboard', start: '2027-04-29', days: 58, phase: false },
+  { name: 'D9 Adoption Dashboard', start: '2027-04-29', days: 58, phase: false },
+  { name: 'Testing and QA activities', start: '2027-06-26', days: 58, phase: true, proposal: true },
+  { name: 'D10 Test Plans and Reports', start: '2027-06-26', days: 58, phase: false },
+  { name: 'Training activities', start: '2027-06-26', days: 58, phase: true, proposal: true },
+  { name: 'D11 Training Materials', start: '2027-06-26', days: 58, phase: false },
+  { name: 'Support activities', start: '2027-08-23', days: 20, phase: true, proposal: true },
+  { name: 'D12 Hypercare Report', start: '2027-08-23', days: 20, phase: false, proposal: true },
+  { name: 'D13 AMS Reports', start: '2027-08-23', days: 20, phase: false, proposal: true },
+  { name: 'Closure activities', start: '2027-09-12', days: 19, phase: true, proposal: true },
+]
+
+function DeliverySchedulePage({ onBack }: { onBack: () => void }) {
+  const DAY = 8 // pixels per day
+  const ROW_H = 40
+  const HEAD_H = 64
+  const chartStart = new Date(2027, 1, 21).getTime()
+  const weeks = 32
+  const dayMs = 86400000
+  const weekStarts = Array.from({ length: weeks }, (_, i) => new Date(chartStart + i * 7 * dayMs))
+  const months: { label: string; span: number }[] = []
+  weekStarts.forEach((d) => {
+    const label = d.toLocaleString('en-GB', { month: 'long' }) + ' ' + d.getFullYear()
+    const last = months[months.length - 1]
+    if (last && last.label === label) last.span += 1
+    else months.push({ label, span: 1 })
+  })
+  const fmt = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.getDate()} ${d.toLocaleString('en-GB', { month: 'short' })}`
+  }
+  const startPx = (iso: string) => ((new Date(iso).getTime() - chartStart) / dayMs) * DAY
+  const barPx = (r: (typeof SCHEDULE_ROWS)[number]) => ({ left: startPx(r.start), width: r.days * DAY })
+  // Finish → start links drawn between bars: [from row, to row]
+  const links: [number, number][] = [[1, 2], [3, 4], [3, 7], [12, 13], [12, 15], [14, 17], [16, 17], [19, 20]]
+  const chartW = weeks * 7 * DAY
+  const chip = (text: string, tone: 'neutral' | 'link' = 'neutral') => (
+    <span style={{ fontSize: 12, color: tone === 'link' ? '#00a0a0' : '#475569', textDecoration: tone === 'link' ? 'underline' : 'none', whiteSpace: 'nowrap' }}>{text}</span>
+  )
+  const ghostBtn: React.CSSProperties = { padding: '7px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: '#0d212c', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }
+  const noteCard: React.CSSProperties = { background: '#fdf3dc', border: '1px solid #f3e2b3', borderRadius: 12, padding: '14px 18px', color: '#3f3a2a', fontSize: 13 }
+  return (
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 28px 20px' }}>
+        <button
+          type="button"
+          onClick={onBack}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', marginBottom: 14, borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: '#0d212c', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+        >
+          <ArrowLeft size={14} />
+          Back to draft
+        </button>
+
+        <details style={{ marginBottom: 8 }}>
+          <summary style={{ fontSize: 13, color: '#334155', cursor: 'pointer' }}>Calendar</summary>
+          <div style={{ fontSize: 12.5, color: '#64748b', padding: '8px 0 0 14px' }}>Calendar days are used for every date and duration.</div>
+        </details>
+        <div style={{ fontSize: 12.5, color: '#64748b', margin: '12px 0 8px' }}>The SOW due date is administrative and was not used.</div>
+        <div style={{ fontSize: 12.5, color: '#64748b', marginBottom: 14 }}>Estimated placements are PROPOSALS until a baseline is approved; explicit dates are fixed anchors and are never shifted.</div>
+
+        <div style={{ ...noteCard, marginBottom: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Decisions for the PMO</div>
+          <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.6 }}>
+            <li>AMS start: the sources give a 12-month AMS duration but do not state whether it starts after, or overlaps, hypercare. Confirm and set the start date.</li>
+          </ul>
+        </div>
+        <div style={{ ...noteCard, marginBottom: 18 }}>Proposed schedule, not approved</div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c' }}>Delivery schedule</div>
+            <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Turn the scope of work into a clear delivery plan.</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button type="button" style={ghostBtn}>Review schedule</button>
+            <button type="button" style={ghostBtn}>
+              Baselines <span style={{ marginLeft: 6, fontSize: 11, background: '#f1f5f9', borderRadius: 6, padding: '1px 7px' }}>0</span>
+            </button>
+            <button type="button" style={{ ...ghostBtn, background: '#00C4C4', border: 'none', color: '#ffffff' }}>+ Add work item</button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', marginBottom: 18 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0d212c' }}>Implementation 1 Mar - 30 Sep 2027</span>
+          {chip('Hypercare 1 Oct - 23 Dec 2027')}
+          {chip('Undated: Application Managed Support (AMS)')}
+          {chip('24 tasks')}
+          {chip('17 milestones')}
+          {chip('49 dependencies')}
+          {chip('1 unscheduled')}
+          {chip('14 dependency warnings', 'link')}
+          {chip('35 need a dependency type')}
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#64748b' }}>Calendar days</span>
+        </div>
+
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#0d212c', marginBottom: 6 }}>Dependency review</div>
+        <div style={{ fontSize: 12.5, color: '#64748b', marginBottom: 12 }}>49 dependencies: 35 need a type decision, 14 proposed Finish → Start. 0 errors, 14 date warnings. Warnings do not change any date.</div>
+        {([['Type needs a decision', 35], ['Proposed links', 14]] as const).map(([label, n]) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', border: '1px solid #eef2f6', borderRadius: 12, marginBottom: 10, fontSize: 13.5, fontWeight: 600, color: '#0d212c' }}>
+            <ChevronRight size={14} color="#64748b" />
+            {label}
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#00a0a0', background: 'rgba(0,196,196,0.1)', borderRadius: 6, padding: '1px 7px' }}>{n}</span>
+          </div>
+        ))}
+
+        {/* Gantt toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '10px 12px', border: '1px solid #eef2f6', borderRadius: 12, margin: '16px 0 0', background: '#fafcfc' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'inline-flex', border: '1px solid #eef2f6', borderRadius: 8, overflow: 'hidden', background: '#ffffff' }}>
+              <span style={{ padding: '6px 14px', fontSize: 12.5, fontWeight: 600, color: '#00a0a0', background: 'rgba(0,196,196,0.1)' }}>Gantt</span>
+              <span style={{ padding: '6px 14px', fontSize: 12.5, color: '#64748b' }}>Table</span>
+            </div>
+            <div style={{ display: 'inline-flex', border: '1px solid #eef2f6', borderRadius: 8, overflow: 'hidden', background: '#ffffff' }}>
+              <span style={{ padding: '6px 14px', fontSize: 12.5, fontWeight: 600, color: '#00a0a0', background: 'rgba(0,196,196,0.1)' }}>Grouped by generated phases (not a source hierarchy)</span>
+              <span style={{ padding: '6px 14px', fontSize: 12.5, color: '#64748b' }}>Flat</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 12, color: '#64748b' }}>Scale</span>
+            <select defaultValue="Weeks" style={{ ...ghostBtn, fontWeight: 500 }}><option>Weeks</option><option>Days</option><option>Months</option></select>
+            <button type="button" style={ghostBtn}>Fit schedule</button>
+            <select defaultValue="A4 landscape" style={{ ...ghostBtn, fontWeight: 500 }}><option>A4 landscape</option><option>A4 portrait</option></select>
+            <button type="button" style={ghostBtn}>Export Gantt PDF</button>
+            <button type="button" style={ghostBtn}>Expand</button>
+          </div>
+        </div>
+
+        {/* Gantt chart */}
+        <div style={{ display: 'flex', border: '1px solid #eef2f6', borderTop: 'none', borderRadius: '0 0 12px 12px', overflow: 'hidden', background: '#ffffff' }}>
+          <div style={{ width: 400, flexShrink: 0, borderRight: '1px solid #e2e8f0' }}>
+            <div style={{ height: HEAD_H, display: 'flex', alignItems: 'center', borderBottom: '1px solid #e2e8f0', fontSize: 12.5, fontWeight: 600, color: '#0d212c' }}>
+              <span style={{ flex: 1, padding: '0 16px' }}>Work Item</span>
+              <span style={{ width: 70, padding: '0 8px', borderLeft: '1px solid #eef2f6', lineHeight: `${HEAD_H}px` }}>Start</span>
+              <span style={{ width: 56, padding: '0 8px', borderLeft: '1px solid #eef2f6', lineHeight: `${HEAD_H}px` }}>Days</span>
+            </div>
+            {SCHEDULE_ROWS.map((r) => (
+              <div key={r.name} style={{ height: ROW_H, display: 'flex', alignItems: 'center', borderBottom: '1px solid #f1f5f9', fontSize: 12.5, color: '#0d212c' }}>
+                <span style={{ flex: 1, minWidth: 0, padding: r.phase ? '0 16px' : '0 16px 0 30px', fontWeight: r.phase ? 700 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {r.name}
+                  {r.proposal && <span style={{ marginLeft: 6, fontSize: 9.5, fontWeight: 700, color: '#64748b', letterSpacing: '0.04em' }}>PROPOSAL</span>}
+                </span>
+                <span style={{ width: 70, padding: '0 8px', color: '#475569' }}>{fmt(r.start)}</span>
+                <span style={{ width: 56, padding: '0 8px', color: '#475569' }}>{r.days}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ flex: 1, minWidth: 0, overflowX: 'auto' }}>
+            <div style={{ width: chartW, position: 'relative' }}>
+              <div style={{ height: HEAD_H, borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', height: HEAD_H / 2 }}>
+                  {months.map((m, i) => (
+                    <div key={i} style={{ width: m.span * 7 * DAY, borderLeft: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#334155' }}>{m.label}</div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', height: HEAD_H / 2 }}>
+                  {weekStarts.map((d, i) => (
+                    <div key={i} style={{ width: 7 * DAY, borderLeft: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11.5, color: '#64748b' }}>
+                      {d.getDate()} {d.toLocaleString('en-GB', { month: 'short' })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ position: 'relative', height: SCHEDULE_ROWS.length * ROW_H, backgroundImage: `repeating-linear-gradient(90deg, #f1f5f9 0, #f1f5f9 1px, transparent 1px, transparent ${7 * DAY}px)` }}>
+                {SCHEDULE_ROWS.map((r, i) => {
+                  const b = barPx(r)
+                  return (
+                    <div
+                      key={r.name}
+                      title={r.name}
+                      style={{ position: 'absolute', top: i * ROW_H + 6, height: ROW_H - 12, left: b.left, width: b.width, borderRadius: 3, background: r.phase ? '#3f6db3' : '#1e9a85', color: '#ffffff', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >
+                      {r.name.replace(/^D\d+ /, (m) => m)}
+                    </div>
+                  )
+                })}
+                <svg width={chartW} height={SCHEDULE_ROWS.length * ROW_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                  {links.map(([from, to], k) => {
+                    const a = barPx(SCHEDULE_ROWS[from])
+                    const bb = barPx(SCHEDULE_ROWS[to])
+                    const x1 = a.left + a.width
+                    const y1 = from * ROW_H + ROW_H / 2
+                    const x2 = bb.left
+                    const y2 = to * ROW_H + ROW_H / 2
+                    const mx = Math.min(x2 - 6, x1 + 10)
+                    return <polyline key={k} points={`${x1},${y1} ${mx},${y1} ${mx},${y2} ${x2},${y2}`} fill="none" stroke="#475569" strokeWidth="1" />
+                  })}
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', padding: '8px 28px', borderTop: '1px solid #e2e8f0', fontSize: 12, color: '#64748b', background: '#ffffff' }}>
+        <span>26 open review items · Draft remains editable</span>
+        <span>No changes yet</span>
+      </div>
     </div>
   )
 }
@@ -12894,7 +13799,12 @@ function SOWDraftTab({
   const [editingReplyText, setEditingReplyText] = useState('')
   const [drawerTab, setDrawerTab] = useState<'review' | 'comments' | 'history' | 'trace' | 'risk'>('review')
   const [hoveredDrawerTab, setHoveredDrawerTab] = useState<string | null>(null)
-  const [reviewDecisions, setReviewDecisions] = useState<Record<string, ReviewDecision>>({})
+  // The draft was generated with part of the review already handled, so the completeness score starts above zero
+  const [reviewDecisions, setReviewDecisions] = useState<Record<string, ReviewDecision>>(() =>
+    Object.fromEntries(
+      ['rv-1', 'rv-2', 'rv-3', 'rv-4', 'rv-5', 'rv-6', 'rv-7', 'rv-10', 'rv-11'].map((id) => [id, { status: 'resolved' as const, contributor: '', note: '' }])
+    )
+  )
   const resolvedReviewIds = Object.keys(reviewDecisions)
   const [riskStatuses, setRiskStatuses] = useState<Record<string, DraftRiskStatus>>({})
   const [showQuality, setShowQuality] = useState(false)
@@ -12935,7 +13845,7 @@ function SOWDraftTab({
 
   const handleDocCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement
-    const citationEl = target.closest('.sow-draft-citation-btn, .sow-inline-citation') as HTMLElement | null
+    const citationEl = target.closest('.sow-draft-citation-btn, .sow-inline-citation, .sow-doc-stated') as HTMLElement | null
     if (citationEl) {
       e.preventDefault()
       e.stopPropagation()
@@ -12967,8 +13877,8 @@ function SOWDraftTab({
   // Version History state
   const [draftVersions, setDraftVersions] = useState([
     {
-      id: 'v1.2',
-      name: 'v1.2',
+      id: 'v4',
+      name: '4',
       isCurrent: true,
       timestamp: 'Today, 18:20',
       author: 'Ashika Jain (PMO)',
@@ -12976,8 +13886,8 @@ function SOWDraftTab({
       changesCount: 6,
     },
     {
-      id: 'v1.1',
-      name: 'v1.1',
+      id: 'v3',
+      name: '3',
       isCurrent: false,
       timestamp: 'Today, 14:45',
       author: 'Ishita (Reviewer)',
@@ -12985,8 +13895,8 @@ function SOWDraftTab({
       changesCount: 12,
     },
     {
-      id: 'v1.0',
-      name: 'v1.0',
+      id: 'v2',
+      name: '2',
       isCurrent: false,
       timestamp: 'Yesterday, 17:30',
       author: 'Narendra (Contributor)',
@@ -12994,8 +13904,8 @@ function SOWDraftTab({
       changesCount: 18,
     },
     {
-      id: 'v0.9',
-      name: 'v0.9',
+      id: 'v1',
+      name: '1',
       isCurrent: false,
       timestamp: '2 days ago, 11:00',
       author: 'Intake AI Agent',
@@ -13028,6 +13938,9 @@ function SOWDraftTab({
     { finding: AIReviewFinding; sectionIdx: number; action: 'manual' | 'ai' }[]
   >([])
   const [showSourceInfoTooltip, setShowSourceInfoTooltip] = useState(false)
+  const [showCompletenessTip, setShowCompletenessTip] = useState(false)
+  // Delivery schedule is a separate page reached from the strip above the draft
+  const [showSchedule, setShowSchedule] = useState(false)
   const [reviewCounts, setReviewCounts] = useState({ conflicts: 0, missing: 0, assumptions: 0 })
   // Count the highlighted items in the rendered draft
   useEffect(() => {
@@ -13668,6 +14581,9 @@ function SOWDraftTab({
         // Review Highlights: questions/assumptions are tagged as assumptions; some sections also carry
         // a conflict or a missing-information note
         body = body.replace(/provenance-question/g, 'provenance-question review-assumption')
+        // "Doc stated" chip at the start of every statement taken from the documents; it opens the same citation preview
+        const docStatedChip = `<span class="sow-doc-stated" contenteditable="false" data-doc="${item.fileName}" data-page="${pageNum}" data-section="${item.title}" title="Open the cited document" style="display:inline-flex;align-items:center;margin-right:6px;padding:1px 8px;font-size:10.5px;font-weight:600;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;cursor:pointer;vertical-align:baseline;user-select:none;">Doc stated</span>`
+        body = body.replace(/(<p class="provenance-block provenance-ai"[^>]*>)/g, `$1${docStatedChip}`)
         if (idx % 4 === 1) {
           body += `<p class="provenance-block review-conflict" style="margin-bottom:12px;line-height:1.7;color:#374151;">The uploaded documents give different values for part of this section. Confirm which source applies before this section is finalised.</p>`
         }
@@ -13995,11 +14911,11 @@ function SOWDraftTab({
     if (!source) return
     const clone = source.cloneNode(true) as HTMLElement
     clone
-      .querySelectorAll(includeCitations ? '.sow-draft-trace-btn' : '.sow-draft-trace-btn, .sow-draft-citation-btn, .sow-inline-citation')
+      .querySelectorAll(includeCitations ? '.sow-draft-trace-btn' : '.sow-draft-trace-btn, .sow-draft-citation-btn, .sow-inline-citation, .sow-doc-stated')
       .forEach((n) => n.remove())
     if (includeCitations) {
       // Citations stay in the document as plain text, not clickable controls
-      clone.querySelectorAll('.sow-draft-citation-btn, .sow-inline-citation').forEach((n) => {
+      clone.querySelectorAll('.sow-draft-citation-btn, .sow-inline-citation, .sow-doc-stated').forEach((n) => {
         ;(n as HTMLElement).style.display = 'inline-block'
         n.removeAttribute('title')
       })
@@ -14226,8 +15142,30 @@ function SOWDraftTab({
     openAiFindings: aiFindings.filter((f) => !f.resolved).length,
     openComments: comments.filter((c) => !c.resolved).length,
   })
-  const allRisks = draftRisks
+  const [customRisks, setCustomRisks] = useState<DraftRisk[]>([])
+  const allRisks = [...draftRisks, ...customRisks].sort((a, b) => ({ High: 0, Medium: 1, Low: 2 }[a.severity] - { High: 0, Medium: 1, Low: 2 }[b.severity]))
   const suggestedRiskCount = allRisks.filter((r) => (riskStatuses[r.id] ?? 'suggested') === 'suggested').length
+
+  // Overall readiness out of 100: each category counts by the share of its items that are handled
+  const completenessRows = (() => {
+    const handledReview = (cat: ReviewCategory) => {
+      const list = REVIEW_ITEMS_SEED.filter((r) => r.category === cat)
+      return { total: list.length, done: list.filter((r) => reviewDecisions[r.id]).length }
+    }
+    const handledRisk = (sev: DraftRiskSeverity) => {
+      const list = allRisks.filter((r) => r.severity === sev)
+      return { total: list.length, done: list.filter((r) => (riskStatuses[r.id] ?? 'suggested') !== 'suggested').length }
+    }
+    return [
+      { label: 'Conflicts', weight: 20, ...handledReview('Conflict') },
+      { label: 'Missing information', weight: 20, ...handledReview('Missing information') },
+      { label: 'Assumptions', weight: 10, ...handledReview('Assumption') },
+      { label: 'High risks', weight: 25, ...handledRisk('High') },
+      { label: 'Medium risks', weight: 15, ...handledRisk('Medium') },
+      { label: 'Low risks', weight: 10, ...handledRisk('Low') },
+    ].map((r) => ({ ...r, points: r.total === 0 ? r.weight : (r.weight * r.done) / r.total }))
+  })()
+  const completenessScore = Math.round(completenessRows.reduce((n, r) => n + r.points, 0))
 
   const jumpToSection = (title: string) => {
     const idx = findSectionIdxForAffected(title)
@@ -14279,14 +15217,27 @@ function SOWDraftTab({
     const idx = findSectionIdxForAffected(item.section)
     const el = idx === -1 ? null : document.getElementById(`sow-section-${idx}`)
     if (!el) return
+    if (!text.trim()) {
+      // Nothing to add: just show which section this resolution belongs to
+      el.classList.add('sow-ai-suggest-highlight')
+      setActiveSectionIdx(idx)
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
+      setTimeout(() => {
+        const clear = () => {
+          el.classList.remove('sow-ai-suggest-highlight')
+          document.removeEventListener('mousedown', clear, true)
+        }
+        document.addEventListener('mousedown', clear, true)
+      }, 400)
+      return
+    }
     const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const box = document.createElement('div')
     box.className = 'sow-inserted-risk sow-risk-highlight sow-risk-pulse'
     box.setAttribute('data-review-id', item.id)
     box.innerHTML =
       `<p style="margin:0 0 6px;font-size:12px;color:#008b8b;font-weight:600;">Review item resolved · ${esc(item.category)}</p>` +
-      `<p style="margin:0 0 6px;font-size:13px;color:#374151;line-height:1.65;">${esc(text)}</p>` +
-      `<p style="margin:0;font-size:12px;color:#64748b;line-height:1.6;">Resolved from the Review panel: ${esc(item.title)}</p>`
+      `<p style="margin:0;font-size:13px;color:#374151;line-height:1.65;">${esc(text)}</p>`
     el.appendChild(box)
     setHasUnsaved(true)
     if (isPMO || isReviewer || isContributor) setHasUnreviewedEdits(true)
@@ -14563,7 +15514,10 @@ function SOWDraftTab({
         </div>
       )}
 
-      <div style={{ display: 'flex', height: '100%', minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden' }}>
+        {showSchedule && <DeliverySchedulePage onBack={() => setShowSchedule(false)} />}
+        {/* The draft stays mounted while the schedule is open, so nothing in it is lost */}
+      <div style={{ display: showSchedule ? 'none' : 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
         {/* ── Left TOC sidebar ──────────────────────────────────────────────── */}
         <SidePane
           side="left"
@@ -15045,7 +15999,7 @@ function SOWDraftTab({
                                   }
                                 >
                                   <Users size={16} color="#00a0a0" />
-                                  Assign Contributors
+                                  Assign Contributor
                                 </button>
                               )}
                               {!isApproved && canManageSections && (
@@ -15805,6 +16759,33 @@ function SOWDraftTab({
                 )
               })}
 
+              {/* Overall readiness: weighted share of conflicts, gaps, assumptions and risks that are handled */}
+              <span
+                style={{ position: 'relative', display: 'inline-flex' }}
+                onMouseEnter={() => setShowCompletenessTip(true)}
+                onMouseLeave={() => setShowCompletenessTip(false)}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, color: '#007a7a', background: 'rgba(0,196,196,0.12)', border: '1px solid rgba(0,196,196,0.35)', cursor: 'help' }}>
+                  Completeness
+                  <span style={{ fontSize: 12.5, fontWeight: 700 }}>{completenessScore}%</span>
+                </span>
+                {showCompletenessTip && (
+                  <span
+                    role="tooltip"
+                    style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 9999, background: '#ffffff', color: '#0d212c', fontSize: 11.5, padding: '10px 12px', borderRadius: 10, width: 250, border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(13,33,44,0.14)', pointerEvents: 'none', lineHeight: 1.5 }}
+                  >
+                    <span style={{ display: 'block', fontWeight: 700, marginBottom: 4 }}>How this is calculated</span>
+                    {completenessRows.map((r) => (
+                      <span key={r.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                        <span>{r.label} ({r.weight}%)</span>
+                        <span style={{ color: '#64748b' }}>{r.done}/{r.total}</span>
+                      </span>
+                    ))}
+                    <span style={{ display: 'block', marginTop: 6, color: '#94a3b8' }}>Each category counts by the share of its items that are resolved or handled.</span>
+                  </span>
+                )}
+              </span>
+
               {/* Clear highlight button */}
               {activeHighlight !== 'none' && (
                 <button
@@ -15834,11 +16815,21 @@ function SOWDraftTab({
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               <button
                 type="button"
+                onClick={() => setShowSchedule(true)}
+                title="Open the delivery schedule"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 8, border: '1.5px solid rgba(0,196,196,0.5)', background: 'rgba(0,196,196,0.12)', color: '#007a7a', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                <CalendarDays size={13} color="#007a7a" />
+                Delivery schedule
+              </button>
+              <span aria-hidden="true" style={{ width: 1, height: 18, background: '#e2e8f0', margin: '0 4px' }} />
+              <button
+                type="button"
                 onClick={() => setShowDraftCitations((v) => !v)}
                 aria-pressed={showDraftCitations}
                 style={{ background: 'none', border: 'none', padding: '2px 4px', fontSize: 12, fontWeight: 600, color: '#008b8b', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
               >
-                {showDraftCitations ? 'Hide Sources' : 'View Sources'}
+                {showDraftCitations ? 'Hide citations' : 'Show citations'}
               </button>
             </div>
           </div>
@@ -15952,6 +16943,7 @@ function SOWDraftTab({
                   border-radius: 8px;
                 }
                 .sow-hide-citations .sow-draft-citation-btn,
+                .sow-hide-citations .sow-doc-stated,
                 .sow-hide-citations .sow-inline-citation {
                   display: none !important;
                 }
@@ -16410,8 +17402,8 @@ function SOWDraftTab({
                   { key: 'review', label: 'Review', Icon: ClipboardList },
                   { key: 'risk', label: 'Risks', Icon: AlertTriangle },
                   { key: 'comments', label: 'Comments', Icon: MessageSquare },
-                  { key: 'history', label: 'Versions', Icon: History },
-                  { key: 'trace', label: 'Trace', Icon: GitBranch },
+                  { key: 'history', label: 'Versions', Icon: GitBranch },
+                  { key: 'trace', label: 'Trace', Icon: History },
                 ] as const).map((t) => {
                   const openRisks = allRisks.filter((r) => (riskStatuses[r.id] ?? 'suggested') === 'suggested')
                   return (
@@ -16914,6 +17906,7 @@ function SOWDraftTab({
                   items={REVIEW_ITEMS_SEED}
                   decisions={reviewDecisions}
                   canDecide={canEditAny}
+                  members={SECTION_MEMBERS.filter((m) => !m.pending).map((m) => m.name)}
                   onJump={jumpToSection}
                   onDecide={(id, d, text) => {
                     setReviewDecisions((prev) => ({ ...prev, [id]: d }))
@@ -16933,46 +17926,17 @@ function SOWDraftTab({
                   onInsert={insertRiskIntoDraft}
                   onDismiss={(id) => setRiskStatuses((prev) => ({ ...prev, [id]: 'dismissed' }))}
                   onRestore={(id) => setRiskStatuses((prev) => ({ ...prev, [id]: 'suggested' }))}
+                  members={SECTION_MEMBERS.filter((m) => !m.pending).map((m) => m.name)}
+                  sectionTitles={tocItems.map((t) => t.title)}
+                  onAddRisk={(r) => {
+                    setCustomRisks((prev) => [...prev, r])
+                    showToast('Risk added', 'success')
+                  }}
                 />
               ) : drawerTab === 'trace' ? (
                 /* Section Trace Tab in Side Drawer */
                 draftTraceTarget ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0d212c' }}>
-                        Section trace: {draftTraceTarget.sectionTitle}
-                      </div>
-                      <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
-                        Audit history of edits, AI generation, and reviewer modifications
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
-                      {DRAFT_SECTION_REVISIONS.map((rev) => (
-                        <div
-                          key={rev.version}
-                          style={{
-                            padding: '12px 14px',
-                            borderRadius: 10,
-                            border: rev.isCurrent ? '1.5px solid #00C4C4' : '1px solid #e2e8f0',
-                            background: rev.isCurrent ? 'rgba(0,196,196,0.04)' : '#ffffff',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 6,
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0d212c' }}>{rev.tag}</span>
-                            <span style={{ fontSize: 11, color: '#94a3b8' }}>{rev.timestamp}</span>
-                          </div>
-                          <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                            by {rev.author} • {rev.role}
-                          </div>
-                          <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.45 }}>{rev.summary}</div>
-                          <div style={{ fontSize: 10.5, color: '#64748b' }}>• {rev.diffSummary}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <SectionTraceVersions title={draftTraceTarget.sectionTitle} />
                 ) : (
                   <div
                     style={{
@@ -17121,6 +18085,7 @@ function SOWDraftTab({
         )}
           </div>
         </div>
+      </div>
       </div>
 
       {showQuality && (
@@ -17351,179 +18316,26 @@ function SOWDraftTab({
         </div>
       )}
 
-      {/* ── Add Reviewer popup ─────────────────────────────────────────────────── */}
+      {/* ── Assign contributor popup ─────────────────────────────────────────────── */}
       {addReviewerIdx !== null && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(13,33,44,0.4)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => {
+        <AssignContributorDialog
+          sectionTitle={tocItems[addReviewerIdx]?.title ?? ''}
+          members={allMembers}
+          selected={reviewerDraft[0] ?? ''}
+          onSelect={(name) => setReviewerDraft(name ? [name] : [])}
+          onClose={() => {
             setAddReviewerIdx(null)
             setReviewerSearch('')
           }}
-        >
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: 14,
-              width: 380,
-              boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-              overflow: 'hidden',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{ padding: '22px 28px 16px', borderBottom: '1px solid rgba(0,196,196,0.12)', position: 'relative' }}
-            >
-              <button
-                onClick={() => {
-                  setAddReviewerIdx(null)
-                  setReviewerSearch('')
-                }}
-                style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}
-                title="Close"
-              >
-                <X size={18} />
-              </button>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#0d212c' }}>Assign Contributors</div>
-              <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
-                &quot;{tocItems[addReviewerIdx]?.title}&quot;
-              </div>
-            </div>
-            <div style={{ padding: '16px 28px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {reviewerLimitError && (
-                <div style={{ padding: '6px 10px', fontSize: 12, color: '#ef4444', background: '#fef2f2', borderRadius: 6 }}>
-                  Maximum 5 contributors can be assigned.
-                </div>
-              )}
-              {allMembers.map((name) => {
-                const isChecked = reviewerDraft.includes(name)
-                const matches = name.toLowerCase().includes(reviewerSearch.toLowerCase())
-                if (!matches) return null
-                return (
-                  <div
-                    key={name}
-                    onClick={() => {
-                      if (isChecked) {
-                        setReviewerDraft((prev) => prev.filter((r) => r !== name))
-                        setReviewerLimitError(false)
-                      } else if (reviewerDraft.length >= 5) {
-                        setReviewerLimitError(true)
-                      } else {
-                        setReviewerDraft((prev) => [...prev, name])
-                        setReviewerLimitError(false)
-                      }
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '8px 6px',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      color: '#374151',
-                      borderRadius: 6,
-                      userSelect: 'none',
-                      transition: 'background 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = '#f8fafc')}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'transparent')}
-                  >
-                    {/* Custom Lucide Checkbox matching primary light / #00C4C4 theme */}
-                    <div
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: 4,
-                        background: isChecked ? '#00C4C4' : '#ffffff',
-                        border: isChecked ? '1.5px solid #00C4C4' : '1.5px solid #cbd5e1',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.15s ease',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {isChecked && <Check size={12} color="#ffffff" strokeWidth={3} />}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                      <span style={{ fontWeight: 600, color: '#0d212c' }}>{name}</span>
-                      <span style={{ fontSize: 11.5, color: '#64748b' }}>{memberEmailByName(name)}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <div style={{ padding: '0 20px 12px' }}>
-              <MemberEmailInvite
-                onAdded={(m) => {
-                  if (reviewerDraft.includes(m.name)) return
-                  if (reviewerDraft.length >= 5) {
-                    setReviewerLimitError(true)
-                    return
-                  }
-                  setReviewerLimitError(false)
-                  setReviewerDraft((prev) => [...prev, m.name])
-                }}
-              />
-            </div>
-            <div
-              style={{
-                padding: '0 28px 20px',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 10,
-              }}
-            >
-              <button
-                onClick={() => {
-                  setAddReviewerIdx(null)
-                  setReviewerSearch('')
-                }}
-                style={{
-                  padding: '8px 18px',
-                  background: 'transparent',
-                  border: '1px solid rgba(0,196,196,0.25)',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 500,
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const idx = addReviewerIdx
-                  if (idx !== null) {
-                    setTocItems((prev) => prev.map((t, i) => (i === idx ? { ...t, reviewers: reviewerDraft } : t)))
-                  }
-                  setAddReviewerIdx(null)
-                  setReviewerSearch('')
-                }}
-                style={{
-                  padding: '8px 18px',
-                  background: '#00C4C4',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#fff',
-                }}
-              >
-                Invite Participants
-              </button>
-            </div>
-          </div>
-        </div>
+          onConfirm={() => {
+            const idx = addReviewerIdx
+            if (idx !== null) {
+              setTocItems((prev) => prev.map((t, i) => (i === idx ? { ...t, reviewers: reviewerDraft } : t)))
+            }
+            setAddReviewerIdx(null)
+            setReviewerSearch('')
+          }}
+        />
       )}
       {/* ── AI Review Modal (PMO & Reviewer) ── */}
       {showAIReviewModal && (
