@@ -4086,7 +4086,7 @@ function SidePane({
   )
 }
 
-function InstructionsPanel({ rows }: { rows: { icon: React.ReactNode; title: string; text: string }[] }) {
+function InstructionsPanel({ rows }: { rows: { icon?: React.ReactNode; title?: string; chip?: React.ReactNode; text: string }[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
@@ -4096,11 +4096,20 @@ function InstructionsPanel({ rows }: { rows: { icon: React.ReactNode; title: str
       <div style={{ flex: 1, overflowY: 'auto', padding: '6px 18px 20px' }}>
         {rows.map((r, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderTop: i === 0 ? 'none' : '1px solid #f1f5f9' }}>
-            <span style={{ width: 52, flexShrink: 0, display: 'inline-flex', justifyContent: 'center', alignItems: 'center', minHeight: 22 }}>{r.icon}</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>{r.title}</div>
-              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginTop: 1 }}>{r.text}</div>
-            </div>
+            {r.chip ? (
+              <div>
+                <div>{r.chip}</div>
+                <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginTop: 6 }}>{r.text}</div>
+              </div>
+            ) : (
+              <>
+                <span style={{ width: 52, flexShrink: 0, display: 'inline-flex', justifyContent: 'center', alignItems: 'center', minHeight: 22 }}>{r.icon}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#0d212c' }}>{r.title}</div>
+                  <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginTop: 1 }}>{r.text}</div>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -4110,16 +4119,30 @@ function InstructionsPanel({ rows }: { rows: { icon: React.ReactNode; title: str
 
 /** Context instructions: what the icons on the Context page mean, one short line each */
 function ContextInstructions() {
-  const chip = (text: string, color: string, bg: string) => (
-    <span style={{ fontSize: 10.5, fontWeight: 600, color, background: bg, padding: '2px 6px', borderRadius: 5, whiteSpace: 'nowrap' }}>{text}</span>
+  // Same chips, names and colours as on the fields and in the Resolve popup
+  const fieldChip = (text: string, color: string, bg: string) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11.5, fontWeight: 600, padding: '3px 12px', borderRadius: 8, whiteSpace: 'nowrap', color, background: bg }}>{text}</span>
   )
-  const rows: { icon: React.ReactNode; title: string; text: string }[] = [
+  const resolverChip = (text: string, color: string, bg: string, border: string) => (
+    <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 20, background: bg, color, border: `1px solid ${border}`, fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap' }}>{text}</span>
+  )
+  const rows: { icon?: React.ReactNode; title?: string; chip?: React.ReactNode; text: string }[] = [
     { icon: <ChevronDown size={18} color="#0d212c" />, title: 'Open or close', text: 'Hover over a section to show its open or close icon.' },
     { icon: <Clock size={17} color="#008b8b" />, title: 'View trace', text: 'See where the content came from and how it changed, version by version.' },
     { icon: <FileText size={16} color="#64748b" />, title: 'Source', text: 'The document and page the content was taken from. Use View Sources to show or hide it.' },
-    { icon: chip('Edited', '#b45309', '#fef3c7'), title: 'Manually Edited', text: 'Someone changed the AI-extracted content by hand.' },
-    { icon: chip('Conflict', '#dc2626', '#fee2e2'), title: 'Conflict', text: 'The uploaded documents disagree about this field.' },
-    { icon: chip('Clarify', '#b45309', '#fef3c7'), title: 'Clarification needed', text: 'More information is needed from you for this field.' },
+    {
+      chip: (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: 6, whiteSpace: 'nowrap' }}>
+          <Edit2 size={11} />
+          Manually Edited
+        </span>
+      ),
+      text: 'Someone changed the AI-extracted content by hand.',
+    },
+    { chip: fieldChip('Conflict', '#dc2626', '#fee2e2'), text: 'New or existing documents give different values for this field. Use Resolve to pick the value to use.' },
+    { chip: fieldChip('Clarification needed', '#b45309', '#fef3c7'), text: 'A Discrepancy or Needs review item is waiting on this field. Use Resolve to answer it.' },
+    { chip: resolverChip('Discrepancy', '#92400e', '#fffbeb', '#fde68a'), text: 'Both values may be true, but the field holds one. Pick one, or keep both. Shown on the field as Clarification needed.' },
+    { chip: resolverChip('Needs review', '#475569', '#f8fafc', '#e2e8f0'), text: 'A statement found in a new document. Confirm whether it applies to this SOW. Shown on the field as Clarification needed.' },
     { icon: <CheckCircle2 size={16} color="#15803d" />, title: 'Resolve', text: 'Opens the questions that settle a conflict or clarification.' },
     { icon: <FileCheck size={16} color="#15803d" />, title: 'Sign off', text: 'Signs off the items or fields you ticked. It stays off until something is ticked.' },
     { icon: <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#16a34a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Check size={11} color="#ffffff" strokeWidth={3.5} /></span>, title: 'Signed off', text: 'The item or field is validated. Signed-off items are locked.' },
