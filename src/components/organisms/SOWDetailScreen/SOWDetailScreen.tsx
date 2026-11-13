@@ -3593,12 +3593,19 @@ const LOCK_OWNER_NAMES: Record<string, string> = {
 /** Countdown of the section this person has locked; hidden when they hold no lock */
 function LockTimerChip({ pagePrefix, owner }: { pagePrefix: string; owner: string }) {
   const { locks, now } = useSectionLocks()
-  const [hover, setHover] = useState(false)
+  const [tip, setTip] = useState<{ top: number; right: number } | null>(null)
   const mine = myLockOnPage(locks, pagePrefix, owner, now)
   // Not shown while the person is still editing; it appears once they have been idle for 3 seconds
   if (!mine || !lockCounting(mine.lock, now)) return null
   return (
-    <span style={{ position: 'relative', display: 'inline-flex' }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+    <span
+      style={{ position: 'relative', display: 'inline-flex' }}
+      onMouseEnter={(e) => {
+        const r = e.currentTarget.getBoundingClientRect()
+        setTip({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) })
+      }}
+      onMouseLeave={() => setTip(null)}
+    >
       <span
         role="timer"
         aria-label={`Your section unlocks in ${formatLockTime(lockRemaining(mine.lock, now))}`}
@@ -3607,15 +3614,18 @@ function LockTimerChip({ pagePrefix, owner }: { pagePrefix: string; owner: strin
         <Lock size={13} />
         {formatLockTime(lockRemaining(mine.lock, now))}
       </span>
-      {hover && (
-        <span
-          role="tooltip"
-          style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60, width: 250, padding: '8px 10px', borderRadius: 8, background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 6px 18px rgba(15,23,42,0.14)', fontSize: 11.5, fontWeight: 400, color: '#475569', lineHeight: 1.45, textAlign: 'left', whiteSpace: 'normal' }}
-        >
-          <strong style={{ display: 'block', fontSize: 12, color: '#0d212c', marginBottom: 2 }}>Section locked for others</strong>
-          The section you are editing stays locked for others. This timer appears 3 seconds after your last edit and runs for 5 minutes; editing again hides it until you pause.
-        </span>
-      )}
+      {tip &&
+        // Rendered on the page itself so nothing in the header can cover or clip it
+        createPortal(
+          <div
+            role="tooltip"
+            style={{ position: 'fixed', top: tip.top, right: tip.right, zIndex: 100000, width: 260, padding: '10px 12px', borderRadius: 10, background: '#ffffff', border: '1px solid #cbd5e1', boxShadow: '0 10px 28px rgba(15,23,42,0.22)', fontSize: 12, fontWeight: 400, color: '#475569', lineHeight: 1.5, textAlign: 'left', pointerEvents: 'none' }}
+          >
+            <strong style={{ display: 'block', fontSize: 12.5, color: '#0d212c', marginBottom: 3 }}>Section locked for others</strong>
+            The section you are editing stays locked for others. This timer appears 3 seconds after your last edit and runs for 5 minutes; editing again hides it until you pause.
+          </div>,
+          document.body
+        )}
     </span>
   )
 }
