@@ -24,6 +24,7 @@ interface ContextIssueState {
   signedFields?: string[]
   clientName?: string
 }
+import { activeLock, formatLockTime, lockRemaining, myLockOnPage, touchSectionLock, useSectionLocks } from './sectionLocks'
 import {
   Check,
   X,
@@ -3560,6 +3561,44 @@ function TraceIconButton({ onClick, ariaLabel = 'View trace' }: { onClick: () =>
         >
           <Clock size={11} />
           View trace
+        </span>
+      )}
+    </span>
+  )
+}
+
+/** The people behind each role in this prototype; the locks are held by role */
+const LOCK_OWNER_NAMES: Record<string, string> = {
+  pmo: 'Ashika Jain',
+  contributor: 'Narendra Patel',
+  reviewer: 'Ishita Sharma',
+  client: 'Riza',
+  admin: 'Admin',
+}
+
+/** Countdown of the section this person has locked; hidden when they hold no lock */
+function LockTimerChip({ pagePrefix, owner }: { pagePrefix: string; owner: string }) {
+  const { locks, now } = useSectionLocks()
+  const [hover, setHover] = useState(false)
+  const mine = myLockOnPage(locks, pagePrefix, owner, now)
+  if (!mine) return null
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex' }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <span
+        role="timer"
+        aria-label={`Your section unlocks in ${formatLockTime(lockRemaining(mine.lock, now))}`}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#ffffff', color: '#475569', fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}
+      >
+        <Lock size={13} />
+        {formatLockTime(lockRemaining(mine.lock, now))}
+      </span>
+      {hover && (
+        <span
+          role="tooltip"
+          style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60, width: 250, padding: '8px 10px', borderRadius: 8, background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 6px 18px rgba(15,23,42,0.14)', fontSize: 11.5, fontWeight: 400, color: '#475569', lineHeight: 1.45, textAlign: 'left', whiteSpace: 'normal' }}
+        >
+          <strong style={{ display: 'block', fontSize: 12, color: '#0d212c', marginBottom: 2 }}>Section locked for others</strong>
+          The section you are editing stays locked. The timer starts 2 seconds after your last edit and runs for 5 minutes; any edit puts it back to 5:00.
         </span>
       )}
     </span>
@@ -9353,7 +9392,10 @@ function StructureTab({
   instructionsShown = false,
   instructionsOpen = true,
   onInstructionsOpenChange,
+  lockScope = 'sow',
 }: {
+  /** Keeps this SOW's section locks apart from other SOWs */
+  lockScope?: string
   /** An uploaded Excel file whose answers should be filled into open questions / assumptions */
   excelImport?: { id: number; fileName: string } | null
   /** Opens the Excel file picker (Client Queue menu) */
@@ -9383,6 +9425,12 @@ function StructureTab({
   const isClient = viewerRole === 'client'
   const isAdmin = viewerRole === 'admin'
   const [sections, setSections] = useState<SOWSection[]>(initialSections)
+  // Section locks: whoever edits a section locks it for the others until 5 minutes pass without an edit.
+  // Only PMO and contributors edit Planning, so the locks do not show for reviewers or clients.
+  const lockOwner = viewerRole
+  const lockPrefix = `${lockScope}|plan|`
+  const canLock = !readOnly && !isReviewer && !isClient && !isAdmin
+  const { locks: sectionLocks, now: lockNow } = useSectionLocks()
   // Excel autofill: show a loader, then fill some of the open items from the sheet
   const [importing, setImporting] = useState<string | null>(null)
   const lastImportId = useRef<number | null>(null)
@@ -10582,6 +10630,8 @@ function StructureTab({
               const assumptions = sec.items.filter((i) => i.type === 'assumption')
               const questions = sec.items.filter((i) => i.type === 'question')
               const isCollapsed = collapsedSectionIds.includes(sec.id)
+              const heldLock = canLock ? activeLock(sectionLocks, `${lockPrefix}${sec.id}`, lockNow) : undefined
+              const lockedByOther = heldLock && heldLock.owner !== lockOwner ? heldLock : undefined
               return (
                 <div
                   key={sec.id}
@@ -10589,6 +10639,12 @@ function StructureTab({
                     sectionRefs.current[sec.id] = el
                   }}
                   data-section-id={sec.id}
+                  onInputCapture={() => {
+                    if (canLock && (!isContributor || isSectionAssignedToContributor(sec))) {
+                      // After the keystroke has been handled: a re-render in the middle of it would reset the field
+                      setTimeout(() => touchSectionLock(`${lockPrefix}${sec.id}`, lockPrefix, lockOwner, LOCK_OWNER_NAMES[lockOwner] ?? lockOwner), 0)
+                    }
+                  }}
                   onMouseEnter={() => setHoveredPaneSection(sec.id)}
                   onMouseLeave={() => setHoveredPaneSection((h) => (h === sec.id ? null : h))}
                   style={{
@@ -10618,9 +10674,15 @@ function StructureTab({
                           style={{ fontSize: 14, fontWeight: 600, color: '#0d212c', flex: 1, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}
                         >
                           {sec.title}
+                          {lockedByOther && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 8, background: '#e2e8f0', color: '#475569', fontSize: 11.5, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                              <Lock size={11} />
+                              Locked · {lockedByOther.ownerName} is editing · unlocks in {formatLockTime(lockRemaining(lockedByOther, lockNow))}
+                            </span>
+                          )}
                         </span>
                         {/* Add item CTA - contributors can add new questions in their assigned sections */}
-                        {!isCollapsed && !disableAnswer && !isReviewer && !isClient && (!isContributor || isSectionAssignedToContributor(sec)) && (
+                        {!isCollapsed && !disableAnswer && !isReviewer && !isClient && !lockedByOther && (!isContributor || isSectionAssignedToContributor(sec)) && (
                           <button
                             onClick={() => setAddItemFor(sec.id)}
                             style={{
@@ -10674,7 +10736,11 @@ function StructureTab({
                       No assumptions or questions yet. Click <strong>+ Add</strong> to add one.
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    <div
+                      // Locked by someone else: readable, but nothing in it can be used
+                      inert={lockedByOther ? true : undefined}
+                      style={{ display: 'flex', flexDirection: 'column', gap: 7, ...(lockedByOther ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}
+                    >
                       {assumptions.map((item, ai) => {
                         const canEditSec = !readOnly && !isReviewer && !isClient && (!isContributor || isSectionAssignedToContributor(sec))
                         return (
@@ -14197,6 +14263,7 @@ function SOWDraftTab({
   isDraftGenerating = false,
   sowDeadline = '2026-10-31',
   headerActionsSlot = null,
+  lockScope = 'sow',
   assignedSectionTitles = [],
   planningSections = [],
   generatedScore = 100,
@@ -14214,6 +14281,8 @@ function SOWDraftTab({
   isContributor?: boolean
   isReviewer?: boolean
   viewerRole?: 'pmo' | 'contributor' | 'reviewer' | 'admin' | 'client'
+  /** Keeps this SOW's section locks apart from other SOWs */
+  lockScope?: string
   headerActionsSlot?: HTMLElement | null
   onSendForReview?: () => void
   onOpenParticipantsModal?: () => void
@@ -14230,6 +14299,8 @@ function SOWDraftTab({
   const canEditAll = (isPMO || isReviewer) && !isReadOnly
   const canEditAssigned = isContributor && !isReadOnly && assignedSectionTitles.length > 0
   const canEditAny = canEditAll || canEditAssigned
+  const lockOwner = isPMO ? 'pmo' : isReviewer ? 'reviewer' : isContributor ? 'contributor' : 'client'
+  const lockPrefix = `${lockScope}|draft|`
   const canManageSections = (isPMO || isReviewer) && !isReadOnly
   const showFormattingToolbar = !isClient && !(isContributor && !canEditAssigned)
 
@@ -15592,6 +15663,7 @@ function SOWDraftTab({
   // ── Header actions (rendered into the tab strip via portal) ──────────────────
   const draftHeaderActions = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {canEditAny && <LockTimerChip pagePrefix={lockPrefix} owner={lockOwner} />}
       {!isClient && (
         <button
           type="button"
@@ -15804,6 +15876,36 @@ function SOWDraftTab({
   const generatedBySection = useRef<Record<string, string>>({})
   const generatedSeq = useRef(0)
   // Items raised by the user's own edits stay at the top, newest first
+  // Section locks: typing in a section locks it for everyone else until 5 minutes pass without an edit
+  const { locks: sectionLocks, now: lockNow } = useSectionLocks()
+  const lockedByOtherAt = (idx: number) => {
+    const l = activeLock(sectionLocks, `${lockPrefix}${idx}`, lockNow)
+    return l && l.owner !== lockOwner ? l : undefined
+  }
+  useEffect(() => {
+    const root = editorRef.current
+    if (!root) return
+    root.querySelectorAll<HTMLElement>('.sow-section').forEach((el) => {
+      const idx = Number(el.id.replace('sow-section-', ''))
+      const l = Number.isNaN(idx) ? undefined : lockedByOtherAt(idx)
+      if (l) {
+        if (!el.hasAttribute('data-locked')) {
+          el.setAttribute('data-locked', el.getAttribute('contenteditable') ?? '')
+          el.setAttribute('contenteditable', 'false')
+          el.classList.add('sow-locked')
+        }
+        el.setAttribute('data-lock-text', `Locked · ${l.ownerName} is editing · unlocks in ${formatLockTime(lockRemaining(l, lockNow))}`)
+      } else if (el.hasAttribute('data-locked')) {
+        const prev = el.getAttribute('data-locked')
+        if (prev) el.setAttribute('contenteditable', prev)
+        else el.removeAttribute('contenteditable')
+        el.removeAttribute('data-locked')
+        el.removeAttribute('data-lock-text')
+        el.classList.remove('sow-locked')
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectionLocks, lockNow, lockOwner])
   const reviewItemsAll = [...generatedReviews.slice().reverse(), ...REVIEW_ITEMS_SEED]
   const markPointerSeen = (id: string) => setNewPointerIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev))
   const raisePointersForEdit = (sectionIdx: number) => {
@@ -15879,6 +15981,11 @@ function SOWDraftTab({
   const insertRiskIntoDraft = (risk: DraftRisk, text: string) => {
     const sectionTitle = risk.section ?? 'Risks & Mitigations'
     const idx = findSectionIdxForAffected(sectionTitle)
+    const lockedBy = idx === -1 ? undefined : lockedByOtherAt(idx)
+    if (lockedBy) {
+      showToast(`${sectionTitle} is locked while ${lockedBy.ownerName} is editing it`, 'info')
+      return
+    }
     const el = idx === -1 ? null : document.getElementById(`sow-section-${idx}`)
     let box: HTMLElement | null = null
     if (el) {
@@ -15918,6 +16025,11 @@ function SOWDraftTab({
     const idx = findSectionIdxForAffected(item.section)
     const el = idx === -1 ? null : document.getElementById(`sow-section-${idx}`)
     if (!el) return
+    const lockedBy = text.trim() ? lockedByOtherAt(idx) : undefined
+    if (lockedBy) {
+      showToast(`${item.section} is locked while ${lockedBy.ownerName} is editing it`, 'info')
+      return
+    }
     if (!text.trim()) {
       // Nothing to add: just show which section this resolution belongs to
       el.classList.add('sow-ai-suggest-highlight')
@@ -17620,6 +17732,25 @@ function SOWDraftTab({
               }}
             >
               <style>{`
+                .sow-section.sow-locked {
+                  background: #f8fafc;
+                  border-radius: 10px;
+                  box-shadow: 0 0 0 8px #f8fafc;
+                  cursor: not-allowed;
+                }
+                .sow-section.sow-locked::before {
+                  content: attr(data-lock-text);
+                  display: inline-block;
+                  margin-bottom: 10px;
+                  padding: 3px 10px;
+                  border-radius: 8px;
+                  background: #e2e8f0;
+                  color: #475569;
+                  font-size: 11.5px;
+                  font-weight: 600;
+                  line-height: 1.5;
+                  user-select: none;
+                }
                 ::highlight(sow-comment) {
                   background: #fef3c7;
                   color: inherit;
@@ -17900,11 +18031,13 @@ function SOWDraftTab({
                 suppressContentEditableWarning
                 onInput={(e) => {
                   if (canEditAny) {
+                    const node = window.getSelection()?.anchorNode
+                    const secEl = (node instanceof Element ? node : node?.parentElement)?.closest('[id^="sow-section-"]')
+                    const secIdx = secEl ? Number(secEl.id.replace('sow-section-', '')) : -1
+                    // Any edit locks the section for the others and restarts its 5 minutes
+                    if (secIdx >= 0) touchSectionLock(`${lockPrefix}${secIdx}`, lockPrefix, lockOwner, LOCK_OWNER_NAMES[lockOwner])
                     // Typed or pasted text (not formatting) raises new review and risk pointers for its section
                     if (((e.nativeEvent as InputEvent).inputType || '').startsWith('insert')) {
-                      const node = window.getSelection()?.anchorNode
-                      const secEl = (node instanceof Element ? node : node?.parentElement)?.closest('[id^="sow-section-"]')
-                      const secIdx = secEl ? Number(secEl.id.replace('sow-section-', '')) : -1
                       if (secIdx >= 0) {
                         if (manualEditTimer.current) clearTimeout(manualEditTimer.current)
                         manualEditTimer.current = setTimeout(() => raisePointersForEdit(secIdx), 1200)
@@ -19920,6 +20053,8 @@ export function SOWDetailScreen({
 
   const [showParticipantsModal, setShowParticipantsModal] = useState(false)
   const { showToast } = useToast()
+  // Locks belong to this SOW (its name when it opened, so renaming does not drop them)
+  const [lockScope] = useState(() => `sow:${sowName}`)
 
   const defaultMockFiles: UploadedFile[] = [
     { id: '1', name: 'Scope_Requirements_RFP.pdf', size: '2.4 MB', type: 'application/pdf', status: 'complete', progress: 100 },
@@ -20461,6 +20596,11 @@ export function SOWDetailScreen({
                 </button>
                 </div>
               )}
+              {activeTab === 'structure' && (effectiveViewerRole === 'pmo' || effectiveViewerRole === 'contributor') && !(contentFrozen || sentLock) && (
+                <div style={{ order: 0, display: 'flex', alignItems: 'center' }}>
+                  <LockTimerChip pagePrefix={`${lockScope}|plan|`} owner={effectiveViewerRole} />
+                </div>
+              )}
               {activeTab === 'structure' && (
                 <div style={{ order: 1, display: 'flex' }}>
                   <button
@@ -20691,6 +20831,7 @@ export function SOWDetailScreen({
                 instructionsShown={instructionsShown}
                 instructionsOpen={instructionsOpen}
                 onInstructionsOpenChange={setInstructionsOpen}
+                lockScope={lockScope}
               />
             ) : (
               <LockedTabState
@@ -20704,6 +20845,7 @@ export function SOWDetailScreen({
                 <ShimmerDraft />
               ) : (
                 <SOWDraftTab
+                  lockScope={lockScope}
                   headerActionsSlot={draftHeaderSlot}
                   isContributor={isContributor}
                   isReviewer={isReviewer}

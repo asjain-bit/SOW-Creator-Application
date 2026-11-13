@@ -19,6 +19,8 @@ import {
 } from './DashboardScreenV2.types'
 import { CreateSOWModal } from '@/components/molecules/CreateSOWModal'
 import {
+  UserX,
+  UserCheck,
   FileText,
   CheckCircle2,
   Layers,
@@ -1552,8 +1554,9 @@ function AgentsView({
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(0,196,196,0.1)', background: '#ffffff' }}>
-              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '30%' }}>Agent Name</th>
-              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '56%' }}>Description</th>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '26%' }}>Agent Name</th>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '12%' }}>Version</th>
+              <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '48%' }}>Description</th>
               <th style={{ padding: '10px 14px', fontSize: 10, fontWeight: 500, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', width: '14%' }}>Status</th>
             </tr>
           </thead>
@@ -1574,6 +1577,7 @@ function AgentsView({
                 onMouseLeave={(e) => (e.currentTarget.style.background = '')}
               >
                 <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 500, color: '#0d212c' }}>{a.name}</td>
+                <td style={{ padding: '10px 14px', fontSize: 12.5, color: '#475569', whiteSpace: 'nowrap' }}>Version {a.versions?.[0]?.version ?? 1}</td>
                 <td style={{ padding: '10px 14px', fontSize: 12.5, color: '#64748b' }}>{a.description}</td>
                 <td style={{ padding: '10px 14px' }}>
                   <span
@@ -3460,6 +3464,8 @@ export function UserDirectoryView({
 
   const [userMenuOpenId, setUserMenuOpenId] = useState<string | null>(null)
   const [userToDelete, setUserToDelete] = useState<PlatformUserItem | null>(null)
+  // Inactivating switches a user off temporarily; they can be reactivated later
+  const [userToToggle, setUserToToggle] = useState<PlatformUserItem | null>(null)
 
   useEffect(() => {
     if (!filterDropdownOpen && !userMenuOpenId && !newRoleDropdownOpen && !editRoleDropdownOpen) return
@@ -3538,6 +3544,12 @@ export function UserDirectoryView({
   const handleDeleteUser = (id: string, name: string) => {
     setUserList((prev) => prev.filter((u) => u.id !== id))
     showToast('User Deleted', 'error')
+  }
+
+  const handleToggleUserStatus = (u: PlatformUserItem) => {
+    const next = u.status === 'Active' ? 'Inactive' : 'Active'
+    setUserList((prev) => prev.map((x) => (x.id === u.id ? { ...x, status: next } : x)))
+    showToast(next === 'Inactive' ? 'User inactivated' : 'User reactivated', 'success')
   }
 
   const toggleNewRole = (r: UserRole) => {
@@ -3990,7 +4002,7 @@ export function UserDirectoryView({
                               boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
                               border: '1px solid #e2e8f0',
                               padding: 6,
-                              minWidth: 130,
+                              minWidth: 160,
                               zIndex: 100,
                               display: 'flex',
                               flexDirection: 'column',
@@ -4027,6 +4039,32 @@ export function UserDirectoryView({
                             >
                               <Pencil size={13} color="#008a8a" />
                               Edit User
+                            </button>
+                            <button
+                              onClick={() => {
+                                setUserMenuOpenId(null)
+                                setUserToToggle(u)
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '8px 10px',
+                                border: 'none',
+                                background: 'transparent',
+                                color: '#0d212c',
+                                fontSize: 12.5,
+                                fontWeight: 500,
+                                borderRadius: 8,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: '100%',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              {u.status === 'Active' ? <UserX size={13} color="#64748b" /> : <UserCheck size={13} color="#008a8a" />}
+                              {u.status === 'Active' ? 'Inactivate User' : 'Reactivate User'}
                             </button>
                             <button
                               onClick={() => {
@@ -4673,6 +4711,63 @@ export function UserDirectoryView({
       )}
 
       {/* ─── MODAL: Delete User Confirmation (PMO Consistent Negative Popup) ─── */}
+      {userToToggle && (() => {
+        const turningOff = userToToggle.status === 'Active'
+        const close = () => setUserToToggle(null)
+        return (
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(3px)' }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) close()
+            }}
+          >
+            <div style={{ background: '#ffffff', borderRadius: 24, padding: '32px 28px', width: 440, maxWidth: '90vw', textAlign: 'center', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+              <button onClick={close} aria-label="Close" style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4, display: 'flex' }}>
+                <X size={20} />
+              </button>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: turningOff ? '#f1f5f9' : 'rgba(0,196,196,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                {turningOff ? <UserX size={26} color="#64748b" strokeWidth={2.2} /> : <UserCheck size={26} color="#008a8a" strokeWidth={2.2} />}
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#0d212c', marginBottom: 8 }}>
+                {turningOff ? 'Inactivate User?' : 'Reactivate User?'}
+              </div>
+              <div style={{ fontSize: 14, color: '#64748b', marginBottom: 26, lineHeight: 1.5 }}>
+                {turningOff ? (
+                  <>
+                    <strong style={{ color: '#0d212c' }}>{userToToggle.name}</strong> will be switched off for now and will not be able to work in the workspace. You can reactivate them at any time.
+                  </>
+                ) : (
+                  <>
+                    <strong style={{ color: '#0d212c' }}>{userToToggle.name}</strong> will get their workspace access back.
+                  </>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={close}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#ffffff', border: '1.5px solid #e2e8f0', color: '#0d212c', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleToggleUserStatus(userToToggle)
+                    close()
+                  }}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, background: '#00C4C4', border: 'none', color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,196,196,0.25)' }}
+                >
+                  {turningOff ? 'Inactivate' : 'Reactivate'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {userToDelete && (
         <div
           style={{
