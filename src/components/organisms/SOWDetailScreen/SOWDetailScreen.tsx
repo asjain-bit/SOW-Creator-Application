@@ -3622,7 +3622,7 @@ function LockTimerChip({ pagePrefix, owner }: { pagePrefix: string; owner: strin
             style={{ position: 'fixed', top: tip.top, right: tip.right, zIndex: 100000, width: 260, padding: '10px 12px', borderRadius: 10, background: '#ffffff', border: '1px solid #cbd5e1', boxShadow: '0 10px 28px rgba(15,23,42,0.22)', fontSize: 12, fontWeight: 400, color: '#475569', lineHeight: 1.5, textAlign: 'left', pointerEvents: 'none' }}
           >
             <strong style={{ display: 'block', fontSize: 12.5, color: '#0d212c', marginBottom: 3 }}>Section locked for others</strong>
-            The section you are editing stays locked for others. This timer appears 3 seconds after your last edit and runs for 5 minutes; editing again hides it until you pause.
+            The section you are editing stays locked for others.
           </div>,
           document.body
         )}
