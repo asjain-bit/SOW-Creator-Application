@@ -804,6 +804,9 @@ function OverviewTab({
     else proceed()
   }
 
+  // A SOW always keeps at least one document
+  const isLastDocument = files.length <= 1
+
   const detailRows = [
     { label: 'SOW Name', value: sowName || '—' },
     {
@@ -997,12 +1000,16 @@ function OverviewTab({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
+                    if (isLastDocument) return
                     setRemoveTarget({ id: file.id, name: file.name })
                   }}
-                  title="Delete document"
+                  title={isLastDocument ? 'At least one document is required' : 'Delete document'}
                   aria-label={`Delete ${file.name}`}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4, display: 'flex', flexShrink: 0 }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#ef4444')}
+                  aria-disabled={isLastDocument}
+                  style={{ background: 'none', border: 'none', cursor: isLastDocument ? 'not-allowed' : 'pointer', color: '#94a3b8', padding: 4, display: 'flex', flexShrink: 0, opacity: isLastDocument ? 0.45 : 1 }}
+                  onMouseEnter={(e) => {
+                    if (!isLastDocument) (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'
+                  }}
                   onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#94a3b8')}
                 >
                   <Trash2 size={16} />
@@ -1010,6 +1017,13 @@ function OverviewTab({
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {isPMO && isLastDocument && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: '#64748b' }}>
+          <Info size={14} color="#64748b" style={{ flexShrink: 0 }} />
+          At least one document is required, so this one can&apos;t be deleted. Upload another document first if you want to replace it.
         </div>
       )}
 
