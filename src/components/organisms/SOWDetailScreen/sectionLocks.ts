@@ -3,9 +3,9 @@
 /**
  * Section locks for the Planning and Draft pages.
  *
- * Whoever types in a section locks it for everyone else. The 5 minute countdown starts once the person
- * has been idle for 2 seconds; any further edit puts it back to the full 5 minutes and pauses it again,
- * and when it reaches 0 the section is free for everybody. A person holds one lock per page, so moving to another section hands the first
+ * Whoever types in a section locks it for everyone else straight away. The 5 minute countdown only appears
+ * and starts once the person has been idle for 3 seconds; any further edit hides it again, and when it
+ * reaches 0 the section is free for everybody. A person holds one lock per page, so moving to another section hands the first
  * one back.
  *
  * Locks live in localStorage (and are shared across tabs with the storage event), so a second tab or
@@ -16,7 +16,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 
 export const LOCK_MS = 5 * 60 * 1000
 /** The 5 minutes only start counting once the person has been idle for this long */
-export const IDLE_MS = 2000
+export const IDLE_MS = 3000
 
 export interface SectionLock {
   /** The role the person is working as (stands in for the person) */
@@ -100,7 +100,7 @@ export function touchSectionLock(key: string, pagePrefix: string, owner: string,
     if (k.startsWith(pagePrefix) && l.owner === owner && k !== key) return
     next[k] = l
   })
-  // While the person keeps editing the countdown stays at the full 5 minutes; it starts after 2 seconds without an edit
+  // The countdown only starts (and shows) after 3 seconds without an edit
   next[key] = { owner, ownerName, expiresAt: now + IDLE_MS + LOCK_MS }
   commit(next)
   return true
@@ -117,7 +117,12 @@ export function useSectionLocks(): { locks: LockMap; now: number } {
   return { locks: map, now }
 }
 
-/** Time left on a lock: the full 5 minutes until the person has been idle for 2 seconds, then counting down */
+/** True once the person has been idle long enough for the 5 minutes to be counting down */
+export function lockCounting(lock: SectionLock, now: number): boolean {
+  return lock.expiresAt - now <= LOCK_MS
+}
+
+/** Time left on a lock (the full 5 minutes until the countdown starts) */
 export function lockRemaining(lock: SectionLock, now: number): number {
   return Math.min(LOCK_MS, Math.max(0, lock.expiresAt - now))
 }

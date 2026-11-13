@@ -24,7 +24,7 @@ interface ContextIssueState {
   signedFields?: string[]
   clientName?: string
 }
-import { activeLock, formatLockTime, lockRemaining, myLockOnPage, touchSectionLock, useSectionLocks } from './sectionLocks'
+import { activeLock, formatLockTime, lockCounting, lockRemaining, myLockOnPage, touchSectionLock, useSectionLocks } from './sectionLocks'
 import {
   Check,
   X,
@@ -1021,8 +1021,8 @@ function OverviewTab({
       )}
 
       {isPMO && isLastDocument && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: '#64748b' }}>
-          <Info size={14} color="#64748b" style={{ flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: '#dc2626' }}>
+          <Info size={14} color="#dc2626" style={{ flexShrink: 0 }} />
           At least one document is required, so this one can&apos;t be deleted. Upload another document first if you want to replace it.
         </div>
       )}
@@ -3595,7 +3595,8 @@ function LockTimerChip({ pagePrefix, owner }: { pagePrefix: string; owner: strin
   const { locks, now } = useSectionLocks()
   const [hover, setHover] = useState(false)
   const mine = myLockOnPage(locks, pagePrefix, owner, now)
-  if (!mine) return null
+  // Not shown while the person is still editing; it appears once they have been idle for 3 seconds
+  if (!mine || !lockCounting(mine.lock, now)) return null
   return (
     <span style={{ position: 'relative', display: 'inline-flex' }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <span
@@ -3612,7 +3613,7 @@ function LockTimerChip({ pagePrefix, owner }: { pagePrefix: string; owner: strin
           style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 60, width: 250, padding: '8px 10px', borderRadius: 8, background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 6px 18px rgba(15,23,42,0.14)', fontSize: 11.5, fontWeight: 400, color: '#475569', lineHeight: 1.45, textAlign: 'left', whiteSpace: 'normal' }}
         >
           <strong style={{ display: 'block', fontSize: 12, color: '#0d212c', marginBottom: 2 }}>Section locked for others</strong>
-          The section you are editing stays locked. The timer starts 2 seconds after your last edit and runs for 5 minutes; any edit puts it back to 5:00.
+          The section you are editing stays locked for others. This timer appears 3 seconds after your last edit and runs for 5 minutes; editing again hides it until you pause.
         </span>
       )}
     </span>
@@ -10691,7 +10692,7 @@ function StructureTab({
                           {lockedByOther && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 8, background: '#e2e8f0', color: '#475569', fontSize: 11.5, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                               <Lock size={11} />
-                              Locked · {lockedByOther.ownerName} is editing · unlocks in {formatLockTime(lockRemaining(lockedByOther, lockNow))}
+                              Locked · {lockedByOther.ownerName} is editing{lockCounting(lockedByOther, lockNow) ? ` · unlocks in ${formatLockTime(lockRemaining(lockedByOther, lockNow))}` : ''}
                             </span>
                           )}
                         </span>
@@ -15908,7 +15909,7 @@ function SOWDraftTab({
           el.setAttribute('contenteditable', 'false')
           el.classList.add('sow-locked')
         }
-        el.setAttribute('data-lock-text', `Locked · ${l.ownerName} is editing · unlocks in ${formatLockTime(lockRemaining(l, lockNow))}`)
+        el.setAttribute('data-lock-text', `Locked · ${l.ownerName} is editing${lockCounting(l, lockNow) ? ` · unlocks in ${formatLockTime(lockRemaining(l, lockNow))}` : ''}`)
       } else if (el.hasAttribute('data-locked')) {
         const prev = el.getAttribute('data-locked')
         if (prev) el.setAttribute('contenteditable', prev)
